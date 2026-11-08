@@ -71,11 +71,15 @@ export async function saveMeetingAction(
   orgId: string,
   input: MeetingInputView,
   intent: "draft" | "published",
-  id: string | null
+  id: string | null,
+  opts?: { autosave?: boolean }
 ): Promise<StudioResult<{ record: MeetingRecordView; warnings: string[] }>> {
   const viewer = await viewerId();
   if (!viewer) return { ok: false, error: "Sign in first." };
-  const r = await saveMeetingContent(viewer, orgId, input as MeetingInput, intent === "draft" ? "draft" : "published", id);
+  // `autosave` is refused over a meeting that is no longer a draft (meeting-content.ts).
+  const r = await saveMeetingContent(viewer, orgId, input as MeetingInput, intent === "draft" ? "draft" : "published", id, {
+    autosave: opts?.autosave === true,
+  });
   if (r.ok === false) return { ok: false, error: r.error };
   return { ok: true, value: { record: await withHref(r.value), warnings: r.warnings ?? [] } };
 }

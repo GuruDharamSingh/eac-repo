@@ -12,13 +12,16 @@ import "@elkdonis/reels/editor.css";
 import "@elkdonis/studio/capture.css";
 import "@elkdonis/studio/image.css";
 import "@elkdonis/studio/wordart.css";
+// The publication forms (Gatherings (new), on trial), in the design's Broadsheet theme.
+import "@elkdonis/studio/forms.css";
+import "@elkdonis/studio/forms/broadsheet.css";
 
 // The Studio's own faces (the mockup's) come from Google Fonts by
 // stylesheet, not next/font: Turbopack's font step failed two builds out of
 // four on the fetch (2026-09-27, "next/font/google queries have exactly one
 // entry"), taking the site down with it. studio.css names the faces directly.
 const STUDIO_FONTS =
-  "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap";
 import { requireUser } from "@/lib/session";
 import { listShareTargets, sharePiece } from "@/lib/share-actions";
 import { archiveSocialPostAction, createSocialPostAction, listSocialPostsAction, publishSocialPost, saveSocialPostAction } from "@/lib/post-actions";
@@ -101,14 +104,15 @@ export const metadata: Metadata = { title: "Studio — Elkdonis Arts Collective"
 const PERSONAL_ORG_ID = "oad";
 const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
 
-type Props = { searchParams: Promise<{ org?: string; id?: string; kind?: string }> };
+type Props = { searchParams: Promise<{ org?: string; id?: string; kind?: string; focus?: string; preset?: string }> };
 
 export default async function StudioPage({ searchParams }: Props) {
   const user = await requireUser("/login?next=/studio");
-  const { org, id, kind } = await searchParams;
+  const { org, id, kind, focus, preset } = await searchParams;
   const isVideo = kind === "video";
   const isPost = kind === "post";
   const isMeeting = kind === "meeting";
+  const isGathering = kind === "gathering";
   const isRecording = kind === "recording";
 
   const [profile, orgs, reels, admin] = await Promise.all([
@@ -146,8 +150,11 @@ export default async function StudioPage({ searchParams }: Props) {
         orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name, slug: o.slug })),
         initialPieces: pieces,
         initialOrgId,
-        initialPieceId: isVideo || isPost || isMeeting || isRecording ? null : (id ?? null),
+        initialPieceId: isVideo || isPost || isMeeting || isGathering || isRecording ? null : (id ?? null),
         initialKind: kind ?? null,
+        // The Publish card's hand-off (packages/content studioNewHref): focus for this visit, and a preset.
+        initialFocus: focus === "1",
+        initialPreset: preset ?? null,
         actions: {
           listPieces: listStudioPieces,
           loadPiece: loadStudioPiece,
@@ -276,6 +283,7 @@ export default async function StudioPage({ searchParams }: Props) {
         uploadEndpoint: "/api/upload/image",
         libraryEndpoint: "/api/media/library?org=:org",
       }}
+      gathering={{ initialId: isGathering ? (id ?? null) : null }}
       recording={{
         // Listed only when the kind is open: one PROPFIND per folder.
         initialItems: isRecording ? await listRecordings(user.id).catch(() => []) : [],

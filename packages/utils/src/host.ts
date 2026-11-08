@@ -35,6 +35,8 @@ export interface HostItemRef {
   kind: string;
   id: string;
   slug?: string | null;
+  /** The record's own public page, when the save already worked it out (a meeting's `href`). */
+  href?: string | null;
 }
 
 /** Link builders. Functions, so a server page passes the host from a client module. */

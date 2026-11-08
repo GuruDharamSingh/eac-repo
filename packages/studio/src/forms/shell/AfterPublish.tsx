@@ -40,7 +40,9 @@ export function AfterPublish({ schema, state, host, ctx, kinds, scope = '', onKe
   const at = state.publishedAt ? clockIn(ctx.timeZone)(state.publishedAt) : '';
   const feed = feedName(state.answers, host, ctx);
   const vis = VISIBILITY[String(state.answers.visibility ?? 'PUBLIC')] ?? 'Public';
-  const href = state.id ? host.viewHref?.({ kind: schema.codeKind(state.answers), id: state.id, slug: slugOf(state.record) }) ?? null : null;
+  const href = state.id
+    ? host.viewHref?.({ kind: schema.codeKind(state.answers), id: state.id, slug: slugOf(state.record), href: recordHref(state.record) }) ?? null
+    : null;
   const [copied, setCopied] = React.useState(false);
   const linkRef = React.useRef<HTMLInputElement>(null);
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,4 +121,13 @@ export function AfterPublish({ schema, state, host, ctx, kinds, scope = '', onKe
       )}
     </section>
   );
+}
+
+/** The saved record's own public page (MeetingRecordView.href), when it has one. */
+function recordHref(record: unknown): string | null {
+  if (record && typeof record === 'object' && 'href' in record) {
+    const h = (record as { href: unknown }).href;
+    return typeof h === 'string' && h ? h : null;
+  }
+  return null;
 }

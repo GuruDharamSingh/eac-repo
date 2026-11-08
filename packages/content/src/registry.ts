@@ -69,7 +69,7 @@ export interface CreateKindMeta {
 
 export const CREATE_KINDS: CreateKindMeta[] = [
   { id: "post", label: "Post", glyph: "◉", hint: "An article or a note", type: "writing", row: "primary", studio: { kind: null, ready: true } },
-  { id: "meeting", label: "Meeting", glyph: "◎", hint: "A date, a place, a link", type: "meeting", row: "primary", studio: { kind: "meeting", ready: true } },
+  { id: "meeting", label: "Gathering", glyph: "◎", hint: "A date, a place, a link", type: "meeting", row: "primary", studio: { kind: "gathering", ready: true } },
   { id: "series", label: "Series", glyph: "◈", hint: "Sessions that belong together", type: "series", row: "primary", studio: { kind: "series", ready: false } },
   { id: "artwork", label: "Artwork", glyph: "▣", hint: "A work, with its details", type: "artwork", row: "primary", studio: { kind: "artwork", ready: false } },
   { id: "questionnaire", label: "Questionnaire", glyph: "▤", hint: "Ask people several things", type: "questionnaire", row: "more", studio: { kind: "question", ready: false } },

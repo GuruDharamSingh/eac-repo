@@ -79,18 +79,18 @@ export function studioPostActions(actions: StudioActions, opts: StudioPostOption
       let pieceId = id;
       if (!pieceId) {
         const started = await actions.startPiece(orgId, s(answers.title).trim() || 'Untitled');
-        if (!started.ok) return started;
+        if (started.ok === false) return started;
         pieceId = started.value.id;
       }
       // An autosave never changes the piece's status (no status in the patch), so it can never take a piece down.
       const patch = postPatch(answers, intent);
       if (saveOpts?.autosave) delete patch.status;
       const saved = await actions.savePiece(pieceId, patch);
-      if (!saved.ok) return saved;
+      if (saved.ok === false) return saved;
       const warnings: string[] = [];
       if (Array.isArray(answers.also_on)) {
         const listed = await actions.setListing(pieceId, [orgId, ...(answers.also_on as string[]).filter((o) => o !== orgId)]);
-        if (!listed.ok) warnings.push(`Saved, but "Also show on" was not: ${listed.error}`);
+        if (listed.ok === false) warnings.push(`Saved, but "Also show on" was not: ${listed.error}`);
       }
       if (answers.visibility && answers.visibility !== 'PUBLIC') warnings.push('Members-only is not available for network pieces yet; this one is public.');
       return { ok: true, value: { record: saved.value, warnings } };

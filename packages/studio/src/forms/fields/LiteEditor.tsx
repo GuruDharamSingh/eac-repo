@@ -132,7 +132,7 @@ export function LiteEditor({ id, value, onChange, placeholder, label = 'Text', t
   // Our own echo is never re-judged, so typing can't flip the editor to read only.
   const [first] = React.useState(() => htmlToLite(value ?? ''));
   const [md, setMd] = React.useState(first.editable ? first.md : '');
-  const [readOnly, setReadOnly] = React.useState<string | null>(!first.editable && (value ?? '').trim() ? first.reason : null);
+  const [readOnly, setReadOnly] = React.useState<string | null>(first.editable === false && (value ?? '').trim() ? first.reason : null);
   const emitted = React.useRef<string>(value ?? '');
   const area = React.useRef<HTMLTextAreaElement>(null);
   const pendingSel = React.useRef<[number, number] | null>(null);
@@ -142,10 +142,10 @@ export function LiteEditor({ id, value, onChange, placeholder, label = 'Text', t
     if ((value ?? '') === emitted.current) return;
     emitted.current = value ?? '';
     const p = htmlToLite(value ?? '');
-    if (p.editable) {
+    if (p.editable === true) {
       setMd(p.md);
       setReadOnly(null);
-    } else if ((value ?? '').trim()) setReadOnly(p.reason);
+    } else if (p.editable === false && (value ?? '').trim()) setReadOnly(p.reason);
   }, [value]);
 
   React.useLayoutEffect(() => {

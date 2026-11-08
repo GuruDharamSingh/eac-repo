@@ -27,7 +27,8 @@ export type StudioKindId =
   | 'video'
   | 'post'
   | 'recording'
-  | 'wordart';
+  | 'wordart'
+  | 'gathering';
 
 export interface StudioKind {
   id: StudioKindId;

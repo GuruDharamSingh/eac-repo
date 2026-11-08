@@ -134,7 +134,7 @@ export function gatheringActions(actions: MeetingActions, opts: GatheringAdapter
       const input: MeetingInputView = toInput(resolved, 'meeting', askHosts(c));
       // The host must forward opts to saveMeetingContent's 6th argument for the server-side refusal.
       const res = await actions.saveMeeting(orgId, input, intent, id, { autosave: saveOpts?.autosave === true });
-      if (!res.ok) return res;
+      if (res.ok === false) return res;
       const warnings = [...res.value.warnings];
       if (dropped.length) warnings.push('Some choices are kept in this form but not saved yet: ' + dropped.join(', ') + '.');
       return { ok: true, value: { record: res.value.record, warnings } };

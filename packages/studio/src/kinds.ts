@@ -19,6 +19,8 @@ export const STUDIO_KINDS: StudioKind[] = [
   // Meetings and events are one shape (content-fields.ts) and the live rows are all meeting;
   // one tab, an extension like Post (2026-11-01).
   { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: true, href: '/studio?kind=meeting' },
+  // The publication forms' Gathering (2026-11-08), on trial beside Meetings until Justin has tried it.
+  { id: 'gathering', label: 'Gatherings (new)', noun: 'gathering', ready: true, href: '/studio?kind=gathering' },
   { id: 'workshop', label: 'Workshops', noun: 'workshop', ready: false },
   { id: 'service', label: 'Services', noun: 'service', ready: false },
   { id: 'question', label: 'Questions', noun: 'questionnaire', ready: false },

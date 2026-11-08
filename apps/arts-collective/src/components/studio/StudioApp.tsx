@@ -7,6 +7,11 @@ import { postExtension, type PostKindProps } from "@elkdonis/studio/post";
 import { meetingExtension, type MeetingKindProps } from "@elkdonis/studio/meeting";
 import { recordingExtension, type RecordingKindProps } from "@elkdonis/studio/recording";
 import { wordartExtension, type WordArtFont } from "@elkdonis/studio/wordart";
+import { broadsheetFormTheme, gatheringActions, gatheringKind, type FormHost } from "@elkdonis/studio/forms";
+import { formExtension, richTextBodySlot } from "@elkdonis/studio/forms/focus";
+import { MediaPicker } from "@elkdonis/cms-ui/files";
+
+const PERSONAL_ORG_ID = "oad";
 
 /**
  * Fonts word art can set text in (public/fonts/wordart; opentype.js reads TTF, OTF and WOFF, not WOFF2).
@@ -33,17 +38,79 @@ export function StudioApp({
   video,
   post,
   meeting,
+  gathering,
   recording,
 }: {
   shell: Omit<StudioShellProps, "extensions">;
   video: VideoKindProps;
   post: PostKindProps;
   meeting: MeetingKindProps;
+  /** The publication forms' Gathering, on trial beside Meetings (2026-11-08). Same server actions. */
+  gathering: { initialId: string | null };
   recording: RecordingKindProps;
 }) {
+  const orgs = shell.orgs;
   const extensions = React.useMemo(
-    () => [videoExtension(video), postExtension(post), meetingExtension(meeting), recordingExtension(recording), wordartExtension({ fonts: WORDART_FONTS })],
-    [video, post, meeting, recording]
+    () => [
+      videoExtension(video),
+      postExtension(post),
+      meetingExtension(meeting),
+      formExtension({
+        id: "gathering",
+        label: "Gatherings (new)",
+        listLabel: "Gatherings",
+        schema: gatheringKind,
+        // No arts-collective org runs an attendee-reminder tick or the minimum-reached mail yet.
+        actions: gatheringActions(meeting.actions, { canRemind: () => false, canNotifyMin: () => false }),
+        initialId: gathering.initialId,
+        theme: broadsheetFormTheme,
+        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+      }),
+      recordingExtension(recording),
+      wordartExtension({ fonts: WORDART_FONTS }),
+    ],
+    [video, post, meeting, gathering, recording, orgs]
   );
   return <StudioShell {...shell} extensions={extensions} />;
+}
+
+/** This app's links and pickers for the forms: the Studio is /studio here; never guessed inside the package. */
+function gatheringHost(
+  orgId: string,
+  orgs: Array<{ orgId: string; slug: string }>,
+  uploadEndpoint: string,
+  libraryEndpoint: string | undefined
+): Omit<FormHost, "actions"> {
+  const orgSlug = orgs.find((o) => o.orgId === orgId)?.slug ?? PERSONAL_ORG_ID;
+  return {
+    studioHref: (o) => {
+      const q = new URLSearchParams();
+      // "post" is the writing room, the Studio's default kind; "" is the Studio itself.
+      if (o.kind && o.kind !== "post") q.set("kind", o.kind);
+      if (o.id) q.set("id", o.id);
+      if (orgId !== PERSONAL_ORG_ID) q.set("org", orgId);
+      if (o.preset) q.set("preset", o.preset);
+      if (o.focus) q.set("focus", "1");
+      const qs = q.toString();
+      return `/studio${qs ? `?${qs}` : ""}`;
+    },
+    viewHref: (ref) => ref.href ?? null,
+    loginHref: (next) => `/login?next=${encodeURIComponent(next)}`,
+    preview: {},
+    feeds: [],
+    slots: {
+      body: richTextBodySlot(),
+      media: ({ value, onChange, label, hint }) => (
+        <MediaPicker
+          value={typeof value === "string" ? value : undefined}
+          onChange={onChange}
+          uploadEndpoint={uploadEndpoint}
+          libraryEndpoint={libraryEndpoint ? libraryEndpoint.replace(":org", encodeURIComponent(orgSlug)) : undefined}
+          uploadFields={{ orgSlug, context: "content" }}
+          label={label ?? "Cover image"}
+          hint={hint}
+        />
+      ),
+    },
+  };
 }
