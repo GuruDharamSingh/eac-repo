@@ -157,6 +157,8 @@ export interface FormState {
   /** Set by the first Publish press; issues show only after it. */
   validationAttempted: boolean;
   saveStatus: SaveStatus;
+  /** An edit landed while a save was in flight: that save does not cover it, so another is due. */
+  editedWhileSaving: boolean;
   savedAt: string | null;
   publishedAt: string | null;
   /** The saved record's id once there is one. */
@@ -200,7 +202,17 @@ export interface FormSaveValue<R> {
 export interface FormActions<R = unknown> {
   context(orgId: string): Promise<Record<string, unknown>>;
   load?(id: string): Promise<{ answers: Answers; record: R } | null>;
-  save(orgId: string, answers: Answers, intent: 'draft' | 'published', id: string | null): Promise<StudioResult<FormSaveValue<R>>>;
+  /**
+   * `opts.autosave`: nobody pressed anything. The adapter forwards it so the server refuses an
+   * autosave over a row that is no longer a draft (meeting-content.ts saveMeetingContent opts).
+   */
+  save(
+    orgId: string,
+    answers: Answers,
+    intent: 'draft' | 'published',
+    id: string | null,
+    opts?: { autosave?: boolean }
+  ): Promise<StudioResult<FormSaveValue<R>>>;
   presets?(orgId: string, kind: FormKindId): Promise<FormPreset[]>;
   /** "Your last post's settings": a preset built from the latest record of this kind. */
   lastSettings?(orgId: string, kind: FormKindId): Promise<FormPreset | null>;

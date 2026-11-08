@@ -109,11 +109,12 @@ export function gatheringActions(actions: MeetingActions, opts: GatheringAdapter
       const c = await context(record.orgId).catch(() => null);
       return { answers: gatheringAnswers(record, c), record };
     },
-    async save(orgId, answers, intent, id) {
+    async save(orgId, answers, intent, id, saveOpts) {
       const c = await context(orgId).catch(() => null);
       const { answers: resolved, dropped } = resolveGatheringAnswers(answers);
       const input: MeetingInputView = toInput(resolved, 'meeting', askHosts(c));
-      const res = await actions.saveMeeting(orgId, input, intent, id);
+      // The host must forward opts to saveMeetingContent's 6th argument for the server-side refusal.
+      const res = await actions.saveMeeting(orgId, input, intent, id, { autosave: saveOpts?.autosave === true });
       if (!res.ok) return res;
       const warnings = [...res.value.warnings];
       if (dropped.length) warnings.push('Some choices are kept in this form but not saved yet: ' + dropped.join(', ') + '.');

@@ -82,7 +82,9 @@ export interface MeetingActions {
     orgId: string,
     input: MeetingInputView,
     intent: 'draft' | 'published',
-    id: string | null
+    id: string | null,
+    /** `autosave`: forward to saveMeetingContent's opts, which refuses it over a row that is not a draft. */
+    opts?: { autosave?: boolean }
   ): Promise<StudioResult<{ record: MeetingRecordView; warnings: string[] }>>;
   removeMeeting(id: string): Promise<StudioResult>;
 }

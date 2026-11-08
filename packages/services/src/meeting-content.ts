@@ -468,7 +468,14 @@ export async function saveMeetingContent(
   orgId: string,
   input: MeetingInput,
   intent: 'draft' | 'published',
-  threadId?: string | null
+  threadId?: string | null,
+  /**
+   * `autosave`: a save the person did not press (the publication forms' draft autosave,
+   * 2026-11-08). It may only touch a draft: over a pending or published row it is refused
+   * and nothing is written, since an explicit "Save draft" there means "take it down", and
+   * an autosave must never mean that.
+   */
+  opts: { autosave?: boolean } = {}
 ): Promise<MeetingResult<MeetingRecord>> {
   const problem = await validate(orgId, input);
   if (problem) return { ok: false, error: problem };
@@ -480,6 +487,9 @@ export async function saveMeetingContent(
     if (!(await mayChange(viewerId, row))) return { ok: false, error: 'Only its author, or an owner or guide, can change this.' };
     if (row.is_series) {
       return { ok: false, error: 'This is a series: change it in its planner, where moving the schedule moves the weeks with it.' };
+    }
+    if (opts.autosave && row.status !== 'draft') {
+      return { ok: false, error: 'Not saved automatically: it is no longer a draft. Press Save to update it.' };
     }
   } else {
     const ctx = await meetingComposeContext(viewerId, orgId);
@@ -503,7 +513,9 @@ export async function saveMeetingContent(
     }
     await writeColumns(id, orgId, input, status);
     const warnings = [
-      ...(await attachRooms(orgId, id, title, input)),
+      // A draft makes no rooms: a public, listable Talk room named after a half-typed title
+      // (an autosave, or "Save draft") is a leak. They are made once it is submitted or published.
+      ...(status === 'draft' ? [] : await attachRooms(orgId, id, title, input)),
       ...(await assignNextHosts(orgId, id, input, viewerId)),
     ];
     await syncCalendar(orgId, id, status);

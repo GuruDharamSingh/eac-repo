@@ -210,6 +210,8 @@ export type FormEvent =
   | { type: 'saveStart' }
   | { type: 'saveDone'; id: string; record: unknown; at: string; published: boolean; serverErrors?: Record<string, string[]> }
   | { type: 'saveFail'; serverErrors?: Record<string, string[]> }
+  /** Back to idle after a failed save, so autosave tries again (with backoff, in the hook). */
+  | { type: 'retry' }
   | { type: 'unpublish' }
   | { type: 'load'; answers: Answers; id: string; record: unknown; publishedAt: string | null };
 
@@ -230,6 +232,7 @@ export function initialFormState(deps: FormReducerDeps, init?: Partial<FormState
     issues: [],
     validationAttempted: false,
     saveStatus: 'idle',
+    editedWhileSaving: false,
     savedAt: null,
     publishedAt: init?.publishedAt ?? null,
     id: init?.id ?? null,
@@ -248,7 +251,16 @@ export function formReducer(deps: FormReducerDeps) {
       case 'patch': {
         const fromPreset = { ...state.fromPreset };
         for (const k of Object.keys(ev.fields)) delete fromPreset[k];
-        return reissue({ ...state, answers: { ...state.answers, ...ev.fields }, fromPreset, saveStatus: state.saveStatus === 'saved' ? 'idle' : state.saveStatus });
+        // During a save: remember the edit, so the save's completion does not claim "saved" over it.
+        // After a save or a failure: back to idle, which is what lets autosave run again.
+        const saving = state.saveStatus === 'saving';
+        return reissue({
+          ...state,
+          answers: { ...state.answers, ...ev.fields },
+          fromPreset,
+          saveStatus: saving ? 'saving' : 'idle',
+          editedWhileSaving: saving ? true : state.editedWhileSaving,
+        });
       }
       case 'toggleSection': {
         const isOpen = state.openSections.includes(ev.id);
@@ -266,7 +278,9 @@ export function formReducer(deps: FormReducerDeps) {
         return reissue(
           {
             ...state,
-            saveStatus: 'saved',
+            // Edits made during the save are not in it: stay idle so the next autosave picks them up.
+            saveStatus: state.editedWhileSaving ? 'idle' : 'saved',
+            editedWhileSaving: false,
             savedAt: ev.at,
             id: ev.id,
             record: ev.record,
@@ -275,7 +289,9 @@ export function formReducer(deps: FormReducerDeps) {
           ev.serverErrors
         );
       case 'saveFail':
-        return reissue({ ...state, saveStatus: 'error' }, ev.serverErrors);
+        return reissue({ ...state, saveStatus: 'error', editedWhileSaving: false }, ev.serverErrors);
+      case 'retry':
+        return state.saveStatus === 'error' ? { ...state, saveStatus: 'idle' } : state;
       case 'unpublish':
         return { ...state, publishedAt: null };
       case 'load':
@@ -324,26 +340,30 @@ export function useFormState(opts: UseFormStateOptions): FormController {
   stateRef.current = state;
   const inFlight = React.useRef<Promise<unknown> | null>(null);
 
+  const failures = React.useRef(0);
   const save = React.useCallback(
-    async (intent: 'draft' | 'published'): Promise<boolean> => {
+    async (intent: 'draft' | 'published', autosave = false): Promise<boolean> => {
       if (!actions) return false;
       if (inFlight.current) await inFlight.current.catch(() => undefined);
       const s = stateRef.current;
       dispatch({ type: 'saveStart' });
-      const p = actions.save(orgId, s.answers, intent, s.id);
+      const p = actions.save(orgId, s.answers, intent, s.id, { autosave });
       inFlight.current = p;
       try {
         const res = await p;
         if (!res.ok) {
+          failures.current += 1;
           dispatch({ type: 'saveFail' });
           return false;
         }
+        failures.current = 0;
         const v = res.value;
         const id = recordId(v.record) ?? s.id ?? '';
         dispatch({ type: 'saveDone', id, record: v.record, at: new Date().toISOString(), published: intent === 'published', serverErrors: v.fieldErrors });
         if (intent === 'published' && !v.fieldErrors) onPublished?.(v.record);
         return !v.fieldErrors;
       } catch {
+        failures.current += 1;
         dispatch({ type: 'saveFail' });
         return false;
       } finally {
@@ -353,14 +373,25 @@ export function useFormState(opts: UseFormStateOptions): FormController {
     [actions, orgId, onPublished]
   );
 
-  // Autosave: drafts only, after an edit, never before there is a title.
+  // Autosave: only a draft (nothing saved yet, or a saved record whose status is still 'draft'),
+  // only after an edit, never before there is a title. A published or pending item's edits go
+  // live only when the person presses Save; the server refuses an autosave over them too.
   const touched = React.useRef(false);
+  const mayAutosave = !!autosaveMs && !!actions && !state.publishedAt && (state.id === null || recordStatus(state.record) === 'draft');
   React.useEffect(() => {
-    if (!autosaveMs || !actions || state.publishedAt || state.saveStatus !== 'idle' || !touched.current) return;
+    if (!mayAutosave || state.saveStatus !== 'idle' || !touched.current) return;
     if (!isFilled(state.answers.title)) return;
-    const t = setTimeout(() => void save('draft'), autosaveMs);
+    const t = setTimeout(() => void save('draft', true), autosaveMs!);
     return () => clearTimeout(t);
-  }, [state.answers, state.saveStatus, state.publishedAt, autosaveMs, actions, save]);
+  }, [state.answers, state.saveStatus, mayAutosave, autosaveMs, save]);
+
+  // After a failed save, try again with backoff (5 s, 10 s, 20 s … up to a minute; six tries).
+  // The next edit also clears the error (the reducer's patch), so typing retries at once.
+  React.useEffect(() => {
+    if (!mayAutosave || state.saveStatus !== 'error' || failures.current === 0 || failures.current > 6) return;
+    const t = setTimeout(() => dispatch({ type: 'retry' }), Math.min(60_000, 5_000 * 2 ** (failures.current - 1)));
+    return () => clearTimeout(t);
+  }, [state.saveStatus, mayAutosave]);
 
   const patch = React.useCallback((fields: Partial<Answers>) => {
     touched.current = true;
@@ -389,6 +420,15 @@ export function useFormState(opts: UseFormStateOptions): FormController {
     saveDraft: React.useCallback(() => save('draft'), [save]),
     publish,
   };
+}
+
+/** A saved record's status ('draft' | 'pending' | 'published'), when it carries one. Both adapters' records do. */
+function recordStatus(record: unknown): string | null {
+  if (record && typeof record === 'object' && 'status' in record) {
+    const s = (record as { status: unknown }).status;
+    return typeof s === 'string' ? s : null;
+  }
+  return null;
 }
 
 function recordId(record: unknown): string | null {

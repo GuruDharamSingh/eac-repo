@@ -75,14 +75,17 @@ export function studioPostActions(actions: StudioActions, opts: StudioPostOption
       const alsoOn = r.listing.selected.filter((o) => o !== r.listing.homeOrgId);
       return { answers: postAnswers(r.post, alsoOn), record: r.post };
     },
-    async save(orgId, answers, intent, id) {
+    async save(orgId, answers, intent, id, saveOpts) {
       let pieceId = id;
       if (!pieceId) {
         const started = await actions.startPiece(orgId, s(answers.title).trim() || 'Untitled');
         if (!started.ok) return started;
         pieceId = started.value.id;
       }
-      const saved = await actions.savePiece(pieceId, postPatch(answers, intent));
+      // An autosave never changes the piece's status (no status in the patch), so it can never take a piece down.
+      const patch = postPatch(answers, intent);
+      if (saveOpts?.autosave) delete patch.status;
+      const saved = await actions.savePiece(pieceId, patch);
       if (!saved.ok) return saved;
       const warnings: string[] = [];
       if (Array.isArray(answers.also_on)) {
