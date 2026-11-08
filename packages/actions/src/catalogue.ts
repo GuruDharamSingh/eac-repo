@@ -9,6 +9,7 @@
 // ============================================================================
 import type { ActionMeta } from './types';
 import { HUB_ACTIONS } from './hub';
+import { withAgent } from './agent';
 
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
@@ -106,7 +107,8 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   },
   // Hub card entries (2026-11-08), kept in ./hub.ts.
   ...HUB_ACTIONS,
-];
+  // Agent exposure (2026-11-08, ./agent.ts): default deny, never on appOnly entries.
+].map(withAgent);
 
 /** The entries a course step can name: person and org entries (`CourseActionScope`). */
 export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => (m.scope === 'person' || m.scope === 'org') && !m.appOnly) as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
@@ -119,6 +121,18 @@ export function actionMeta(id: string): ActionMeta | null {
 }
 
 export const ACTION_IDS: readonly string[] = ACTION_CATALOGUE.map((m) => m.id);
+
+/** An entry's agent exposure (./agent.ts): 'read', 'draft', or null (not exposed; always null for appOnly). */
+export function agentExposure(id: string): 'read' | 'draft' | null {
+  const m = BY_ID.get(id);
+  return m && !m.appOnly && m.agent ? m.agent : null;
+}
+
+/** Entries whose status an agent may read: exposed ('read' or 'draft') and with a status check. */
+export const AGENT_READ_IDS: readonly string[] = ACTION_CATALOGUE.filter((m) => m.agent && !m.appOnly && m.derived).map((m) => m.id);
+
+/** Entries an agent may perform: drafts and additions only. */
+export const AGENT_DRAFT_IDS: readonly string[] = ACTION_CATALOGUE.filter((m) => m.agent === 'draft' && !m.appOnly && m.runnable).map((m) => m.id);
 
 /**
  * The step's params for an entry, restricted to the entry's declared names and

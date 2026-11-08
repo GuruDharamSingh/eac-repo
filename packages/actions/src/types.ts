@@ -79,6 +79,14 @@ export interface ActionMeta {
    * role changes, removals, welcomes).
    */
   appOnly?: boolean;
+  /**
+   * What an agent door (the MCP, later the dock assistant) may do with the entry
+   * (2026-11-08; docs/open/mcp-foundations/PLAN.md §2.4). Default deny: absent = not
+   * exposed to agents at all. `read`: its status is an agent read. `draft`: its runner
+   * is an agent tool too, because it writes drafts and additions only. Set in
+   * ./agent.ts (never on an `appOnly` entry); check:registry enforces the rules.
+   */
+  agent?: 'read' | 'draft';
 }
 
 /** What the registry reports about an entry for one person. Same shape as @elkdonis/lms TaskStatus. */

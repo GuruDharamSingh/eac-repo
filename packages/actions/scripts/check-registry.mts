@@ -8,6 +8,7 @@
 // Run (any container with the workspace at /app; tsx comes from @elkdonis/lms):
 //   pnpm --filter @elkdonis/actions check:registry
 import { ACTION_CATALOGUE } from '../src/catalogue';
+import { AGENT_EXPOSURE } from '../src/agent';
 import { RUNNERS } from '../src/server/run';
 import { CHECKS } from '../src/server/status';
 
@@ -21,12 +22,17 @@ for (const m of ACTION_CATALOGUE) {
   const hasCheck = Object.hasOwn(CHECKS, m.id);
   if (m.runnable !== hasRunner) problems.push(`${m.id}: catalogue says runnable=${m.runnable}, RUNNERS ${hasRunner ? 'has' : 'lacks'} a runner`);
   if (m.derived !== hasCheck) problems.push(`${m.id}: catalogue says derived=${m.derived}, CHECKS ${hasCheck ? 'has' : 'lacks'} a check`);
+  // Agent exposure (2026-11-08, src/agent.ts): default deny; never appOnly; read ⇒ a check; draft ⇒ a runner.
+  if (m.agent && m.appOnly) problems.push(`${m.id}: appOnly entries cannot have agent exposure`);
+  if (m.agent === 'read' && !hasCheck) problems.push(`${m.id}: agent 'read' needs a status check (derived)`);
+  if (m.agent === 'draft' && !hasRunner) problems.push(`${m.id}: agent 'draft' needs a runner (runnable)`);
   for (const p of m.params ?? []) {
     if (!p.options.some((o) => o.value === p.default)) problems.push(`${m.id}: param ${p.name} default '${p.default}' is not one of its options`);
     const values = p.options.map((o) => o.value);
     if (new Set(values).size !== values.length) problems.push(`${m.id}: param ${p.name} repeats an option`);
   }
 }
+for (const id of Object.keys(AGENT_EXPOSURE)) if (!ids.has(id)) problems.push(`${id}: has agent exposure but no catalogue entry`);
 for (const id of Object.keys(RUNNERS)) if (!ids.has(id)) problems.push(`${id}: has a runner but no catalogue entry`);
 for (const id of Object.keys(CHECKS)) if (!ids.has(id)) problems.push(`${id}: has a check but no catalogue entry`);
 
