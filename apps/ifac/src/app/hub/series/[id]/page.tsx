@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getMeetingSeries } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { getForumViewer } from "@/lib/forum";
 import { requireOrgMember } from "@/lib/auth";
 import { SeriesPlannerPage } from "@elkdonis/series-site/hub";
 import { seriesEmailsHref, seriesMailingsHref } from "@/lib/series-letters";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function HubSeriesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const viewer = await requireOrgMember(`/hub/series/${id}`);
-  const series = await getMeetingSeries(siteConfig.orgId, { threadId: id }, { count: 1 });
+  const series = await getMeetingSeries(siteConfig.orgId, { threadId: id }, { count: 1, viewer: await getForumViewer() });
   if (!series) notFound();
   return (
     <SeriesPlannerPage

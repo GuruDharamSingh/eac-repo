@@ -7,6 +7,7 @@ import type { RotaAssignment } from './meeting-rota';
 import { checkRsvpEligibility, countConfirmedRsvps, deleteRsvp, setRsvpStatus } from './thread-rsvp';
 import { SERIES_KIND, SERIES_SESSION_KIND } from './thread-kinds';
 import { getOrgRole } from './org-membership';
+import { canViewThread, type ThreadRole } from './thread-audience';
 import { createTalkRoom } from './nextcloud';
 import type { MeetingMaterial } from './standing-meeting';
 
@@ -594,14 +595,57 @@ interface SeriesRow {
   is_rsvp_enabled: boolean;
   attendee_limit: number | null;
   metadata: Record<string, unknown> | null;
+  visibility: string;
+  min_role: string | null;
+  author_id: string;
 }
 
-async function loadSeries(orgId: string, ref: { threadId?: string; slug?: string }): Promise<SeriesRow | null> {
+/**
+ * Who is reading a series (2026-11-08). A series is an ordinary thread with an
+ * audience (`visibility` + `min_role`, thread-audience.ts), and its weeks take
+ * the series' audience: a week is readable exactly when its series is. Every
+ * read that hands a series or a week to a page, a calendar file or a mail goes
+ * through `loadSeries` with one of these.
+ *
+ *   - omitted / null   a signed-out visitor: only an `everyone` series
+ *   - ForumViewer      (or any `{ userId, roles }`) the audience rules apply
+ *   - 'internal'       server work that is not on someone's behalf (planner
+ *                      writes); never pass a request's viewer as 'internal'
+ */
+export type SeriesReader = 'internal' | { userId: string | null; roles?: Record<string, string>; isGlobalAdmin?: boolean } | null;
+
+function canReadSeriesRow(row: Pick<SeriesRow, 'org_id' | 'visibility' | 'min_role' | 'author_id'>, reader: SeriesReader | undefined): boolean {
+  if (reader === 'internal') return true;
+  const role = (reader?.roles?.[row.org_id] ?? null) as ThreadRole | null;
+  return canViewThread(
+    { visibility: row.visibility, minRole: row.min_role, authorId: row.author_id, status: 'published' },
+    { userId: reader?.userId ?? null, role, isGlobalAdmin: Boolean(reader?.isGlobalAdmin) }
+  );
+}
+
+/** A reader for one user id (a signed link, a mail run): their role in `orgId`, and the admin flag. */
+export async function seriesReaderForUser(userId: string | null | undefined, orgId: string): Promise<SeriesReader> {
+  if (!userId) return null;
+  const [role, [u]] = await Promise.all([
+    getOrgRole(userId, orgId).catch(() => null),
+    db<Array<{ is_admin: boolean | null }>>`SELECT is_admin FROM users WHERE id = ${userId}`,
+  ]);
+  return { userId, roles: role ? { [orgId]: role } : {}, isGlobalAdmin: Boolean(u?.is_admin) };
+}
+
+/**
+ * Loads a published series row. `reader` defaults to 'internal' because the
+ * writes in this file call it; the functions that return data to a viewer pass
+ * theirs (`getMeetingSeries`, `getMeetingSeriesWeek`), and a series the reader
+ * may not open comes back as null, the same as one that does not exist.
+ */
+async function loadSeries(orgId: string, ref: { threadId?: string; slug?: string }, reader: SeriesReader | undefined = 'internal'): Promise<SeriesRow | null> {
   if (!ref.threadId && !ref.slug) return null;
   const [row] = await db<SeriesRow[]>`
     SELECT id, org_id, slug, title, excerpt, body, scheduled_at, duration_minutes,
            recurrence_pattern, recurrence_until, format, location, meeting_url, video_link,
-           nextcloud_talk_token, is_rsvp_enabled, attendee_limit, metadata
+           nextcloud_talk_token, is_rsvp_enabled, attendee_limit, metadata,
+           visibility, min_role, author_id
     FROM threads
     WHERE org_id = ${orgId}
       AND status = 'published'
@@ -609,7 +653,8 @@ async function loadSeries(orgId: string, ref: { threadId?: string; slug?: string
       AND ${ref.threadId ? db`id = ${ref.threadId}` : db`slug = ${ref.slug!}`}
     LIMIT 1
   `;
-  return row ?? null;
+  if (!row || !canReadSeriesRow(row, reader)) return null;
+  return row;
 }
 
 function materialsOf(value: unknown): MeetingMaterial[] {
@@ -802,9 +847,9 @@ async function resolveWeek(series: SeriesRow, at: string | Date, rows?: SessionR
 export async function getMeetingSeries(
   orgId: string,
   ref: { threadId?: string; slug?: string },
-  options: { from?: Date; count?: number; pastCount?: number } = {}
+  options: { from?: Date; count?: number; pastCount?: number; viewer?: SeriesReader } = {}
 ): Promise<MeetingSeries | null> {
-  const row = await loadSeries(orgId, ref);
+  const row = await loadSeries(orgId, ref, options.viewer ?? null);
   if (!row) return null;
   const rows = await loadSessionRows(row.org_id, row.id);
   return buildSeries(row, rows, options);
@@ -819,10 +864,10 @@ export async function getMeetingSeriesWeek(
   orgId: string,
   ref: { threadId?: string; slug?: string },
   number: number,
-  options: { count?: number; pastCount?: number } = {}
+  options: { count?: number; pastCount?: number; viewer?: SeriesReader } = {}
 ): Promise<{ series: MeetingSeries; week: SeriesSession } | null> {
   if (!Number.isInteger(number) || number < 1) return null;
-  const row = await loadSeries(orgId, ref);
+  const row = await loadSeries(orgId, ref, options.viewer ?? null);
   if (!row) return null;
   const rows = await loadSessionRows(row.org_id, row.id);
   let at: Date | null = null;
@@ -1344,6 +1389,11 @@ export async function ensureSeriesSession(
           attendeeLimit: series.attendee_limit,
           metadata: { seriesSession: { seriesId: series.id, occurrenceAt: week.startsAt, number: week.number } },
         });
+        // A week takes its series' audience (see SeriesReader), so the week
+        // thread is never more open than the series it belongs to.
+        if (series.visibility !== 'PUBLIC' || series.min_role) {
+          await db`UPDATE threads SET visibility = ${series.visibility}, min_role = ${series.min_role} WHERE id = ${topic.id} AND org_id = ${orgId}`;
+        }
         topicId = topic.id;
       } catch (e) {
         // A parallel caller making the same week took the slug between
@@ -1815,6 +1865,10 @@ export async function setSeriesSubscription(input: {
 }): Promise<boolean> {
   const series = await loadSeries(input.orgId, { threadId: input.threadId });
   if (!series) throw new SeriesError('Series not found', 404);
+  // Following a series the person may not open is refused like a missing one.
+  if (input.subscribed && !canReadSeriesRow(series, await seriesReaderForUser(input.userId, input.orgId))) {
+    throw new SeriesError('Series not found', 404);
+  }
   if (!input.subscribed) {
     await db`
       DELETE FROM thread_rsvps
@@ -1845,15 +1899,24 @@ export interface SeriesSubscriber {
 }
 
 export async function listSeriesSubscribers(orgId: string, threadId: string): Promise<SeriesSubscriber[]> {
-  const rows = await db<Array<{ user_id: string; email: string; display_name: string | null }>>`
-    SELECT r.user_id, u.email, u.display_name
+  const all = await db<Array<{ user_id: string; email: string; display_name: string | null; role: string | null; is_admin: boolean | null; visibility: string; min_role: string | null; author_id: string }>>`
+    SELECT r.user_id, u.email, u.display_name, uo.role, u.is_admin, t.visibility, t.min_role, t.author_id
     FROM thread_rsvps r
     JOIN threads t ON t.id = r.thread_id
     JOIN users u ON u.id = r.user_id
+    LEFT JOIN user_organizations uo ON uo.user_id = r.user_id AND uo.org_id = t.org_id
     WHERE r.thread_id = ${threadId} AND t.org_id = ${orgId}
       AND r.status = ${SUBSCRIBED_STATUS} AND u.email IS NOT NULL AND u.email <> ''
     ORDER BY r.created_at
   `;
+  // Letters carry the join details: a restricted series mails only people who
+  // may still open it (someone who left the org stops hearing from it).
+  const rows = all.filter((r) =>
+    canReadSeriesRow(
+      { org_id: orgId, visibility: r.visibility, min_role: r.min_role, author_id: r.author_id },
+      { userId: r.user_id, roles: r.role ? { [orgId]: r.role } : {}, isGlobalAdmin: Boolean(r.is_admin) }
+    )
+  );
   return rows.map((r) => ({ userId: r.user_id, email: r.email, displayName: r.display_name?.trim() || r.email.split('@')[0] }));
 }
 

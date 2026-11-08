@@ -2,16 +2,17 @@ import { db } from "@elkdonis/db";
 import type { HubSeries } from "@elkdonis/cms-ui/hub";
 import { listSeriesForPage } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { getForumViewer } from "@/lib/forum";
 
 /** Listed series that have not ended, in the Series page's order. */
 export async function currentSeries() {
-  const entries = await listSeriesForPage(siteConfig.orgId, { count: 8 }).catch(() => []);
+  const entries = await listSeriesForPage(siteConfig.orgId, { count: 8, viewer: await getForumViewer() }).catch(() => []);
   return entries.filter((e) => e.inLanding && !e.ended);
 }
 
 /** Every series that has not ended, listed or not, for the hub's cards. */
 export async function hubSeriesCards(): Promise<HubSeries[]> {
-  const entries = await listSeriesForPage(siteConfig.orgId, { count: 12 }).catch(() => []);
+  const entries = await listSeriesForPage(siteConfig.orgId, { count: 12, viewer: await getForumViewer() }).catch(() => []);
   return entries
     .filter((e) => !e.ended)
     .map(({ series: s }) => ({

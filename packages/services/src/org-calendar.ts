@@ -35,6 +35,8 @@ import { db } from '@elkdonis/db';
 import { addMonths, expandOccurrences, startOfMonth } from '@elkdonis/utils';
 import { SERIES_KIND } from './thread-kinds';
 import { joinableThreadIds } from './join-link';
+import { RANK_OF, type ThreadRole } from './thread-audience';
+import { getOrgRole } from './org-membership';
 import {
   createCalendarEvent,
   deleteCalendarEvent,
@@ -276,16 +278,23 @@ export async function pushThreadToCalendar(
 
   // Rule 2: the thread must belong to this org. Without this a caller could
   // name any thread id and have the service account publish it here.
-  const [thread] = await db<SchedulableThread[]>`
+  const [thread] = await db<Array<SchedulableThread & { visibility: string }>>`
     SELECT id, title, body, location, scheduled_at, duration_minutes,
            meeting_url, recurrence_pattern, recurrence_until,
-           reminder_minutes_before,
+           reminder_minutes_before, visibility,
            metadata->'series'->>'interval' AS series_interval
     FROM threads
     WHERE id = ${threadId} AND org_id = ${orgId}
   `;
   if (!thread) {
     throw new OrgCalendarScopeError(`Thread ${threadId} is not in ${orgId}`);
+  }
+  // The calendar is shared with every role in the org (viewers included), so a
+  // thread with a narrower audience (members-only, guides, owner, author;
+  // thread-audience.ts) is not mirrored, and one that was is taken down.
+  if (thread.visibility === 'INVITE_ONLY') {
+    await removeThreadFromCalendar(orgId, threadId);
+    return false;
   }
   // Undated threads are not calendar entries. Not an error — a draft event
   // without a date is a normal state.
@@ -348,6 +357,7 @@ export async function syncOrgCalendarEvents(orgId: string): Promise<number> {
     WHERE org_id = ${orgId}
       AND kind = ANY(${SCHEDULED_KINDS as unknown as string[]})
       AND status = 'published'
+      AND visibility <> 'INVITE_ONLY'
       AND scheduled_at IS NOT NULL
   `;
 
@@ -453,6 +463,45 @@ export async function eventsForViewer<T extends { id: string; location: string |
   );
 }
 
+/**
+ * What the reader may open in this org (2026-11-08): their role rank
+ * (viewer 1 … owner 4, 0 for none; an `canEdit` viewer counts as at least a
+ * guide) and the platform-admin flag. A signed-out reader has rank 0.
+ */
+interface CalendarAccess {
+  userId: string | null;
+  rank: number;
+  isAdmin: boolean;
+}
+
+async function calendarAccess(orgId: string, viewer?: CalendarViewer | null): Promise<CalendarAccess> {
+  const userId = viewer?.userId ?? null;
+  if (!userId) return { userId: null, rank: 0, isAdmin: false };
+  const [role, [u]] = await Promise.all([
+    getOrgRole(userId, orgId).catch(() => null),
+    db<Array<{ is_admin: boolean | null }>>`SELECT is_admin FROM users WHERE id = ${userId}`.catch(() => []),
+  ]);
+  const rank = Math.max(role ? RANK_OF[role as ThreadRole] ?? 0 : 0, viewer?.canEdit ? RANK_OF.guide : 0);
+  return { userId, rank, isAdmin: Boolean(u?.is_admin) };
+}
+
+/**
+ * The audience rule of thread-audience.ts `canViewThread` as SQL over alias
+ * `t` (published threads): PUBLIC for anyone; ORGANIZATION for any role;
+ * INVITE_ONLY when the reader's role meets `min_role`; the author and platform
+ * admins read their own / everything.
+ */
+function calendarAudienceSql(a: CalendarAccess) {
+  return db`(
+    ${a.isAdmin}::boolean
+    OR t.visibility = 'PUBLIC'
+    OR (${a.userId}::text IS NOT NULL AND t.author_id::text = ${a.userId}::text)
+    OR (t.visibility = 'ORGANIZATION' AND ${a.rank}::int >= 1)
+    OR (t.visibility = 'INVITE_ONLY' AND t.min_role IS NOT NULL AND ${a.rank}::int >= CASE t.min_role
+          WHEN 'viewer' THEN 1 WHEN 'member' THEN 2 WHEN 'guide' THEN 3 WHEN 'owner' THEN 4 ELSE 99 END)
+  )`;
+}
+
 export async function listOrgEventsInRange(
   orgId: string,
   from: Date,
@@ -474,6 +523,7 @@ export async function listOrgEventsInRange(
   }
 
   try {
+    const access = await calendarAccess(orgId, viewer);
     const rows = await db<
       Array<{
         id: string;
@@ -505,6 +555,7 @@ export async function listOrgEventsInRange(
         AND t.status = 'published'
         AND t.kind = ANY(${SCHEDULED_KINDS as unknown as string[]})
         AND t.scheduled_at IS NOT NULL
+        AND ${calendarAudienceSql(access)}
         AND t.scheduled_at < ${to.toISOString()}
         AND (t.recurrence_pattern IS NOT NULL
              OR t.scheduled_at >= ${from.toISOString()})

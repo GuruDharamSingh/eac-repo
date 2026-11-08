@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { SeriesSite } from "../config";
 import type { CSSProperties } from "react";
 import { getSeriesPageSettings, getSeriesRsvps, listSeriesForPage, type SeriesPageEntry } from "@elkdonis/services";
-import { hostCards, nextPublicSession } from "../lib/series";
+import { hostCards, nextPublicSession, readerOf } from "../lib/series";
 import { comingLabel, dateParts, rhythmLabel, scheduleLine, seriesZones, timeIn, timeInZones, weekdayPlural, zoneLabel } from "../lib/series-time";
 import { coverStill, shareMetadata } from "../lib/series-share";
 import { Icon } from "../components/icons";
@@ -30,7 +30,7 @@ import "../components/series-index.css";
 
 export async function seriesIndexMetadata(site: SeriesSite): Promise<Metadata> {
   const settings = await getSeriesPageSettings(site.orgId).catch(() => null);
-  const entries = settings ? await listSeriesForPage(site.orgId, { count: 1, settings }).catch(() => []) : [];
+  const entries = settings ? await listSeriesForPage(site.orgId, { count: 1, settings, viewer: await readerOf(site) }).catch(() => []) : [];
   const lead = entries.find((e) => e.listed && !e.ended) ?? null;
   return shareMetadata(site, {
     title: settings?.heading || `Series from ${site.shortName}`,
@@ -42,7 +42,7 @@ export async function seriesIndexMetadata(site: SeriesSite): Promise<Metadata> {
 
 export async function SeriesIndexPage({ site }: { site: SeriesSite }) {
   const settings = await getSeriesPageSettings(site.orgId);
-  const all = await listSeriesForPage(site.orgId, { count: 10, settings });
+  const all = await listSeriesForPage(site.orgId, { count: 10, settings, viewer: await readerOf(site) });
   const shown = all.filter((e) => e.listed);
   const current = shown.filter((e) => !e.ended);
   const ended = shown.filter((e) => e.ended);

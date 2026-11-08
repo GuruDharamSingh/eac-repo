@@ -6,11 +6,25 @@ import {
   getStandingMeetingId,
   isSubscribedToSeries,
   type MeetingSeries,
+  type SeriesReader,
   type SeriesSession,
 } from "@elkdonis/services";
 import type { SeriesSite } from "../config";
 
 type Viewer = NonNullable<Awaited<ReturnType<SeriesSite["getViewer"]>>>;
+
+/**
+ * Who is asking, for the audience rule (members-only series; services
+ * meeting-series.ts `SeriesReader`): the request's forum viewer, else a
+ * signed-out visitor.
+ */
+export async function readerOf(site: SeriesSite): Promise<SeriesReader> {
+  try {
+    return await site.getForumViewer();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The series an org presents on its landing page: `site_config` key
@@ -24,11 +38,11 @@ export async function getPresentedSeries(site: SeriesSite, options: { count?: nu
     (await getPresentedSeriesId(site.orgId).catch(() => null)) ??
     (await getStandingMeetingId(site.orgId).catch(() => null));
   if (!id) return null;
-  return getMeetingSeries(site.orgId, { threadId: id }, { count: options.count ?? 6 }).catch(() => null);
+  return getMeetingSeries(site.orgId, { threadId: id }, { count: options.count ?? 6, viewer: await readerOf(site) }).catch(() => null);
 }
 
 export async function getSeriesBySlug(site: SeriesSite, slug: string, options: { count?: number; pastCount?: number } = {}): Promise<MeetingSeries | null> {
-  return getMeetingSeries(site.orgId, { slug }, { count: options.count ?? 8, pastCount: options.pastCount ?? 0 }).catch(() => null);
+  return getMeetingSeries(site.orgId, { slug }, { count: options.count ?? 8, pastCount: options.pastCount ?? 0, viewer: await readerOf(site) }).catch(() => null);
 }
 
 /**
@@ -42,7 +56,7 @@ export async function getSeriesWeek(
   slug: string,
   n: number
 ): Promise<{ series: MeetingSeries; week: SeriesSession } | null> {
-  return getMeetingSeriesWeek(site.orgId, { slug }, n, { count: 13, pastCount: 12 }).catch(() => null);
+  return getMeetingSeriesWeek(site.orgId, { slug }, n, { count: 13, pastCount: 12, viewer: await readerOf(site) }).catch(() => null);
 }
 
 /**

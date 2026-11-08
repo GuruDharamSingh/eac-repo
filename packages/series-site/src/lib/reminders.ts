@@ -230,7 +230,7 @@ async function seriesIds(): Promise<string[]> {
 async function runSubscriberReminders(appOrigin: string): Promise<void> {
   const now = Date.now();
   for (const id of await seriesIds()) {
-    const series = await getMeetingSeries(site.orgId, { threadId: id }, { count: 8 });
+    const series = await getMeetingSeries(site.orgId, { threadId: id }, { count: 8, viewer: "internal" });
     if (!series || series.reminderDays <= 0) continue;
     const horizon = now + series.reminderDays * 86_400_000;
     const due = series.sessions.filter((w) => {
@@ -343,7 +343,7 @@ async function runHostReminders(appOrigin: string): Promise<void> {
       // A series week links to its own page; any other rota to the hub. A
       // cancelled week sends nothing (checked before the claim, so a restored
       // week is still reminded).
-      const series = await getMeetingSeries(site.orgId, { threadId: duty.threadId }, { from: new Date(Date.parse(at) - 60_000), count: 1 }).catch(() => null);
+      const series = await getMeetingSeries(site.orgId, { threadId: duty.threadId }, { from: new Date(Date.parse(at) - 60_000), count: 1, viewer: "internal" }).catch(() => null);
       if (series?.sessions.find((w) => w.at === at)?.isCancelled) continue;
       if (!(await claimHostReminder(duty.threadId, duty.occurrenceAt, role))) continue;
       try {

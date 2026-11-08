@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import { getSeriesPageSettings, getSeriesRsvps, listSeriesForPage, seriesJoinUrl } from "@elkdonis/services";
 import { sanitizeRichText } from "@elkdonis/utils";
-import { canSeeMaterials, getSeriesBySlug, hostCards, isViewerSubscribed, nextPublicSession } from "../lib/series";
+import { canSeeMaterials, getSeriesBySlug, hostCards, isViewerSubscribed, nextPublicSession, readerOf } from "../lib/series";
 import { comingLabel, dateParts, dayMonthLong, displayZones, rhythmLabel, scheduleLine, seriesZones, timeInZones, timesWithDayMark } from "../lib/series-time";
 import { coverStill, shareMetadata } from "../lib/series-share";
 import { Icon } from "../components/icons";
@@ -69,7 +69,7 @@ export async function SeriesPage({ site, params }: { site: SeriesSite; params: P
   ]);
   // This series' colour, as the Series page assigns it.
   const entry = settings
-    ? (await listSeriesForPage(site.orgId, { count: 1, settings }).catch(() => [])).find((e) => e.series.id === series.id) ?? null
+    ? (await listSeriesForPage(site.orgId, { count: 1, settings, viewer: await readerOf(site) }).catch(() => [])).find((e) => e.series.id === series.id) ?? null
     : null;
   const accent = entry?.accent ?? null;
 

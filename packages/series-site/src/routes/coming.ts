@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
-import { getMeetingSeries } from "@elkdonis/services";
+import { getMeetingSeries, seriesReaderForUser } from "@elkdonis/services";
 import { createSeriesMail } from "../lib/series-mail";
 import { createNotePage } from "../lib/note-page";
 import type { SeriesSite } from "../config";
@@ -28,7 +28,7 @@ async function resolve(p: Params) {
   if (Number.isNaN(at.getTime())) return null;
   const iso = at.toISOString();
   if (!verifyComing(p.s, iso, p.u, p.t)) return null;
-  const series = await getMeetingSeries(site.orgId, { threadId: p.s }, { count: 12, pastCount: 0 }).catch(() => null);
+  const series = await getMeetingSeries(site.orgId, { threadId: p.s }, { count: 12, pastCount: 0, viewer: await seriesReaderForUser(p.u, site.orgId) }).catch(() => null);
   const week = series?.sessions.find((w) => w.at === iso);
   if (!series || !week) return null;
   return { series, week };

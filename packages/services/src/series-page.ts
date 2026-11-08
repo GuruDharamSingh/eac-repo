@@ -1,6 +1,6 @@
 import { db } from '@elkdonis/db';
 import { sanitizeRichText } from '@elkdonis/utils';
-import { getMeetingSeries, type MeetingSeries } from './meeting-series';
+import { getMeetingSeries, type MeetingSeries, type SeriesReader } from './meeting-series';
 import { SERIES_KIND } from './thread-kinds';
 
 /**
@@ -139,12 +139,13 @@ export interface SeriesPageEntry {
  */
 export async function listSeriesForPage(
   orgId: string,
-  options: { count?: number; settings?: SeriesPageSettings } = {}
+  /** `viewer`: who is reading (see SeriesReader). Omitted = signed out, so a series with a restricted audience is left out. */
+  options: { count?: number; settings?: SeriesPageSettings; viewer?: SeriesReader } = {}
 ): Promise<SeriesPageEntry[]> {
   const settings = options.settings ?? (await getSeriesPageSettings(orgId));
   const rows = await listSeriesRows(orgId);
   const loaded = await Promise.all(
-    rows.map((r) => getMeetingSeries(orgId, { threadId: r.id }, { count: options.count ?? 8 }).catch(() => null))
+    rows.map((r) => getMeetingSeries(orgId, { threadId: r.id }, { count: options.count ?? 8, viewer: options.viewer }).catch(() => null))
   );
   const now = Date.now();
   const entries: SeriesPageEntry[] = [];

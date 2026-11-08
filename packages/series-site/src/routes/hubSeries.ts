@@ -25,6 +25,7 @@ import {
 import { sanitizeRichText } from "@elkdonis/utils";
 import { DEFAULT_SERIES_ZONE } from "../lib/series-time";
 import { createSeriesMail } from "../lib/series-mail";
+import { readerOf } from "../lib/series";
 import type { SeriesSite } from "../config";
 import { apiMember } from "../config";
 
@@ -68,7 +69,7 @@ async function GET(request: NextRequest) {
   if (!threadId) return NextResponse.json({ error: "threadId required" }, { status: 400 });
 
   const [series, candidates, page] = await Promise.all([
-    getMeetingSeries(site.orgId, { threadId }, { count: 10, pastCount: 1 }),
+    getMeetingSeries(site.orgId, { threadId }, { count: 10, pastCount: 1, viewer: await readerOf(site) }),
     listRotaCandidates(site.orgId),
     getSeriesPageSettings(site.orgId).catch(() => null),
   ]);
@@ -393,7 +394,7 @@ async function POST(request: NextRequest) {
 async function mailAssignee(threadId: string, occurrenceAt: string, role: "host" | "co-host", userId: string) {
   try {
     const [series, [person]] = await Promise.all([
-      getMeetingSeries(site.orgId, { threadId }, { count: 24, pastCount: 0 }),
+      getMeetingSeries(site.orgId, { threadId }, { count: 24, pastCount: 0, viewer: "internal" }),
       db<Array<{ email: string | null; display_name: string | null }>>`SELECT email, display_name FROM users WHERE id = ${userId}`,
     ]);
     const at = new Date(occurrenceAt).toISOString();

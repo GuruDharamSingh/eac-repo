@@ -79,6 +79,8 @@ interface ThreadRow {
   recurrence_until: Date | null;
   updated_at: Date;
   nextcloud_last_sync: Date | null;
+  /** Audience column; INVITE_ONLY threads are never mirrored (org-calendar.ts pushThreadToCalendar). */
+  visibility: string;
   /** `metadata.series` is an object: a series still stored as kind 'meeting'. */
   series_meta?: boolean;
 }
@@ -180,7 +182,7 @@ export async function reconcileOrgCalendar(
   const objectByUid = new Map(objects.map((o) => [o.uid, o]));
 
   const threads = await db<ThreadRow[]>`
-    SELECT id, kind, title, status, body, location, meeting_url, scheduled_at, duration_minutes,
+    SELECT id, kind, title, status, visibility, body, location, meeting_url, scheduled_at, duration_minutes,
            recurrence_pattern, recurrence_until, updated_at, nextcloud_last_sync,
            COALESCE(jsonb_typeof(metadata->'series') = 'object', false) AS series_meta
     FROM threads
@@ -219,8 +221,9 @@ export async function reconcileOrgCalendar(
       continue;
     }
 
-    // The hub decides whether it is visible at all.
-    if (thread.status !== 'published' || !thread.scheduled_at) {
+    // The hub decides whether it is visible at all. A thread with a narrower
+    // audience than the org (INVITE_ONLY) is not on the shared calendar.
+    if (thread.status !== 'published' || !thread.scheduled_at || thread.visibility === 'INVITE_ONLY') {
       if (!dry) {
         await deleteCalendarObject(nc, obj.href).catch(() => {});
         // The hub removed it, not Nextcloud: forget the push, or the next run
@@ -292,6 +295,7 @@ export async function reconcileOrgCalendar(
   const missing = threads.filter(
     (t) =>
       t.status === 'published' &&
+      t.visibility !== 'INVITE_ONLY' &&
       t.scheduled_at &&
       !objectByUid.has(t.id) &&
       inWindow(t, from, to) // not visible to this read — say nothing

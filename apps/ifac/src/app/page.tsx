@@ -2,6 +2,7 @@ import { getServerSession } from "@elkdonis/auth-server";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { listSeriesForPage, type MeetingSeries, type SeriesSession } from "@elkdonis/services";
+import { getForumViewer } from "@/lib/forum";
 import { nextPublicSession } from "@/lib/series";
 import { PublicBanner, PublicFooter, PublicHeader, PublicShell } from "@/components/site/chrome";
 import { EventStage, type StageSlide } from "@elkdonis/series-site/components/event-stage";
@@ -144,7 +145,7 @@ const AUCTION_SLIDE: StageSlide = {
 
 /** The series the landing shows: listed, not ended, in the Series page's order. */
 async function landingSeries() {
-  const entries = await listSeriesForPage(siteConfig.orgId, { count: 8 }).catch(() => []);
+  const entries = await listSeriesForPage(siteConfig.orgId, { count: 8, viewer: await getForumViewer() }).catch(() => []);
   return entries.filter((e) => e.inLanding && !e.ended);
 }
 

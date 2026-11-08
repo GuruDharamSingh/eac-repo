@@ -5,7 +5,8 @@ import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { getHubViewer } from "@/lib/hub-auth";
-import { mayReceiveJoinLink } from "@elkdonis/services";
+import { getOrgRole, mayReceiveJoinLink } from "@elkdonis/services";
+import { canViewThread } from "@elkdonis/services/thread-audience";
 import { SiteFooter } from "@/components/site-chrome";
 import { HubCrumbBar } from "@/components/hub/HubCrumbBar";
 import { RsvpPanel } from "@/components/hub/RsvpPanel";
@@ -51,13 +52,17 @@ export default async function MeetingPage({
       cover_image_url: string | null;
       author_name: string | null;
       author_slug: string | null;
+      visibility: string;
+      min_role: string | null;
+      author_id: string;
     }>
   >`
     SELECT t.id, t.title, t.body, t.location, t.format, t.scheduled_at,
            t.duration_minutes, t.meeting_url, t.nextcloud_talk_token,
            t.recurrence_pattern, t.attendee_limit, t.is_rsvp_enabled,
            t.metadata->>'coverImageUrl' AS cover_image_url,
-           u.display_name AS author_name, u.slug AS author_slug
+           u.display_name AS author_name, u.slug AS author_slug,
+           t.visibility, t.min_role, t.author_id
     FROM threads t
     LEFT JOIN users u ON u.id = t.author_id
     WHERE t.org_id = ${siteConfig.orgId}
@@ -65,6 +70,9 @@ export default async function MeetingPage({
       AND t.status = 'published'
   `;
   if (!thread) notFound();
+  // A meeting (or series) with a restricted audience is for that audience, not every member.
+  const role = await getOrgRole(viewer.userId, siteConfig.orgId);
+  if (!canViewThread({ visibility: thread.visibility, minRole: thread.min_role, authorId: thread.author_id, status: "published" }, { userId: viewer.userId, role })) notFound();
 
   const attendees = await db<
     Array<{ display_name: string | null; slug: string | null; avatar_url: string | null }>

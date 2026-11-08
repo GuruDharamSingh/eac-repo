@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
 import { getMeetingSeries } from "@elkdonis/services";
 import { createSeriesMail } from "../lib/series-mail";
+import { readerOf } from "../lib/series";
 import type { SeriesSite } from "../config";
 
 export function rsvpRoutes(site: SeriesSite) {
@@ -33,7 +34,7 @@ async function POST(request: NextRequest) {
   if (Number.isNaN(at.getTime())) return NextResponse.json({ error: "Bad occurrenceAt" }, { status: 400 });
   const going = body.going !== false;
 
-  const series = await getMeetingSeries(site.orgId, { threadId: body.seriesId }, { count: 12, pastCount: 1 });
+  const series = await getMeetingSeries(site.orgId, { threadId: body.seriesId }, { count: 12, pastCount: 1, viewer: await readerOf(site) });
   if (!series) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const session = series.sessions.find((s) => s.at === at.toISOString());
   if (!session) return NextResponse.json({ error: "That week is not on the series." }, { status: 400 });

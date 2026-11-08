@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSeriesPageSettings, listSeriesForPage, saveSeriesPageSettings } from "@elkdonis/services";
 import type { SeriesSite } from "../config";
 import { apiMember } from "../config";
+import { readerOf } from "../lib/series";
 
 export function hubSeriesPageRoutes(site: SeriesSite) {
 
@@ -16,7 +17,7 @@ async function GET() {
   const viewer = await apiMember(site);
   if (!viewer) return NextResponse.json({ error: "Members only" }, { status: 403 });
   const settings = await getSeriesPageSettings(site.orgId);
-  const entries = await listSeriesForPage(site.orgId, { count: 6, settings });
+  const entries = await listSeriesForPage(site.orgId, { count: 6, settings, viewer: await readerOf(site) });
   return NextResponse.json({
     settings,
     canEdit: viewer.canEdit,

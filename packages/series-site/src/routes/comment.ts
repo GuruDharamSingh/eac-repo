@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { ensureSeriesSessionTopic, getMeetingSeries, postReply } from "@elkdonis/services";
+import { readerOf } from "../lib/series";
 import type { SeriesSite } from "../config";
 
 export function commentRoutes(site: SeriesSite) {
@@ -21,7 +22,7 @@ async function POST(request: NextRequest) {
   const text = String(body.text ?? "").trim();
   if (!text) return NextResponse.json({ error: "Write something first." }, { status: 400 });
 
-  const series = await getMeetingSeries(site.orgId, { threadId: body.seriesId }, { count: 20, pastCount: 12 });
+  const series = await getMeetingSeries(site.orgId, { threadId: body.seriesId }, { count: 20, pastCount: 12, viewer: await readerOf(site) });
   const week = series?.sessions.find((s) => s.at === at.toISOString());
   if (!series || !week) return NextResponse.json({ error: "That week is not on the series." }, { status: 404 });
 

@@ -972,6 +972,8 @@ export {
   coverFrameOf,
   seriesCoverOf,
   intervalWeeksOf,
+  // 2026-11-08: who may read a series (audience rules).
+  seriesReaderForUser,
 } from './meeting-series';
 export type {
   CoverFrame,
@@ -991,6 +993,7 @@ export type {
   SeriesWeekMove,
   SeriesSessionRef,
   SeriesSubscriber,
+  SeriesReader,
 } from './meeting-series';
 
 // An org's public Series page: intro copy, order, featured series, and every
