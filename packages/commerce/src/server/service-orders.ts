@@ -16,6 +16,7 @@
  * config. Server-only, like ./index.ts.
  */
 
+import { isoOrNull } from "../time";
 import { db } from "@elkdonis/db";
 import type { Currency, Order } from "../types";
 import { buildEtransferInstructions, generateOrderNumber } from "../etransfer";
@@ -216,7 +217,7 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
   });
 
   // Fire emails non-blocking — order is already committed.
-  const paymentDueAt = (order.payment_due_at as string | null) ?? null;
+  const paymentDueAt = isoOrNull(order.payment_due_at);
   const emailItems = [
     {
       description: title,

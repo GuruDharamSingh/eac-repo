@@ -10,6 +10,7 @@
  */
 
 import { db } from "@elkdonis/db";
+import { iso } from "../time";
 import type {
   Artwork,
   ArtworkMedia,
@@ -63,8 +64,8 @@ function mapArtwork(r: Row): Artwork {
     primaryImageId: opt(r.primary_image_id),
     metadata: (r.metadata as Record<string, unknown>) ?? {},
     viewCount: r.view_count != null ? Number(r.view_count) : 0,
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
+    createdAt: iso(r.created_at),
+    updatedAt: iso(r.updated_at),
     artistName: opt(r.artist_name),
     artistSlug: opt(r.artist_slug),
     primaryImageUrl: opt(r.primary_image_url),
@@ -137,7 +138,7 @@ function mapVariant(r: Row): ArtworkVariant {
     editionTotal: opt<number>(r.edition_total),
     inventoryQty: num(r.inventory_qty),
     position: num(r.position),
-    createdAt: r.created_at as string,
+    createdAt: iso(r.created_at),
     beneficiaryPayeeId: opt(r.beneficiary_payee_id),
     beneficiaryScope: opt(r.beneficiary_scope),
   };
@@ -154,7 +155,7 @@ function mapMedia(r: Row): ArtworkMedia {
     alt: opt(r.alt),
     role: r.role as ArtworkMedia["role"],
     position: num(r.position),
-    createdAt: r.created_at as string,
+    createdAt: iso(r.created_at),
   };
 }
 
@@ -163,8 +164,8 @@ function mapLot(r: Row): AuctionLot {
     id: r.id as string,
     artworkVariantId: r.artwork_variant_id as string,
     orgId: r.org_id as string,
-    startAt: r.start_at as string,
-    endAt: r.end_at as string,
+    startAt: iso(r.start_at),
+    endAt: iso(r.end_at),
     startingBidMinor: num(r.starting_bid_minor),
     reserveMinor: optNum(r.reserve_minor),
     buyNowMinor: optNum(r.buy_now_minor),
@@ -177,8 +178,8 @@ function mapLot(r: Row): AuctionLot {
     status: r.status as AuctionLot["status"],
     winnerUserId: opt(r.winner_user_id),
     metadata: (r.metadata as Record<string, unknown>) ?? {},
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
+    createdAt: iso(r.created_at),
+    updatedAt: iso(r.updated_at),
     seriesId: opt(r.series_id),
     lotNumber: optNum(r.lot_number),
   };
@@ -641,8 +642,8 @@ function mapStore(r: Row): Store {
     status: r.status as Store["status"],
     bioHtml: opt(r.bio_html),
     profileBio: opt<string>(r.owner_bio) ?? null,
-    joinedAt: r.joined_at as string,
-    updatedAt: r.updated_at as string,
+    joinedAt: iso(r.joined_at),
+    updatedAt: iso(r.updated_at),
 
 
     // Identity is the owner's (users / organizations). The store's own copies
@@ -901,7 +902,7 @@ export async function listStoreMembers(storeId: string): Promise<StoreMember[]> 
     storeId: r.store_id as string,
     userId: r.user_id as string,
     role: r.role as StoreMember["role"],
-    addedAt: r.added_at as string,
+    addedAt: iso(r.added_at),
     addedBy: opt(r.added_by),
     displayName: opt(r.display_name),
     email: opt(r.email),
@@ -1294,7 +1295,7 @@ export async function listBidsForLot(lotId: string, limit = 25): Promise<Bid[]> 
     maxAmountMinor: optNum(r.max_amount_minor),
     isMaxBid: Boolean(r.is_max_bid),
     status: r.status as Bid["status"],
-    placedAt: r.placed_at as string,
+    placedAt: iso(r.placed_at),
     bidderName: opt(r.bidder_name),
   }));
 }
@@ -1315,8 +1316,8 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
     currency: r.currency as Cart["currency"],
     expiresAt: opt(r.expires_at),
     metadata: (r.metadata as Record<string, unknown>) ?? {},
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
+    createdAt: iso(r.created_at),
+    updatedAt: iso(r.updated_at),
   };
 
   const lineRows = (await db`
@@ -1344,7 +1345,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
     currency: lr.currency as Cart["currency"],
     notes: opt(lr.notes),
     viaStoreId: opt(lr.via_store_id),
-    createdAt: lr.created_at as string,
+    createdAt: iso(lr.created_at),
     artwork: {
       id: lr.art_id as string,
       orgId: lr.art_org_id as string,
@@ -1357,8 +1358,8 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
       certificateOfAuthenticity: true,
       metadata: {},
       viewCount: 0,
-      createdAt: lr.created_at as string,
-      updatedAt: lr.created_at as string,
+      createdAt: iso(lr.created_at),
+      updatedAt: iso(lr.created_at),
       primaryImageUrl: opt(lr.primary_image_url),
       primaryImageAlt: opt(lr.primary_image_alt),
     },
@@ -1468,7 +1469,7 @@ function mapOrderLine(r: Row): OrderLine {
     galleryShareMinor: optNum(r.gallery_share_minor),
     currency: r.currency as OrderLine["currency"],
     metadata: (r.metadata as Record<string, unknown>) ?? {},
-    createdAt: r.created_at as string,
+    createdAt: iso(r.created_at),
   };
 }
 
@@ -1512,8 +1513,8 @@ function mapOrder(r: Row): Order {
     billingAddress: opt(r.billing_address),
     notes: opt(r.notes),
     metadata: (r.metadata as Record<string, unknown>) ?? {},
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
+    createdAt: iso(r.created_at),
+    updatedAt: iso(r.updated_at),
     paidAt: opt(r.paid_at),
     fulfilledAt: opt(r.fulfilled_at),
     cancelledAt: opt(r.cancelled_at),
@@ -1686,7 +1687,7 @@ export async function adminListArtworks(
     viewCount: num(r.view_count),
     priceMinor: r.price_minor != null ? num(r.price_minor) : null,
     currency: opt(r.currency),
-    createdAt: r.created_at as string,
+    createdAt: iso(r.created_at),
     hiddenByAdmin: r.hidden_by_admin === true,
     storeName: opt(r.store_name),
   }));
@@ -1729,7 +1730,7 @@ export async function adminListActiveCarts(
     itemCount: num(r.item_count),
     subtotalMinor: num(r.subtotal_minor),
     currency: r.currency as string,
-    updatedAt: r.updated_at as string,
+    updatedAt: iso(r.updated_at),
   }));
 }
 
@@ -1773,7 +1774,7 @@ export async function adminListUsers(
     id: r.id as string,
     email: opt(r.email),
     displayName: opt(r.display_name),
-    createdAt: r.created_at as string,
+    createdAt: iso(r.created_at),
     artistStatus: opt(r.artist_status),
     inCollective: Boolean(r.in_collective),
   }));

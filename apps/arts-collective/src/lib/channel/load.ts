@@ -518,7 +518,7 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
     if (listed) {
       timeline.push({
         id: `${key}:market`,
-        at: a.createdAt,
+        at: isoOf(a.createdAt)!,
         outlet: "market",
         identityId: ownerId,
         label: a.status === "sold" ? "Sold" : price ? `Listed for sale · ${price}` : "Listed, price on request",
@@ -528,9 +528,9 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
         deliveryId: null,
       });
       if (pinnedOrg && siteUrl)
-        timeline.push({ id: `${key}:site`, at: a.createdAt, outlet: "site", identityId: `org:${pinnedOrg}`, label: `On ${homeOf(pinnedOrg)?.orgName ?? "the site"}`, sub: `${host(siteUrl)}/pieces/${a.slug}`, state: "published", href, deliveryId: null });
+        timeline.push({ id: `${key}:site`, at: isoOf(a.createdAt)!, outlet: "site", identityId: `org:${pinnedOrg}`, label: `On ${homeOf(pinnedOrg)?.orgName ?? "the site"}`, sub: `${host(siteUrl)}/pieces/${a.slug}`, state: "published", href, deliveryId: null });
     } else {
-      timeline.push({ id: `${key}:draft`, at: a.updatedAt, outlet: "market", identityId: ownerId, label: "Draft listing", sub: "Market · not listed", state: "draft", href: null, deliveryId: null });
+      timeline.push({ id: `${key}:draft`, at: isoOf(a.updatedAt)!, outlet: "market", identityId: ownerId, label: "Draft listing", sub: "Market · not listed", state: "draft", href: null, deliveryId: null });
     }
     for (const p of [...(postsByLink.get(href) ?? []), ...(postsByLink.get(`${MARKET}/artworks/${a.id}`) ?? [])])
       timeline.push(...shareEntries(p.shares, p.org_id === PERSONAL_ORG ? me.id : `org:${p.org_id}`, `post:${p.id}`));

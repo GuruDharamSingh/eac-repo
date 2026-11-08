@@ -1,5 +1,6 @@
 import { db } from "@elkdonis/db";
 import type { Order, OrderStatus } from "../types";
+import { iso, isoOrNull } from "../time";
 
 export type Row = Record<string, unknown>;
 
@@ -26,8 +27,8 @@ export function mapOrder(r: Row): Order {
     paymentMethod: r.payment_method as Order["paymentMethod"],
     paymentReference: (r.payment_reference as string | null) ?? null,
     paymentInstructions: (r.payment_instructions as string | null) ?? null,
-    paymentDueAt: (r.payment_due_at as string | null) ?? null,
-    paymentConfirmedAt: (r.payment_confirmed_at as string | null) ?? null,
+    paymentDueAt: isoOrNull(r.payment_due_at),
+    paymentConfirmedAt: isoOrNull(r.payment_confirmed_at),
     paymentConfirmedBy: (r.payment_confirmed_by as string | null) ?? null,
     paymentMetadata: (r.payment_metadata as Record<string, unknown>) ?? {},
     subtotalMinor: num(r.subtotal_minor),
@@ -39,10 +40,10 @@ export function mapOrder(r: Row): Order {
     billingAddress: (r.billing_address as Order["billingAddress"]) ?? null,
     notes: (r.notes as string | null) ?? null,
     metadata: (r.metadata as Record<string, unknown>) ?? {},
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
-    paidAt: (r.paid_at as string | null) ?? null,
-    fulfilledAt: (r.fulfilled_at as string | null) ?? null,
-    cancelledAt: (r.cancelled_at as string | null) ?? null,
+    createdAt: iso(r.created_at),
+    updatedAt: iso(r.updated_at),
+    paidAt: isoOrNull(r.paid_at),
+    fulfilledAt: isoOrNull(r.fulfilled_at),
+    cancelledAt: isoOrNull(r.cancelled_at),
   };
 }
