@@ -116,3 +116,16 @@ export const CHIP_REASON = {
   owner: 'An owner’s role can’t be changed.',
   notOwner: 'Only owners change roles.',
 } as const;
+
+/**
+ * The registry entries the Members card calls: the host door's allow-list.
+ * Plain data here (not on the client card object) so a host's "use server"
+ * action can read it.
+ */
+export const MEMBERS_ACTIONS = [
+  "org-person-role",
+  "org-person-listed",
+  "org-person-remove",
+  "org-arrival-welcome",
+  "org-arrival-dismiss",
+] as const;

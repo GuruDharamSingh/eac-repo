@@ -85,14 +85,14 @@
 
 /* — blueprint frame (+ corner marks) — */
 .hc-frame { position: relative; border: 1px solid var(--hc-divider); border-radius: var(--hc-radius); }
-.hc-frame > .hc-corner {
+:is(.hc-frame, .hc-btn-primary) > .hc-corner {
   position: absolute; width: 11px; height: 11px; pointer-events: none;
   color: color-mix(in srgb, var(--hc-text) 55%, transparent);
   opacity: var(--hc-marks);
 }
-.hc-frame > .hc-corner::before, .hc-frame > .hc-corner::after { content: ""; position: absolute; background: currentColor; }
-.hc-frame > .hc-corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
-.hc-frame > .hc-corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
+:is(.hc-frame, .hc-btn-primary) > .hc-corner::before, :is(.hc-frame, .hc-btn-primary) > .hc-corner::after { content: ""; position: absolute; background: currentColor; }
+:is(.hc-frame, .hc-btn-primary) > .hc-corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+:is(.hc-frame, .hc-btn-primary) > .hc-corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
 .hc-corner.tl { top: -6px; left: -6px; }
 .hc-corner.tr { top: -6px; right: -6px; }
 .hc-corner.bl { bottom: -6px; left: -6px; }

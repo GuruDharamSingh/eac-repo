@@ -81,8 +81,8 @@ export interface HubNav {
   tab: string | null;
   openPopup(): void;
   close(): void;
-  /** Pop-up "Open page ↗", tab links. In-host this is /hub/<id>?tab=. */
-  openDetail(tab?: string, row?: string): void;
+  /** Pop-up "Open page ↗", tab links. In-host this is /hub/<id>?tab=&row=&<query>. */
+  openDetail(tab?: string, row?: string, query?: Record<string, string>): void;
 }
 
 /** Result of a card write (registry entry). Mirrors performAction's shape loosely. */
@@ -94,8 +94,8 @@ export type HubActionResult<T = unknown> = { ok: true; value?: T } | { ok: false
  * where they must be; declarations (template pages) live on `site`.
  */
 export interface HubCardHost extends HostLinks {
-  /** /hub/<card>?tab=&row= on this host (basePath included). */
-  hubHref(card: string, tab?: string, row?: string): string;
+  /** /hub/<card>?tab=&row=&<query> on this host (basePath included). */
+  hubHref(card: string, tab?: string, row?: string, query?: Record<string, string>): string;
   /** The live site page for a path ('' = home), basePath included. */
   liveHref(path: string): string;
   /** The Puck editor for a page path (sunjay /studio/<slug>). Null when the host has no editor. */

@@ -262,9 +262,11 @@ export function Tabs({ tabs, active, onChange, size }: {
 
 // ── pop-up ─────────────────────────────────────────────────────────────
 
-export function Popup({ icon, title, titleSize = 24, width, top = 104, onClose, onOpenPage, children, footer }: {
+export function Popup({ icon, title, titleSize = 24, width, top = 104, onClose, onOpenPage, children, footer, meta }: {
   icon: HubIconName;
   title: string;
+  /** Beside the title ("16 people"). */
+  meta?: React.ReactNode;
   titleSize?: number;
   width: number;
   top?: number;
@@ -286,7 +288,8 @@ export function Popup({ icon, title, titleSize = 24, width, top = 104, onClose, 
       <Frame elev="lg" className="hc-popup" role="dialog" aria-label={title} style={{ width, top }}>
         <div className="hc-popup-head">
           <span style={{ display: 'flex', color: 'var(--hc-accent)' }}><Icon name={icon} size={20} /></span>
-          <span className="hc-title" style={{ fontSize: titleSize }}>{title}</span>
+          <span className="hc-title" style={{ fontSize: titleSize, marginRight: meta ? 0 : undefined }}>{title}</span>
+          {meta ? <span className="hc-muted" style={{ fontSize: 13, marginRight: 'auto' }}>{meta}</span> : null}
           {onOpenPage ? <Btn variant="ghost" onClick={onOpenPage}>Open page ↗</Btn> : null}
           <Btn variant="ghost" square icon="close" iconSize={18} aria-label="Close" onClick={onClose} />
         </div>

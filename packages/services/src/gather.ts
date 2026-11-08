@@ -703,7 +703,7 @@ export async function gatherOnto(
     const viewer = options.viewer ?? GATHER_ANONYMOUS;
     const [target] = await db<Array<{ id: string }>>`
       SELECT t.id FROM threads t
-      WHERE t.id = ${input.targetThreadId} AND ${visibleToGatherer(viewer)}
+      WHERE t.id = ${input.targetThreadId!} AND ${visibleToGatherer(viewer)}
     `;
     // Same wording for "gone" and "not yours to see", as everywhere else.
     if (!target) throw new GatherError('No such thread');
