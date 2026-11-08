@@ -97,10 +97,13 @@ export function harnessHost(theme: HarnessTheme, feeds: Array<{ slug: string; na
       neighbour: {
         post: { label: 'Earlier', title: 'A visit to the paper mill' },
         gathering: { label: 'Earlier', title: 'Bookbinding, a Saturday' },
+        series: { label: 'Earlier', title: 'Bookbinding, a Saturday' },
+        artwork: { label: 'Earlier', title: 'Low tide, No. 1' },
+        service: { label: 'Also offered', title: 'Paper marbling, an afternoon' },
       },
     },
     feeds,
-    actions: { post: STUB_ACTIONS, gathering: STUB_ACTIONS },
+    actions: { post: STUB_ACTIONS, gathering: STUB_ACTIONS, artwork: STUB_ACTIONS, service: STUB_ACTIONS },
     slots: { media: stubMedia, blocks: canvasBlocks },
   };
 }

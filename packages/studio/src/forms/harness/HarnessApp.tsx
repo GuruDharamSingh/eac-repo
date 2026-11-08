@@ -8,8 +8,6 @@
 // ============================================================================
 
 import * as React from 'react';
-import { gatheringKind } from '../kinds/gathering';
-import { postKind } from '../kinds/post';
 import { useFormState } from '../state';
 import { FormShell } from '../shell/FormShell';
 import { useFormUi } from '../shell/ui';
@@ -19,7 +17,7 @@ import { HARNESS_PAGES, PUBLISHED_AT, SAVED_AT, harnessPresets, type HarnessPage
 import { StatesSheet } from './StatesSheet';
 
 function FormPage({ page, theme }: { page: HarnessPage; theme: HarnessTheme }) {
-  const schema = page.kind === 'post' ? postKind : gatheringKind;
+  const schema = page.schema;
   const feeds = (page.ctx.fields.feeds as Array<{ slug: string; name: string }> | undefined) ?? [];
   const host = React.useMemo(() => harnessHost(theme, feeds), [theme, feeds]);
   const ctl = useFormState({
@@ -51,7 +49,7 @@ function FormPage({ page, theme }: { page: HarnessPage; theme: HarnessTheme }) {
       ctx={page.ctx}
       theme={theme === 'broadsheet' ? broadsheetFormTheme : defaultFormTheme}
       presets={harnessPresets(page.kind)}
-      kinds={['post', 'gathering']}
+      kinds={['post', 'gathering', 'artwork', 'service']}
       on={{
         patch: ctl.patch,
         toggleSection: ctl.toggleSection,
