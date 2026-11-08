@@ -1,0 +1,90 @@
+// ============================================================================
+// "A reading for …": the starter Ario opens from /studio ("Start a reading").
+// Every reading begins as a copy of this; his words replace the bracketed
+// prompts. It shows each thing a step can do once, on type 4 as an example.
+// ============================================================================
+
+export const READING_TEMPLATE = {
+  root: { props: { title: "A reading" } },
+  content: [
+    {
+      type: "he-reading",
+      props: {
+        id: "he-reading-main",
+        eyebrow: "A reading",
+        title: "A reading for …",
+        intro: "<p>[Ario: a few words to the person. What this reading is, and how to read it: step by step, or all at once with “Written out”.]</p>",
+        editorStep: 1,
+        view: "stepper",
+        sound: true,
+        steps: [
+          {
+            title: "Where you stand",
+            text: "<p>[The core type, in your words for this person.]</p>",
+            lens: "centers",
+            core: "4",
+            wings: "none",
+            arrows: "none",
+            lit: "",
+            lines: "all",
+            marks: "",
+            pins: "4: your point",
+            cue: "core",
+          },
+          {
+            title: "Either side",
+            text: "<p>[The wings: which one leans in, and how it shows.]</p>",
+            lens: "centers",
+            core: "4",
+            wings: "both",
+            arrows: "none",
+            lit: "",
+            lines: "core",
+            marks: "",
+            pins: "3: [a word]\n5: [a word]",
+            cue: "lit",
+          },
+          {
+            title: "Under pressure, and at ease",
+            text: "<p>[The stress and growth lines for this person.]</p>",
+            lens: "centers",
+            core: "4",
+            wings: "none",
+            arrows: "both",
+            lit: "",
+            lines: "core",
+            marks: "",
+            pins: "",
+            cue: "none",
+          },
+          {
+            title: "Through another lens",
+            text: "<p>[A triad that matters here, e.g. Frustration 1 · 4 · 7.]</p>",
+            lens: "object",
+            core: "4",
+            wings: "none",
+            arrows: "none",
+            lit: "1 7",
+            lines: "none",
+            marks: "1-4, 4-7, 7-1",
+            pins: "",
+            cue: "lit",
+          },
+          {
+            title: "A line of your own",
+            text: "<p>[Draw what you see: an arrow between any two points, and a note where it lands.]</p>",
+            lens: "centers",
+            core: "4",
+            wings: "none",
+            arrows: "none",
+            lit: "",
+            lines: "hexad",
+            marks: "4>8",
+            pins: "8: [what moves here]",
+            cue: "line",
+          },
+        ],
+      },
+    },
+  ],
+};

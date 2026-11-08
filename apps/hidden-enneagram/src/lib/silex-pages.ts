@@ -1,19 +1,9 @@
 /**
- * The Silex pages published in Nextcloud (besides index, which `/` no longer
- * draws). `[page]` still serves them unless a studio page is published at the
- * same address; the studio index marks such a page "replaces the Silex page".
+ * The Silex pages published in Nextcloud that `[page]` still serves.
+ *
+ * Round 3 (2026-11-07): /introduction, /centers, /contact and /type-1 … /type-9
+ * left this list. Their words were folded into /enneagram (lib/exposition.ts)
+ * and the landing's contact form, and the addresses redirect (next.config.ts).
+ * None is left; the set stays so a page added in Silex can be listed again.
  */
-export const SILEX_PAGES: ReadonlySet<string> = new Set([
-  "introduction",
-  "centers",
-  "contact",
-  "type-1",
-  "type-2",
-  "type-3",
-  "type-4",
-  "type-5",
-  "type-6",
-  "type-7",
-  "type-8",
-  "type-9",
-]);
+export const SILEX_PAGES: ReadonlySet<string> = new Set<string>([]);

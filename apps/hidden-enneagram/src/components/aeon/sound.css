@@ -1,0 +1,128 @@
+/* ==========================================================================
+   The figure's sound (sound-bar.tsx), the web of music laid on the figure,
+   and the standalone web (components/music-web). Every colour a token.
+   Imported at the root (app/globals.css) so Puck's canvas mirrors it.
+   ========================================================================== */
+
+.he-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.he-sound { margin: -6px 0 16px; display: grid; gap: 10px; }
+.he-sound-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.he-sound-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.he-sound-toggle svg { flex: none; }
+.he-sound-vol input { width: 110px; accent-color: var(--he-aurum); vertical-align: middle; }
+.he-sound-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; }
+
+.he-mic-ask,
+.he-mic-live {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--he-ink);
+  background: var(--he-card);
+  border: 1px solid var(--he-card-edge);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.he-mic-ask p { margin: 0; }
+.he-mic-live { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.he-mic-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--he-stress);
+  box-shadow: 0 0 8px var(--he-stress);
+}
+.he-sound-error { color: var(--he-stress); font-size: 0.9rem; margin: 0; }
+
+.he-sound-more summary {
+  cursor: pointer;
+  font-family: var(--he-font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--he-ink-dim);
+}
+.he-sound-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; margin-top: 10px; }
+.he-sound-grid label { display: grid; gap: 4px; font-size: 0.82rem; color: var(--he-ink-dim); }
+.he-sound-grid select {
+  font: inherit; color: var(--he-ink); background: var(--he-well);
+  border: 1px solid var(--he-line); border-radius: 8px; padding: 6px 8px;
+}
+.he-sound-grid .he-sound-check { display: flex; align-items: center; gap: 8px; }
+.he-sound-check input { accent-color: var(--he-aurum); }
+.he-sound-note { font-size: 0.82rem; line-height: 1.5; color: var(--he-ink-dim); margin: 10px 0 0; }
+
+/* A point sounding (tap, melody, chord) and where a sung tone lands. */
+.he-node.he-sounding .he-halo { stroke: var(--node-hue, var(--he-aurum)); stroke-width: 3; filter: drop-shadow(0 0 10px var(--node-hue, var(--he-aurum))); }
+.he-node.he-sounding .he-face { stroke-width: 3; }
+.he-node.he-heard .he-halo { stroke: var(--he-ink); stroke-width: 2; stroke-dasharray: 4 4; }
+.he-heard-cents {
+  font-family: var(--he-font-mono) !important;
+  font-size: 12px !important;
+  fill: var(--he-ink) !important;
+  letter-spacing: 0.06em;
+}
+
+/* The 36-tick ring (layout E) and the note labels. */
+.he-web-circle { fill: none; stroke: var(--he-hairline); stroke-width: 1; }
+.he-web-tick line { stroke: var(--he-ink-faint); stroke-width: 1.2; }
+.he-web-tick.he-web-meet line { stroke: var(--he-aurum); stroke-width: 2; }
+.he-web-tick text,
+.he-web-notes text {
+  font-family: var(--he-font-mono);
+  font-size: 11px;
+  fill: var(--he-ink-dim);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.he-web-notes text { font-size: 10px; letter-spacing: 0.08em; }
+.he-web-notes text.he-web-shock { fill: var(--he-stress); font-style: italic; }
+.he-web-tick.he-web-lit text { fill: var(--he-aurum); font-weight: 700; }
+.he-web-tick.he-web-lit line { stroke: var(--he-aurum); stroke-width: 2.4; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .he-node .he-halo { transition: stroke 0.2s ease, filter 0.2s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .he-node.he-sounding .he-halo { filter: none; }
+}
+
+/* The web of music (music-web/web-of-music.tsx). */
+.he-mw { display: grid; gap: 14px; container-type: inline-size; }
+.he-mw-sep { width: 1px; height: 22px; background: var(--he-line); margin: 0 4px; }
+.he-mw-stage {
+  background:
+    radial-gradient(60% 60% at 50% 46%, color-mix(in srgb, var(--he-aurum) 6%, transparent), transparent 75%),
+    var(--he-well);
+  border: 1px solid var(--he-hairline);
+  border-radius: 16px;
+  padding: clamp(8px, 2vw, 22px);
+  max-width: 720px;
+}
+.he-mw-svg { display: block; width: 100%; height: auto; }
+.he-mw-tick { stroke: var(--he-ink-faint); stroke-width: 1.3; }
+.he-mw-tick.he-web-meet { stroke: var(--he-aurum); stroke-width: 2.4; }
+.he-mw-ptnum { font-family: var(--he-font-mono); font-size: 12px; fill: var(--he-ink-dim); text-anchor: middle; dominant-baseline: central; }
+.he-mw-pc circle, .he-mw-pt circle { fill: var(--he-card); stroke: var(--he-ink-faint); stroke-width: 1.2; cursor: pointer; }
+.he-mw-pc.he-mw-dia circle { stroke: var(--he-ink-dim); }
+.he-mw-pc text, .he-mw-pt text { font-family: var(--he-font-mono); font-size: 12px; fill: var(--he-ink-dim); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.he-mw-pc.he-mw-dia text { fill: var(--he-ink); }
+.he-mw-pt text { font-family: var(--he-font-display); font-size: 17px; fill: var(--he-ink); }
+.he-mw-pt text.he-mw-note { font-family: var(--he-font-mono); font-size: 10px; fill: var(--he-ink-dim); }
+.he-mw-pt text.he-web-shock { fill: var(--he-stress); font-style: italic; }
+.he-mw-pc.he-on circle, .he-mw-pt.he-on circle { fill: var(--he-aurum); stroke: var(--he-aurum); filter: drop-shadow(0 0 8px var(--he-aurum-glow)); }
+.he-mw-pc.he-on text, .he-mw-pt.he-on > text:not(.he-mw-note) { fill: var(--he-night); }
+.he-mw-pc circle:focus-visible, .he-mw-pt circle:focus-visible { outline: none; stroke: var(--he-focus); stroke-width: 2.4; }
+.he-mw-cycle { fill: color-mix(in srgb, var(--he-aurum) 8%, transparent); stroke: var(--he-aurum); stroke-width: 1.4; stroke-linejoin: round; opacity: 0.8; }
+.he-mw-tri { stroke: var(--he-hairline); stroke-width: 1; cursor: pointer; }
+.he-mw-major { fill: color-mix(in srgb, var(--he-heart) 7%, transparent); }
+.he-mw-minor { fill: color-mix(in srgb, var(--he-head) 7%, transparent); }
+.he-mw-tri:hover { fill: color-mix(in srgb, var(--he-aurum) 14%, transparent); }
+.he-mw-tri.he-on { fill: color-mix(in srgb, var(--he-aurum) 30%, transparent); }
+.he-mw-controls { max-width: 720px; align-items: end; }
+
+/* The page measure for the web of music block (as site.css does for the site blocks). */
+.he-music-web {
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin-inline: auto;
+  padding-block: clamp(40px, 6vw, 80px);
+}

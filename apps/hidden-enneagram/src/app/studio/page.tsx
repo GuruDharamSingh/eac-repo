@@ -7,6 +7,7 @@ import { requireOrgEditor } from "@/lib/auth";
 import { BUILT_IN_SLUGS, listPages, ROUTE_SLUGS } from "@/lib/puck/store";
 import { siteConfig } from "@/config/site";
 import { SILEX_PAGES } from "@/lib/silex-pages";
+import { readingSlug } from "@/lib/reading-privacy";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pages", robots: { index: false, follow: false } };
@@ -17,8 +18,11 @@ export const metadata: Metadata = { title: "Pages", robots: { index: false, foll
  * one starts from that design. A new address that is one of the Silex pages
  * replaces that Silex page once published (the way to move them over).
  */
-export default async function StudioIndex({ searchParams }: { searchParams: Promise<{ slug?: string }> }) {
+export default async function StudioIndex({ searchParams }: { searchParams: Promise<{ slug?: string; reading?: string }> }) {
   await requireOrgEditor("/studio");
+
+  // "Start a reading": a fresh, unguessable address, opened on the starter.
+  if ((await searchParams).reading === "new") redirect(`/studio/${readingSlug()}?template=reading`);
 
   const [{ slug }, all, feeds] = await Promise.all([
     searchParams,
@@ -63,12 +67,28 @@ export default async function StudioIndex({ searchParams }: { searchParams: Prom
             <Link href={`/studio/${page.slug}`}>{page.slug.replace(/-/g, " ")}</Link>{" "}
             <span className="he-note">
               — <Link href={`/${page.slug}`}>/{page.slug}</Link>
-              {SILEX_PAGES.has(page.slug) ? " (replaces the Silex page)" : ""}, last published{" "}
+              {SILEX_PAGES.has(page.slug) ? " (replaces the Silex page)" : ""}
+              {page.slug.startsWith("reading-") ? " (a reading: private link, not in search engines)" : ""}, last published{" "}
               {new Date(page.updatedAt).toLocaleDateString()}
             </span>
           </li>
         ))}
       </ul>
+
+      <section className="he-studio-reading" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: "1.2rem", margin: "0 0 .4rem" }}>A reading for one person</h2>
+        <p className="he-note">
+          Opens a copy of “A reading for …” at a new address nobody could guess (reading- and twelve random letters).
+          Write the steps on the figure, publish, then send the address only to the person it is for. Pages with a
+          reading are kept out of search engines and listed nowhere public; anyone with the link can read it.
+        </p>
+        <form action="/studio">
+          <input type="hidden" name="reading" value="new" />
+          <button type="submit" className="he-btn">
+            Start a reading
+          </button>
+        </form>
+      </section>
 
       <form action="/studio" style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", alignItems: "center", marginTop: 24 }}>
         <label htmlFor="slug">New page address</label>

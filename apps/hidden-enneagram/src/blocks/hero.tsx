@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import { defineBlock, type PropsOf } from "@elkdonis/blocks";
 import { AeonSigil } from "@/components/aeon/sigil";
-import { courseUrl } from "@/config/site";
 
 // ============================================================================
 // Opening (he-hero): the front door, in the ÆON draft's shape. An eyebrow, a
@@ -10,6 +9,10 @@ import { courseUrl } from "@/config/site";
 //
 // Colours and type come from the site's tokens (--he-*), so Site style moves
 // them; the parts are clickable in the studio for this block's own look.
+//
+// Round 3 (2026-11-07): "A glow (orb)" beside the words, Ario's original
+// Silex ornament (a white-core radial glow), and quieter defaults: no course
+// link (the free course is de-emphasised; it lives on /enneagram only).
 // ============================================================================
 
 const props = [
@@ -19,7 +22,7 @@ const props = [
     name: "accent",
     kind: "string",
     label: "Lit phrase",
-    description: "Words inside the title drawn in gold (they must appear in the title exactly). Empty = none.",
+    description: "Words inside the title drawn in the accent colour (they must appear in the title exactly). Empty = none.",
     default: "your life",
   },
   {
@@ -29,12 +32,12 @@ const props = [
     default:
       "The Enneagram is a map of how your core motivations became a recurring psychological fixation — and how that reaction shaped the way you relate, protect, desire, and disconnect.",
   },
-  { name: "primaryLabel", kind: "string", label: "First link", default: "Walk the figure" },
-  { name: "primaryHref", kind: "url", label: "First link goes to", default: "/enneagram" },
-  { name: "secondLabel", kind: "string", label: "Second link", description: "Empty = no second link.", default: "Free course" },
-  { name: "secondHref", kind: "url", label: "Second link goes to", default: courseUrl() },
-  { name: "thirdLabel", kind: "string", label: "Third link", description: "Empty = no third link.", default: "Book a typing" },
-  { name: "thirdHref", kind: "url", label: "Third link goes to", default: "/services" },
+  { name: "primaryLabel", kind: "string", label: "First link", default: "Readings and counselling" },
+  { name: "primaryHref", kind: "url", label: "First link goes to", default: "/services" },
+  { name: "secondLabel", kind: "string", label: "Second link", description: "Empty = no second link.", default: "The enneagram" },
+  { name: "secondHref", kind: "url", label: "Second link goes to", default: "/enneagram" },
+  { name: "thirdLabel", kind: "string", label: "Third link", description: "Empty = no third link.", default: "" },
+  { name: "thirdHref", kind: "url", label: "Third link goes to", default: "" },
   {
     name: "figure",
     kind: "select",
@@ -42,6 +45,7 @@ const props = [
     default: "sigil",
     options: [
       { value: "sigil", label: "The figure (ornament)" },
+      { value: "orb", label: "A glow (orb)" },
       { value: "image", label: "A picture" },
       { value: "none", label: "Nothing (words across)" },
     ],
@@ -88,7 +92,7 @@ export function HeHero({
     { label: thirdLabel, href: thirdHref, primary: false },
   ].filter((l) => typeof l.label === "string" && l.label.trim() && typeof l.href === "string" && l.href.trim());
   const hasImage = figure === "image" && typeof image === "string" && image.trim() !== "";
-  const side = figure === "sigil" || hasImage;
+  const side = figure === "sigil" || figure === "orb" || hasImage;
   const titleText = typeof title === "string" ? title : "";
 
   return (
@@ -112,6 +116,10 @@ export function HeHero({
           <div className="he-hero-figure" aria-hidden="true">
             <AeonSigil />
           </div>
+        ) : figure === "orb" ? (
+          <div className="he-hero-figure he-hero-orb" aria-hidden="true">
+            <div className="he-orb" />
+          </div>
         ) : hasImage ? (
           <figure className="he-hero-figure he-hero-picture">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -128,7 +136,7 @@ export const heHero = defineBlock(
     id: "he-hero",
     label: "Opening",
     category: "headers",
-    description: "The front door: a title with a lit phrase, a lede, up to three links, and the figure beside them.",
+    description: "The front door: a title with a lit phrase, a lede, up to three links, and a glow, the figure or a picture beside them.",
     memberSafe: true,
     styling: "tokens",
     props,
@@ -143,7 +151,7 @@ export const heHero = defineBlock(
       ornament: { label: "Figure / picture", sel: "> .he-hero .he-hero-figure" },
     },
     tokens: [
-      { name: "--he-aurum", label: "Gold (lit phrase, first link)", type: "color" },
+      { name: "--he-aurum", label: "Accent (lit phrase, first link)", type: "color" },
       { name: "--he-ink", label: "Ink", type: "color" },
       { name: "--he-ink-dim", label: "Quiet ink (lede)", type: "color" },
     ],
@@ -154,13 +162,13 @@ export const heHero = defineBlock(
     title: "The story you framed your life around",
     accent: "your life",
     lede: "The Enneagram is a map of how your core motivations became a recurring psychological fixation — and how that reaction shaped the way you relate, protect, desire, and disconnect.",
-    primaryLabel: "Walk the figure",
-    primaryHref: "/enneagram",
-    secondLabel: "Free course",
-    secondHref: courseUrl(),
-    thirdLabel: "Book a typing",
-    thirdHref: "/services",
-    figure: "sigil" as const,
+    primaryLabel: "Readings and counselling",
+    primaryHref: "/services",
+    secondLabel: "The enneagram",
+    secondHref: "/enneagram",
+    thirdLabel: "",
+    thirdHref: "",
+    figure: "orb" as const,
     image: "",
     imageAlt: "",
     titleSize: 64,

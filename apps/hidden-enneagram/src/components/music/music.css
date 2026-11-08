@@ -1,0 +1,53 @@
+/* Ario's music: the invitation and the mini player (site-audio.tsx). Bottom
+   right (Site style's button is bottom left). Every colour a token. */
+
+.he-music { position: fixed; right: 16px; bottom: 16px; z-index: 60; font-family: var(--he-font-mono); }
+.he-music[data-hidden] { display: none; }
+
+.he-music-invite { display: flex; align-items: center; gap: 4px; }
+.he-music-pill,
+.he-music-mini,
+.he-music-bar {
+  color: var(--he-ink);
+  background: color-mix(in srgb, var(--he-card) 92%, transparent);
+  border: 1px solid var(--he-card-edge);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--he-night) 60%, transparent);
+  backdrop-filter: blur(8px);
+}
+.he-music-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+  border-radius: 999px; padding: 10px 16px; cursor: pointer;
+}
+.he-music-pill:hover { border-color: var(--he-aurum); }
+.he-music-pill svg { color: var(--he-aurum); }
+.he-music-x {
+  font: inherit; font-size: 1rem; line-height: 1; color: var(--he-ink-dim);
+  background: transparent; border: 0; padding: 8px; cursor: pointer;
+}
+.he-music-mini {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; color: var(--he-ink-dim);
+}
+.he-music-bar {
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 14px; padding: 6px 8px 6px 6px; max-width: min(92vw, 440px);
+}
+.he-music-btn {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: inherit; font-size: 1rem; color: var(--he-ink);
+  background: transparent; border: 1px solid var(--he-line); cursor: pointer;
+}
+.he-music-btn:hover { border-color: var(--he-aurum); color: var(--he-aurum); }
+.he-music-now {
+  min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.7rem; letter-spacing: 0.06em; color: var(--he-ink-dim);
+}
+.he-music-now b { color: var(--he-ink); font-weight: 600; }
+.he-music-vol input { width: 80px; accent-color: var(--he-aurum); vertical-align: middle; }
+.he-music :focus-visible { outline: 2px solid var(--he-focus); outline-offset: 2px; }
+
+@media print { .he-music { display: none !important; } }
+/* Editors see "Edit this page" in the same corner: sit above it. */
+body:has(.he-edit-page) .he-music { bottom: 72px; }

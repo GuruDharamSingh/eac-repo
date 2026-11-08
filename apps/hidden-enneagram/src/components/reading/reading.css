@@ -1,0 +1,123 @@
+/* ==========================================================================
+   A reading (he-reading): the still wheel (components/aeon/wheel.tsx), the
+   stepper and the written-out list, and how it prints. Every colour a token.
+   ========================================================================== */
+
+.he-reading-block { container-type: inline-size; }
+.he-reading { display: grid; gap: 18px; }
+.he-r-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.he-r-stage { display: grid; grid-template-columns: 1fr; gap: clamp(20px, 3vw, 44px); align-items: start; }
+@container (min-width: 52rem) {
+  .he-r-stage { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+}
+.he-r-figure,
+.he-r-figure-sm {
+  background:
+    radial-gradient(60% 60% at 50% 46%, color-mix(in srgb, var(--he-aurum) 6%, transparent), transparent 75%),
+    var(--he-well);
+  border: 1px solid var(--he-hairline);
+  border-radius: 16px;
+  padding: clamp(8px, 1.5vw, 18px);
+}
+.he-wheel { display: block; width: 100%; height: auto; }
+
+.he-r-text { outline: none; }
+.he-r-count {
+  font-family: var(--he-font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--he-ink-dim);
+  margin: 0 0 6px;
+}
+.he-r-body h3 { font-family: var(--he-font-display); font-weight: 400; font-size: 1.6rem; margin: 0 0 10px; color: var(--he-ink); }
+.he-r-body { color: var(--he-ink); line-height: 1.65; }
+.he-r-pins { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; font-size: 0.92rem; color: var(--he-ink-dim); }
+.he-r-pins b { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; border: 1px solid var(--he-aurum); color: var(--he-aurum); margin-right: 6px; font-weight: 400; }
+.he-r-pager { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.he-r-dots { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.he-r-dot {
+  width: 12px; height: 12px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--he-ink-dim); background: transparent; cursor: pointer;
+}
+.he-r-dot[aria-current="step"] { background: var(--he-aurum); border-color: var(--he-aurum); box-shadow: 0 0 10px var(--he-aurum-glow); }
+.he-r-dot:focus-visible { outline: 2px solid var(--he-focus); outline-offset: 2px; }
+.he-r-hint { font-size: 0.78rem; color: var(--he-ink-dim); margin: 10px 0 0; }
+.he-r-shows { font-size: 0.85rem; color: var(--he-ink-dim); font-style: italic; }
+.he-r-empty { color: var(--he-ink-dim); }
+
+/* The still wheel's own marks. */
+.he-r-node .he-halo { fill: transparent; stroke: transparent; }
+.he-r-node .he-face { fill: var(--he-card); stroke: var(--node-hue, var(--he-ink-dim)); stroke-width: 1.6; }
+.he-r-node text {
+  font-family: var(--he-font-display); font-size: 26px;
+  fill: var(--node-hue, var(--he-ink)); text-anchor: middle; dominant-baseline: central;
+}
+.he-r-node.he-r-core .he-face { fill: var(--node-hue, var(--he-aurum)); filter: drop-shadow(0 0 12px var(--node-hue, var(--he-aurum))); }
+.he-r-node.he-r-core text { fill: var(--he-night); }
+.he-r-node.he-r-wing .he-face { stroke-width: 3; }
+.he-r-node.he-r-wing .he-halo { stroke: var(--node-hue, var(--he-aurum)); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.he-r-node.he-r-lit .he-face { stroke-width: 3; filter: drop-shadow(0 0 6px var(--node-hue, var(--he-aurum))); }
+.he-r-node.he-r-quiet { opacity: 0.42; }
+.he-r-node.he-sounding .he-halo { stroke: var(--node-hue, var(--he-aurum)); stroke-width: 3; }
+.he-r-wingarc path { fill: none; stroke: var(--he-ink); stroke-width: 4; stroke-linecap: round; opacity: 0.7; }
+.he-r-arrow, .he-r-mark { stroke-width: 2.6; stroke-linecap: round; fill: none; }
+.he-r-arrow.he-stress { stroke: var(--he-stress); stroke-dasharray: 8 6; }
+.he-r-arrow.he-growth { stroke: var(--he-growth); stroke-dasharray: 8 6; }
+.he-r-mark { stroke: var(--he-aurum); }
+.he-r-ah-stress path { fill: var(--he-stress); }
+.he-r-ah-growth path { fill: var(--he-growth); }
+.he-r-ah-mark path { fill: var(--he-aurum); }
+.he-r-pin { font-family: var(--he-font-body, inherit); font-size: 19px; fill: var(--he-ink); dominant-baseline: central; }
+.he-wheel-small .he-r-pin { font-size: 24px; }
+
+/* Written out: every step, a small still figure beside its words. */
+.he-r-written { list-style: none; padding: 0; margin: 0; display: none; gap: 28px; }
+.he-reading[data-view="written"] .he-r-written { display: grid; }
+.he-reading[data-view="written"] .he-r-stage { display: none; }
+.he-r-written > li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; break-inside: avoid; page-break-inside: avoid; }
+@container (min-width: 44rem) {
+  .he-r-written > li { grid-template-columns: 240px minmax(0, 1fr); }
+}
+
+@media print {
+  .he-reading .he-r-tools,
+  .he-reading .he-r-stage,
+  .he-r-hear,
+  [data-de-ui] { display: none !important; }
+  .he-reading .he-r-written { display: grid !important; }
+  .he-r-written > li { grid-template-columns: 200px 1fr; }
+  .he-r-figure-sm { background: none; border-color: #999; }
+  .he-reading-block, .he-reading-block * { color: #111 !important; }
+  .he-r-node .he-face { fill: #fff; }
+  .he-r-node.he-r-core text { fill: #fff; }
+  .he-r-pin { fill: #111; }
+}
+
+/* Printing a page that holds a reading: the reading alone, not the site's chrome. */
+@media print {
+  body:has(.he-reading-block) [data-chrome],
+  body:has(.he-reading-block) .he-edit-page { display: none !important; }
+}
+
+/* The page measure, as site.css gives the other site blocks (kept here: site.css belongs to the redesign). */
+.he-reading-block {
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin-inline: auto;
+  padding-block: clamp(40px, 6vw, 80px);
+}
+
+/* Print on white, whatever the screen ground (browsers may print backgrounds). */
+@media print {
+  body:has(.he-reading-block),
+  body:has(.he-reading-block) .he-reading-block { background: #fff !important; }
+  .he-reading-block { width: 100%; padding: 0; }
+  .he-r-figure-sm { background: #fff !important; }
+  .he-r-node .he-face { stroke: #333; }
+  .he-r-node text { fill: #111; }
+  .he-r-node.he-r-core .he-face { fill: #333; filter: none; }
+  .he-r-node.he-r-quiet { opacity: 0.55; }
+  .he-ring, .he-figure-line { stroke: #666; }
+  .he-r-mark { stroke: #8a6a00; }
+}

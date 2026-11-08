@@ -1,0 +1,61 @@
+/* /publish (round 4): the Studio over the site's chrome.
+   The root layout draws the header, footer and editor buttons around every
+   page; the Studio is a whole screen, so it sits above them, as in the popup's
+   frame. Every rule is under .he-publish or .he-sk-*, so nothing leaks. */
+
+.he-publish {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: auto;
+  background: #f3f1ec;
+}
+.he-publish > .studio { min-height: 100%; }
+
+/* The Services kind (components/publish/service-kind.tsx), in the Studio's own variables. */
+.he-sk-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+.he-sk-title {
+  font-family: var(--st-serif);
+  font-size: 30px;
+  font-weight: 500;
+  border: 0;
+  border-bottom: 1px solid var(--st-line);
+  background: transparent;
+  color: var(--st-ink);
+  padding: 4px 0 8px;
+}
+.he-sk-sub {
+  font-size: 15px;
+  border: 0;
+  border-bottom: 1px dashed var(--st-line);
+  background: transparent;
+  color: var(--st-muted);
+  padding: 2px 0 6px;
+}
+.he-sk-title:focus, .he-sk-sub:focus { outline: none; border-bottom-color: var(--st-accent); }
+.he-sk-body { display: flex; flex-direction: column; gap: 5px; }
+.he-sk-label { font-size: 12px; color: var(--st-muted); font-weight: 500; }
+.he-sk-body .ProseMirror, .he-sk-body [contenteditable] { background: var(--st-panel); color: var(--st-ink); }
+.he-sk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.studio-settings .studio-panel > .studio-field,
+.studio-settings .studio-panel > .studio-check,
+.studio-settings .studio-panel > .he-sk-row { margin-bottom: 10px; }
+.he-sk-coming { padding-top: 64px; }
+.he-sk-coming h2 { font-family: var(--st-serif); font-size: 28px; font-weight: 500; }
+.he-sk-kicker { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--st-accent); margin: 0; }
+
+/* The "coming" kinds (coming-kind.tsx) are registered so "New ▾" never sends Ario to
+   /studio (Puck). Their tabs would crowd the bar out of the popup's width and push
+   Publish off the edge, so only Writing and Services show as tabs; the rest stay in
+   "New ▾", where choosing one opens its "coming" note. The order is fixed in
+   publish-app.tsx: the shell's own Writing button, then Services, then the stubs.
+   Package ask: a host prop to list kinds without a tab (docs/editor.md). */
+.he-publish .studio-kindsw > button:nth-child(n + 3),
+.he-publish .studio-side__links > button:nth-child(n + 3) { display: none; }

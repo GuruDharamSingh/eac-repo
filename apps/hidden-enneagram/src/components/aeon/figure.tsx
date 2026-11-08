@@ -21,6 +21,9 @@ import {
   trimmedLine,
   wingsOf,
 } from "./geometry";
+import { useFigureSound, type FigureSound, type FigureSoundState } from "./use-figure-sound";
+import { SoundBar } from "./sound-bar";
+import { chromaOf, nearestNote, toneOf, type Point } from "@/lib/sound/tuning";
 
 // ============================================================================
 // The instrument: ÆON's interactive enneagram (~/aeon-enneagram/js/aeon.js,
@@ -69,6 +72,77 @@ export interface AeonFigureProps {
    * client, so a useId differed and React warned of a hydration mismatch.
    */
   idBase?: string;
+  /**
+   * The figure's sound (opt-in for the visitor: a speaker toggle). Absent =
+   * a silent figure, as before. See use-figure-sound.ts.
+   */
+  sound?: FigureSound | null;
+}
+
+const PC_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
+const WEB_R = R - 64;
+
+/**
+ * The web of music laid on the nine points (the research report's layout E):
+ * a 36-tick ring inside the circle, where every 4th tick is an enneagram point
+ * and every 3rd a pitch class in circle-of-fifths order from do. 9 and 12 meet
+ * only at 0, 120 and 240 degrees (points 9, 3, 6), which are marked.
+ */
+function WebRing({ s }: { s: FigureSoundState }) {
+  const doChroma = nearestNote(s.doHz).chroma;
+  const lit = new Set<number>();
+  if (s.heard) lit.add(nearestNote(s.heard.hz).chroma);
+  for (const p of s.sounding) {
+    const c = chromaOf(p, doChroma, s.tuning, s.temperament);
+    if (c !== null) lit.add(c);
+  }
+  return (
+    <g className="he-web-ring" aria-hidden="true">
+      <circle cx={CX} cy={CY} r={WEB_R} className="he-web-circle" />
+      {Array.from({ length: 36 }, (_, i) => {
+        const deg = i * 10 - 90;
+        const rad = (deg * Math.PI) / 180;
+        const nine = i % 4 === 0;
+        const twelve = i % 3 === 0;
+        const len = nine && twelve ? 14 : nine || twelve ? 9 : 4;
+        const x1 = Math.round((CX + WEB_R * Math.cos(rad)) * 100) / 100;
+        const y1 = Math.round((CY + WEB_R * Math.sin(rad)) * 100) / 100;
+        const x2 = Math.round((CX + (WEB_R - len) * Math.cos(rad)) * 100) / 100;
+        const y2 = Math.round((CY + (WEB_R - len) * Math.sin(rad)) * 100) / 100;
+        const chroma = twelve ? (doChroma + 7 * (i / 3)) % 12 : -1;
+        const lr = WEB_R - 24;
+        return (
+          <g key={i} className={`he-web-tick${nine && twelve ? " he-web-meet" : ""}${twelve && lit.has(chroma) ? " he-web-lit" : ""}`}>
+            <line x1={x1} y1={y1} x2={x2} y2={y2} />
+            {twelve ? (
+              <text x={Math.round((CX + lr * Math.cos(rad)) * 100) / 100} y={Math.round((CY + lr * Math.sin(rad)) * 100) / 100}>
+                {PC_NAMES[chroma]}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** Each point's note in the current tuning, just inside the circle. */
+function NoteLabels({ s }: { s: FigureSoundState }) {
+  const doChroma = nearestNote(s.doHz).chroma;
+  return (
+    <g className="he-web-notes" aria-hidden="true">
+      {NUMS.map((t) => {
+        const tone = toneOf(t as Point, s.tuning, s.temperament);
+        const c = chromaOf(t as Point, doChroma, s.tuning, s.temperament);
+        const lp = pt(t, R - 46);
+        return (
+          <text key={t} x={lp.x} y={lp.y} className={tone.kind === "shock" ? "he-web-shock" : undefined}>
+            {tone.kind === "shock" ? "shock" : s.tuning === "harmonic" ? tone.ratio : `${tone.name} ${c === null ? "" : PC_NAMES[c]}`}
+          </text>
+        );
+      })}
+    </g>
+  );
 }
 
 const HUE: Record<CenterKey, string> = { gut: "var(--he-gut)", heart: "var(--he-heart)", head: "var(--he-head)" };
@@ -178,6 +252,7 @@ export function AeonFigure({
   typeHref = "",
   followHash = false,
   idBase = "he-fig",
+  sound = null,
 }: AeonFigureProps) {
   const [mode, setMode] = useState<ModeKey>(MODES[initialMode] ? initialMode : "centers");
   const [selected, setSelected] = useState<TypeNum>(isTypeNum(start) ? start : 9);
@@ -185,6 +260,7 @@ export function AeonFigure({
   const [turned, setTurned] = useState(0);
   const [hovered, setHovered] = useState<TypeNum | null>(null);
   const nodeRefs = useRef<Partial<Record<TypeNum, SVGGElement | null>>>({});
+  const s = useFigureSound(sound, mode);
 
   // The editor changes the props in place: follow them.
   useEffect(() => setMode(MODES[initialMode] ? initialMode : "centers"), [initialMode]);
@@ -208,6 +284,7 @@ export function AeonFigure({
   }, [followHash]);
 
   function select(t: TypeNum, focus = false) {
+    s.tap(t);
     setSelected(t);
     setSegment(0);
     setTurned((n) => n + 1);
@@ -250,7 +327,9 @@ export function AeonFigure({
           </div>
         ) : null}
 
-        <div className="he-wheel-box">
+        {sound ? <SoundBar s={s} mic={sound.mic} /> : null}
+
+        <div className="he-wheel-box" data-sounding={s.sounding.length ? "" : undefined}>
           <svg
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             role="group"
@@ -270,6 +349,8 @@ export function AeonFigure({
                 <line key={`h${a}-${b}`} {...trimmedLine(a, b)} className={`he-figure-line${touches(a, b) ? "" : " he-dimmed"}`} />
               ))}
             </g>
+            {sound?.web === "ring" ? <WebRing s={s} /> : null}
+            {sound && sound.web !== "off" ? <NoteLabels s={s} /> : null}
             <g>
               <path d={arcPath(selected)} className="he-wing-arc" />
             </g>
@@ -296,7 +377,7 @@ export function AeonFigure({
                   ref={(node) => {
                     nodeRefs.current[t] = node;
                   }}
-                  className={`he-node${t === selected ? " he-selected" : ""}`}
+                  className={`he-node${t === selected ? " he-selected" : ""}${s.sounding.includes(t as Point) ? " he-sounding" : ""}${s.heard?.point === t ? " he-heard" : ""}`}
                   tabIndex={0}
                   role="button"
                   aria-pressed={t === selected}
@@ -313,6 +394,12 @@ export function AeonFigure({
                   <text x={p.x} y={p.y + 1}>
                     {t}
                   </text>
+                  {s.heard?.point === t ? (
+                    <text x={p.x} y={p.y + NODE_R + 18} className="he-heard-cents" aria-hidden="true">
+                      {s.heard.cents > 0 ? "+" : ""}
+                      {s.heard.cents}¢
+                    </text>
+                  ) : null}
                 </g>
               );
             })}

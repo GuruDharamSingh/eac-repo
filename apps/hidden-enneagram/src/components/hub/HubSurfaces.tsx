@@ -13,6 +13,8 @@ import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
+import { TypeSurface } from "@/components/exposition/type-surface";
+import { publishSurfaces } from "@/components/publish/surfaces";
 
 /**
  * This site's connectors for the shared surface system.
@@ -168,6 +170,13 @@ export function HubSurfaces({
           id: String(result.id),
           href: "path" in result ? (result.path as string | null) : null,
         };
+      },
+      // Round 3: a type of the enneagram as a popup (opened from /enneagram by
+      // components/exposition/type-links.tsx; its twin is the #type-N row).
+      custom: {
+        "enneagram-type": ({ descriptor }) => <TypeSurface descriptor={descriptor} />,
+        // Round 4: the Publish chooser and the Studio (/publish) in a popup (components/publish).
+        ...publishSurfaces(feeds),
       },
     }),
     [signedIn, canEdit, userId, displayName, feeds, router]

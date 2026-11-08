@@ -7,4 +7,9 @@ export const RESOLVED_KEYS: Record<string, readonly string[]> = {
   "he-enneagram": ["placement"],
   "he-course": ["course"],
   "thread-feed": ["items"],
+  // Round 3. he-service's route keys are injected at render, never stored; listed so a save can never keep them.
+  "he-shelf": ["items"],
+  "he-forum": ["topics"],
+  "he-person": ["person"],
+  "he-service": ["service", "booking", "routeSlug", "routeQuery"],
 };

@@ -33,11 +33,19 @@ export async function GET(
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  // Two legitimate trees: this org's own assets, and a person's own folder
-  // (a member's portrait/work follows the person, not the org). A sanity
-  // bound on the subtree only — canReadMedia below is the access decision.
+  // Three legitimate trees: this org's own assets, a person's own folder
+  // (a member's portrait/work follows the person, not the org), and any org's
+  // `Profile Pictures/` folder. A sanity bound on the subtree only —
+  // canReadMedia below is the access decision.
+  //
+  // The third is sunjay's exception (round 3, 2026-11-07), copied as written:
+  // `users.avatar_url` is network identity and points wherever the upload
+  // landed. Ario's is `EAC_Network/inner_group/Profile Pictures/…`, so the
+  // org-scoped bound 404'd his portrait on /about. Scoped to that exact folder
+  // name; canReadMedia still denies any path with a `private` segment.
   const allowedPrefixes = [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"];
-  if (!allowedPrefixes.some((p) => filePath.startsWith(p))) {
+  const isProfilePicture = /^EAC_Network\/[^/]+\/Profile Pictures\/[^/]+$/.test(filePath);
+  if (!isProfilePicture && !allowedPrefixes.some((p) => filePath.startsWith(p))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -80,6 +88,10 @@ export async function GET(
       const value = upstream.headers.get(key);
       if (value) headers.set(key, value);
     }
+    // Ranges are forwarded to Nextcloud, which answers 206 (checked
+    // 2026-11-07), but it does not advertise them. Say so, so Safari and the
+    // <audio> seek bar treat Ario's tracks as seekable.
+    if (!headers.has("accept-ranges")) headers.set("Accept-Ranges", "bytes");
     // A response whose visibility was just decided per-viewer must never be
     // stored by a shared cache: marking it public+immutable would serve one
     // org's private file to the next requester for a year, so revoking a

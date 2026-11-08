@@ -26,6 +26,7 @@ import {
   MAX_PARTY_SIZE,
   type PurchasableThreadKind,
 } from "@elkdonis/commerce/server";
+import type { StripeCollectOptions } from "@elkdonis/payments";
 import { isCardPaymentAvailable, startStripeCheckout, syncStripeOrder } from "./stripe";
 
 /**
@@ -76,6 +77,11 @@ export interface StartThreadCheckoutInput {
   kinds?: readonly PurchasableThreadKind[];
   /** What the buyer is told they are paying for — "booking", "place". */
   itemNoun?: string;
+  /**
+   * The buyer's email. May be "" when `collect.email` is set: Stripe's page
+   * asks for it, and syncStripeOrder / the webhook write it onto the order
+   * (katie's "Buy now" path).
+   */
   customerEmail: string;
   customerName?: string | null;
   customerId?: string | null;
@@ -95,6 +101,13 @@ export interface StartThreadCheckoutInput {
   cancelPath: string;
   /** Where `checkoutReturn` is mounted. Default `/api/checkout/return`. */
   returnRoute?: string;
+  /**
+   * Optional (2026-11-07, hidden-enneagram "Book and pay"): what Stripe's
+   * page asks for (email, shipping address, phone) for a booking started
+   * from one button with no form. Passed to startStripeCheckout as is.
+   * Omitted = the session every caller always got.
+   */
+  collect?: StripeCollectOptions | null;
 }
 
 /** Create the card order and open Stripe Checkout; the caller redirects to `url`. */
@@ -121,6 +134,7 @@ export async function startThreadCheckout(
     successUrl: `${base}${route}?order=${encodeURIComponent(order.id)}&to=${encodeURIComponent(input.returnPath)}`,
     cancelUrl: `${base}${input.cancelPath}${input.cancelPath.includes("?") ? "&" : "?"}payment=cancelled`,
     imageBase: base,
+    ...(input.collect ? { collect: input.collect } : {}),
   });
   return { orderId: order.id, url };
 }

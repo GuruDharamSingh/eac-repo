@@ -12,6 +12,7 @@ import { hubTemplateHtml, hubTemplateSections } from "@/lib/hub-template";
 import { listOrdersForCustomer } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import { PublishCard } from "@/components/publish/publish-door";
 import { Badge } from "@/components/ui/badge";
 import { getThreadsForFeed } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
@@ -78,35 +79,28 @@ export default async function HubPage() {
           hub's own layout — one file, the same one the Silex editor loads. */}
       <link rel="stylesheet" href="/api/silex/templates/hub.css" />
       {hub}
-      <main className="mx-auto max-w-[880px] px-6 py-16 font-sans">
-        {/* Editors compose from here rather than going to /manage: the same
-            surface a card opens, in compose mode. Omitted entirely for
-            members — a door onto a form they cannot submit is worse than no
-            door, which is the "Soon" card pattern the catalogue replaced. */}
-        <SurfaceCardGrid>
-          {viewer.canEdit && (
-            <SurfaceCard
-              title="Write something"
-              blurb="A piece of writing, or an offering people can book."
-              glyph="✎"
-              kicker="Compose"
-              surface={{ type: "compose" }}
-            />
-          )}
+      <main className="mx-auto w-[min(1040px,calc(100%-48px))] pt-2 pb-16 font-sans">
+        {/* One grid (round 4 tidy, 2026-11-07): Publish (editors), the forum, readings and
+            bookings, then the rooms. Members see the forum, readings, Center and the course. */}
+        <HubCardGrid label="What to do here">
+          {viewer.canEdit ? <PublishCard /> : null}
           <ForumFace forum={forum} />
-        </SurfaceCardGrid>
-
-        {/* The rooms (2026-11-07): the network's Center and Channel, the back
-            office and the page editor for editors, and Ario's course. */}
-        <div className="mt-10">
-          <HubCardGrid label="Rooms">
-            <HubLinkCard href="/center" glyph="◌" title="Center" blurb="Your home on the network: who you follow, what is coming up." />
-            {viewer.canEdit ? <HubLinkCard href="/channel" glyph="◉" title="Channel" blurb="Post writing and sessions to Facebook, Instagram and Threads, and see where each went." /> : null}
-            {viewer.canEdit ? <HubLinkCard href="/manage" glyph="◧" title="Manage" blurb="Content, orders, contacts, the newsletter, pages and the site's look." /> : null}
-            {viewer.canEdit ? <HubLinkCard href="/studio" glyph="✎" title="Page editor" blurb="Arrange blocks to build the home page, The Figure and new pages." /> : null}
-            <HubLinkCard href={courseUrl()} glyph="Ⅶ" title="Enneagram Foundations" blurb="The free course on Sophia: seven modules, short steps, private reflections." />
-          </HubCardGrid>
-        </div>
+          <HubLinkCard
+            href={myOrders.length > 0 ? "#bookings" : "/readings"}
+            glyph="◇"
+            title="Readings & bookings"
+            blurb={
+              myOrders.length > 0
+                ? `${myOrders.length} booked. Yours are listed below.`
+                : "Book a reading or a counselling session."
+            }
+          />
+          <HubLinkCard href="/center" glyph="◌" title="Center" blurb="Your home on the network: who you follow, what is coming up." />
+          {viewer.canEdit ? <HubLinkCard href="/channel" glyph="◉" title="Channel" blurb="Post writing and sessions to Facebook, Instagram and Threads, and see where each went." /> : null}
+          {viewer.canEdit ? <HubLinkCard href="/manage" glyph="◧" title="Manage" blurb="Content, orders, contacts, the newsletter, pages and the site's look." /> : null}
+          {viewer.canEdit ? <HubLinkCard href="/studio" glyph="▦" title="Page editor" blurb="Arrange blocks to build the home page, The Figure and new pages." /> : null}
+          <HubLinkCard href={courseUrl()} glyph="Ⅶ" title="Enneagram Foundations" blurb="The free course on Sophia: seven modules, short steps, private reflections." />
+        </HubCardGrid>
 
         {memberFeeds.length === 0 ? (
           <p className="mt-14 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
@@ -164,7 +158,7 @@ export default async function HubPage() {
           ))
         )}
 
-        <section className="mt-16 border-t border-border pt-12">
+        <section id="bookings" className="mt-16 scroll-mt-24 border-t border-border pt-12">
           <h2 className="font-serif text-2xl font-medium">Your bookings</h2>
           {myOrders.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">

@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/direct-edit",
     "@elkdonis/analytics",
     "@elkdonis/redis",
+    // The authoring Studio at /publish (round 4, 2026-11-07).
+    "@elkdonis/studio",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
@@ -36,6 +38,21 @@ const nextConfig: NextConfig = {
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : undefined,
   },
   output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // Round 3 (2026-11-07): the exposition is ONE page. The old chapter pages
+  // fold into /enneagram (308s, before any route, so neither [page] nor the
+  // studio can shadow them; their slugs are in ROUTE_SLUGS too). /type-N
+  // lands on its row (#type-N opens it). /services is now /readings; a
+  // service keeps /services/<slug>. /contact is the landing's contact form.
+  async redirects() {
+    return [
+      { source: "/introduction", destination: "/enneagram#introduction", permanent: true },
+      { source: "/centers", destination: "/enneagram#centers", permanent: true },
+      { source: "/triads", destination: "/enneagram#triads", permanent: true },
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ source: `/type-${n}`, destination: `/enneagram#type-${n}`, permanent: true })),
+      { source: "/contact", destination: "/#contact", permanent: true },
+      { source: "/services", destination: "/readings", permanent: true },
+    ];
+  },
   allowedDevOrigins: ["localhost", "*.localhost", "127.0.0.1", "192.168.0.24", "*.192.168.0.24"],
 };
 

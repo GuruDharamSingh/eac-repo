@@ -1,41 +1,15 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { Data } from "@puckeditor/core";
 import { getServiceOffering } from "@elkdonis/services";
-import { sanitizeRichText } from "@elkdonis/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PuckPage, pageData } from "@/lib/puck/render";
+import { SERVICE_SLUG } from "@/lib/puck/store";
+import { DEFAULT_SERVICE_PAGE } from "@/lib/default-pages";
 import { siteConfig } from "@/config/site";
 
-const BOOKING_LABEL: Record<string, string> = {
-  one_on_one: "One-on-one",
-  group: "Group",
-  async: "Self-paced",
-};
+export const dynamic = "force-dynamic";
 
-const FORMAT_LABEL: Record<string, string> = {
-  in_person: "In person",
-  online: "Online",
-  hybrid: "Hybrid",
-};
-
-const CTA_LABEL: Record<string, string> = {
-  waitlist: "Join the waitlist",
-  full: "Sold out",
-  closed: "Booking closed",
-};
-
-function priceLabel(price: number | null, currency: string, slidingMin: number | null) {
-  if (price == null) return null;
-  const fmt = (n: number) => new Intl.NumberFormat("en-CA", { style: "currency", currency }).format(n);
-  return slidingMin != null ? `${fmt(slidingMin)}–${fmt(price)}, sliding scale` : fmt(price);
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const service = await getServiceOffering(siteConfig.orgId, slug);
   if (!service) return {};
@@ -46,123 +20,39 @@ export async function generateMetadata({
   };
 }
 
+type Node = { type?: string; props?: Record<string, unknown> };
+
+/** Hand the address to every he-service block, slots included (the resolver reads it; never stored). */
+function withRoute(nodes: unknown, slug: string, query: Record<string, string | undefined>): unknown {
+  if (!Array.isArray(nodes)) return nodes;
+  return nodes.map((n: Node) => {
+    if (!n || typeof n !== "object" || !n.props) return n;
+    const props: Record<string, unknown> = { ...n.props };
+    for (const [k, v] of Object.entries(props)) if (Array.isArray(v)) props[k] = withRoute(v, slug, query);
+    if (n.type === "he-service") Object.assign(props, { routeSlug: slug, routeQuery: query });
+    return { ...n, props };
+  });
+}
+
+/**
+ * /services/<slug> (round 3): the studio document `service` (one template for
+ * every service; DEFAULT_SERVICE_PAGE until published) around he-service,
+ * which draws this service and "Book and pay". Stripe returns here with
+ * `?booked=1&order=<id>` (app/api/checkout/return).
+ */
 export default async function ServiceDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ booked?: string }>;
+  searchParams: Promise<{ booked?: string; order?: string; card?: string; payment?: string }>;
 }) {
-  const { slug } = await params;
-  // Set by /api/checkout/return after a card payment.
-  const booked = (await searchParams).booked === "1";
+  const [{ slug }, q] = await Promise.all([params, searchParams]);
   const service = await getServiceOffering(siteConfig.orgId, slug);
   if (!service) notFound();
-
-  const price = priceLabel(service.price, service.currency, service.priceSlidingMin);
-  const bannerUrl = service.bannerImageUrl ?? service.coverImageUrl;
-  const isOpen = service.registrationStatus === "open";
-
-  return (
-    <article>
-      <Link
-        href="/services"
-        className="text-xs uppercase tracking-[0.2em] text-muted-foreground no-underline hover:text-foreground"
-      >
-        ← Services
-      </Link>
-
-      {bannerUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={bannerUrl}
-          alt=""
-          className="mt-6 aspect-[21/9] w-full rounded-xl object-cover"
-        />
-      )}
-
-      <div className="mt-8 flex items-center gap-2">
-        {service.bookingType && (
-          <Badge variant="outline" className="border-primary/40 text-primary">
-            {BOOKING_LABEL[service.bookingType] ?? service.bookingType}
-          </Badge>
-        )}
-        {service.format && <Badge variant="secondary">{FORMAT_LABEL[service.format]}</Badge>}
-      </div>
-
-      <h1 className="mt-3 font-serif text-4xl font-medium leading-[1.1]">{service.title}</h1>
-      {service.subtitle && <p className="mt-2 text-lg text-muted-foreground">{service.subtitle}</p>}
-
-      <dl className="mt-8 grid grid-cols-2 gap-4 rounded-lg border border-border bg-card p-5 sm:grid-cols-4">
-        {service.recurrenceLabel && (
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Schedule
-            </dt>
-            <dd className="mt-1 text-sm">{service.recurrenceLabel}</dd>
-          </div>
-        )}
-        {service.sessionCount && (
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Sessions
-            </dt>
-            <dd className="mt-1 text-sm">
-              {service.sessionCount}
-              {service.sessionDurationHrs ? ` × ${service.sessionDurationHrs}h` : ""}
-            </dd>
-          </div>
-        )}
-        {service.location && (
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Location
-            </dt>
-            <dd className="mt-1 text-sm">{service.location}</dd>
-          </div>
-        )}
-        {price && (
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Price
-            </dt>
-            <dd className="mt-1 text-sm font-medium">{price}</dd>
-          </div>
-        )}
-      </dl>
-
-      {/* The body is rich-text HTML from the composer. It was printed as
-          text, showing its tags; it is sanitised here as well as on write
-          because older rows predate write-time sanitising. */}
-      {service.body && (
-        <div
-          className="prose-services mt-10 text-[17px] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: sanitizeRichText(service.body) }}
-        />
-      )}
-
-      {service.slidingScaleNote && (
-        <p className="mt-6 text-sm text-muted-foreground">{service.slidingScaleNote}</p>
-      )}
-
-      <div className="mt-10">
-        {booked ? (
-          <p role="status" className="rounded-lg border border-border bg-card p-5">
-            Thank you — your booking is paid.{" "}
-            {(service.bookingType ?? "one_on_one") === "one_on_one"
-              ? "We will confirm one of your times, or suggest others; the email we sent you has a link to follow it."
-              : "We will be in touch by email."}
-          </p>
-        ) : isOpen ? (
-          <Button asChild size="lg">
-            <Link href={`/services/${service.slug}/book`}>Book now</Link>
-          </Button>
-        ) : (
-          <Button size="lg" disabled>
-            {CTA_LABEL[service.registrationStatus]}
-          </Button>
-        )}
-      </div>
-    </article>
-  );
+  const data = await pageData(SERVICE_SLUG, DEFAULT_SERVICE_PAGE);
+  if (!data) notFound();
+  const query = { booked: q.booked, order: q.order, card: q.card, payment: q.payment };
+  const routed = { ...data, content: withRoute(data.content, service.slug, query) } as Data;
+  return <PuckPage slug={SERVICE_SLUG} data={routed} />;
 }

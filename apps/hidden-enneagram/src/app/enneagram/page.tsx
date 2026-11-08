@@ -3,14 +3,17 @@ import { notFound } from "next/navigation";
 import { PuckPage, pageData, titleOf } from "@/lib/puck/render";
 import { FIGURE_SLUG } from "@/lib/puck/store";
 import { DEFAULT_FIGURE_PAGE } from "@/lib/default-pages";
+import { readingMetadata } from "@/lib/reading-privacy";
+import { TypeLinks } from "@/components/exposition/type-links";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await pageData(FIGURE_SLUG, DEFAULT_FIGURE_PAGE);
   return {
-    title: titleOf(data) ?? "The Figure",
-    description: "The enneagram as an instrument: nine points, four lenses, stress and growth lines, and each type's dossier read step by step.",
+    title: titleOf(data) ?? "The Enneagram",
+    description: "The enneagram in Ario's words: the centers, the core fixation, the triads and the nine types, beside the figure.",
+    ...readingMetadata(data),
   };
 }
 
@@ -22,5 +25,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FigurePage() {
   const data = await pageData(FIGURE_SLUG, DEFAULT_FIGURE_PAGE);
   if (!data) notFound();
-  return <PuckPage slug={FIGURE_SLUG} data={data} />;
+  return (
+    <>
+      <PuckPage slug={FIGURE_SLUG} data={data} />
+      {/* Round 3: a tap on a type (figure or text) opens its Surface popup. */}
+      <TypeLinks />
+    </>
+  );
 }

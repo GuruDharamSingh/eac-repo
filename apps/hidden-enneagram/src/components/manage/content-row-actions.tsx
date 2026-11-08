@@ -71,7 +71,7 @@ export function ContentRowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/manage/content/${threadId}`}>Edit</Link>
+          <Link href={`/manage/content/${threadId}`}>Edit in the form</Link>
         </DropdownMenuItem>
         {feedSlug && status === "published" && (
           <DropdownMenuItem asChild>

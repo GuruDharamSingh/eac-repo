@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PublishMenuLink } from "@/components/publish/publish-door";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { siteConfig } from "@/config/site";
@@ -14,8 +15,10 @@ export interface HeaderLink {
 }
 
 interface SiteHeaderProps {
-  /** The menu: The Figure, the org's feeds, Course, Forum, About (built by the layout). */
+  /** The menu (round 3: The Enneagram, Readings, Writing, Music, About; built by the layout). */
   links: HeaderLink[];
+  /** Round 3: the secondary links (forum, the other feeds, the course), kept off the bar so it stays one line. In the account menu and the phone sheet; visitors find them in the footer. */
+  more?: HeaderLink[];
   signedIn: boolean;
   /** Owner or guide: Manage, Hub, Edit the site. */
   canEdit: boolean;
@@ -29,13 +32,13 @@ interface SiteHeaderProps {
  * `data-part` let Site style give the header's parts their own look.
  * Replaces SiteNav on every page: it sits in the root layout now.
  */
-export function SiteHeader({ links, signedIn, canEdit, isMember, email }: SiteHeaderProps) {
+export function SiteHeader({ links, more = [], signedIn, canEdit, isMember, email }: SiteHeaderProps) {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   useEffect(() => setOpen(false), [pathname]);
 
-  const items = links.map((link) => {
+  const linkItem = (link: HeaderLink) => {
     const path = link.href.split("#")[0] || "/";
     const current = /^https?:/.test(link.href) ? false : path !== "/" && (pathname === path || pathname.startsWith(`${path}/`));
     return (
@@ -48,11 +51,15 @@ export function SiteHeader({ links, signedIn, canEdit, isMember, email }: SiteHe
         ) : null}
       </Link>
     );
-  });
+  };
+  const items = links.map(linkItem);
+  const moreItems = more.map(linkItem);
 
   // The network rooms: Hub (members), Center and Channel (anyone signed in; Channel posts for editors).
   const rooms = (
     <>
+      {/* Round 4: the Publish door (a chooser, then the Studio popup). */}
+      {canEdit ? <PublishMenuLink onOpen={close} /> : null}
       {canEdit ? <Link href="/manage" onClick={close}>Manage</Link> : null}
       {canEdit ? <Link href="/studio" onClick={close}>Edit the site</Link> : null}
       {isMember ? <Link href="/hub" onClick={close}>Hub</Link> : null}
@@ -82,9 +89,15 @@ export function SiteHeader({ links, signedIn, canEdit, isMember, email }: SiteHe
                 <span className="he-acct__dot" aria-hidden="true">
                   {(email ?? "?").charAt(0).toUpperCase()}
                 </span>
-                <span>{email ? email.split("@")[0] : "Account"}</span>
+                <span className="he-acct__name">{email ? email.split("@")[0] : "Account"}</span>
               </summary>
               <div className="he-acct__panel">
+                {moreItems.length ? (
+                  <>
+                    {moreItems}
+                    <hr />
+                  </>
+                ) : null}
                 {rooms}
                 <hr />
                 <SignOutButton />
@@ -103,6 +116,7 @@ export function SiteHeader({ links, signedIn, canEdit, isMember, email }: SiteHe
       {open ? (
         <nav className="he-header__sheet" aria-label="Site, menu" data-part="menu">
           {items}
+          {moreItems}
           {signedIn ? (
             <>
               {rooms}

@@ -71,6 +71,9 @@
 @import "./palette.css";
 @import "./site.css";
 @import "../components/aeon/aeon.css";
+@import "../components/aeon/sound.css";
+@import "../components/reading/reading.css";
+@import "../components/music/music.css";
 
 @theme inline {
   --color-background: hsl(var(--background));

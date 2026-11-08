@@ -3,6 +3,7 @@ import { editingOf, placementRules, type PuckEditing, type ResolvedPlacement } f
 import { AeonFigure, type FigureReader } from "@/components/aeon/figure";
 import { isTypeNum } from "@/components/aeon/geometry";
 import type { ModeKey } from "@/components/aeon/content";
+import { SOUND_PROPS, soundFromProps } from "./sound-props";
 
 // ============================================================================
 // The Figure (he-enneagram): Ario's instrument as a smart block.
@@ -80,6 +81,7 @@ const props = [
   { name: "controls", kind: "boolean", label: "Show the lens chips and legend", default: true },
   { name: "typeLinks", kind: "boolean", label: "Link each type to its own page (/type-N)", default: true },
   { name: "readHref", kind: "url", label: "Summary link goes to", description: "{n} = the type.", default: "/enneagram#type-{n}" },
+  ...SOUND_PROPS,
 ] as const;
 
 type Props = PropsOf<typeof props> & { placement?: ResolvedPlacement | null; puck?: PuckEditing };
@@ -104,9 +106,12 @@ export function HeEnneagram(p: Props) {
       controls={p.controls !== false}
       reader={reader}
       readHref={typeof p.readHref === "string" && p.readHref ? p.readHref : "/enneagram#type-{n}"}
-      typeHref={p.typeLinks === false ? "" : "/type-{n}"}
-      followHash={!drawn && reader === "full"}
+      // Round 3: the type pages folded into /enneagram (#type-N; a tap there opens the type's popup).
+      typeHref={p.typeLinks === false ? "" : "/enneagram#type-{n}"}
+      // Round 3: the summary reader follows #type-N too (the sticky figure on /enneagram).
+      followHash={!drawn && reader !== "none"}
       idBase={typeof (p as { id?: unknown }).id === "string" ? (p as { id: string }).id : "he-fig"}
+      sound={soundFromProps(p)}
     />
   );
   return (
@@ -153,6 +158,7 @@ export const heEnneagram = defineBlock(
       steps: { label: "Reading steps", sel: ".he-seg-rail" },
       reading: { label: "Reading", sel: ".he-seg-body" },
       pager: { label: "Back / Next", sel: ".he-seg-pager" },
+      sound: { label: "Sound controls", sel: ".he-sound" },
     },
     tokens: [
       { name: "--he-gut", label: "Gut hue", type: "color" },

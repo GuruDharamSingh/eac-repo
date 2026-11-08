@@ -19,6 +19,7 @@ const TABS = [
   { href: "/manage/newsletter", label: "Newsletter" },
   { href: "/manage/pages", label: "Pages" },
   { href: "/manage/site", label: "Site" },
+  { href: "/manage/music", label: "Music" },
 ];
 const OWNER_TABS = [{ href: "/manage/analytics", label: "Visitors" }];
 

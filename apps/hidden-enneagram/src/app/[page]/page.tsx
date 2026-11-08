@@ -9,7 +9,8 @@ import { ORG_SLUG } from "@/lib/session";
 import { siteConfig } from "@/config/site";
 import { SILEX_PAGES } from "@/lib/silex-pages";
 import { PuckPage, pageData, titleOf } from "@/lib/puck/render";
-import { ROUTE_SLUGS } from "@/lib/puck/store";
+import { ELSEWHERE_SLUGS, ROUTE_SLUGS } from "@/lib/puck/store";
+import { readingMetadata } from "@/lib/reading-privacy";
 
 /**
  * One dynamic segment, three kinds of page, tried in this order:
@@ -24,8 +25,9 @@ import { ROUTE_SLUGS } from "@/lib/puck/store";
  * one at a time, without a deploy. The studio refuses feed slugs and this
  * app's own routes, so 1 can never hide a feed or a route.
  *
- * /services, /about, /hub, /triads, /enneagram are static routes and take
- * precedence over this segment entirely.
+ * /services/*, /about, /readings, /hub, /enneagram are static routes and take
+ * precedence over this segment entirely. Round 3: /introduction, /centers,
+ * /triads, /type-N, /contact and /services redirect in next.config.ts.
  */
 
 export const dynamic = "force-dynamic";
@@ -34,12 +36,14 @@ interface PageProps {
   params: Promise<{ page: string }>;
 }
 
-const studioPage = (slug: string) => (ROUTE_SLUGS.has(slug) ? Promise.resolve(null) : pageData(slug));
+// Round 3: not the documents drawn elsewhere (home is /, service is every /services/<slug>).
+const studioPage = (slug: string) => (ROUTE_SLUGS.has(slug) || ELSEWHERE_SLUGS.has(slug) ? Promise.resolve(null) : pageData(slug));
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { page } = await params;
   const built = await studioPage(page);
-  if (built) return { title: titleOf(built) ?? page.replace(/-/g, " ") };
+  // A page holding a reading is about one person: noindex, no referrer (lib/reading-privacy.ts).
+  if (built) return { title: titleOf(built) ?? page.replace(/-/g, " "), ...readingMetadata(built) };
   if (SILEX_PAGES.has(page)) return {};
 
   const feed = await getOrgFeed(siteConfig.orgId, page);

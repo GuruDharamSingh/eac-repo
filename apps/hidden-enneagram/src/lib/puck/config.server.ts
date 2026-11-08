@@ -8,6 +8,8 @@ import { currentOrgId } from "@/lib/site-org";
 import { CATALOGUE } from "@/lib/puck/catalogue";
 import { loadCourse } from "@/lib/course";
 import { figurePlacement } from "@/blocks/enneagram-block";
+import { loadShelf } from "@/lib/shelf";
+import { loadForumTopics, loadPerson, loadServiceBlock } from "@/lib/record-blocks";
 
 // ============================================================================
 // The catalogue as a PUBLISHED page sees it: same blocks, resolvers that read
@@ -28,6 +30,11 @@ const serverResolvers: BlockResolvers = {
       upcomingOnly: true,
     }),
   }),
+  // Round 3: the records the quiet pages frame.
+  "he-shelf": async (props) => ({ items: await loadShelf(props) }),
+  "he-forum": async (props) => ({ topics: await loadForumTopics(props.limit) }),
+  "he-person": async (props) => ({ person: await loadPerson(props.slug) }),
+  "he-service": async (props) => loadServiceBlock(props),
 };
 
 export const serverPuckConfig = buildPuckConfig({

@@ -17,6 +17,7 @@ import type { MeetingVisibility } from "@elkdonis/types";
 const ORG_ID = siteConfig.orgId;
 
 const MAX_SIZE_MB = 25;
+const MAX_AUDIO_MB = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,11 +33,14 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
-    if (!file.type.startsWith("image/")) {
+    // `kind=audio` is the Music tab's tracks; anything else is an image, as before.
+    const isAudio = formData.get("kind") === "audio";
+    const maxMb = isAudio ? MAX_AUDIO_MB : MAX_SIZE_MB;
+    if (!file.type.startsWith(isAudio ? "audio/" : "image/")) {
       return NextResponse.json({ error: `Unsupported file type: ${file.type || "unknown"}` }, { status: 400 });
     }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      return NextResponse.json({ error: `File size must be less than ${MAX_SIZE_MB}MB` }, { status: 400 });
+    if (file.size > maxMb * 1024 * 1024) {
+      return NextResponse.json({ error: `File size must be less than ${maxMb}MB` }, { status: 400 });
     }
 
     // Named after the work when the surface sends a title, else after the
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
     // page, a gallery item and every <img src> carries. See uploadFilename.
     const title = String(formData.get("title") ?? "").trim().slice(0, 200);
     const filename = uploadFilename(file.name, title || null);
-    const relativePath = getUploadPath(ORG_ID, "Images", filename, visibility);
+    const relativePath = getUploadPath(ORG_ID, isAudio ? "Audio" : "Images", filename, visibility);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
     // `image/svg+xml` passes a `startsWith("image/")` check. An SVG is a
     // script container, so verify the actual leading bytes — validateUploadBuffer
     // classifies SVG as its own kind, never `image`.
-    const validation = validateUploadBuffer(buffer, ["image"]);
+    const validation = validateUploadBuffer(buffer, isAudio ? ["audio"] : ["image"]);
     if (!validation.ok) {
       return NextResponse.json(
         { error: "reason" in validation ? validation.reason : "Rejected" },
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
           url, type, filename, size_bytes, mime_type
         ) VALUES (
           ${mediaId}, ${ORG_ID}, ${editor.userId}, ${filename}, ${relativePath},
-          ${fileUrl}, 'image', ${file.name}, ${file.size}, ${file.type}
+          ${fileUrl}, ${isAudio ? "audio" : "image"}, ${file.name}, ${file.size}, ${file.type}
         )
       `;
 

@@ -39,6 +39,16 @@ const clientResolvers: BlockResolvers = {
   "thread-feed": async (props) => ({
     items: await getJson(`/api/blocks/thread-feed?limit=${typeof props.limit === "number" ? props.limit : 10}`, "items", []),
   }),
+  // Round 3: the same records through the editor's routes (visitor-visible data only).
+  "he-shelf": async (props) => ({
+    items: await getJson(`/api/blocks/he-shelf?source=${encodeURIComponent(String(props.source ?? ""))}&feed=${encodeURIComponent(String(props.feed ?? ""))}&limit=${Number(props.limit) || 3}`, "items", []),
+  }),
+  "he-forum": async (props) => ({ topics: await getJson(`/api/blocks/he-records?block=forum&limit=${Number(props.limit) || 0}`, "topics", []) }),
+  "he-person": async (props) => ({ person: await getJson(`/api/blocks/he-records?block=person&slug=${encodeURIComponent(String(props.slug ?? ""))}`, "person", null) }),
+  "he-service": async (props) => ({
+    service: await getJson(`/api/blocks/he-records?block=service&slug=${encodeURIComponent(String(props.serviceSlug ?? ""))}`, "service", null),
+    booking: null,
+  }),
 };
 
 /**

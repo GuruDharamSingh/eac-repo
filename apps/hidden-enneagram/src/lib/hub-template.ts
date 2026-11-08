@@ -63,6 +63,16 @@ export function hubTemplateSections(): Array<{ id: string; bindings?: BindingMap
   }
 }
 
+/**
+ * Template sections this site leaves out (round 4 tidy, 2026-11-07). `eac-hub-resources`
+ * ("To hand": Notes, Recordings, Worksheets) is filler: ResourcesEmbed draws the
+ * template's static `data-items` as plain rows that link nowhere.
+ * `eac-hub-stream` ("Lately"): its org-feed embed renders outside the slot, light cards
+ * edge to edge under a blank gap, and repeats /writing and /readings. Restore by removing
+ * the id here.
+ */
+const OMIT_SECTIONS = new Set(["eac-hub-resources", "eac-hub-stream"]);
+
 let cachedHtml: string | null = null;
 let cachedCss: string | null = null;
 
@@ -79,7 +89,7 @@ export function hubTemplateHtml(): string | null {
   try {
     const { dir, manifest } = readManifest();
     const inner = manifest.sections
-      .filter((section) => section.defaultVisible !== false)
+      .filter((section) => section.defaultVisible !== false && !OMIT_SECTIONS.has(section.id))
       .map((section) => fs.readFileSync(path.join(dir, section.html), "utf-8"))
       .join("\n");
     cachedHtml = `<main class="eac-hub">\n${inner}\n</main>`;

@@ -1,54 +1,68 @@
 /* ==========================================================================
-   The Hidden Enneagram: the house look (2026-11-07 re-stand).
+   The Hidden Enneagram: the house look.
 
-   Adopted from Ario's ÆON draft (~/aeon-enneagram, 2026-10-29): a near-black
-   ground with a faint gold and violet glow, warm ink, gold for marks and
-   links, and the three centre hues (gut teal, heart rose, head violet).
-   Supersedes the 2026-09-09 light theme; the Silex pages were always dark.
+   Round 3 (2026-11-07): Ario's ORIGINAL Silex look is the default again,
+   matched to the live /introduction page and its template tokens
+   (packages/silex-nextcloud-connector/src/templates/enneagram/tokens):
+   near-black #0a0a0c, warm ink #ece7dd, reading ink #bcb6aa, teal #3aa99c,
+   Cormorant Garamond and EB Garamond, hairlines, and the white-core "orb"
+   glow between bands (site.css .he-orb). Quiet, centred, one idea per band.
+
+   Round 1's ÆON draft (gold, Marcellus/Spectral/Chivo Mono) is kept as a
+   look preset: html[data-he-look="aeon"] below (Site style → Look).
 
    Two layers, so one change moves everything:
      1. shadcn HSL triplets (what Site style edits; site-style-schema.ts)
      2. --he-* tokens derived from them (what the blocks, the figure, the
         header and footer read), plus the shared kits' --eac-* tokens.
+   Token NAMES are stored in block looks (`--he-aurum` is "the accent",
+   teal here, gold in ÆON): never rename.
 
-   Contrast, measured on the ÆON values (the defaults below):
-     ink #ece7d8 on ground #07080d     16.5:1
-     quiet ink #a7a193 on ground        7.8:1
-     gold #d4b062 on ground             8.2:1
-     gut #5fc2ae 8.4:1 · heart #e88d80 7.0:1 · head #ab9fe6 6.8:1
-     ink on card #10131e               15.0:1
-     ground-coloured text on gold       8.2:1 (the primary button)
-   The faint ink (≈4.2:1) is for large or bold labels only.
+   Contrast (Silex defaults):
+     ink #ece7dd on #0a0a0c        16.0:1
+     reading ink #bcb6aa on it     10.0:1
+     teal #3aa99c on it             6.6:1  (links, small accents)
+     #0a0a0c on teal                6.6:1  (the primary button)
+     ink on card #131319           14.6:1
+   The faint ink (≈4.4:1) is for large or letter-spaced labels only.
    ========================================================================== */
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.375rem;
+  --he-look: quiet;
 
-  --background: 230 30% 4%;          /* night  #07080d */
-  --foreground: 45 34% 89%;          /* ink    #ece7d8 */
-  --card: 227 30% 9%;                /* card   #10131e */
-  --card-foreground: 45 34% 89%;
-  --popover: 227 30% 9%;
-  --popover-foreground: 45 34% 89%;
-  --primary: 41 57% 61%;             /* aurum  #d4b062 */
-  --primary-foreground: 230 30% 4%;
-  --secondary: 226 26% 16%;          /* card edge #1f2435 */
-  --secondary-foreground: 45 34% 89%;
-  --muted: 228 31% 6%;               /* well   #0b0d15 */
-  --muted-foreground: 42 10% 62%;    /* dim    #a7a193 */
-  --accent: 226 26% 16%;
-  --accent-foreground: 45 34% 89%;
-  --destructive: 0 62% 68%;          /* #e07a7a, 7.2:1 on the ground */
-  --destructive-foreground: 230 30% 4%;
-  --border: 226 25% 20%;             /* line   #262c40 */
-  --input: 226 18% 34%;              /* field edge, 3:1 on the ground */
-  --ring: 43 70% 70%;                /* focus  #e8ca7e */
+  --background: 240 9% 4%;           /* #0a0a0c */
+  --foreground: 40 28% 90%;          /* #ece7dd */
+  --card: 240 14% 9%;                /* #131319 */
+  --card-foreground: 40 28% 90%;
+  --popover: 240 14% 9%;
+  --popover-foreground: 40 28% 90%;
+  --primary: 173 49% 45%;            /* teal #3aa99c */
+  --primary-foreground: 240 9% 4%;
+  --secondary: 240 8% 15%;           /* card edge */
+  --secondary-foreground: 40 28% 90%;
+  --muted: 240 13% 8%;               /* raised #111116 */
+  --muted-foreground: 40 12% 70%;    /* reading ink #bcb6aa */
+  --accent: 240 8% 15%;
+  --accent-foreground: 40 28% 90%;
+  --destructive: 0 62% 68%;          /* #e07a7a */
+  --destructive-foreground: 240 9% 4%;
+  --border: 40 4% 16%;               /* a hairline, rgba(236,231,221,.14) on the ground */
+  --input: 40 4% 30%;                /* field edge, 3:1 on the ground */
+  --ring: 173 50% 60%;               /* focus */
 
   /* The three centres and the stress line (Site style: Figure). */
   --gut: 168 45% 57%;                /* #5fc2ae */
   --heart: 8 69% 71%;                /* #e88d80 */
   --head: 250 59% 76%;               /* #ab9fe6 */
   --stress: 18 62% 65%;              /* #dd8f6e */
+
+  /* The look's faces (ÆON swaps them; Site style's font choice wins over both). */
+  --he-look-display: var(--font-cormorant), "EB Garamond", Garamond, Georgia, serif;
+  --he-look-body: var(--font-eb-garamond), Garamond, Georgia, serif;
+  --he-look-label: var(--font-eb-garamond), Garamond, Georgia, serif;
+  --he-look-weight: 400;
+  --he-look-display-weight: 500;
 
   /* ── layer 2: the house tokens ───────────────────────────────────────── */
   --he-night: hsl(var(--background));
@@ -72,9 +86,11 @@
   --he-stress: hsl(var(--stress));
   --he-growth: hsl(var(--primary));
   --he-focus: hsl(var(--ring));
-  --he-font-display: var(--site-font-heading, var(--font-marcellus), "Palatino Linotype", "Book Antiqua", serif);
-  --he-font-body: var(--site-font-body, var(--font-spectral), Georgia, "Times New Roman", serif);
-  --he-font-mono: var(--font-chivo-mono), "SFMono-Regular", Consolas, monospace;
+  --he-font-display: var(--site-font-heading, var(--he-look-display));
+  --he-font-body: var(--site-font-body, var(--he-look-body));
+  /* Labels (eyebrows, legends, step counts): letter-spaced Garamond capitals; Chivo Mono in ÆON. */
+  --he-font-mono: var(--he-look-label);
+  --he-reading: 720px;
   --he-max: 1180px;
   --he-gutter: clamp(18px, 4vw, 48px);
 
@@ -129,4 +145,32 @@
   --eac-font-title: var(--he-font-display);
 
   color-scheme: dark;
+}
+
+/* ── The ÆON look preset (round 1's house look, Site style → Look) ─────── */
+html[data-he-look="aeon"] {
+  --radius: 0.5rem;
+  --background: 230 30% 4%;          /* night  #07080d */
+  --foreground: 45 34% 89%;          /* ink    #ece7d8 */
+  --card: 227 30% 9%;                /* card   #10131e */
+  --card-foreground: 45 34% 89%;
+  --popover: 227 30% 9%;
+  --popover-foreground: 45 34% 89%;
+  --primary: 41 57% 61%;             /* aurum  #d4b062 */
+  --primary-foreground: 230 30% 4%;
+  --secondary: 226 26% 16%;
+  --secondary-foreground: 45 34% 89%;
+  --muted: 228 31% 6%;
+  --muted-foreground: 42 10% 62%;
+  --accent: 226 26% 16%;
+  --accent-foreground: 45 34% 89%;
+  --destructive-foreground: 230 30% 4%;
+  --border: 226 25% 20%;
+  --input: 226 18% 34%;
+  --ring: 43 70% 70%;
+  --he-look-display: var(--font-marcellus), "Palatino Linotype", "Book Antiqua", serif;
+  --he-look-body: var(--font-spectral), Georgia, "Times New Roman", serif;
+  --he-look-label: var(--font-chivo-mono), "SFMono-Regular", Consolas, monospace;
+  --he-look-weight: 300;
+  --he-look-display-weight: 400;
 }
