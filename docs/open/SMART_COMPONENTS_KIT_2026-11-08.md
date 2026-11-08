@@ -125,6 +125,11 @@ A kit version must:
 5. **§2.5 `popup:custom`** once `<NetworkChrome>` exists (architect §5.4).
 6. **§2.6 Looks resolver,** with the forms' `content_prefs` cascade (Lane B / publishing forms).
 
-## 6. Open questions for the PM
-- **Package home:** keep it all in `@elkdonis/blocks/record`, or split sources and the chooser into `@elkdonis/content` (new 2026-11-08, it already has `registry.ts`)? I lean `content` for sources and `blocks/record` for rendering.
-- **Templates in the shell:** shell orgs (`/sites/[slug]`) get route templates through the kit's host-resolved mount. Is the published document keyed per org in `site_config`, as today, for both planes?
+## 6. Decisions (PM, system32-08, 2026-11-08)
+1. **Sources live in `@elkdonis/blocks/record`.** The registry is a block-facing contract, and some sources are
+   not content (person, shelf, forum, course). Sources that ARE pieces (post, service, artwork, series)
+   delegate their loading to `@elkdonis/content/server`, so a piece loads one way everywhere.
+   `@elkdonis/content` must not depend on blocks.
+2. **Templates are keyed per org in both planes:** `(orgId, key)`, resolved from the `site` object, so a
+   shell org and a custom app behave the same. A custom app may register app-level defaults (today's
+   `lib/default-pages.ts`); an org's published template overrides them.
