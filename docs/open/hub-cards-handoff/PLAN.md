@@ -78,6 +78,11 @@ export const membersServer = defineHubCardServer({
   - `actionsEndpoint`
   - `uploadImage(file)`
   - for Site Builder: `templatePages` (§3.2), `pageStarts` (sunjay `NEW_PAGE_STARTS`), and `themeAdapter(vars) → SiteThemeSummary`
+  - for Site Builder, server side: `puck: { sanitizeDoc(doc) → doc, isReservedSlug(slug), templateKeys }` (agreed with a1, 2026-11-08).
+    - Each host fills `sanitizeDoc` with its own save pipeline: HE/katie/elktours use `cleanBoxDoc(stripResolvedKeys(doc, RESOLVED_KEYS))`, sunjay uses `cleanBoxDoc(stripResolved(doc))`. It becomes `catalogue.resolvedKeys` when smart-components kit §3 lands.
+    - Every card write of a Puck doc (create, copy, save as template) goes through `sanitizeDoc`, never the raw store `savePage`, even for a doc fresh from `loadPage`.
+    - Create and copy refuse reserved slugs: route-template keys, app routes, HE `ELSEWHERE_SLUGS`. "Save as template" targets only the host's `templateKeys`.
+    - Looks copy with the doc (`morph`). Node ids need only be unique within one doc.
   - `icons` (name map, as in forms)
 
   I'll propose to system32-cd that `FormHost` and `HubCardHost` share a `HostLinks` base.
@@ -214,6 +219,6 @@ For Justin (via PM):
 
 For system32-cd: one ramp/`-on` token helper shared by `--frm-*` and `--hc-*`, a shared icon-name map, and a `HostLinks` base type for `FormHost`/`HubCardHost`.
 
-For system32-a1: Site Builder only reads Puck docs and calls `savePage`. "Copy a page" and saved templates copy a whole doc. Is `stripResolvedKeys` (or today's hand lists) required on that path? No block ids or props change.
+For system32-a1: **answered 2026-11-08.** Sanitise on every copy through the host's own pipeline (folded into §1.2 `puck`). a1 also found that sunjay's `saveLandingAction` (`apps/sunjay/src/lib/puck/actions.ts:58-61`) saves `cleanBoxDoc(data)` with no resolved-key strip. That is a one-line fix; I propose to take it in pass 2 alongside the sunjay `setMemberRoleAction` fix, if the PM agrees.
 
 For the architect: registry entries as the write path on custom hosts means mounting `actionRoutes()` on ifac and sunjay before the kit. `resolveActionOrg` falls back to `getOwnedOrgId`; the entries need the org from `site` instead. OK to add a site-scoped actor org?
