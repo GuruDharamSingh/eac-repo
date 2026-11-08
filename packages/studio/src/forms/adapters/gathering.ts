@@ -141,6 +141,11 @@ export function gatheringActions(actions: MeetingActions, opts: GatheringAdapter
       return { answers: gatheringAnswers(record, c), record };
     },
     async save(orgId, answers, intent, id, saveOpts) {
+      // A series is saved by the series adapter (pass 2). Until a host routes it there, refuse
+      // rather than quietly saving a weekly meeting where the person asked for a series.
+      if (answers['forms.repeat_as_series'] === true) {
+        return { ok: false, error: 'Series can’t be saved from this form yet. Untick “Present it as a series” to save a weekly gathering.' };
+      }
       const c = await context(orgId).catch(() => null);
       const { answers: resolved, dropped } = resolveGatheringAnswers(answers);
       const input: MeetingInputView = toInput(resolved, 'meeting', askHosts(c));
