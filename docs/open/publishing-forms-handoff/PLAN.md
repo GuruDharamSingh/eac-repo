@@ -350,7 +350,9 @@ Keys:
 - `availability`: 'available' | 'reserved' | 'sold'.
 - `medium`, `height_cm`, `width_cm`, `depth_cm`, `unit`: 'cm' | 'in' (converted to cm on save), `year`.
 - `edition_type`: 'unique' | 'edition' | 'open', mapped to `kind` original / limited_edition / open_edition.
-- `edition_size`, `edition_proofs`.
+- `edition_size` → `editionTotal`, and `edition_proofs` (no column: dropped with a warning).
+- `stock` → `inventoryQty`: copies on hand. Payment decrements it; the piece goes reserved or sold by itself at 0 (commerce 7d6540c0).
+- `availability` is set by `setArtworkAvailability` after publish, on a listed piece only.
 - `variants`: `Array<{ name; price; stock }>`.
 - `description` (HTML).
 - `shows`: `{ store; gallery }`.
