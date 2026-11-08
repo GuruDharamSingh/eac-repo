@@ -326,8 +326,8 @@ export type { OrgRole, OrgMembership, OrgMember, OrgFollower } from './org-membe
 // Signed-in arrivals through the network SSO handoff (migration 164).
 export { listOrgArrivals } from './network-arrivals';
 // An org's people for its owners and guides: roles, listing, arrivals (Center, 2026-10-18).
-export { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople, ASSIGNABLE_ORG_ROLES } from './org-people';
-export type { OrgPerson, OrgPeopleResult } from './org-people';
+export { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople, canChangeOrgPeople, removeOrgPerson, listOrgArrivalQueue, welcomeOrgArrival, dismissOrgArrival, ASSIGNABLE_ORG_ROLES } from './org-people';
+export type { OrgPerson, OrgPeopleResult, OrgArrivalQueueItem } from './org-people';
 // Start an organisation (moved from arts-collective's /api/org/create, 2026-10-18).
 export { createOrganizationForUser, checkSubdomain, normalizeSubdomain, isValidSubdomain, ORG_TIERS } from './org-create';
 export type { CreateOrgInput, CreateOrgResult, OrgTier } from './org-create';

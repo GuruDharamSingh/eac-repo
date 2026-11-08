@@ -10,10 +10,24 @@
 import { actionMeta } from '../catalogue';
 import { canManageOrgPeople, getOwnedOrgId } from '@elkdonis/services';
 
+export interface ActionOrgOptions {
+  /**
+   * A site-bound door (2026-11-08, hub cards on a custom host): the org IS this
+   * site's, honoured only for its owners and guides. A claim for another org is
+   * refused (null), and there is no fallback to an owned org. Opt-in: callers
+   * that don't pass it behave exactly as before.
+   */
+  siteOrgId?: string | null;
+}
+
 /** The org a person may act on: `requested` (an org id) when they manage it, else the org they own. */
-export async function resolveActionOrg(userId: string, requested?: string | null): Promise<string | null> {
+export async function resolveActionOrg(userId: string, requested?: string | null, opts?: ActionOrgOptions): Promise<string | null> {
   if (!userId) return null;
   const claim = typeof requested === 'string' && requested ? requested : null;
+  if (opts?.siteOrgId) {
+    if (claim && claim !== opts.siteOrgId) return null;
+    return (await canManageOrgPeople(userId, opts.siteOrgId)) ? opts.siteOrgId : null;
+  }
   if (claim && (await canManageOrgPeople(userId, claim))) return claim;
   return getOwnedOrgId(userId);
 }
@@ -31,9 +45,10 @@ export async function resolveChannelOrg(userId: string, requested?: string | nul
 }
 
 /** As `resolveActionOrg` for an `org`-scoped entry, `resolveChannelOrg` for a `channel` one; null for any other entry. */
-export async function actionOrgId(id: string, userId: string, requested?: string | null): Promise<string | null> {
+export async function actionOrgId(id: string, userId: string, requested?: string | null, opts?: ActionOrgOptions): Promise<string | null> {
   const scope = actionMeta(id)?.scope;
-  if (scope === 'org') return resolveActionOrg(userId, requested);
-  if (scope === 'channel') return resolveChannelOrg(userId, requested);
+  if (scope === 'org') return resolveActionOrg(userId, requested, opts);
+  // Channel is central (serving doc §4.1): a site-bound door never settles a channel.
+  if (scope === 'channel') return opts?.siteOrgId ? null : resolveChannelOrg(userId, requested);
   return null;
 }

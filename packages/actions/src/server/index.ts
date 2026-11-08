@@ -2,7 +2,8 @@
 // services; never import it from a client component.
 export { actionStatus, actionStatuses, type StatusContext, type ActionSources } from './status';
 export { performAction, actionInputSchema, RUNNABLE_IDS, type ActorContext } from './run';
-export { resolveActionOrg, resolveChannelOrg, actionOrgId } from './org';
+export { resolveActionOrg, resolveChannelOrg, actionOrgId, type ActionOrgOptions } from './org';
+export { performHubAction, type HubDoorActor } from './hub-door';
 export { actionJsonSchema } from './schema';
 export { actionRoutes, type ActionRoutesOptions, type ActionRouteActor, type ActionCatalogueRow, type ActionRateLimit } from './routes';
 export { dockData, dockStep, dockPost, dockChannel, channelDockPath, postPathSlugs, isDockAction, type DockData, type DockStep, type DockPost, type DockPostAction, type DockChannel, type DockLms, type DockOptions } from './dock';

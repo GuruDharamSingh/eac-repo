@@ -72,6 +72,12 @@ export interface ActionMeta {
   performs?: string;
   /** Choices an author makes in the step. Absent = none. */
   params?: ReadonlyArray<ActionParam>;
+  /**
+   * Performed only through a host's own pages (`via` 'app'), never the HTTP
+   * routes, the dock or an agent; and never a course step (2026-11-08, the hub
+   * card entries: role changes, removals, welcomes).
+   */
+  appOnly?: boolean;
 }
 
 /** What the registry reports about an entry for one person. Same shape as @elkdonis/lms TaskStatus. */

@@ -25,6 +25,7 @@ import type { ActionResult } from '../types';
 import { actionMeta } from '../catalogue';
 import { CHANNEL_OUTLET_IDS } from '../channel';
 import { acceptSuggestion, dismissSuggestion, fillSlot, planStep } from './channel';
+import { HUB_RUNNERS } from './hub-runners';
 
 export interface ActorContext {
   /** users.id of the signed-in person, from the host's verified session. */
@@ -40,6 +41,12 @@ export interface ActorContext {
   orgClaim?: string | null;
   /** Which door performed it, for the audit row: 'app' (a host's server action, the default), 'http' (actionRoutes). */
   via?: string;
+  /**
+   * Set by a site-bound door (performHubAction, 2026-11-08): this host's org. An `org`
+   * entry must act on it, a `thread` entry's post must belong to it, and `channel`
+   * entries are refused (Channel is central). Absent = no site binding (as before).
+   */
+  siteOrgId?: string | null;
   /** A `thread` entry's subject: the post's id, as the caller names it. performAction loads and checks it. */
   subjectId?: string | null;
   /** Set by performAction for a `thread` entry: the post, read from the database. Never from the caller. */
@@ -75,7 +82,7 @@ const hostDoor = (ctx: ActorContext) => (ctx.via ?? 'app') === 'app';
 
 type Allowed = { ok: true } | { ok: false; error: string };
 
-interface Runner<I> {
+export interface Runner<I> {
   /** Absent: the entry takes no input and ignores what it is given. */
   input?: z.ZodType<I>;
   /** Beyond "signed in", which performAction checks for every entry. */
@@ -370,6 +377,9 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
     failure: 'Could not change the plan. Try again.',
     run: (ctx, input) => planStep(ctx, input),
   }),
+
+  // Hub card entries (2026-11-08): ./hub-runners.ts, all appOnly.
+  ...HUB_RUNNERS,
 };
 
 /** The ids that have a runner: the entries a host, a route or a script can perform directly. */
@@ -394,6 +404,18 @@ async function perform(id: string, given: ActorContext, raw: unknown): Promise<{
   let ctx: ActorContext = { ...given, thread: undefined, subjectId: actionMeta(id)?.scope === 'thread' ? given.subjectId : null };
   const r = RUNNERS[id];
   if (!r) return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'unknown' } };
+  const meta = actionMeta(id);
+  // appOnly entries (hub card writes) run only from a host's own pages.
+  if (meta?.appOnly && !hostDoor(given)) {
+    return { ctx, input: raw, result: { ok: false, error: 'This is done from the site’s own pages.', code: 'forbidden' } };
+  }
+  // A site-bound door (siteOrgId): org entries act on the site's org only; no channel entries.
+  if (given.siteOrgId) {
+    if (meta?.scope === 'channel') return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'forbidden' } };
+    if (meta?.scope === 'org' && ctx.orgId !== given.siteOrgId) {
+      return { ctx, input: raw, result: { ok: false, error: 'That organisation isn’t this site’s.', code: 'forbidden' } };
+    }
+  }
   // A `channel` entry asked for an org channel the door did not settle (not an owner or guide there, or `oad`): refuse.
   if (actionMeta(id)?.scope === 'channel' && typeof given.orgClaim === 'string' && given.orgClaim.trim() && !ctx.orgId) {
     return { ctx, input: raw, result: { ok: false, error: 'You do not run that organisation’s channel.', code: 'forbidden' } };
@@ -405,6 +427,9 @@ async function perform(id: string, given: ActorContext, raw: unknown): Promise<{
     if (!subjectId) return { ctx, input: raw, result: { ok: false, error: 'Name the post this acts on.', code: 'input' } };
     const thread = await loadThread(subjectId);
     if (!thread) return { ctx, input: raw, result: { ok: false, error: 'No such post.', code: 'unknown' } };
+    if (given.siteOrgId && thread.orgId !== given.siteOrgId) {
+      return { ctx, input: raw, result: { ok: false, error: 'That post isn’t on this site.', code: 'forbidden' } };
+    }
     ctx = { ...ctx, orgId: thread.orgId, thread };
   }
   const res = await performChecked(id, r, ctx, raw);

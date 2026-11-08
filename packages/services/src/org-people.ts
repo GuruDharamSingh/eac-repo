@@ -1,5 +1,5 @@
 import { db } from '@elkdonis/db';
-import { getOrgRole, setOrgRole, type OrgRole } from './org-membership';
+import { getOrgRole, removeOrgMember, setOrgRole, type OrgRole } from './org-membership';
 import { requestNextcloudSync } from './org-nextcloud-access';
 
 // ============================================================================
@@ -107,9 +107,19 @@ export async function canManageOrgPeople(actorUserId: string, orgId: string): Pr
   return role === 'owner' || role === 'guide';
 }
 
+/**
+ * May this person change other people's role, listing or membership? Owners
+ * only (2026-11-08, Justin: the hub Members spec's roles table). Guides still
+ * see people and arrivals (`canManageOrgPeople`) and may welcome an arrival as
+ * a viewer (`welcomeOrgArrival`); nobody grants owner from here.
+ */
+export async function canChangeOrgPeople(actorUserId: string, orgId: string): Promise<boolean> {
+  return (await getOrgRole(actorUserId, orgId)) === 'owner';
+}
+
 async function guard(orgId: string, targetUserId: string, actorUserId: string): Promise<OrgPeopleResult> {
   if (!targetUserId) return { ok: false, error: 'A person is required.' };
-  if (!(await canManageOrgPeople(actorUserId, orgId))) return { ok: false, error: 'Only owners and guides can change this.' };
+  if (!(await canChangeOrgPeople(actorUserId, orgId))) return { ok: false, error: 'Only owners change roles.' };
   if (targetUserId === actorUserId) return { ok: false, error: "You can't change your own access here." };
   const role = await getOrgRole(targetUserId, orgId);
   if (role === null) return { ok: false, error: "That person isn't in this organisation." };
@@ -161,4 +171,130 @@ export async function setOrgPersonListed(
     RETURNING user_id
   `;
   return rows.length > 0 ? { ok: true } : { ok: false, error: 'That person has no profile on this site to list.' };
+}
+
+
+// ─── Hub Members card (2026-11-08, docs/open/hub-cards-handoff/PLAN.md §2) ───
+
+/** Remove someone from the org: unlisted, membership row gone, storage revoked at the next sync. Owners only. */
+export async function removeOrgPerson(orgId: string, targetUserId: string, actorUserId: string): Promise<OrgPeopleResult> {
+  const allowed = await guard(orgId, targetUserId, actorUserId);
+  if (!allowed.ok) return allowed;
+  await db`UPDATE org_profiles SET is_public = false, updated_at = NOW() WHERE org_id = ${orgId} AND user_id = ${targetUserId}`;
+  await removeOrgMember(targetUserId, orgId);
+  await requestNextcloudSync(orgId, actorUserId, 'removal').catch((err) =>
+    console.error('[org-people] requestNextcloudSync:', err)
+  );
+  return { ok: true };
+}
+
+export interface OrgArrivalQueueItem {
+  /** The oldest open network_arrivals row for this person. */
+  arrivalId: string;
+  userId: string;
+  email: string;
+  displayName: string | null;
+  handle: string | null;
+  fromHost: string | null;
+  fromOrgName: string | null;
+  arrivedAt: string;
+}
+
+/** 42703 = undefined column: migration 258 (network_arrivals handled_at/outcome) not applied yet. */
+const isMissingColumn = (err: unknown) => (err as { code?: string })?.code === '42703';
+
+/**
+ * The arrivals queue, oldest first: signed-in people who came over from another
+ * site and are not yet a member, guide or owner (a self-follow viewer is still
+ * waiting). Rows handled by migration 258's columns drop out; before that
+ * migration every arrival counts as open.
+ */
+export async function listOrgArrivalQueue(orgId: string, limit = 100): Promise<OrgArrivalQueueItem[]> {
+  type Row = { id: string; user_id: string; email: string; display_name: string | null; handle: string | null; from_host: string | null; from_org_name: string | null; arrived_at: Date };
+  const query = (handled: boolean) => db<Row[]>`
+    SELECT DISTINCT ON (a.user_id)
+           a.id::text AS id, a.user_id::text AS user_id, u.email, u.display_name,
+           NULLIF(split_part(u.email, '@', 1), '') AS handle,
+           a.from_host, fo.name AS from_org_name, a.arrived_at
+    FROM network_arrivals a
+    JOIN users u ON u.id = a.user_id
+    LEFT JOIN organizations fo ON fo.id = a.from_org_id
+    LEFT JOIN user_organizations uo ON uo.org_id = a.org_id AND uo.user_id = a.user_id
+    WHERE a.org_id = ${orgId}
+      AND (uo.role IS NULL OR uo.role = 'viewer')
+      ${handled ? db`AND a.handled_at IS NULL` : db``}
+    ORDER BY a.user_id, a.arrived_at ASC
+  `;
+  let rows: Row[];
+  try {
+    rows = await query(true);
+  } catch (err) {
+    if (!isMissingColumn(err)) throw err;
+    rows = await query(false);
+  }
+  return rows
+    .sort((x, y) => new Date(x.arrived_at).getTime() - new Date(y.arrived_at).getTime())
+    .slice(0, limit)
+    .map((r) => ({
+      arrivalId: r.id,
+      userId: r.user_id,
+      email: r.email,
+      displayName: r.display_name,
+      handle: r.handle,
+      fromHost: r.from_host,
+      fromOrgName: r.from_org_name,
+      arrivedAt: new Date(r.arrived_at).toISOString(),
+    }));
+}
+
+async function markArrivalHandled(orgId: string, userId: string, actorUserId: string, outcome: 'welcomed' | 'dismissed'): Promise<boolean> {
+  try {
+    await db`
+      UPDATE network_arrivals SET handled_at = NOW(), handled_by = ${actorUserId}, outcome = ${outcome}
+      WHERE org_id = ${orgId} AND user_id = ${userId} AND handled_at IS NULL
+    `;
+    return true;
+  } catch (err) {
+    if (isMissingColumn(err)) return false;
+    throw err;
+  }
+}
+
+async function loadArrival(orgId: string, arrivalId: string): Promise<{ userId: string } | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(arrivalId)) return null;
+  const [row] = await db<Array<{ user_id: string }>>`
+    SELECT user_id::text AS user_id FROM network_arrivals WHERE id = ${arrivalId} AND org_id = ${orgId} LIMIT 1
+  `;
+  return row ? { userId: row.user_id } : null;
+}
+
+/**
+ * Welcome an arrival with a role. Owners pick viewer, member or guide; guides
+ * welcome as viewer only. They join unlisted, and a storage sync is queued.
+ */
+export async function welcomeOrgArrival(orgId: string, arrivalId: string, actorUserId: string, role: string): Promise<OrgPeopleResult> {
+  if (!ASSIGNABLE_ORG_ROLES.includes(role as OrgRole)) return { ok: false, error: 'Pick viewer, member or guide.' };
+  const actorRole = await getOrgRole(actorUserId, orgId);
+  if (actorRole !== 'owner' && actorRole !== 'guide') return { ok: false, error: 'Only owners and guides welcome arrivals.' };
+  if (actorRole === 'guide' && role !== 'viewer') return { ok: false, error: 'Guides welcome arrivals as viewers; owners give other roles.' };
+  const arrival = await loadArrival(orgId, arrivalId);
+  if (!arrival) return { ok: false, error: 'That arrival is no longer waiting.' };
+  if (arrival.userId === actorUserId) return { ok: false, error: "You can't change your own access here." };
+  const current = await getOrgRole(arrival.userId, orgId);
+  if (current && current !== 'viewer') return { ok: false, error: 'They are already part of this organisation.' };
+  await setOrgRole(arrival.userId, orgId, role as OrgRole);
+  await markArrivalHandled(orgId, arrival.userId, actorUserId, 'welcomed');
+  await requestNextcloudSync(orgId, actorUserId, 'welcome').catch((err) =>
+    console.error('[org-people] requestNextcloudSync:', err)
+  );
+  return { ok: true };
+}
+
+/** Take someone off the arrivals queue without a role. Needs migration 258. */
+export async function dismissOrgArrival(orgId: string, arrivalId: string, actorUserId: string): Promise<OrgPeopleResult> {
+  if (!(await canManageOrgPeople(actorUserId, orgId))) return { ok: false, error: 'Only owners and guides welcome arrivals.' };
+  const arrival = await loadArrival(orgId, arrivalId);
+  if (!arrival) return { ok: false, error: 'That arrival is no longer waiting.' };
+  const done = await markArrivalHandled(orgId, arrival.userId, actorUserId, 'dismissed');
+  return done ? { ok: true } : { ok: false, error: 'Dismissing arrivals needs a database update that is not applied yet.' };
 }

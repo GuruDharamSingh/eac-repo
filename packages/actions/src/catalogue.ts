@@ -8,6 +8,7 @@
 // unchanged (published course versions store them).
 // ============================================================================
 import type { ActionMeta } from './types';
+import { HUB_ACTIONS } from './hub';
 
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
@@ -103,10 +104,12 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
     ...d('channel-plan-step', 'Add or tick a plan step', 'Append a step to a piece’s plan.md, or tick or untick one.', 'channel', 'channel', true, false),
     performs: 'Appends a step to plan.md, or ticks or unticks the step at an index whose text matches what the caller read (a step added since is refused, not mis-ticked). Recorded in the plan’s event log with the actor kind.',
   },
+  // Hub card entries (2026-11-08), kept in ./hub.ts.
+  ...HUB_ACTIONS,
 ];
 
 /** The entries a course step can name: person and org entries (`CourseActionScope`). */
-export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => m.scope === 'person' || m.scope === 'org') as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
+export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => (m.scope === 'person' || m.scope === 'org') && !m.appOnly) as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
 
 const BY_ID = new Map(ACTION_CATALOGUE.map((m) => [m.id, m]));
 
