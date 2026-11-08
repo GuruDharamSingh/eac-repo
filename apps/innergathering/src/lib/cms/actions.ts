@@ -6,7 +6,6 @@ import { nanoid } from "nanoid";
 import {
   getOrgFeed,
   upsertOrgFeed,
-  setOrgRole,
   createCollaborativeDocument,
   createTalkRoom,
   updateProfile,
@@ -14,6 +13,7 @@ import {
   ensureUniqueUserSlug,
   setStandingMeeting,
   setCenterPromo,
+  setOrgPersonRole,
   type OrgRole,
 } from "@elkdonis/services";
 import { audienceToStorage, canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
@@ -522,7 +522,7 @@ export async function saveCenterPromoAction(input: CenterPromoInput | null): Pro
 /**
  * Change a member's role in this org.
  *
- * Delegates to setOrgRole in @elkdonis/services, which is org-scoped by
+ * Delegates to setOrgPersonRole in @elkdonis/services (the shared guard), org-scoped by
  * construction — there is deliberately no path from here to the global
  * users.is_admin superadmin flag.
  */
@@ -537,12 +537,11 @@ export async function setMemberRoleAction(
   if (editor.role !== "owner") {
     return { ok: false, error: "Only the site owner can change roles." };
   }
-  if (userId === editor.userId && role !== "owner") {
-    return { ok: false, error: "You can't remove your own ownership here." };
-  }
-
+  // The shared guard (services/org-people): never yourself, never an owner,
+  // never to owner, and every change queues the Nextcloud sync (2026-11-08).
   try {
-    await setOrgRole(userId, ORG, role);
+    const res = await setOrgPersonRole(ORG, userId, editor.userId, role);
+    if (!res.ok) return { ok: false, error: res.error ?? "Could not change the role." };
     revalidatePath("/manage/people");
     return { ok: true };
   } catch (err) {
