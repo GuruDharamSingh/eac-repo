@@ -151,7 +151,14 @@ export interface HubCardServerDef<FaceData = unknown, DetailData = unknown> {
   id: string;
   /** Face + pop-up data. Computes `can` on the server; the UI never re-derives a gate. */
   load(site: HubSite, viewer: HubViewer): Promise<FaceData>;
-  loadDetail(site: HubSite, viewer: HubViewer, tab: string | null): Promise<DetailData>;
+  loadDetail(site: HubSite, viewer: HubViewer, query: HubDetailQuery): Promise<DetailData>;
+}
+
+/** The detail page's URL state: /hub/<id>?tab=&row=&range=… Values are untrusted strings. */
+export interface HubDetailQuery {
+  tab: string | null;
+  row?: string | null;
+  [key: string]: string | null | undefined;
 }
 
 export function defineHubCard<F, D, H extends HubCardHost = HubCardHost>(def: HubCardDef<F, D, H>): HubCardDef<F, D, H> {

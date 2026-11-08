@@ -16,10 +16,14 @@
     "./site-builder/model": "./src/site-builder/model.ts",
     "./server": "./src/server/index.ts",
     "./hub-cards.css": "./src/theme/hub-cards.css",
-    "./industry.css": "./src/theme/industry.css"
+    "./industry.css": "./src/theme/industry.css",
+    "./server/members": "./src/server/members.ts"
   },
   "dependencies": {
+    "@elkdonis/analytics": "workspace:*",
+    "@elkdonis/db": "workspace:*",
     "@elkdonis/fonts": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "lucide-react": "^0.544.0"
   },
