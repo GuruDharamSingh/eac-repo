@@ -310,6 +310,34 @@ The questions as asked:
 - Hydration: ids from the block or field, never `useId`/random. Server code imports page-builder
   `/config` or `/server` only.
 
+## 11. Status: pass 1 landed in packages (2026-11-08)
+
+Commits on `work/2026-11-08` (all committed by explicit path):
+- Contract and shared types: b601684a, 2e5de4c3 (`@elkdonis/utils/host`).
+- Bone: state and presets f6bf59a2; adapters 0c1f7b30; StudioShell props 1a12e6da.
+- Reminder write: f87c19ec, with the `canRemind` host option in ebb5f284.
+- Code-review fixes 94f20407 (no rooms for drafts, edits during a save, autosave retry, autosave over drafts only).
+- Soft tissue: kinds and rules 79310a21, reviewed in e5f49fbb.
+- Tendons: shell, fields, preview and theme 31267247; harness f8d65307.
+- Review edits and entry points: 11583eb2.
+
+Checks:
+- studio tsc is clean.
+- rules/check.ts passes 173/173.
+- The harness renders 33 pages (`scripts/forms-harness`; canvas ids 1a, 2a, 2b, 1b, 1h, 1i, 1j, 1l, 1m, 1n and blank, each in Broadsheet, no theme and a dark site).
+- The `./forms` bundle has no tiptap.
+
+**Not live yet.** The arts-collective wiring waits for the PM's go:
+- `app/studio/page.tsx`: pass `?focus` and `?preset` to StudioShell.
+- `lib/meeting-actions.ts:78`: forward `opts` to saveMeetingContent.
+- Register `formExtension({ id: 'meeting', schema: gatheringKind, actions: gatheringActions(meetingActions, { canRemind, canNotifyMin }) })`.
+- Supply `canRemind` and `canNotifyMin` per org.
+
+Open items:
+- The Canvas's own "alt required to publish" isn't a form rule yet.
+- Tags, schedule, email switches and the rest are in `deferred` (PLAN §1.6).
+- Reminders for shell orgs need a tick on arts-collective (Justin).
+
 ## 10. Review round 1 (system32-a1, 2026-11-08): all eight notes taken
 
 1. The `service` kind was added (pass 2, "Offering"; HE `service-kind.tsx` is the reference; author = signed-in user).
