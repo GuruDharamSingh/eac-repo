@@ -71,7 +71,9 @@ type FrameProps<T extends React.ElementType> = {
 } & Omit<React.ComponentPropsWithoutRef<T>, 'as' | 'className' | 'children'>;
 
 export function Frame<T extends React.ElementType = 'div'>({ as, elev, className, children, ...rest }: FrameProps<T>) {
-  const Tag = (as ?? 'div') as React.ElementType;
+  // A narrow component type, not React.ElementType: hosts with extra global JSX intrinsics (three/r3f on arts-collective)
+  // otherwise resolve children to never (TS2746).
+  const Tag = (as ?? 'div') as React.ComponentType<{ className?: string; children?: React.ReactNode }>;
   const cls = ['hc-frame', elev ? `hc-elev-${elev}` : '', className].filter(Boolean).join(' ');
   return (
     <Tag className={cls} {...rest}>
