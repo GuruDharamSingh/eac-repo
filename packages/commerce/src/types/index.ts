@@ -263,6 +263,11 @@ export interface CreateArtworkInput {
   priceMinor: number;
   currency?: Currency;
   inventoryQty?: number;
+  /**
+   * A limited edition's size (written to the default variant's
+   * edition_total). Defaults to `inventoryQty`; ignored for other kinds.
+   */
+  editionTotal?: number | null;
   images?: ArtworkMediaInput[];
 }
 
@@ -285,6 +290,11 @@ export interface UpdateArtworkInput {
   priceMinor?: number;
   currency?: Currency;
   inventoryQty?: number;
+  /**
+   * A limited edition's size. When omitted a limited edition keeps the size
+   * it has (or takes `inventoryQty` if it never had one); other kinds have none.
+   */
+  editionTotal?: number | null;
   creditedArtistUserId?: string | null;
   estimateLowMinor?: number | null;
   estimateHighMinor?: number | null;

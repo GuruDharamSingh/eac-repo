@@ -28,6 +28,7 @@ import type {
 } from "../types";
 import { releaseOnPayoutAccountReady } from "./ledger";
 import { requireArtworkAccess, seriesDeskClause } from "./access";
+import { artworkStock, lockArtworks, variantStock } from "./stock";
 import { jsonb } from "./map-order";
 
 type Row = Record<string, unknown>;
@@ -273,6 +274,19 @@ export async function addToCart(input: {
     );
   }
   if (num(variant.inventory_qty) <= 0) throw new Error("This piece is no longer available");
+  // An edition: copies held by unpaid orders are not for sale (./stock.ts).
+  // createOrder re-checks under a lock; this is the early, friendly answer.
+  {
+    const want = input.quantity ?? 1;
+    const s = (await variantStock(db, [input.artworkVariantId])).get(input.artworkVariantId);
+    if (s && s.sellable < want) {
+      throw new Error(
+        s.sellable === 0
+          ? "Every copy is reserved pending payment."
+          : `Only ${s.sellable} ${s.sellable === 1 ? "copy is" : "copies are"} left.`
+      );
+    }
+  }
   if (variant.store_status !== "active") {
     throw new Error("This store is not currently selling.");
   }
@@ -1068,14 +1082,20 @@ export async function createArtwork(
     `) as unknown as Row[];
     const artworkId = artRows[0]!.id as string;
 
-    // Single default variant.
+    // Single default variant. A limited edition records its size: the
+    // number given, else the copies listed (2026-11-08).
+    const inventoryQty = input.inventoryQty ?? 1;
+    const editionTotal =
+      (input.kind ?? "original") === "limited_edition"
+        ? (positiveInt(input.editionTotal) ?? Math.max(inventoryQty, 1))
+        : null;
     await tx`
       INSERT INTO artwork_variant (
-        artwork_id, org_id, label, price_minor, currency, inventory_qty, position,
+        artwork_id, org_id, label, price_minor, currency, inventory_qty, edition_total, position,
         beneficiary_payee_id, beneficiary_scope
       ) VALUES (
         ${artworkId}, ${orgId}, 'Default', ${Math.max(0, Math.round(input.priceMinor))},
-        ${currency}, ${input.inventoryQty ?? 1}, 0,
+        ${currency}, ${inventoryQty}, ${editionTotal}, 0,
         ${input.beneficiaryPayeeId ?? null},
         ${input.beneficiaryPayeeId ? (input.beneficiaryScope ?? "all_proceeds") : null}
       )
@@ -1141,12 +1161,26 @@ export async function updateArtwork(
 
     const touchesVariant =
       input.priceMinor !== undefined || input.inventoryQty !== undefined ||
-      input.currency !== undefined || input.beneficiaryPayeeId !== undefined;
+      input.currency !== undefined || input.beneficiaryPayeeId !== undefined ||
+      input.kind !== undefined || input.editionTotal !== undefined;
     if (touchesVariant) {
+      // edition_total follows the piece's kind (2026-11-08): a limited edition
+      // keeps the size given, else the one it had, else the copies listed;
+      // any other kind has none. The kind is read back from the row above.
+      const editionTotal = positiveInt(input.editionTotal);
       await tx`
         UPDATE artwork_variant SET
           price_minor = COALESCE(${input.priceMinor !== undefined ? Math.max(0, Math.round(input.priceMinor)) : null}, price_minor),
           inventory_qty = COALESCE(${input.inventoryQty ?? null}, inventory_qty),
+          edition_total = CASE
+            WHEN (SELECT kind FROM artwork WHERE id = ${artworkId}) = 'limited_edition'
+            THEN COALESCE(
+              ${editionTotal}::int,
+              edition_total,
+              GREATEST(COALESCE(${input.inventoryQty ?? null}::int, inventory_qty), 1)
+            )
+            ELSE NULL
+          END,
           currency = COALESCE(${input.currency ?? null}, currency),
           beneficiary_payee_id = ${input.beneficiaryPayeeId !== undefined ? input.beneficiaryPayeeId : db`beneficiary_payee_id`},
           beneficiary_scope = ${
@@ -1167,6 +1201,13 @@ export async function updateArtwork(
       await writeProvenance(tx as unknown as typeof db, artworkId, orgId, input.provenance, artistUserId);
     }
   });
+}
+
+/** A whole number above zero, or null. */
+function positiveInt(n: number | null | undefined): number | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  const r = Math.round(n);
+  return r > 0 ? r : null;
 }
 
 function normaliseEstimate(
@@ -1358,6 +1399,51 @@ export async function archiveArtwork(
     RETURNING id
   `) as unknown as Row[];
   if (!rows[0]) throw new Error("Artwork not found or cannot be archived.");
+}
+
+export type ArtworkAvailability = "available" | "reserved" | "sold";
+
+/**
+ * The seller sets a listed piece's availability by hand (2026-11-08): held for
+ * someone off-site, sold elsewhere, or back on sale. Same access as every
+ * other seller write here (`requireArtworkAccess`).
+ *
+ * Only a listed piece (available / reserved / sold) can be set; a draft is
+ * published with {@link publishArtwork}, and a piece the keepers hid stays
+ * hidden. 'available' needs a copy to sell — raise the quantity first. Stock
+ * still drives the status afterwards: an order, payment, cancel or refund on
+ * the piece recomputes it (./stock.ts).
+ */
+export async function setArtworkAvailability(
+  artworkId: string,
+  actorUserId: string,
+  status: ArtworkAvailability
+): Promise<{ status: ArtworkAvailability }> {
+  if (status !== "available" && status !== "reserved" && status !== "sold") {
+    throw new Error("Availability is available, reserved or sold.");
+  }
+  return db.begin(async (tx) => {
+    await requireArtworkAccess(tx as unknown as typeof db, artworkId, actorUserId);
+    await lockArtworks(tx as unknown as typeof db, [artworkId]);
+    const [a] = (await tx`
+      SELECT status, metadata->'hiddenByAdmin' IS NOT NULL AS hidden FROM artwork WHERE id = ${artworkId}
+    `) as unknown as Row[];
+    if (!a) throw new Error("Artwork not found.");
+    if (a.hidden) throw new Error("The marketplace keepers have hidden this piece; ask them to show it again.");
+    const current = a.status as string;
+    if (current !== "available" && current !== "reserved" && current !== "sold") {
+      throw new Error("Only a listed piece can be marked available, reserved or sold. Publish it first.");
+    }
+    if (current === status) return { status };
+    if (status === "available") {
+      const { sellable } = await artworkStock(tx as unknown as typeof db, artworkId);
+      if (sellable <= 0) {
+        throw new Error("No copies are left to sell. Raise the quantity before putting it back on sale.");
+      }
+    }
+    await tx`UPDATE artwork SET status = ${status} WHERE id = ${artworkId}`;
+    return { status };
+  });
 }
 
 // Series workspace: orders, fulfilment, money, artists, visitors (2026-10-28).

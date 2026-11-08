@@ -23,6 +23,7 @@ import type { Address, Order } from "../types";
 import { jsonb, mapOrder, num, type Row } from "./map-order";
 import { HOST_PAYOUT_EMAIL, resolveSettlement, estimateProcessorFeeMinor, type LineSettlement } from "./settlement";
 import { writeEntry } from "./ledger";
+import { lockArtworks, syncArtworkStatus, variantStock } from "./stock";
 
 /**
  * The buyer's choice of where the commission goes (ORG_STORE_BRIEF R3): one or
@@ -114,6 +115,18 @@ const ITEM_JOIN = db`
   JOIN store st ON st.id = a.store_id
   LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
 `;
+
+/**
+ * The reservation row an order line made, for a query joining reservation r,
+ * commerce_order_line l and commerce_order o. A line names its reservation in
+ * its metadata (2026-11-08); a line from before that shares its order's
+ * created_at (both were the creating transaction's NOW()). Either way another
+ * buyer's hold on the same edition is never touched.
+ */
+const OWN_RESERVATION = db`(
+  r.id::text = l.metadata->>'reservationId'
+  OR (l.metadata->>'reservationId' IS NULL AND r.created_at = o.created_at)
+)`;
 
 function rowToItem(r: Row, unitMinor: number, qty: number): SellableItem {
   const via = (r.via_store_id as string | null) ?? null;
@@ -260,6 +273,31 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const status = rail === "etransfer" ? "awaiting_etransfer" : "pending_payment";
 
   const order = await db.begin(async (tx) => {
+    // Stock (./stock.ts). Lock every piece in the order, then count what is
+    // left with the locks held: a second buyer for the same copy waits here
+    // and then sees the first buyer's order as a hold.
+    await lockArtworks(tx as unknown as typeof db, items.map((it) => it.artworkId));
+    const wanted = new Map<string, { qty: number; title: string }>();
+    for (const it of items) {
+      if (!Number.isInteger(it.qty) || it.qty < 1) throw new Error("Each line needs a quantity of at least 1.");
+      const w = wanted.get(it.variantId);
+      wanted.set(it.variantId, { qty: (w?.qty ?? 0) + it.qty, title: it.title });
+    }
+    const stock = await variantStock(tx as unknown as typeof db, [...wanted.keys()]);
+    for (const [variantId, w] of wanted) {
+      const s = stock.get(variantId);
+      const sellable = s?.sellable ?? 0;
+      if (sellable >= w.qty) continue;
+      if (sellable === 0) {
+        throw new Error(
+          s && s.held > 0
+            ? `“${w.title}” is reserved pending payment.`
+            : `“${w.title}” is no longer available.`
+        );
+      }
+      throw new Error(`Only ${sellable} of “${w.title}” ${sellable === 1 ? "is" : "are"} left.`);
+    }
+
     const orderRows = (await tx`
       INSERT INTO commerce_order (
         number, store_id, customer_id, customer_email, customer_name, status,
@@ -295,6 +333,15 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
 
     for (const sp of lineSplits) {
       const it = sp.item;
+      // Hold the copies for the payment window. The order line below IS the
+      // hold that stock counts (./stock.ts); this row is the record of it,
+      // and the line names it so cancel and confirm touch only this order's.
+      const [res] = (await tx`
+        INSERT INTO reservation (artwork_variant_id, cart_id, expires_at, status)
+        VALUES (${it.variantId}, ${input.cartId ?? null}, ${dueAt.toISOString()}, 'active')
+        RETURNING id
+      `) as unknown as Row[];
+
       // The line records what it was, who made it, which front showed it, and
       // which agreement authorised the org's cut — so the settlement can be
       // re-derived years later. A NULL agreement_id is meaningful: nothing
@@ -305,7 +352,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
           description, quantity, unit_price_minor,
           artist_share_minor, gallery_share_minor, currency,
           agreement_id, org_share_percent, payee_org_id, presented_store_id,
-          beneficiary_payee_id, beneficiary_share_minor
+          beneficiary_payee_id, beneficiary_share_minor, metadata
         ) VALUES (
           ${orderId}, ${it.variantId}, ${it.artworkId},
           ${it.makerUserId}, ${it.artOrgId},
@@ -313,16 +360,16 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
           ${sp.makerShareMinor}, ${sp.orgShareMinor}, ${it.currency},
           ${sp.agreementId}, ${sp.orgSharePercent},
           ${sp.payeeOrgId}, ${it.presentedStoreId ?? it.storeId},
-          ${sp.beneficiaryPayeeId}, ${sp.beneficiaryShareMinor}
+          ${sp.beneficiaryPayeeId}, ${sp.beneficiaryShareMinor},
+          ${jsonb({ reservationId: res!.id as string })}
         )
       `;
+    }
 
-      // Hold the piece for the payment window.
-      await tx`
-        INSERT INTO reservation (artwork_variant_id, cart_id, expires_at, status)
-        VALUES (${it.variantId}, ${input.cartId ?? null}, ${dueAt.toISOString()}, 'active')
-      `;
-      await tx`UPDATE artwork SET status = 'reserved' WHERE id = ${it.artworkId}`;
+    // The piece is 'reserved' only once nothing is left to sell (a
+    // one-of-a-kind piece always: its one copy is now held).
+    for (const artworkId of new Set(items.map((it) => it.artworkId))) {
+      await syncArtworkStatus(tx as unknown as typeof db, artworkId, "order");
     }
 
     return orderRow;
@@ -503,12 +550,14 @@ export async function switchOrderToEtransfer(input: {
       WHERE id = ${input.orderId}
       RETURNING *
     `) as unknown as Row[];
-    // Keep the piece held for the new window.
+    // Keep the piece held for the new window (this order's holds only).
     await tx`
       UPDATE reservation r SET expires_at = GREATEST(r.expires_at, ${dueAt.toISOString()}::timestamptz)
       FROM commerce_order_line l
+      JOIN commerce_order o ON o.id = l.order_id
       WHERE l.order_id = ${input.orderId}
         AND r.artwork_variant_id = l.artwork_variant_id
+        AND ${OWN_RESERVATION}
         AND r.status = 'active'
     `;
     return r[0]!;
@@ -549,8 +598,10 @@ export async function recordStripeCheckout(input: {
     await tx`
       UPDATE reservation r SET expires_at = GREATEST(r.expires_at, ${graceUntil}::timestamptz)
       FROM commerce_order_line l
+      JOIN commerce_order o ON o.id = l.order_id
       WHERE l.order_id = ${input.orderId}
         AND r.artwork_variant_id = l.artwork_variant_id
+        AND ${OWN_RESERVATION}
         AND r.status = 'active'
     `;
   });
@@ -655,21 +706,37 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
       ((order.support as { split?: SupportSplit } | null)?.split ?? null) as SupportSplit | null
     );
 
+    // Stock: the copies this order held are now taken. Lock the pieces, take
+    // them off hand, convert this order's holds, then let each piece's
+    // status follow what is left — 'sold' only when no copy remains.
+    // Inventory and reservations only exist for artwork lines; a service or
+    // workshop line has no variant, and these match nothing.
+    const stockArtworkIds = [
+      ...new Set(lineRows.filter((l) => l.artwork_variant_id).map((l) => l.artwork_id as string | null).filter(Boolean)),
+    ] as string[];
+    await lockArtworks(tx as unknown as typeof db, stockArtworkIds);
     for (const l of lineRows) {
-      // Inventory and reservations only exist for artwork lines; a service or
-      // workshop line has no variant, and these match nothing.
+      if (!l.artwork_variant_id) continue;
       await tx`
         UPDATE artwork_variant
         SET inventory_qty = GREATEST(inventory_qty - ${num(l.quantity)}, 0)
         WHERE id = ${l.artwork_variant_id as string}
       `;
-      await tx`UPDATE artwork SET status = 'sold' WHERE id = ${l.artwork_id as string}`;
-      await tx`
-        UPDATE reservation SET status = 'converted'
-        WHERE artwork_variant_id = ${l.artwork_variant_id as string}
-          AND status = 'active'
-      `;
+    }
+    await tx`
+      UPDATE reservation r SET status = 'converted'
+      FROM commerce_order_line l
+      JOIN commerce_order o ON o.id = l.order_id
+      WHERE l.order_id = ${input.orderId}
+        AND r.artwork_variant_id = l.artwork_variant_id
+        AND ${OWN_RESERVATION}
+        AND r.status = 'active'
+    `;
+    for (const artworkId of stockArtworkIds) {
+      await syncArtworkStatus(tx as unknown as typeof db, artworkId, "paid");
+    }
 
+    for (const l of lineRows) {
       const currency = l.currency as string;
       const lineId = l.id as string;
       const makerUserId = (l.artist_user_id as string | null) ?? null;
@@ -1019,19 +1086,27 @@ export async function cancelOrder(input: {
     if (!rows[0]) throw new Error("Order is not in a state where it can be cancelled.");
     const order = rows[0];
 
+    // The status change above is what releases the copies (an order line
+    // only holds stock while its order is unpaid; ./stock.ts). Release this
+    // order's reservation rows — not another buyer's on the same edition —
+    // and put each piece back on sale unless other orders hold every copy.
     const lines = (await tx`
       SELECT artwork_variant_id, artwork_id FROM commerce_order_line
       WHERE order_id = ${input.orderId} AND artwork_variant_id IS NOT NULL
     `) as unknown as Row[];
-    for (const l of lines) {
-      await tx`
-        UPDATE reservation SET status = 'released'
-        WHERE artwork_variant_id = ${l.artwork_variant_id as string} AND status = 'active'
-      `;
-      await tx`
-        UPDATE artwork SET status = 'available'
-        WHERE id = ${l.artwork_id as string} AND status = 'reserved'
-      `;
+    const artworkIds = [...new Set(lines.map((l) => l.artwork_id as string | null).filter(Boolean))] as string[];
+    await lockArtworks(tx as unknown as typeof db, artworkIds);
+    await tx`
+      UPDATE reservation r SET status = 'released'
+      FROM commerce_order_line l
+      JOIN commerce_order o ON o.id = l.order_id
+      WHERE l.order_id = ${input.orderId}
+        AND r.artwork_variant_id = l.artwork_variant_id
+        AND ${OWN_RESERVATION}
+        AND r.status = 'active'
+    `;
+    for (const artworkId of artworkIds) {
+      await syncArtworkStatus(tx as unknown as typeof db, artworkId, "cancelled");
     }
 
     const lotId = ((order.metadata as Record<string, unknown>)?.lotId as string | undefined) ?? null;
@@ -1127,18 +1202,23 @@ export async function refundOrder(input: {
     const lines = (await tx`
       SELECT * FROM commerce_order_line WHERE order_id = ${input.orderId}
     `) as unknown as Row[];
+    // The copies come back on hand; each piece goes back on sale (./stock.ts).
+    const stockArtworkIds = [
+      ...new Set(lines.filter((l) => l.artwork_variant_id).map((l) => l.artwork_id as string | null).filter(Boolean)),
+    ] as string[];
+    await lockArtworks(tx as unknown as typeof db, stockArtworkIds);
     for (const l of lines) {
       if (l.artwork_variant_id) {
         await tx`
           UPDATE artwork_variant SET inventory_qty = inventory_qty + ${num(l.quantity)}
           WHERE id = ${l.artwork_variant_id as string}
         `;
-        await tx`
-          UPDATE artwork SET status = 'available'
-          WHERE id = ${l.artwork_id as string} AND status = 'sold'
-        `;
       }
-
+    }
+    for (const artworkId of stockArtworkIds) {
+      await syncArtworkStatus(tx as unknown as typeof db, artworkId, "refunded");
+    }
+    for (const l of lines) {
       const lineId = l.id as string;
       const currency = l.currency as string;
       const parties: Array<{ party: { kind: "user"; userId: string } | { kind: "org"; orgId: string }; amount: number }> = [];
