@@ -73,9 +73,10 @@ export interface ActionMeta {
   /** Choices an author makes in the step. Absent = none. */
   params?: ReadonlyArray<ActionParam>;
   /**
-   * Performed only through a host's own pages (`via` 'app'), never the HTTP
-   * routes, the dock or an agent; and never a course step (2026-11-08, the hub
-   * card entries: role changes, removals, welcomes).
+   * Performed only through the site-bound hub door (performHubAction: `via` 'app'
+   * plus `siteOrgId`), never a generic runAction endpoint, the HTTP routes, the
+   * dock or an agent; and never a course step (2026-11-08, the hub card entries:
+   * role changes, removals, welcomes).
    */
   appOnly?: boolean;
 }

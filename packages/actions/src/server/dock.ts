@@ -290,6 +290,8 @@ export async function dockData(opts: DockOptions): Promise<DockData | null> {
 export function isDockAction(id: string): boolean {
   const m = actionMeta(id);
   if (!m) return false;
+  // Hub card writes (appOnly) run only through the site-bound hub door, never the dock.
+  if (m.appOnly) return false;
   if (m.scope === 'channel') return CHANNEL_DOCK_ACTIONS.includes(id);
   return m.scope !== 'thread' || id === 'thread-publish' || id === 'thread-pin';
 }

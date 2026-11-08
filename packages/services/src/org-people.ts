@@ -182,6 +182,8 @@ export async function removeOrgPerson(orgId: string, targetUserId: string, actor
   if (!allowed.ok) return allowed;
   await db`UPDATE org_profiles SET is_public = false, updated_at = NOW() WHERE org_id = ${orgId} AND user_id = ${targetUserId}`;
   await removeOrgMember(targetUserId, orgId);
+  // Their open arrivals must not put them back in the waiting queue (no-op before migration 258).
+  await markArrivalHandled(orgId, targetUserId, actorUserId, 'dismissed');
   await requestNextcloudSync(orgId, actorUserId, 'removal').catch((err) =>
     console.error('[org-people] requestNextcloudSync:', err)
   );

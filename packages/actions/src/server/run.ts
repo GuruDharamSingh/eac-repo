@@ -405,8 +405,10 @@ async function perform(id: string, given: ActorContext, raw: unknown): Promise<{
   const r = RUNNERS[id];
   if (!r) return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'unknown' } };
   const meta = actionMeta(id);
-  // appOnly entries (hub card writes) run only from a host's own pages.
-  if (meta?.appOnly && !hostDoor(given)) {
+  // appOnly entries (hub card writes) run only through the site-bound hub door:
+  // a host's own pages (via 'app') AND a site binding, which only performHubAction
+  // sets. A generic runAction endpoint or the dock (via 'app', no siteOrgId) is refused.
+  if (meta?.appOnly && (!hostDoor(given) || !given.siteOrgId)) {
     return { ctx, input: raw, result: { ok: false, error: 'This is done from the site’s own pages.', code: 'forbidden' } };
   }
   // A site-bound door (siteOrgId): org entries act on the site's org only; no channel entries.

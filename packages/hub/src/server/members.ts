@@ -70,7 +70,8 @@ interface Built {
 
 async function build(site: HubSite, viewer: HubViewer): Promise<Built> {
   const role: HubRole = viewer.role ?? 'viewer';
-  const isOwner = role === 'owner' || viewer.isNetworkAdmin;
+  // The services guard requires an org owner; a network admin who isn't one sees it read-only.
+  const isOwner = role === 'owner';
   const storageCap = await capabilityOn(site, 'nextcloud_access', {
     granted: GRANTED_CAPABILITIES,
     hasGrant: (orgId, key) => hasOrgGrant(orgId, key as 'nextcloud_access'),
@@ -239,6 +240,6 @@ export const membersServer = defineHubCardServer<MembersFaceData, MembersDetailD
 
 /** Whether the org has shared storage the Permissions tab should show (owners + nextcloud_access grant). */
 export async function membersStorageOn(site: HubSite, viewer: HubViewer): Promise<boolean> {
-  if (!(viewer.role === 'owner' || viewer.isNetworkAdmin)) return false;
+  if (viewer.role !== 'owner') return false;
   return Boolean(await getNextcloudAccessOverview(site.orgId).catch(() => null)) && (await hasOrgGrant(site.orgId, 'nextcloud_access'));
 }
