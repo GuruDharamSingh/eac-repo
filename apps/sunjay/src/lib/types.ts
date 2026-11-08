@@ -20,6 +20,8 @@ export interface Thread {
   feedSlug: string | null;
   status: string;
   visibility: string;
+  /** threads.min_role: lowest org role that may read it (visibility INVITE_ONLY). */
+  minRole: string | null;
   /** threads.body — rich text HTML. */
   description: string | null;
   excerpt: string | null;

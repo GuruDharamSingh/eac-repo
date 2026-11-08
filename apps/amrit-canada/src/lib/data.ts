@@ -47,7 +47,7 @@ const ORG = siteConfig.orgId;
 // this site doesn't use), so the hero image rides in metadata rather than
 // costing a migration for one nullable text field.
 const THREAD_COLUMNS = db`
-  t.id, t.title, t.slug, t.kind, t.section, t.status, t.visibility,
+  t.id, t.title, t.slug, t.kind, t.section, t.status, t.visibility, t.min_role,
   t.body AS description, t.excerpt,
   t.metadata->>'coverImageUrl' AS cover_image_url,
   t.metadata->>'timeZone' AS time_zone,
@@ -81,6 +81,7 @@ interface ThreadRow {
   section: string | null;
   status: string;
   visibility: string;
+  min_role: string | null;
   description: string | null;
   excerpt: string | null;
   cover_image_url: string | null;
@@ -119,6 +120,7 @@ function mapThread(row: ThreadRow): Thread {
     feedSlug: row.section,
     status: row.status,
     visibility: row.visibility,
+    minRole: row.min_role,
     description: row.description,
     excerpt: row.excerpt,
     coverImageUrl: row.cover_image_url,
@@ -289,14 +291,13 @@ async function withTerms(thread: Thread | null): Promise<Thread | null> {
  * Whether the current visitor may read a thread by its visibility. Until
  * 2026-10-03 getThreadBySlug returned any published thread to anyone, so a
  * members-only (ORGANIZATION) post opened by direct URL. Rows with a minimum
- * role (INVITE_ONLY, migration 188) are not offered by this app's form and stay
- * author/admin-only here.
+ * role (INVITE_ONLY, migration 188, e.g. "members only") follow that role.
  */
 async function mayRead(thread: Thread): Promise<boolean> {
   const viewer = await getViewer().catch(() => null);
   const isGlobalAdmin = viewer ? await isAdmin(viewer.userId).catch(() => false) : false;
   return canViewThread(
-    { visibility: thread.visibility, minRole: null, authorId: thread.authorId, status: thread.status },
+    { visibility: thread.visibility, minRole: thread.minRole, authorId: thread.authorId, status: thread.status },
     { userId: viewer?.userId ?? null, role: (viewer?.role as ThreadRole | null) ?? null, isGlobalAdmin }
   );
 }

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { meetsMinRole, type ThreadRole } from "@elkdonis/services/thread-audience";
 import { createThreadAdminRoutes, getStandingMeetingId } from "@elkdonis/services";
 import { getGathering, getOrgFeed, getWorkshopOfferingById } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
@@ -39,6 +40,8 @@ export async function GET(
     (published && thread.visibility === "PUBLIC") ||
     // A follower (viewer role) reads ORGANIZATION threads too — decision 6.
     (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isAffiliate)) ||
+    // A minimum role (INVITE_ONLY, e.g. "members only") reads for that role and above.
+    (published && thread.visibility === "INVITE_ONLY" && Boolean(thread.minRole) && meetsMinRole((viewer?.role as ThreadRole | null) ?? null, thread.minRole)) ||
     Boolean(viewer?.canEdit);
   // 404 rather than 403: an unpublished item should not confirm it exists.
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
