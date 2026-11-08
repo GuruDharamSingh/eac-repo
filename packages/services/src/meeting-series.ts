@@ -8,7 +8,7 @@ import { checkRsvpEligibility, countConfirmedRsvps, deleteRsvp, setRsvpStatus } 
 import { SERIES_KIND, SERIES_SESSION_KIND } from './thread-kinds';
 import { getOrgRole } from './org-membership';
 import { canViewThread, type ThreadRole } from './thread-audience';
-import { createTalkRoom } from './nextcloud';
+import { createTalkRoom, talkRoomPolicy } from './nextcloud';
 import type { MeetingMaterial } from './standing-meeting';
 
 /**
@@ -1950,7 +1950,12 @@ export async function ensureSeriesTalkRoom(input: {
   const [actor] = await db<Array<{ nextcloud_user_id: string | null }>>`
     SELECT nextcloud_user_id FROM users WHERE id = ${input.actorUserId}
   `;
-  const token = await createTalkRoom(series.title, 'public', { moderator: actor?.nextcloud_user_id ?? null, listable: 1 });
+  const [org] = await db<Array<{ nextcloud_circle_id: string | null }>>`
+    SELECT nextcloud_circle_id FROM organizations WHERE id = ${input.orgId}
+  `;
+  // Public series: public and listable as before. Members-only: unlisted, and circle-only when the org has one.
+  const policy = talkRoomPolicy(series.visibility, series.min_role, org?.nextcloud_circle_id);
+  const token = await createTalkRoom(series.title, policy.type, { moderator: actor?.nextcloud_user_id ?? null, listable: policy.listable, circle: policy.circle });
   if (!token) throw new SeriesError('The Talk room could not be created.');
   const [stored] = await db<Array<{ nextcloud_talk_token: string }>>`
     UPDATE threads SET nextcloud_talk_token = COALESCE(nextcloud_talk_token, ${token}), updated_at = NOW()

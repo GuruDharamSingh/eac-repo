@@ -4,7 +4,7 @@ import { createThread } from './posts';
 import { canModerateOrg, statusForNewThread } from './moderation';
 import { listOrgFeeds, getOrgFeed } from './org-feeds';
 import { assignMeetingRole, clearMeetingRole, getMeetingRota, listRotaCandidates } from './meeting-rota';
-import { createCollaborativeDocument, createTalkRoom } from './nextcloud';
+import { createCollaborativeDocument, createTalkRoom, syncTalkRoomAudience, talkRoomPolicy } from './nextcloud';
 import { ensureOrgCalendar, getOrgCalendarUri, pushThreadToCalendar, removeThreadFromCalendar } from './org-calendar';
 import { removeThreadAs } from './thread-admin';
 import { validTimeZone } from './meeting-series';
@@ -393,14 +393,23 @@ async function attachRooms(orgId: string, threadId: string, title: string, input
   const wantTalk = Boolean(input.createTalkRoom) && !input.meetingUrl;
   const wantDoc = Boolean(input.createDocument);
   if (!wantTalk && !wantDoc) return warnings;
-  const [current] = await db<Array<{ nextcloud_talk_token: string | null; document_url: string | null; nc: string | null }>>`
-    SELECT t.nextcloud_talk_token, t.document_url, u.nextcloud_user_id AS nc
-    FROM threads t JOIN users u ON u.id = t.author_id WHERE t.id = ${threadId}
+  const [current] = await db<Array<{ nextcloud_talk_token: string | null; document_url: string | null; nc: string | null; visibility: string; min_role: string | null; circle: string | null }>>`
+    SELECT t.nextcloud_talk_token, t.document_url, u.nextcloud_user_id AS nc,
+           t.visibility, t.min_role, o.nextcloud_circle_id AS circle
+    FROM threads t JOIN users u ON u.id = t.author_id
+    LEFT JOIN organizations o ON o.id = t.org_id
+    WHERE t.id = ${threadId}
   `;
+  if (wantTalk && current?.nextcloud_talk_token) {
+    // Already has one: if the audience has narrowed since, make it unlisted / circle-only.
+    await syncTalkRoomAudience(current.nextcloud_talk_token, current.visibility, current.min_role, current.circle);
+  }
   if (wantTalk && !current?.nextcloud_talk_token) {
     try {
-      // Public (type 3): joinable from a link without an account. The author moderates it.
-      const token = await createTalkRoom(title, 'public', { moderator: current?.nc ?? null, listable: 1 });
+      // Public thread: a public, listable room (type 3; guests join from the link).
+      // Anything else: unlisted, and restricted to the org circle when there is one.
+      const policy = talkRoomPolicy(current?.visibility, current?.min_role, current?.circle);
+      const token = await createTalkRoom(title, policy.type, { moderator: current?.nc ?? null, listable: policy.listable, circle: policy.circle });
       if (token) await db`UPDATE threads SET nextcloud_talk_token = ${token} WHERE id = ${threadId}`;
       else warnings.push('The Talk room could not be created.');
     } catch (err) {

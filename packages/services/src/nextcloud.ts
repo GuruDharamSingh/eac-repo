@@ -353,7 +353,7 @@ export async function uploadFile(
 export async function createTalkRoom(
   name: string,
   type: 'group' | 'public' = 'public',
-  opts: { moderator?: string | null; listable?: 0 | 1 | 2 } = {}
+  opts: { moderator?: string | null; listable?: 0 | 1 | 2; circle?: string | null } = {}
 ): Promise<string | null> {
   try {
     // `format=json` is load-bearing: OCS answers in XML by default, so without
@@ -389,6 +389,54 @@ export async function createTalkRoom(
 }
 
 /**
+ * How a thread's Talk room is made, from who may read the thread.
+ * PUBLIC: unchanged (a public, listable room: guests join from the link).
+ * Anything else: never listable. With an org Circle and an audience the whole
+ * circle may see (followers / members), a private group room (type 2, so no
+ * guest access) whose participants are the circle. Otherwise (narrower
+ * audiences, or no circle) a non-listable link-only room: the join link is
+ * shown only to RSVP'd people, hosts and editors.
+ */
+export function talkRoomPolicy(
+  visibility: string | null | undefined,
+  minRole: string | null | undefined,
+  orgCircleId: string | null | undefined
+): { type: 'group' | 'public'; listable: 0 | 1; circle: string | null } {
+  if (!visibility || visibility === 'PUBLIC') return { type: 'public', listable: 1, circle: null };
+  const circleOk = Boolean(orgCircleId) && (!minRole || minRole === 'viewer' || minRole === 'member');
+  return circleOk
+    ? { type: 'group', listable: 0, circle: orgCircleId! }
+    : { type: 'public', listable: 0, circle: null };
+}
+
+/**
+ * Bring an EXISTING room in line with a thread's current audience (for
+ * example after public -> members): make it unlisted, and where the policy
+ * restricts it to a circle, drop guest access (DELETE /public) and add the
+ * circle. Making a room public again is not undone here. Never throws.
+ */
+export async function syncTalkRoomAudience(
+  token: string,
+  visibility: string | null | undefined,
+  minRole: string | null | undefined,
+  orgCircleId: string | null | undefined
+): Promise<void> {
+  const policy = talkRoomPolicy(visibility, minRole, orgCircleId);
+  if (policy.listable !== 0) return;
+  try {
+    if (policy.circle) {
+      await fetch(`${NEXTCLOUD_URL}/ocs/v2.php/apps/spreed/api/v4/room/${encodeURIComponent(token)}/public?format=json`, {
+        method: 'DELETE',
+        headers: { Authorization: `Basic ${auth}`, 'OCS-APIRequest': 'true', Accept: 'application/json' },
+      });
+    }
+    await configureTalkRoom(token, { listable: 0, circle: policy.circle });
+  } catch (err) {
+    console.error(`[talk] could not restrict room ${token}:`, err);
+  }
+}
+
+/**
  * Make `moderator` a real member and moderator of a room, and set how
  * discoverable it is. Exported so an EXISTING room can be repaired too — the
  * rooms made before this existed all have their author as a mere visitor.
@@ -396,7 +444,7 @@ export async function createTalkRoom(
  */
 export async function configureTalkRoom(
   token: string,
-  opts: { moderator?: string | null; listable?: 0 | 1 | 2 } = {}
+  opts: { moderator?: string | null; listable?: 0 | 1 | 2; circle?: string | null } = {}
 ): Promise<void> {
   const base = `${NEXTCLOUD_URL}/ocs/v2.php/apps/spreed/api/v4/room/${encodeURIComponent(token)}`;
   const headers = {
@@ -432,6 +480,19 @@ export async function configureTalkRoom(
       }
     } catch (err) {
       console.error(`[talk] could not make ${opts.moderator} a moderator of ${token}:`, err);
+    }
+  }
+
+  if (opts.circle) {
+    // Restrict a members-only room to the org's Nextcloud Circle (Team). The
+    // circle's single id is what Talk takes as `newParticipant` for source 'circles'.
+    try {
+      await fetch(`${base}/participants?format=json`, {
+        method: 'POST',
+        ...form({ newParticipant: opts.circle, source: 'circles' }),
+      });
+    } catch (err) {
+      console.error(`[talk] could not add circle ${opts.circle} to ${token}:`, err);
     }
   }
 
