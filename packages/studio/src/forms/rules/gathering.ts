@@ -15,6 +15,15 @@
 // Sections and fields are the gathering schema's (kinds/gathering/schema.ts):
 // the time control is `start_time`, joined to scheduled_at by the When section
 // and by the adapter (forms/adapters/gathering.ts).
+//
+// Series in place (pass 2): the rules above hold for a series too, except the
+// length (a series session is 15 min to 10 h) and the minimum (a series week
+// carries no minimum). The series rules mirror what the series save refuses:
+//   series.weekly        WEEKLY only (adapters/series.ts; SeriesScheduleInput.monthly, meeting-series.ts:1918)
+//   series.duration      saveSeriesSchedule: 15 min to 10 h (meeting-series.ts:1995)
+//   series.sessions-none at least one session that is not skipped (design §7, the brief)
+//   series.public        a series is public (the series reads never check visibility,
+//                        meeting-series.ts:599-611; adapters/series.ts refuses another)
 // ============================================================================
 
 import type { FormRule } from '../contract';
@@ -23,7 +32,9 @@ import {
   datePart,
   isHttpUrl,
   isRepeating,
+  isSeries,
   num,
+  repeatPattern,
   startHasPassed,
   startInstant,
   startTime,
@@ -31,6 +42,7 @@ import {
   trimmed,
   untilInstant,
 } from './answers';
+import { seriesSessions } from './series';
 
 export const GATHERING_RULES: FormRule[] = [
   {
@@ -82,11 +94,56 @@ export const GATHERING_RULES: FormRule[] = [
     fields: ['duration_minutes'],
     section: 'when',
     test: (a) => {
+      if (isSeries(a)) return false; // series.duration
       const d = num(a.duration_minutes);
       return d !== null && (d < 5 || d > 24 * 60);
     },
     message: 'Make it between 5 minutes and 24 hours.',
     short: 'When: the length',
+  },
+  {
+    id: 'series.duration',
+    severity: 'block',
+    fields: ['duration_minutes'],
+    section: 'when',
+    test: (a) => {
+      if (!isSeries(a)) return false;
+      const d = num(a.duration_minutes);
+      return d !== null && (d < 15 || d > 600);
+    },
+    message: 'A session lasts between 15 minutes and 10 hours.',
+    short: 'When: the length of a session',
+  },
+  {
+    id: 'series.weekly',
+    severity: 'block',
+    fields: ['recurrence_pattern'],
+    section: 'when',
+    test: (a) => isSeries(a) && repeatPattern(a) !== 'WEEKLY',
+    message: 'A series meets every one to four weeks. Pick how often under Repeats.',
+    short: 'When: a series repeats by the week',
+  },
+  {
+    id: 'series.sessions-none',
+    severity: 'block',
+    fields: ['forms.sessions'],
+    section: 'sessions',
+    test: (a) => {
+      if (!isSeries(a)) return false;
+      const rows = seriesSessions(a);
+      return rows.length > 0 && rows.every((r) => r.skipped);
+    },
+    message: 'Every date is skipped. Put one back, or add a session.',
+    short: 'Sessions: every date is skipped',
+  },
+  {
+    id: 'series.public',
+    severity: 'block',
+    fields: ['visibility'],
+    section: 'publishing',
+    test: (a) => isSeries(a) && (text(a.visibility) || 'PUBLIC') !== 'PUBLIC',
+    message: 'A series is public: its page is listed for everyone. Make it Public, or untick “Present it as a series”.',
+    short: 'Publishing: a series is public',
   },
   {
     id: 'gathering.until',
@@ -159,7 +216,8 @@ export const GATHERING_RULES: FormRule[] = [
     fields: ['min_attendees', 'attendee_limit'],
     section: 'rsvp',
     test: (a) => {
-      if (a.is_rsvp_enabled === false) return false;
+      // A series week carries no minimum (meeting-series.ts:1333-1347); the series form draws none.
+      if (a.is_rsvp_enabled === false || isSeries(a)) return false;
       const min = num(a.min_attendees);
       const cap = num(a.attendee_limit);
       return min !== null && cap !== null && min > cap;

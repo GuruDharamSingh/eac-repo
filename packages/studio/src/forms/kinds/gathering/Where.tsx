@@ -14,8 +14,10 @@
 // keeps it in the component, so going back within the session restores it.
 //
 // Copy checked against the code (owner ruling 7, nothing claimed that isn't so):
-//   - the join link is not gated on an RSVP: ThreadSurface.tsx:107-110,241 shows
-//     "Join" to anyone who can see the page, so the hint says only that
+//   - since 53b80e80 the join link (meeting_url, or the Talk token behind
+//     /call/<token>) reaches only people who RSVP'd yes or maybe, the hosts and
+//     the org's editors (services/join-link.ts mayReceiveJoinLink); a series
+//     keeps it in metadata.joinDetails for RSVP'd viewers (meeting-series.ts:485-495)
 //   - a room is made when it goes out (submitted or published), never for a draft
 //     (saveMeetingContent skips attachRooms for status 'draft' since 94f20407),
 //     always public (createTalkRoom(title, 'public'), meeting-content.ts)
@@ -27,8 +29,8 @@ import { whereModeOf, type WhereMode } from '../../adapters/gathering';
 import { text, trimmed } from '../../rules/answers';
 import { Hint, Stack } from '../post/parts';
 
-const LINK_HINT = 'It shows as a Join button on the page.';
-const TALK_HINT = 'A public room is made in Nextcloud when you publish. People join it from the page, no account needed.';
+const LINK_HINT = 'Only people who say they’re coming see the link, and the hosts.';
+const TALK_HINT = 'A public room is made in Nextcloud when you publish. People who say they’re coming join it from the page, no account needed.';
 
 /** Talk room is offered where Nextcloud Talk is wired, and kept visible on a record that already chose it. */
 export function canChooseTalk(a: Answers, ctx: FormContext): boolean {

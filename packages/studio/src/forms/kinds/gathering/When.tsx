@@ -7,6 +7,7 @@
 //   Ends 20:30 · Eastern time (Toronto) · Change
 //   (Repeats)  Every week on Thursday, 8 sessions
 //      Every [week ▾] on Thursdays   [8 sessions | Until a date]
+//      [✓] Present it as a series
 //
 // Every control is the shell's, through field(). The answer keys underneath
 // are content-fields' meeting keys:
@@ -21,9 +22,18 @@
 //   forms.repeat_count  the N (derived back from recurrence_until on load; the adapter
 //                       drops it, DERIVED_FORM_KEYS)
 //
-// Pass 2 seam: "Present it as a series" sets forms.repeat_as_series, which
-// codeKind and label read (rules/answers.ts isSeries). It is not drawn here
-// in pass 1 (schema `deferred`: as-series, sessions, series-page).
+// Series in place (pass 2, PLAN §12): "Present it as a series" sets
+// forms.repeat_as_series (rules/answers.ts isSeries → codeKind 'series', "New
+// series"). It is drawn only on a WEEKLY repeat (a series is weekly, every 1–4
+// weeks: meeting-series.ts:95, :1918) and only before the form has a record
+// (SectionProps.recordId): a saved gathering is a meeting, and an existing
+// series is edited in its planner. As a series:
+//   "Every" offers 1–4 weeks (forms.repeat_every_weeks), the weekday derived
+//   from the first date; "N sessions" counts sessions HELD, so the planner's
+//   skips push the last date out (rules/series.ts withSeriesSchedule); every
+//   schedule edit rebuilds forms.sessions by date.
+// Turning Repeats off unticks it too, so a meeting saved in between can never
+// come back as a series.
 // ============================================================================
 
 import * as React from 'react';
@@ -34,6 +44,7 @@ import {
   durationLabel,
   endTime,
   isRepeating,
+  isSeries,
   joinStart,
   num,
   repeatPattern,
@@ -47,6 +58,7 @@ import {
   zoneLabel,
   zoneOf,
 } from '../../rules/answers';
+import { SERIES_EVERY_WEEKS, canBeSeries, seriesEnds, seriesEveryWeeks, seriesHeldCount, seriesRepeatSummary, withSeriesSchedule } from '../../rules/series';
 import { Cell, Hint, Row, Stack, TextAction, Words } from '../post/parts';
 
 /** The design's seg: 1h | 1½h | 2h | 3h, then Other. */
@@ -57,6 +69,8 @@ const PATTERN_OPTIONS = [
   { value: 'WEEKLY', label: 'week' },
   { value: 'MONTHLY', label: 'month' },
 ];
+
+const EVERY_WEEKS_OPTIONS = SERIES_EVERY_WEEKS.map((n) => ({ value: String(n), label: n === 1 ? 'week' : `${n} weeks` }));
 
 const ORDINAL = ['first', 'second', 'third', 'fourth', 'last'];
 
@@ -78,12 +92,18 @@ export function whenHint(a: Answers, zone: string): string {
   return [end ? `Ends ${end}` : '', zoneLabel(zone)].filter(Boolean).join(' · ');
 }
 
-export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionProps) {
+/** The Repeats switch's line: a series counts held sessions and says "every 2 weeks". */
+export function whenRepeatSummary(a: Answers, ctx: Parameters<typeof repeatSummary>[1]): string {
+  return isSeries(a) ? seriesRepeatSummary(a) : repeatSummary(a, ctx);
+}
+
+export function GatheringWhen({ answers: a, patch, ctx, field, tier, recordId }: SectionProps) {
   const date = datePart(a.scheduled_at);
   const time = startTime(a);
   const zone = zoneOf(a, ctx);
   const duration = num(a.duration_minutes);
   const repeating = isRepeating(a);
+  const series = isSeries(a);
   const quick = tier === 'quick';
 
   const [zoneOpen, setZoneOpen] = React.useState(false);
@@ -93,20 +113,33 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
   const [ends, setEnds] = React.useState<'count' | 'until'>(() =>
     num(a['forms.repeat_count']) === null && datePart(a.recurrence_until) && sessionCount(a, ctx) === null ? 'until' : 'count'
   );
-  const count = num(a['forms.repeat_count']) ?? sessionCount(a, ctx);
+  const count = num(a['forms.repeat_count']) ?? (series ? (seriesEnds(a) === 'until' ? seriesHeldCount(a) : null) : sessionCount(a, ctx));
+
+  /** recurrence_until for "N sessions": a series counts held dates (skips push it out). */
+  const untilFor = (next: Answers, n: number) => (isSeries(next) ? '' : untilForCount(next, ctx, n));
 
   /**
    * Patch, keeping "N sessions" true: when the start, the time or the pattern moves,
-   * the last session's date moves with it.
+   * the last session's date moves with it. A series also rebuilds its session list.
    */
   const apply = (fields: Partial<Answers>) => {
     const next = { ...a, ...fields };
     if (isRepeating(next) && ends === 'count') {
       const n = num(next['forms.repeat_count']) ?? count;
       if (n !== null && n > 0) {
-        fields = { ...fields, 'forms.repeat_count': n, recurrence_until: untilForCount(next, ctx, n) };
+        fields = isSeries(next) ? { ...fields, 'forms.repeat_count': n } : { ...fields, 'forms.repeat_count': n, recurrence_until: untilFor(next, n) };
       }
     }
+    patch(withSeriesSchedule(a, fields));
+  };
+
+  /** "Present it as a series" on or off. */
+  const setSeries = (on: boolean) => {
+    if (on) return patch(withSeriesSchedule(a, { 'forms.repeat_as_series': true, recurrence_pattern: 'WEEKLY' }));
+    // Back to a meeting: it repeats weekly with no interval, so "N sessions" is recounted that way.
+    const fields: Partial<Answers> = { 'forms.repeat_as_series': false };
+    const n = num(a['forms.repeat_count']);
+    if (ends === 'count' && n !== null && n > 0) fields.recurrence_until = untilForCount({ ...a, ...fields }, ctx, n);
     patch(fields);
   };
 
@@ -121,7 +154,7 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
         <Cell flex="1 1 170px">
           {field('scheduled_at', {
             input: 'date',
-            label: 'Date',
+            label: series ? 'First session' : 'Date',
             hideLabel: true,
             required: true,
             value: date,
@@ -158,7 +191,7 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
         </Cell>
         {otherLength && (
           <Cell flex="0 0 120px">
-            {field('duration_minutes', { input: 'number', label: 'Minutes', min: 5, max: 24 * 60, step: 5, placeholder: '45' })}
+            {field('duration_minutes', { input: 'number', label: 'Minutes', min: series ? 15 : 5, max: series ? 600 : 24 * 60, step: 5, placeholder: '45' })}
           </Cell>
         )}
       </Row>
@@ -173,12 +206,12 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
           input: 'toggle',
           label: 'Repeats',
           // The toggle's inline line: "Does not repeat" / "Every week on Thursday, 8 sessions".
-          placeholder: repeatSummary(a, ctx),
+          placeholder: whenRepeatSummary(a, ctx),
           value: repeating,
           onChange: (on) =>
             on
               ? apply({ recurrence_pattern: 'WEEKLY' })
-              : patch({ recurrence_pattern: 'NONE', recurrence_until: '', 'forms.repeat_count': undefined }),
+              : patch({ recurrence_pattern: 'NONE', recurrence_until: '', 'forms.repeat_count': undefined, 'forms.repeat_as_series': false }),
         })}
 
       {!quick && repeating && (
@@ -186,14 +219,23 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
           <Row name="when-cadence" gap={8} align="center">
             <Words>Every</Words>
             <Cell flex="0 0 auto">
-              {field('recurrence_pattern', {
-                input: 'select',
-                label: 'Every',
-                hideLabel: true,
-                options: PATTERN_OPTIONS,
-                value: repeatPattern(a) ?? 'WEEKLY',
-                onChange: (v) => apply({ recurrence_pattern: text(v) }),
-              })}
+              {series
+                ? field('forms.repeat_every_weeks', {
+                    input: 'select',
+                    label: 'Every',
+                    hideLabel: true,
+                    options: EVERY_WEEKS_OPTIONS,
+                    value: String(seriesEveryWeeks(a)),
+                    onChange: (v) => apply({ 'forms.repeat_every_weeks': Number(v) || 1, recurrence_pattern: 'WEEKLY' }),
+                  })
+                : field('recurrence_pattern', {
+                    input: 'select',
+                    label: 'Every',
+                    hideLabel: true,
+                    options: PATTERN_OPTIONS,
+                    value: repeatPattern(a) ?? 'WEEKLY',
+                    onChange: (v) => apply({ recurrence_pattern: text(v) }),
+                  })}
             </Cell>
             {cadenceWords(a) && <Words>{cadenceWords(a)}</Words>}
             <Cell flex="0 1 auto">
@@ -209,10 +251,10 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
                 onChange: (v) => {
                   if (v === 'until') {
                     setEnds('until');
-                    patch({ 'forms.repeat_count': undefined });
+                    patch(withSeriesSchedule(a, { 'forms.repeat_count': undefined }));
                   } else {
                     setEnds('count');
-                    if (count) patch({ 'forms.repeat_count': count, recurrence_until: untilForCount(a, ctx, count) });
+                    if (count) patch(withSeriesSchedule(a, series ? { 'forms.repeat_count': count } : { 'forms.repeat_count': count, recurrence_until: untilFor(a, count) }));
                   }
                 },
               })}
@@ -230,8 +272,8 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
                   value: count ?? '',
                   onChange: (v) => {
                     const n = num(v);
-                    if (n === null || n < 1 || !Number.isInteger(n)) return patch({ 'forms.repeat_count': undefined, recurrence_until: '' });
-                    patch({ 'forms.repeat_count': n, recurrence_until: untilForCount(a, ctx, n) });
+                    if (n === null || n < 1 || !Number.isInteger(n)) return patch(withSeriesSchedule(a, { 'forms.repeat_count': undefined, recurrence_until: '' }));
+                    patch(withSeriesSchedule(a, series ? { 'forms.repeat_count': n } : { 'forms.repeat_count': n, recurrence_until: untilFor(a, n) }));
                   },
                 })}
               </Cell>
@@ -244,11 +286,24 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
                   input: 'date',
                   label: 'Last date',
                   value: datePart(a.recurrence_until),
-                  onChange: (v) => patch({ recurrence_until: untilForDate(text(v)), 'forms.repeat_count': undefined }),
+                  onChange: (v) => patch(withSeriesSchedule(a, { recurrence_until: untilForDate(text(v)), 'forms.repeat_count': undefined })),
                 })}
               </Cell>
             </Row>
           )}
+
+          {canBeSeries(a) && recordId == null &&
+            field('forms.repeat_as_series', {
+              input: 'boolean',
+              label: 'Present it as a series',
+              strong: true,
+              // Series page (series-page.ts listSeriesForPage); the whole run = subscribe
+              // (setSeriesSubscription), single evenings = each week's own RSVP (ensureSeriesSession).
+              hint: 'It gets a series page that lists its sessions. People can sign up for the whole run or RSVP to single evenings.',
+              value: series,
+              onChange: (v) => setSeries(v === true),
+            })}
+          {canBeSeries(a) && recordId != null && <Hint>To make a series, start a new gathering.</Hint>}
         </Stack>
       )}
     </Stack>

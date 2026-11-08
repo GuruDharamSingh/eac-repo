@@ -8,17 +8,25 @@
 // where_mode, start_time, forms.repeat_count, forms.repeat_as_series,
 // forms.loaded_start.
 //
-// Series is derived, never chosen: Repeats on + forms.repeat_as_series makes
-// codeKind 'series' and the label "New series". Pass 1 draws neither the
-// checkbox nor the planner; the seam is rules/answers.ts isSeries(), used
-// here, and the deferred entries as-series / sessions / series-page.
+// Series is derived, never chosen (pass 2, PLAN §12): Repeats on WEEKLY +
+// "Present it as a series" (forms.repeat_as_series, drawn in When for a new
+// gathering) makes codeKind 'series', the label "New series", the Sessions
+// planner after When and the Series page row before Publishing. The answers
+// stay the gathering's keys (specKind 'meeting', so the fields keep their
+// meeting specs) plus forms.repeat_every_weeks, forms.sessions and
+// forms.series_page; adapters/series.ts reads them through rules/series.ts.
+// What a series cannot store is not drawn for one: Hosts, Emails, Materials
+// (schema `when`), the RSVP minimum and closing time, Public | Members.
 // ============================================================================
 
 import { emptyContentAnswers, knownTimeZone, type ContentFieldContext } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormKindSchema } from '../../contract';
-import { isSeries } from '../../rules/answers';
+import { isRepeating, isSeries } from '../../rules/answers';
 import { GATHERING_RULES } from '../../rules/gathering';
+import { seriesHeldCount, seriesPageSummary } from '../../rules/series';
 import type { KindLayout } from '../post/parts';
+import { SeriesPage } from './SeriesPage';
+import { GatheringSessions } from './Sessions';
 import {
   GatheringEmails,
   GatheringHosts,
@@ -57,12 +65,15 @@ export const GATHERING_LAYOUT: KindLayout = {
   rows: [
     // Desktop: one line. 390px: date takes the line, time and the length seg drop under it.
     { section: 'when', row: 'when-start', cells: { scheduled_at: '1 1 170px', start_time: '0 0 132px', duration_choice: '0 1 auto', duration_minutes: '0 0 120px' } },
-    { section: 'when', row: 'when-cadence', cells: { recurrence_pattern: '0 0 auto', 'forms.repeat_ends': '0 1 auto' } },
+    { section: 'when', row: 'when-cadence', cells: { recurrence_pattern: '0 0 auto', 'forms.repeat_every_weeks': '0 0 auto', 'forms.repeat_ends': '0 1 auto' } },
+    // The planner's "Skip dates…": From and To share a line, then wrap under each other at 390px.
+    { section: 'sessions', row: 'sessions-skip', cells: { 'forms.skip_from': '1 1 150px', 'forms.skip_to': '1 1 150px' } },
     { section: 'hosts', row: 'hosts', cells: { host_user_id: '1 1 200px', co_host_user_id: '1 1 200px' } },
     { section: 'rsvp', row: 'rsvp-numbers', cells: { attendee_limit: '1 1 120px', min_attendees: '1 1 120px', rsvp_deadline: '1 1 150px' } },
     { section: 'emails', row: 'emails-reminder', cells: { reminder_on: '0 0 auto', reminder_minutes_before: '0 0 auto' } },
     { section: 'publishing', row: 'goes-on', cells: { feed_slug: '1 1 260px', visibility: '0 1 auto' } },
   ],
+  // The repeat sub-block (cadence, ends, "Present it as a series") keeps its 46px at 390px.
   indents: [{ section: 'when', block: 'repeat', px: 46 }],
 };
 
@@ -70,6 +81,11 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
   id: 'gathering',
   label: (a) => (isSeries(a) ? 'New series' : 'New gathering'),
   codeKind: (a) => (isSeries(a) ? 'series' : 'meeting'),
+  // A series keeps the gathering's keys, so its fields keep the meeting specs (bone, c59dcee7).
+  specKind: () => 'meeting',
+  // No autosave while Repeats is on: an autosaved meeting draft would take away the
+  // series choice (drawn only before there is a record). Series drafts save on Save draft / Publish.
+  autosave: (a) => !isRepeating(a),
   sections: [
     // ── Essentials ──
     { id: 'title', label: 'Title', tier: 'essentials', fields: ['title'], quick: true },
@@ -81,6 +97,16 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       render: 'gatheringWhen',
       quick: true,
     },
+    {
+      // Series only: the list planner (rules/series.ts), after When as the design's rail has it.
+      id: 'sessions',
+      label: 'Sessions',
+      tier: 'essentials',
+      fields: ['forms.sessions'],
+      render: 'gatheringSessions',
+      when: (a) => isSeries(a),
+      done: (a) => seriesHeldCount(a) > 0,
+    },
     { id: 'where', label: 'Where', tier: 'essentials', fields: ['location', 'meeting_url', 'create_talk_room'], render: 'gatheringWhere', quick: true },
     { id: 'description', label: 'Description', tier: 'essentials', fields: ['body'], quick: true },
     // ── More ──
@@ -91,7 +117,8 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       fields: ['host_user_id', 'co_host_user_id'],
       render: 'gatheringHosts',
       summary: hostsSummary,
-      when: (_a, ctx) => hasHosts(ctx),
+      // A series' hosts are set per week in its planner (assignSeriesRole, meeting-series.ts:1493).
+      when: (a, ctx) => hasHosts(ctx) && !isSeries(a),
     },
     {
       id: 'rsvp',
@@ -109,7 +136,9 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       render: 'gatheringEmails',
       summary: (a) => emailsSummary(a),
       // Drawn only when one of its rows works for this org (today: the reminder, where canRemind).
-      when: (_a, ctx) => emailRows(ctx).length > 0,
+      // Not for a series: its letter goes to subscribers N days ahead (metadata.series.reminderDays,
+      // meeting-series.ts:1042), which is not this attendee reminder.
+      when: (a, ctx) => emailRows(ctx).length > 0 && !isSeries(a),
     },
     {
       id: 'cover',
@@ -118,7 +147,27 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       fields: ['cover_image_url'],
       summary: (a) => (typeof a.cover_image_url === 'string' && a.cover_image_url ? 'A cover picture' : 'None yet'),
     },
-    { id: 'materials', label: 'Materials', tier: 'more', fields: ['create_document', 'video_link'], render: 'gatheringMaterials', summary: materialsSummary },
+    {
+      id: 'materials',
+      label: 'Materials',
+      tier: 'more',
+      fields: ['create_document', 'video_link'],
+      render: 'gatheringMaterials',
+      summary: materialsSummary,
+      // A series has no document path, and its recordings are per week (adapters/series.ts).
+      when: (a) => !isSeries(a),
+    },
+    {
+      id: 'seriesPage',
+      label: 'Series page',
+      tier: 'more',
+      fields: ['forms.series_page'],
+      render: 'seriesPage',
+      summary: (a) => seriesPageSummary(a),
+      when: (a) => isSeries(a),
+      // Listed by default, so the row already says something.
+      done: () => true,
+    },
     {
       id: 'publishing',
       label: 'Publishing',
@@ -136,6 +185,8 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
     gatheringEmails: GatheringEmails,
     gatheringMaterials: GatheringMaterials,
     gatheringPublishing: GatheringPublishing,
+    gatheringSessions: GatheringSessions,
+    seriesPage: SeriesPage,
   },
   rules: GATHERING_RULES,
   // README "Interactions": Gathering opens Places and RSVP; a series opens nothing.
@@ -210,8 +261,9 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
     {
       id: 'materials.files',
       label: 'Add files, Add a link',
-      reason: 'A gathering’s save carries no materials (MeetingInput, meeting-content.ts:40-79). The series/meeting materials store is wired with Series in pass 2 (PLAN §1.6, Materials).',
-      pass: 2,
+      reason:
+        'A gathering’s save carries no materials (MeetingInput, meeting-content.ts:40-79), and a new series takes none either: materials are per week (saveSeriesSession.materials, packages/services/src/meeting-series.ts:1167), added in its planner once it exists.',
+      pass: 4,
     },
     {
       id: 'poll',
@@ -219,24 +271,40 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       reason: 'Polls are org-scoped with no thread to attach to (packages/services/src/question-polls.ts:44-51). The attached add-on is pass 3.',
       pass: 3,
     },
-    // ── Series in place (the pass 2 seam: forms.repeat_as_series + isSeries) ──
+    // ── Series in place (pass 2: drawn; what a series cannot store yet) ──
     {
-      id: 'as-series',
-      label: 'Present it as a series',
-      reason: 'A series is saved by the planner, not by this save, which refuses one (meeting-content.ts:482); the composite series-create adapter is pass 2 (PLAN §1.6). Repeats itself works now, on recurrence_pattern / recurrence_until.',
-      pass: 2,
+      id: 'sessions.skip-reason',
+      label: 'Skipped: Christmas Eve (the reason)',
+      reason:
+        'A skip is cancelSeriesSession, which takes no reason (packages/services/src/meeting-series.ts:1603-1608), and series_sessions has no column for one. The row reads "Skipped".',
+      pass: 4,
     },
     {
-      id: 'sessions',
-      label: 'Sessions',
-      reason: 'The session planner (skip, restore, per-session title and note) needs series_sessions rows, which exist only after a series is created (PLAN §1.6, Series in place).',
-      pass: 2,
+      id: 'sessions.off-rule',
+      label: 'Add a session on a date off the schedule',
+      reason:
+        'ensureSeriesSession refuses a date that is not on the series’ rule (packages/services/src/meeting-series.ts:1297) and moveSeriesSession only moves an existing week (:1676). "Add a session" adds the next date on the rule instead.',
+      pass: 4,
     },
     {
-      id: 'series-page',
-      label: 'Series page',
-      reason: 'Listed / slides / featured are series-page settings (saveSeriesPageSettings, packages/services/src/series-page.ts:80), for a series only.',
-      pass: 2,
+      id: 'sessions.renumber',
+      label: 'Skips renumber the sessions',
+      reason:
+        'The server keeps each week’s rule number when another is skipped (stable number, packages/services/src/meeting-series.ts:296; cancelSeriesSession keeps the row, :1603-1622), so the list keeps them too and strikes a skipped one through (bone’s ruling, PLAN §12 deviation).',
+      pass: 4,
+    },
+    {
+      id: 'sessions.calendar',
+      label: 'Planner as a calendar (1d) or a programme (1e)',
+      reason: 'The list planner comes first; the calendar and programme variants are pass 4 (PLAN §1.6, Series in place; §6).',
+      pass: 4,
+    },
+    {
+      id: 'series.rsvp-extras',
+      label: 'A series’ minimum, its notice, RSVPs close, Hosts, Emails, Materials',
+      reason:
+        'A series week carries only its places (ensureSeriesSession copies attendee_limit, packages/services/src/meeting-series.ts:1333-1347); hosts are per week (assignSeriesRole, :1493) and the series letter is metadata.series.reminderDays to subscribers (:1042), not the attendee reminder. Not drawn for a series.',
+      pass: 4,
     },
   ],
   layout: GATHERING_LAYOUT,

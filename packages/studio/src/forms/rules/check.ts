@@ -18,12 +18,26 @@ import {
   GATHERING_REPEAT_SAMPLE,
   GATHERING_SAMPLE,
   GATHERING_SAMPLE_CONTEXT,
+  GATHERING_SERIES_SAMPLE,
   emailsSummary,
   hostsSummary,
   publishingSummary,
   rsvpSummary,
   whenHint,
+  whenRepeatSummary,
 } from '../kinds/gathering';
+import { visibleSections } from '../state';
+import {
+  canBeSeries,
+  rebuildSessions,
+  seriesEveryWeeks,
+  seriesPageSummary,
+  seriesSessions,
+  sessionsSummary,
+  untitledLabel,
+  withSeriesSchedule,
+  type SessionEntry,
+} from './series';
 import {
   durationLabel,
   endTime,
@@ -166,6 +180,79 @@ cases(GATHERING_RULES, 'gathering.min-over-cap', G, g, [
   ['strings from inputs', { min_attendees: '12', attendee_limit: '10' }, true],
 ]);
 
+// ── series in place (pass 2) ─────────────────────────────────────────────────
+
+const S = GATHERING_SERIES_SAMPLE;
+const sessionsOf = (list: SessionEntry[]): Answers => ({ ...S, 'forms.sessions': list });
+const sampleEntries = rebuildSessions(S);
+const unskip = (date: string) => sampleEntries.map((e) => (e.date === date ? { date: e.date } : e));
+
+const rows = seriesSessions(S);
+eq('series sample: ten Thursdays from 19 Nov', [rows.length, rows[0]?.date, rows[9]?.date], [10, '2026-11-19', '2027-01-21']);
+eq('series sample: rule numbers, the skipped keep theirs', rows.map((r) => `${r.number}${r.skipped ? 'x' : ''}`), ['1', '2', '3', '4', '5', '6x', '7x', '8', '9', '10']);
+eq('series sample: the design’s summary line', sessionsSummary(S), '8 sessions · 19 Nov to 21 Jan · 2 dates skipped');
+eq('series sample: the last date is the 8th held Thursday', S.recurrence_until, '2027-01-21T23:59');
+eq('untitled row', untitledLabel(rows[9]!), 'Session 10, no title yet');
+eq('series repeat line', whenRepeatSummary(S, G), 'Every week on Thursday, 8 sessions');
+eq('series repeat line, every 2 weeks', whenRepeatSummary({ ...S, 'forms.repeat_every_weeks': 2 }, G), 'Every 2 weeks on Thursday, 8 sessions');
+
+// "N sessions": a restore keeps 8 held, so the run ends a week sooner and 21 Jan drops off.
+const restored = withSeriesSchedule(S, { 'forms.sessions': unskip('2026-12-24') });
+eq('count mode: restore pulls the end in', restored.recurrence_until, '2027-01-14T23:59');
+eq('count mode: restore, the list', (restored['forms.sessions'] as SessionEntry[]).length, 9);
+eq('count mode: restore, the summary', sessionsSummary({ ...S, ...restored }), '8 sessions · 19 Nov to 14 Jan · 1 date skipped');
+// A skip pushes it out: skipping 7 Jan too makes 21 Jan... 28 Jan the 8th.
+const skipped3 = withSeriesSchedule(S, { 'forms.sessions': sampleEntries.map((e) => (e.date === '2027-01-07' ? { ...e, skipped: true } : e)) });
+eq('count mode: a skip pushes the end out', skipped3.recurrence_until, '2027-01-28T23:59');
+eq('count mode: titles are kept by date', seriesSessions({ ...S, ...skipped3 }).find((r) => r.date === '2027-01-14')?.title, 'Editioning and signing');
+
+// "Until a date": the range stays, skips lower the count.
+const U: Answers = { ...S, 'forms.repeat_count': undefined, recurrence_until: '2027-01-21T23:59' };
+eq('until mode: same ten dates', seriesSessions(U).length, 10);
+eq('until mode: a skip lowers the count', sessionsSummary({ ...U, 'forms.sessions': sampleEntries.map((e) => (e.date === '2027-01-07' ? { ...e, skipped: true } : e)) }), '7 sessions · 19 Nov to 21 Jan · 3 dates skipped');
+eq('open-ended: the first eight', sessionsSummary({ ...S, 'forms.repeat_count': undefined, recurrence_until: '', 'forms.sessions': [] }), 'No last date · the first 8 sessions from 19 Nov');
+
+// Every 2 weeks: the dates move and what is no longer on the rule drops; 31 Dec stays skipped.
+const fortnightly = withSeriesSchedule(S, { 'forms.repeat_every_weeks': 2 });
+eq('every 2 weeks: the dates', seriesSessions({ ...S, ...fortnightly }).slice(0, 4).map((r) => r.date), ['2026-11-19', '2026-12-03', '2026-12-17', '2026-12-31']);
+eq('every 2 weeks: 31 Dec still skipped, 24 Dec gone', seriesSessions({ ...S, ...fortnightly }).filter((r) => r.skipped).map((r) => r.date), ['2026-12-31']);
+eq('every 2 weeks: 8 held end on 11 Mar', fortnightly.recurrence_until, '2027-03-11T23:59');
+eq('not a series: withSeriesSchedule leaves the patch alone', withSeriesSchedule(GATHERING_REPEAT_SAMPLE, { duration_minutes: 90 }), { duration_minutes: 90 });
+
+eq('seriesEveryWeeks reads 1–4 only', [seriesEveryWeeks({ 'forms.repeat_every_weeks': 3 }), seriesEveryWeeks({ 'forms.repeat_every_weeks': '2' }), seriesEveryWeeks({ 'forms.repeat_every_weeks': 5 }), seriesEveryWeeks({})], [3, 2, 1, 1]);
+eq('canBeSeries: weekly only', [canBeSeries({ recurrence_pattern: 'WEEKLY' }), canBeSeries({ recurrence_pattern: 'MONTHLY' }), canBeSeries({ recurrence_pattern: 'DAILY' }), canBeSeries({ recurrence_pattern: 'NONE' })], [true, false, false, false]);
+eq('series page summary', seriesPageSummary(S), 'Listed on Series · colour picked for you');
+eq('series page summary, slides', seriesPageSummary({ 'forms.series_page': { listed: true, slides: true } }), 'Listed on Series and in the slides · colour picked for you');
+eq('series page summary, featured', seriesPageSummary({ 'forms.series_page': { featured: true } }), 'Featured on Series · colour picked for you');
+eq('series page summary, unlisted', seriesPageSummary({ 'forms.series_page': { listed: false } }), 'Not listed on Series · colour picked for you');
+eq('rsvp summary, series', rsvpSummary(S), '24 places each session');
+
+cases(GATHERING_RULES, 'series.sessions-none', G, S, [
+  ['the sample', {}, false],
+  ['until mode, every date skipped', { 'forms.repeat_count': undefined, recurrence_until: '2026-11-26T23:59', 'forms.sessions': [{ date: '2026-11-19', skipped: true }, { date: '2026-11-26', skipped: true }] }, true],
+  ['until mode, one left', { 'forms.repeat_count': undefined, recurrence_until: '2026-11-26T23:59', 'forms.sessions': [{ date: '2026-11-19', skipped: true }] }, false],
+  ['not a series', { 'forms.repeat_as_series': false, 'forms.repeat_count': undefined, recurrence_until: '2026-11-26T23:59', 'forms.sessions': [{ date: '2026-11-19', skipped: true }, { date: '2026-11-26', skipped: true }] }, false],
+]);
+eq('sessions-none: count mode walks past skips, so it never fires', GATHERING_RULES.find((r) => r.id === 'series.sessions-none')!.test(sessionsOf([{ date: '2026-11-19', skipped: true }, { date: '2026-11-26', skipped: true }]), G), false);
+
+cases(GATHERING_RULES, 'series.duration', G, S, [
+  ['2h', { duration_minutes: 120 }, false],
+  ['10 min', { duration_minutes: 10 }, true],
+  ['11 h', { duration_minutes: 660 }, true],
+  ['not a series, 11 h', { 'forms.repeat_as_series': false, duration_minutes: 660 }, false],
+]);
+cases(GATHERING_RULES, 'gathering.duration', G, S, [['a series of 4 min is series.duration’s', { duration_minutes: 4 }, false]]);
+cases(GATHERING_RULES, 'series.weekly', G, S, [
+  ['weekly', {}, false],
+  ['monthly from a preset', { recurrence_pattern: 'MONTHLY' }, true],
+]);
+cases(GATHERING_RULES, 'series.public', G, S, [
+  ['public', {}, false],
+  ['members', { visibility: 'ORGANIZATION' }, true],
+  ['not a series, members', { 'forms.repeat_as_series': false, visibility: 'ORGANIZATION' }, false],
+]);
+cases(GATHERING_RULES, 'gathering.min-over-cap', G, S, [['a series carries no minimum', { min_attendees: 30, attendee_limit: 10 }, false]]);
+
 // ── post rules ───────────────────────────────────────────────────────────────
 
 const P = POST_SAMPLE_CONTEXT;
@@ -245,7 +332,16 @@ eq(
 );
 eq('labels', [postKind.label(p), gatheringKind.label(g), gatheringKind.label({ ...GATHERING_REPEAT_SAMPLE, 'forms.repeat_as_series': true })], ['New post', 'New gathering', 'New series']);
 eq('codeKind', [gatheringKind.codeKind(GATHERING_REPEAT_SAMPLE), gatheringKind.codeKind({ ...GATHERING_REPEAT_SAMPLE, 'forms.repeat_as_series': true })], ['meeting', 'series']);
-eq('defaultOpen', [postKind.defaultOpen(p), gatheringKind.defaultOpen(g)], [['alsoOn'], ['rsvp']]);
+eq('defaultOpen', [postKind.defaultOpen(p), gatheringKind.defaultOpen(g), gatheringKind.defaultOpen(S)], [['alsoOn'], ['rsvp'], []]);
+eq('series sample is ready', issueIds(gatheringKind, S, G), []);
+eq('a series keeps the meeting specs', gatheringKind.specKind?.(S), 'meeting');
+eq('no autosave while Repeats is on', [gatheringKind.autosave?.(g), gatheringKind.autosave?.(GATHERING_REPEAT_SAMPLE), gatheringKind.autosave?.(S)], [true, false, false]);
+eq(
+  'series sections: Sessions after When, Series page before Publishing; no Hosts, Emails, Materials',
+  visibleSections(gatheringKind, S, G).map((s) => s.id),
+  ['title', 'when', 'sessions', 'where', 'description', 'rsvp', 'cover', 'seriesPage', 'publishing']
+);
+eq('a gathering draws no series sections', visibleSections(gatheringKind, GATHERING_REPEAT_SAMPLE, G).map((s) => s.id).filter((id) => id === 'sessions' || id === 'seriesPage'), []);
 
 for (const schema of [postKind, gatheringKind] as FormKindSchema[]) {
   const ids = schema.sections.map((s) => s.id);

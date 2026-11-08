@@ -5,13 +5,16 @@
 // Materials, Publishing, with their closed-row summaries. Design: README §4.
 //
 // Only what saves today is drawn (owner ruling 7); the rest is in the
-// schema's `deferred` with the code that shows why.
+// schema's `deferred` with the code that shows why. As a series (pass 2), the
+// Hosts, Emails and Materials rows are not drawn at all (schema `when`; hosts
+// and materials are per week, the subscriber letter is not this reminder) and
+// Places and RSVP keeps only the places.
 // ============================================================================
 
 import * as React from 'react';
 import type { Answers, FormContext, SectionProps } from '../../contract';
-import { datePart, dayLabel, isRepeating, num, text, timeOf, trimmed } from '../../rules/answers';
-import { Cell, GoesOnFields, Hint, Row, Stack, Words, hostCandidatesOf, placementSummary } from '../post/parts';
+import { datePart, dayLabel, isRepeating, isSeries, num, text, timeOf, trimmed } from '../../rules/answers';
+import { Cell, GoesOnFields, Hint, Row, Stack, Words, hostCandidatesOf, placementSummary, visibilityOf } from '../post/parts';
 
 // ── Hosts ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +45,15 @@ export function hostsSummary(a: Answers, ctx: FormContext): string {
 // ── Places and RSVP ──────────────────────────────────────────────────────────
 
 export function GatheringRsvp({ answers: a, field, ctx }: SectionProps) {
+  // A series: every week thread is made RSVP-on with the series' places (meeting-series.ts:1333-1347);
+  // the minimum, its notice and one closing time have nowhere to go on a weekly run (adapters/series.ts).
+  if (isSeries(a)) {
+    return (
+      <Row name="rsvp-numbers" gap={14} align="flex-start">
+        <Cell flex="0 1 180px">{field('attendee_limit', { input: 'number', label: 'Places', min: 1, placeholder: '', hint: 'For each session. Empty means no cap.' })}</Cell>
+      </Row>
+    );
+  }
   const on = a.is_rsvp_enabled !== false;
   return (
     <Stack gap={18}>
@@ -61,8 +73,9 @@ export function GatheringRsvp({ answers: a, field, ctx }: SectionProps) {
 
 /** "24 places · closes when it starts"; with the warning, the design's "Needs 12 to go ahead, but only 10 places". */
 export function rsvpSummary(a: Answers): string {
-  if (a.is_rsvp_enabled === false) return 'No RSVPs';
   const cap = num(a.attendee_limit);
+  if (isSeries(a)) return cap !== null ? `${cap} ${cap === 1 ? 'place' : 'places'} each session` : 'No cap on places';
+  if (a.is_rsvp_enabled === false) return 'No RSVPs';
   const min = num(a.min_attendees);
   if (cap !== null && min !== null && min > cap) return `Needs ${min} to go ahead, but only ${cap} ${cap === 1 ? 'place' : 'places'}`;
   const deadline = text(a.rsvp_deadline);
@@ -185,7 +198,11 @@ export function materialsSummary(a: Answers, ctx: FormContext): string {
 // ── Publishing ───────────────────────────────────────────────────────────────
 
 export function GatheringPublishing(props: SectionProps) {
-  return <GoesOnFields {...props} label="Goes on" network />;
+  // A series is public: the series reads never check visibility (loadSeries, meeting-series.ts:599-611;
+  // listSeriesRows, series-page.ts:110-115), so the adapter refuses anything else. The seg stays
+  // only while a preset or an earlier choice left it non-public, so it can be put right here.
+  const fixedPublic = isSeries(props.answers) && visibilityOf(props.answers) === 'PUBLIC';
+  return <GoesOnFields {...props} label="Goes on" network hideVisibility={fixedPublic} />;
 }
 
 export function publishingSummary(a: Answers, ctx: FormContext): string {
