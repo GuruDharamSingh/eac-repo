@@ -14,6 +14,7 @@
 // ============================================================================
 
 import type * as React from 'react';
+import type { CommonIconName, HostLinks, IconMap, StudioLinkRequest } from '@elkdonis/utils/host';
 import type { StudioResult } from '../types';
 
 export type Answers = Record<string, unknown>;
@@ -175,20 +176,15 @@ export interface CardRendererProps {
 }
 export type CardRenderer = (props: CardRendererProps) => React.ReactNode;
 
-export interface StudioHrefOptions {
-  kind: FormKindId;
-  id?: string;
-  preset?: string;
-  focus?: boolean;
-  org?: string | null;
-}
+/** A Studio link from the forms: the shared request, with the forms' kind. */
+export type StudioHrefOptions = StudioLinkRequest & { kind: FormKindId };
 
-/** Everything that differs between hosts. Nothing in forms assumes a route or a table. */
-export interface FormHost {
-  /** The authoring Studio on this host: /studio on arts-collective, /publish on hidden-enneagram. */
-  studioHref(o: StudioHrefOptions): string;
-  /** The published item's public page. */
-  viewHref?(kind: FormKindId, record: unknown): string | null;
+/**
+ * Everything that differs between hosts. Nothing in forms assumes a route or a table.
+ * The links (studioHref: /studio on arts-collective, /publish on hidden-enneagram;
+ * viewHref; loginHref; studioPaths for the frame check) come from the shared HostLinks.
+ */
+export interface FormHost extends HostLinks {
   preview: {
     /** The site's own cards; unset kinds fall back to the cms-ui surface cards. */
     cards?: Partial<Record<FormKindId | 'series', CardRenderer>>;
@@ -230,14 +226,12 @@ export type FrameMessage = { source: typeof FRAME_MESSAGE_SOURCE } & (
 
 // ── theme (PLAN §5) ─────────────────────────────────────────────────────────
 
-/** Icon names the forms ask for; a theme maps them onto its library (Phosphor duotone, lucide…). */
+/** Icon names the forms ask for: the shared set plus the forms' own. A theme maps them onto its library. */
 export type FormIconName =
-  | 'back' | 'caret' | 'clock' | 'preset' | 'done' | 'empty' | 'error' | 'warning' | 'close' | 'plus' | 'minus'
-  | 'drag' | 'focal' | 'upload' | 'library' | 'camera' | 'image' | 'page' | 'public' | 'members' | 'date'
-  | 'skip' | 'restore' | 'place' | 'link' | 'talk' | 'questions' | 'poll' | 'attach' | 'preview' | 'previewOff'
-  | 'expand' | 'external' | 'copy' | 'check' | 'spinner' | 'person' | 'list' | 'more';
+  | CommonIconName
+  | 'preset' | 'drag' | 'focal' | 'page' | 'skip' | 'restore' | 'place' | 'talk' | 'questions' | 'poll' | 'attach';
 
-export type FormIconMap = Record<FormIconName, React.ComponentType<{ size?: number; className?: string }>>;
+export type FormIconMap = IconMap<FormIconName, React.ComponentType<{ size?: number; className?: string }>>;
 
 export interface FormTheme {
   id: string;

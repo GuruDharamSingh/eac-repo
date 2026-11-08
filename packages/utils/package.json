@@ -11,7 +11,8 @@
     "./wiki-render": "./src/wiki-render.ts",
     "./html-to-text": "./src/html-to-text.ts",
     "./sanitize-email": "./src/sanitize-email.ts",
-    "./essay": "./src/essay.ts"
+    "./essay": "./src/essay.ts",
+    "./host": "./src/host.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
