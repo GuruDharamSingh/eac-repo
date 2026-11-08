@@ -1,0 +1,94 @@
+/*
+  @elkdonis/studio/forms/broadsheet.css — the Broadsheet theme for the forms.
+  Source: docs/open/publishing-forms-handoff/README.md "Design tokens" and
+  _ds/broadsheet-…/styles.css. One theme among many: nothing here is read by a
+  component; it only redefines --frm-* under [data-form-theme="broadsheet"],
+  on the forms root or on any wrapper above it.
+
+  Font: Source Serif 4 (400, 600, italic 400). The host loads it (Google Fonts
+  or @elkdonis/fonts); a quoted stack cannot be stored in site_themes, so it
+  lives here and not in a hook.
+
+  Contrast, WCAG 2.1, measured on bg #f3f2f2 / surface #eae9e9 (2026-11-08):
+    text #201e1d on bg 14.86, on surface 13.70
+    muted n700 #605d5d on bg 5.83, on surface 5.38
+    accent-ink a700 #006786 on bg 5.72, on surface 5.28   (small cyan text)
+    tag accent a800 #004961 on a100 #e9f8ff 9.10
+    tag neutral n800 #444141 on n100 #f8f4f4 9.26
+    danger-ink a2-700 #aa0b56 on bg 6.50, on a2-100 6.62
+    alert a2-800 #790e3d on a2-100 #fff1f4 9.85
+    error border a2 #d6006c on surface 4.25            (non-text, passes 3:1)
+    warning icon a2-600 #d82071 on bg 4.31             (non-text, passes 3:1)
+    accent icon #0088b0 on bg 3.65                      (non-text, passes 3:1)
+    press fill a700 #006786 under bg ink 5.72
+  Below the bar, kept because the design is final (flagged to the owner):
+    accent-on: bg #f3f2f2 on accent #0088b0 3.65 — Publish, the selected seg
+      option and other 13–14px text on the cyan fill miss 4.5:1.
+    hover fill a600 #1186ac under bg ink 3.74.
+    control line (text 16% = #d1d0d0) on surface 1.27, on bg 1.38 — input
+      edges miss the 3:1 non-text bar; the surface fill is the cue.
+    warning border a2-400 #ff90b1 on surface 1.75 (an icon and a message
+      carry the warning too).
+    empty-status icon n500 #9b9797 on bg 2.59 (the label carries it).
+    switch track off n400 #bab6b6 on bg 1.80 (the knob position carries it).
+*/
+
+[data-form-theme='broadsheet'].frm,
+[data-form-theme='broadsheet'] .frm {
+  /* the published palette */
+  --frm-bg: #f3f2f2;
+  --frm-surface: #eae9e9;
+  --frm-text: #201e1d;
+  --frm-strong: #444141; /* neutral-800 */
+  --frm-muted: #605d5d; /* neutral-700 */
+  --frm-faint: #9b9797; /* neutral-500 */
+  --frm-placeholder: #605d5d; /* the DS says text 65% (#676564 on surface); n700 is its nearest step */
+  --frm-divider: #d1d0d0; /* --color-divider: text 16% over bg, pinned */
+  --frm-control-line: #d1d0d0;
+  --frm-control-hover: #8f8d8c; /* .input:hover, text 45% over surface, pinned */
+  --frm-track-off: #bab6b6; /* neutral-400 */
+  --frm-tag-bg: #f8f4f4; /* neutral-100 */
+  --frm-tag-ink: #444141; /* neutral-800 */
+  --frm-hover: rgba(32, 30, 29, 0.07); /* .btn-secondary:hover, text 7% */
+  --frm-hover-soft: rgba(32, 30, 29, 0.05); /* More rows, text 5% */
+  --frm-press: rgba(32, 30, 29, 0.14);
+  --frm-media-bg: #d7d3d3; /* neutral-300 under the dot screen */
+  --frm-media-dot: rgba(32, 30, 29, 0.2);
+  --frm-color-scheme: light;
+
+  /* cyan, the accent: --color-accent and its 100–900 ramp */
+  --frm-accent: #0088b0;
+  --frm-accent-on: #f3f2f2; /* the design's bg-coloured text on the fill (see above) */
+  --frm-accent-hover: #1186ac; /* accent-600 */
+  --frm-accent-press: #006786; /* accent-700, also "Publishing…" */
+  --frm-accent-ink: #006786; /* accent-700: "any small text in cyan" */
+  --frm-accent-soft: #e9f8ff; /* accent-100: tag-accent, the active Preview toggle */
+  --frm-accent-soft-ink: #004961; /* accent-800 */
+  --frm-accent-soft-line: #99e0ff; /* accent-300 */
+  --frm-ghost-ink: #006786; /* ghost buttons are small cyan text, so accent-700 */
+  --frm-ghost-hover: rgba(0, 136, 176, 0.1); /* .btn-ghost:hover, accent 10% */
+  --frm-focus: #0088b0;
+
+  /* magenta, accent-2: Broadsheet's problems colour */
+  --frm-danger: #d6006c; /* accent-2: error borders and icons */
+  --frm-danger-ink: #aa0b56; /* accent-2-700: error text, flagged rail items */
+  --frm-danger-soft: #fff1f4; /* accent-2-100: the alert */
+  --frm-danger-soft-ink: #790e3d; /* accent-2-800 */
+  --frm-warn: #d82071; /* accent-2-600: the warning icon */
+  --frm-warn-line: #ff90b1; /* accent-2-400: the warning border */
+
+  /* radius 1 / 2 / 4, shadows md and lg */
+  --frm-radius-control: 2px;
+  --frm-radius-panel: 4px;
+  --frm-radius-mark: 2px;
+  --frm-shadow-panel: 0 3px 10px rgba(45, 43, 43, 0.16);
+  --frm-shadow-pop: 0 12px 32px rgba(45, 43, 43, 0.22);
+
+  /* Source Serif 4 for everything, headings at 600 */
+  --frm-font-body: 'Source Serif 4', system-ui, sans-serif;
+  --frm-font-heading: 'Source Serif 4', system-ui, sans-serif;
+  --frm-heading-weight: 600;
+  --frm-label-weight: 600;
+  --frm-title-size: 34px;
+  --frm-title-size-sm: 27px;
+}
