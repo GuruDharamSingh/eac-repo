@@ -6,7 +6,7 @@
 //   [Place | Online link | Talk room]
 //   Place        the address, plus "Also online" (a link beside it = hybrid)
 //   Online link  the joining link
-//   Talk room    a sentence: the room is made on save, public, joined from the page
+//   Talk room    a sentence: the room is made on publish, public, joined from the page
 //
 // `where_mode` is the seg's answer key (forms/adapters/gathering.ts whereModeOf /
 // resolveGatheringAnswers map it onto format, location, meeting_url and
@@ -16,8 +16,9 @@
 // Copy checked against the code (owner ruling 7, nothing claimed that isn't so):
 //   - the join link is not gated on an RSVP: ThreadSurface.tsx:107-110,241 shows
 //     "Join" to anyone who can see the page, so the hint says only that
-//   - a room is made on any save, draft included (saveMeetingContent →
-//     attachRooms, meeting-content.ts:506), always public (:403)
+//   - a room is made when it goes out (submitted or published), never for a draft
+//     (saveMeetingContent skips attachRooms for status 'draft' since 94f20407),
+//     always public (createTalkRoom(title, 'public'), meeting-content.ts)
 // ============================================================================
 
 import * as React from 'react';
@@ -27,7 +28,7 @@ import { text, trimmed } from '../../rules/answers';
 import { Hint, Stack } from '../post/parts';
 
 const LINK_HINT = 'It shows as a Join button on the page.';
-const TALK_HINT = 'A public room is made in Nextcloud when you save. People join it from the page, no account needed.';
+const TALK_HINT = 'A public room is made in Nextcloud when you publish. People join it from the page, no account needed.';
 
 /** Talk room is offered where Nextcloud Talk is wired, and kept visible on a record that already chose it. */
 export function canChooseTalk(a: Answers, ctx: FormContext): boolean {

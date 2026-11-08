@@ -41,7 +41,7 @@ export function hostsSummary(a: Answers, ctx: FormContext): string {
 
 // ── Places and RSVP ──────────────────────────────────────────────────────────
 
-export function GatheringRsvp({ answers: a, field }: SectionProps) {
+export function GatheringRsvp({ answers: a, field, ctx }: SectionProps) {
   const on = a.is_rsvp_enabled !== false;
   return (
     <Stack gap={18}>
@@ -53,7 +53,8 @@ export function GatheringRsvp({ answers: a, field }: SectionProps) {
           <Cell flex="1 1 150px">{field('rsvp_deadline', { input: 'datetime', label: 'RSVPs close', placeholder: 'When it starts', hint: 'Empty means when it starts.' })}</Cell>
         </Row>
       )}
-      {on && num(a.min_attendees) !== null && field('notify_on_min_attendees', { input: 'toggle', label: 'Tell me when the minimum is reached' })}
+      {/* Mailed only where the site's RSVP route sends it (adapters/gathering.ts canNotifyMin). */}
+      {on && num(a.min_attendees) !== null && ctx.fields.canNotifyMin === true && field('notify_on_min_attendees', { input: 'toggle', label: 'Tell me when the minimum is reached' })}
     </Stack>
   );
 }

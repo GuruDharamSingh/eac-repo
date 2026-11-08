@@ -51,6 +51,13 @@ export function resolveGatheringAnswers(a: Answers): { answers: Answers; dropped
   if (typeof a.start_time === 'string' && /^\d{2}:\d{2}$/.test(a.start_time) && typeof a.scheduled_at === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(a.scheduled_at)) {
     out.scheduled_at = `${a.scheduled_at}T${a.start_time}`;
   }
+  // A "last date" with no time means the end of that day, in the gathering's zone. Read as
+  // midnight, it drops that day's own session from the reminders (attendee-reminders.ts:108)
+  // and the calendar's UNTIL; convert.ts toAnswers slices a stored until back to a date on
+  // load, so an untouched re-save would lose it again without this.
+  if (typeof out.recurrence_until === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(out.recurrence_until)) {
+    out.recurrence_until = `${out.recurrence_until}T23:59`;
+  }
   const formKeys = Object.keys(out).filter((k) => k === 'forms' || k.startsWith('forms.'));
   for (const k of ['where_mode', 'start_time', ...formKeys]) delete out[k];
   // Keys that are UI state already translated into stored columns are not "lost": no warning.
@@ -85,6 +92,12 @@ export interface GatheringAdapterOptions {
    * would send it (owner ruling 7). The host knows which site serves the org.
    */
   canRemind?: (orgId: string) => boolean;
+  /**
+   * Whether "Tell me when the minimum is reached" is mailed for this org: only the RSVP routes
+   * of amrit-canada (:208), elktours (:208), sunjay (:212) and innergathering (:252) send it;
+   * arts-collective sends nothing. Default no, as with canRemind.
+   */
+  canNotifyMin?: (orgId: string) => boolean;
 }
 
 export function gatheringActions(actions: MeetingActions, opts: GatheringAdapterOptions = {}): FormActions<MeetingRecordView> {
@@ -101,7 +114,13 @@ export function gatheringActions(actions: MeetingActions, opts: GatheringAdapter
   return {
     async context(orgId) {
       const c = await context(orgId);
-      return { ...fieldContext(c), canEdit: c.canEdit, reason: c.reason, canRemind: opts.canRemind ? opts.canRemind(orgId) : false };
+      return {
+        ...fieldContext(c),
+        canEdit: c.canEdit,
+        reason: c.reason,
+        canRemind: opts.canRemind ? opts.canRemind(orgId) : false,
+        canNotifyMin: opts.canNotifyMin ? opts.canNotifyMin(orgId) : false,
+      };
     },
     async load(id) {
       const record = await actions.loadMeeting(id);
