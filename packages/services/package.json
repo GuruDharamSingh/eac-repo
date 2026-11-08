@@ -21,7 +21,8 @@
     "./paath-day": "./src/paath-day.ts",
     "./video-render": "./src/video-render.ts",
     "./businesses": "./src/businesses.ts",
-    "./featured-people": "./src/featured-people.ts"
+    "./featured-people": "./src/featured-people.ts",
+    "./series-form": "./src/series-form.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
