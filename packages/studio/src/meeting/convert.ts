@@ -87,6 +87,8 @@ export function toInput(a: Answers, kind: MeetingInputView['kind'], askHosts: bo
     // undefined = the form had no hosting fields; "" = "Nobody".
     ...(askHosts && a.host_user_id !== undefined ? { hostUserId: str(a.host_user_id) } : {}),
     ...(askHosts && a.co_host_user_id !== undefined ? { coHostUserId: str(a.co_host_user_id) } : {}),
+    // undefined = the form has no reminder control, so the stored value is kept.
+    ...(a.reminder_minutes_before !== undefined ? { reminderMinutesBefore: optNum(a.reminder_minutes_before) } : {}),
   };
 }
 
@@ -123,6 +125,7 @@ export function toAnswers(r: MeetingRecordView, ctx: ContentFieldContext): Answe
     create_document: Boolean(i.createDocument),
     ...(i.hostUserId !== undefined ? { host_user_id: i.hostUserId } : {}),
     ...(i.coHostUserId !== undefined ? { co_host_user_id: i.coHostUserId } : {}),
+    ...(i.reminderMinutesBefore !== undefined ? { reminder_minutes_before: i.reminderMinutesBefore } : {}),
   };
 }
 

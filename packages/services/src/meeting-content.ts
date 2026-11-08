@@ -70,6 +70,12 @@ export interface MeetingInput {
   /** Host of the NEXT occurrence. undefined = not asked; "" = nobody. */
   hostUserId?: string;
   coHostUserId?: string;
+  /**
+   * Remind people who said yes this many minutes before each occurrence
+   * (`threads.reminder_minutes_before`, read by attendee-reminders.ts:94).
+   * undefined = not asked (the stored value is kept); null = no reminder.
+   */
+  reminderMinutesBefore?: number | null;
 }
 
 export interface MeetingSummary {
@@ -185,6 +191,7 @@ type Row = {
   rsvp_deadline: Date | null;
   min_attendees: number | null;
   notify_on_min_attendees: boolean;
+  reminder_minutes_before: number | null;
   nextcloud_talk_token: string | null;
   document_url: string | null;
   metadata: Record<string, unknown> | null;
@@ -299,6 +306,7 @@ export async function loadMeetingContent(viewerId: string, id: string): Promise<
       createDocument: Boolean(row.document_url),
       hostUserId,
       coHostUserId,
+      reminderMinutesBefore: row.reminder_minutes_before ?? null,
     },
   };
 }
@@ -322,6 +330,8 @@ async function validate(orgId: string, input: MeetingInput): Promise<string | nu
   if (!httpUrl(input.meetingUrl)) return 'The joining link must start with https://';
   if (!httpUrl(input.videoLink)) return 'The recording link must start with https://';
   if (input.timeZone && !validTimeZone(input.timeZone)) return 'Pick a time zone from the list.';
+  const r = input.reminderMinutesBefore;
+  if (r != null && (!Number.isInteger(r) || r < 5 || r > 14 * 24 * 60)) return 'A reminder goes out between 5 minutes and two weeks before.';
   if (input.section) {
     const feed = await getOrgFeed(orgId, input.section).catch(() => null);
     if (!feed) return 'That page does not exist on this site.';
@@ -367,6 +377,9 @@ async function writeColumns(threadId: string, orgId: string, input: MeetingInput
       rsvp_deadline     = ${rsvp ? (input.rsvpDeadline ?? null) : null},
       min_attendees     = ${rsvp ? (input.minAttendees ?? null) : null},
       notify_on_min_attendees = ${rsvp && input.minAttendees ? Boolean(input.notifyOnMinAttendees) : false},
+      reminder_minutes_before = CASE WHEN ${input.reminderMinutesBefore !== undefined}::boolean
+                                     THEN ${input.reminderMinutesBefore ?? null}::int
+                                     ELSE reminder_minutes_before END,
       metadata          = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl' - 'timeZone') || ${db.json(meta)},
       published_at      = CASE WHEN ${status} = 'published' AND published_at IS NULL THEN NOW() ELSE published_at END,
       updated_at        = NOW()

@@ -35,6 +35,8 @@ export interface MeetingInputView {
   createDocument?: boolean;
   hostUserId?: string;
   coHostUserId?: string;
+  /** Minutes before each occurrence that people who said yes are reminded. undefined = not asked; null = none. */
+  reminderMinutesBefore?: number | null;
 }
 
 export interface MeetingSummaryView {
