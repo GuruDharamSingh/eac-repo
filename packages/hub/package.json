@@ -18,7 +18,10 @@
     "./hub-cards.css": "./src/theme/hub-cards.css",
     "./industry.css": "./src/theme/industry.css",
     "./server/members": "./src/server/members.ts",
-    "./server/site-builder": "./src/server/site-builder.ts"
+    "./server/site-builder": "./src/server/site-builder.ts",
+    "./review": "./src/review/index.ts",
+    "./review/model": "./src/review/model.ts",
+    "./server/review": "./src/server/review.ts"
   },
   "dependencies": {
     "@elkdonis/analytics": "workspace:*",

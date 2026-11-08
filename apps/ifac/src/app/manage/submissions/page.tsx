@@ -1,45 +1,27 @@
-import {
-  listPendingThreads,
-  listReviewedThreads,
-  orgRequiresReview,
-  listPendingUserPages,
-  orgHostsStorePanels,
-  listPendingListings,
-} from "@elkdonis/services";
+import "@elkdonis/hub/hub-cards.css";
+import "@elkdonis/hub/industry.css";
+import { loadReviewQueue } from "@elkdonis/hub/server/review";
 import { requireIfacManager } from "@/lib/manage-auth";
-import { siteConfig } from "@/config/site";
-import { SubmissionsPanel } from "@/components/manage/submissions-panel";
+import { hubSite, getHubCardViewer } from "@/lib/hub-site";
+import { ReviewDetailMount } from "@/components/hub/hub-card-host";
 
 export const metadata = { title: "Submissions — IFAC" };
 export const dynamic = "force-dynamic";
 
 /**
- * What members have sent in, and whether anything waits at all.
+ * What members have sent in, posts from other network sites asking to show
+ * here, and whether anything waits at all: the shared review queue
+ * (@elkdonis/hub review, 2026-11-08), which replaced this tab's own panel. The
+ * same queue is at /hub/review; this tab redirects there once the old tabs are
+ * retired (PLAN §4).
  *
- * IFAC ships with the thread queue off (migration 156's default) and store
- * panels off (migration 157's default) — this page is usually empty on both
- * counts, which is the point: moderation here is a power to intervene, not a
- * gate everything passes through.
+ * TODO: the old panel's "recently decided" list (listReviewedThreads) is not in
+ * the shared queue yet.
  */
 export default async function ManageSubmissionsPage() {
   await requireIfacManager("/manage/submissions");
-  const [pending, recent, review, pendingPanels, storePanels, pendingListings] = await Promise.all([
-    listPendingThreads(siteConfig.orgId),
-    listReviewedThreads(siteConfig.orgId, 10),
-    orgRequiresReview(siteConfig.orgId),
-    listPendingUserPages(siteConfig.orgId),
-    orgHostsStorePanels(siteConfig.orgId),
-    listPendingListings(siteConfig.orgId),
-  ]);
-
-  return (
-    <SubmissionsPanel
-      initialPending={pending}
-      recent={recent}
-      review={review}
-      initialPendingPanels={pendingPanels}
-      storePanels={storePanels}
-      initialPendingListings={pendingListings}
-    />
-  );
+  const viewer = await getHubCardViewer();
+  if (!viewer) return null;
+  const data = await loadReviewQueue(hubSite, viewer, { storePanels: true });
+  return <ReviewDetailMount data={data} backHref="/manage" />;
 }

@@ -42,7 +42,8 @@ import "@elkdonis/hub/hub-cards.css";
 import "@elkdonis/hub/industry.css";
 import { membersServer } from "@elkdonis/hub/server/members";
 import { hubSite, getHubCardViewer } from "@/lib/hub-site";
-import { MembersCardMount } from "@/components/hub/hub-card-host";
+import { MembersCardMount, ReviewCardMount } from "@/components/hub/hub-card-host";
+import { loadReviewQueue } from "@elkdonis/hub/server/review";
 import { KindTilesFace } from "@/components/hub/KindTilesFace";
 import { HelpErrand } from "@/components/hub/HelpErrand";
 import { FilesFace } from "@/components/hub/FilesCard";
@@ -198,6 +199,10 @@ export default async function HubPage({
 
   // Owners and guides get the Members card; it decides everything else from `can`.
   const cardViewer = viewer.canEdit ? await getHubCardViewer() : null;
+  const reviewFace = cardViewer ? await loadReviewQueue(hubSite, cardViewer, { storePanels: true }).catch((err) => {
+    console.error("[hub] review card:", err);
+    return null;
+  }) : null;
   const membersFace = cardViewer ? await membersServer.load(hubSite, cardViewer).catch((err) => {
     console.error("[hub] members card:", err);
     return null;
@@ -352,6 +357,7 @@ export default async function HubPage({
             <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
             {/* The shared Members hub card (pilot, docs/open/hub-cards-handoff/PLAN.md). */}
             {membersFace && <MembersCardMount data={membersFace} />}
+            {reviewFace && <ReviewCardMount data={reviewFace} />}
             {/* Running the site is an editor's errand; the card is theirs only. */}
             {viewer.canEdit && (
               <SurfaceCard

@@ -6,10 +6,11 @@
 
 import { performHubAction } from "@elkdonis/actions/server";
 import { MEMBERS_ACTIONS } from "@elkdonis/hub/members/model";
+import { REVIEW_ACTIONS } from "@elkdonis/hub/review/model";
 import { getServerSession } from "@elkdonis/auth-server";
 import { hubSite } from "@/lib/hub-site";
 
-const ALLOW: readonly string[] = [...MEMBERS_ACTIONS];
+const ALLOW: readonly string[] = [...MEMBERS_ACTIONS, ...REVIEW_ACTIONS];
 
 export async function runHubAction(id: string, input: Record<string, unknown>) {
   const session = await getServerSession();
