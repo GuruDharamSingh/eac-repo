@@ -197,7 +197,7 @@ function threadSelect(userId: string) {
     (SELECT r.status = 'yes' FROM thread_rsvps r WHERE r.thread_id = t.id AND r.user_id = ${userId}) AS viewer_attending,
     (SELECT COALESCE(array_agg(o2.name ORDER BY o2.name), '{}')
        FROM thread_orgs x JOIN organizations o2 ON o2.id = x.org_id
-      WHERE x.thread_id = t.id AND x.org_id <> t.org_id) AS carried_by,
+      WHERE x.thread_id = t.id AND x.org_id <> t.org_id AND x.status = 'approved') AS carried_by,
     a.display_name AS author_name, a.avatar_url AS author_avatar, a.slug AS author_slug
   `;
 }
@@ -226,14 +226,14 @@ async function loadNetwork(orgId: string, userId: string, memberOrgIds: string[]
   const mine = memberOrgIds.length ? db`(t.org_id = ANY(${memberOrgIds}))` : db`FALSE`;
   const rows = await db<ThreadRow[]>`
     SELECT ${threadSelect(userId)},
-           EXISTS (SELECT 1 FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id = ${orgId}) AS carried_here
+           EXISTS (SELECT 1 FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id = ${orgId} AND x.status = 'approved') AS carried_here
     FROM threads t JOIN organizations o ON o.id = t.org_id LEFT JOIN users a ON a.id = t.author_id
     WHERE t.org_id <> ${orgId}
       AND t.status = 'published'
       AND t.kind <> ALL(${OFF_FEED_KINDS})
       AND t.visibility = 'PUBLIC'
       AND (t.share_to_network OR t.pinned
-           OR EXISTS (SELECT 1 FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id = ${orgId}))
+           OR EXISTS (SELECT 1 FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id = ${orgId} AND x.status = 'approved'))
     ORDER BY carried_here DESC, ${mine} DESC, COALESCE(t.published_at, t.created_at) DESC
     LIMIT ${limit}
   `;

@@ -36,6 +36,17 @@ export interface PendingPanel {
   createdAt: string;
 }
 
+/** A post homed on another site asking to show here too (thread_orgs, pending). */
+export interface PendingListingItem {
+  threadId: string;
+  title: string;
+  kind: string;
+  excerpt: string | null;
+  authorName: string | null;
+  homeOrgName: string | null;
+  addedAt: string;
+}
+
 const when = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
@@ -47,13 +58,16 @@ export function SubmissionsPanel({
   review,
   initialPendingPanels,
   storePanels,
+  initialPendingListings = [],
 }: {
   initialPending: Submission[];
   recent: ReviewedSubmission[];
   review: boolean;
   initialPendingPanels: PendingPanel[];
   storePanels: boolean;
+  initialPendingListings?: PendingListingItem[];
 }) {
+  const [pendingListings, setPendingListings] = useState(initialPendingListings);
   const [pending, setPending] = useState(initialPending);
   const [held, setHeld] = useState(review);
   const [pendingPanels, setPendingPanels] = useState(initialPendingPanels);
@@ -114,8 +128,66 @@ export function SubmissionsPanel({
     startTransition(() => {});
   }
 
+  async function decideListing(threadId: string, decision: "approve" | "decline") {
+    const id = `listing:${threadId}`;
+    setBusy(id);
+    const data = await post({ listingThreadId: threadId, listingDecision: decision });
+    setBusy(null);
+    if (!data) return;
+    setPendingListings((list) => list.filter((l) => l.threadId !== threadId));
+    toast.success(decision === "approve" ? "It now shows here too." : "Declined — it stays on its own site only.");
+    startTransition(() => {});
+  }
+
   return (
     <div className="manage-submissions">
+      {pendingListings.length > 0 && (
+        <section className="admin-panel">
+          <h2>
+            From other sites <span className="manage-count">{pendingListings.length}</span>
+          </h2>
+          <p className="body-copy">
+            Members asking to show a post from their own page or another site here too. Nothing shows
+            here until an owner or guide says yes.
+          </p>
+          <ul className="manage-sub-list">
+            {pendingListings.map((l) => {
+              const id = `listing:${l.threadId}`;
+              return (
+                <li key={id} className="manage-sub">
+                  <div className="manage-sub__body">
+                    <p className="manage-sub__meta">
+                      {l.kind} · {l.authorName ?? "Someone"}
+                      {l.homeOrgName ? ` · from ${l.homeOrgName}` : ""} · {when(l.addedAt)}
+                    </p>
+                    <h3 className="manage-sub__title">{l.title}</h3>
+                    {l.excerpt && <p className="manage-sub__excerpt">{l.excerpt}</p>}
+                  </div>
+                  <div className="manage-sub__actions">
+                    <button
+                      type="button"
+                      className="hub-btn"
+                      disabled={busy === id}
+                      onClick={() => void decideListing(l.threadId, "approve")}
+                    >
+                      Show here
+                    </button>
+                    <button
+                      type="button"
+                      className="hub-btn hub-btn--quiet"
+                      disabled={busy === id}
+                      onClick={() => void decideListing(l.threadId, "decline")}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <section className="admin-panel">
         <h2>Before it goes up</h2>
         <p className="body-copy">

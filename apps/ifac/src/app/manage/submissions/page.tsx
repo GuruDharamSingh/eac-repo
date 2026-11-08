@@ -4,6 +4,7 @@ import {
   orgRequiresReview,
   listPendingUserPages,
   orgHostsStorePanels,
+  listPendingListings,
 } from "@elkdonis/services";
 import { requireIfacManager } from "@/lib/manage-auth";
 import { siteConfig } from "@/config/site";
@@ -22,12 +23,13 @@ export const dynamic = "force-dynamic";
  */
 export default async function ManageSubmissionsPage() {
   await requireIfacManager("/manage/submissions");
-  const [pending, recent, review, pendingPanels, storePanels] = await Promise.all([
+  const [pending, recent, review, pendingPanels, storePanels, pendingListings] = await Promise.all([
     listPendingThreads(siteConfig.orgId),
     listReviewedThreads(siteConfig.orgId, 10),
     orgRequiresReview(siteConfig.orgId),
     listPendingUserPages(siteConfig.orgId),
     orgHostsStorePanels(siteConfig.orgId),
+    listPendingListings(siteConfig.orgId),
   ]);
 
   return (
@@ -37,6 +39,7 @@ export default async function ManageSubmissionsPage() {
       review={review}
       initialPendingPanels={pendingPanels}
       storePanels={storePanels}
+      initialPendingListings={pendingListings}
     />
   );
 }

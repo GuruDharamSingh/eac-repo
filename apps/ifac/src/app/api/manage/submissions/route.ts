@@ -5,6 +5,8 @@ import {
   setOrgStorePanels,
   reviewUserPage,
   listPendingUserPages,
+  listPendingListings,
+  reviewListing,
 } from "@elkdonis/services";
 import { getIfacManager } from "@/lib/manage-auth";
 import { siteConfig } from "@/config/site";
@@ -30,6 +32,7 @@ export async function GET() {
   return Response.json({
     pending: await listPendingThreads(siteConfig.orgId),
     pendingPanels: await listPendingUserPages(siteConfig.orgId),
+    pendingListings: await listPendingListings(siteConfig.orgId),
   });
 }
 
@@ -45,6 +48,8 @@ export async function POST(request: Request) {
     panelUserId?: string;
     panelKey?: string;
     panelDecision?: string;
+    listingThreadId?: string;
+    listingDecision?: string;
   };
   try {
     body = await request.json();
@@ -64,6 +69,17 @@ export async function POST(request: Request) {
     const r = await setOrgStorePanels(viewer.userId, siteConfig.orgId, body.storePanels);
     if (r.ok === false) return Response.json({ error: r.error }, { status: 403 });
     return Response.json({ ok: true, storePanels: r.on });
+  }
+
+  // A post from another site asking to show here too (thread_orgs, migration
+  // 261). reviewListing re-checks owner-or-guide of this org.
+  if (body.listingThreadId) {
+    const decision =
+      body.listingDecision === "approve" ? "approve" : body.listingDecision === "decline" ? "decline" : null;
+    if (!decision) return Response.json({ error: "Expected { listingThreadId, listingDecision }" }, { status: 400 });
+    const r = await reviewListing(viewer.userId, body.listingThreadId, siteConfig.orgId, decision);
+    if (!r.ok) return Response.json({ error: r.error }, { status: 400 });
+    return Response.json({ ok: true, status: r.status });
   }
 
   // A decision on a waiting store panel.

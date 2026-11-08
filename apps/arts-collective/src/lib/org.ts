@@ -568,7 +568,7 @@ export async function getThreadOrgs(
       SELECT DISTINCT o.id, o.name, o.slug
       FROM organizations o
       WHERE o.id = (SELECT org_id FROM threads WHERE id = ${threadId})
-         OR o.id IN (SELECT org_id FROM thread_orgs WHERE thread_id = ${threadId})
+         OR o.id IN (SELECT org_id FROM thread_orgs WHERE thread_id = ${threadId} AND status = 'approved')
       ORDER BY o.name
     `;
   } catch {

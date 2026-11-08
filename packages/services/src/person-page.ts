@@ -431,7 +431,7 @@ export async function listMyListablePosts(userId: string, opts: { limit?: number
     const [rows, orgs] = await Promise.all([
       db<Array<{ id: string; title: string; kind: string; org_id: string; org_name: string; published_at: Date | null; listed_on: string[] | null }>>`
         SELECT t.id, t.title, t.kind, t.org_id, o.name AS org_name, t.published_at,
-               ARRAY(SELECT x.org_id FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id <> t.org_id ORDER BY x.org_id) AS listed_on
+               ARRAY(SELECT x.org_id FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id <> t.org_id AND x.status <> 'declined' ORDER BY x.org_id) AS listed_on
         FROM threads t JOIN organizations o ON o.id = t.org_id
         WHERE t.author_id = ${userId}
           AND t.visibility = 'PUBLIC'
