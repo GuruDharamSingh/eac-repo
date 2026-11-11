@@ -453,6 +453,20 @@ export function buildPuckConfig({
       fields.morph = { type: "custom", visible: false, render: () => null } as unknown as (typeof fields)[string];
     }
 
+    // `look` (the canvas's style object on its box, words and picture blocks,
+    // @elkdonis/direct-edit) gets one too, unless a block declares its own.
+    // resolveAllData walks an object prop with no field using the block's own
+    // fields by key: a box's `look.items` (align-items, "center") was read as
+    // the box's `items` slot and threw `h.some is not a function`, so a page
+    // saved from the canvas with aligned items 500ed (hiddenenneagram.com/,
+    // 2026-11-11 21:25 UTC). A custom field does not stop that walk (only an
+    // object field gives it fields of its own), so this is a hidden object
+    // field with none: the walk finds no slot or rich text inside, and the
+    // value passes through untouched.
+    if (!def.props.some((p) => p.name === "look")) {
+      fields.look = { type: "object", objectFields: {}, visible: false } as unknown as (typeof fields)[string];
+    }
+
     components[def.id] = {
       label: def.label,
       fields,

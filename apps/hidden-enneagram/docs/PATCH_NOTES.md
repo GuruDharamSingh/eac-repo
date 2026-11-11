@@ -20,6 +20,12 @@
   `NODE_OPTIONS=--max-old-space-size=3584`, passed. Through the edge: `/`, `/enneagram`, `/readings`, `/about`, `/writing`,
   `/music`, `/about/aeon` 200 (`/` 22,763 bytes, as before); `/studio`, `/studio/home`, `/studio/home/blocks` 307 to login;
   served CSS carries the class twins. Not yet opened signed in.
+- Fix, 17:22 EST rebuild (build `gOu_Jk0nrmPOt8j_70rH3`, backup `~/eac-backups/next/hidden-enneagram-20261111-1720.tgz`): `/` 500ed
+  (`h.some is not a function`) after `puck:home` was saved from the canvas at 21:25 UTC with a box look `items: "center"`;
+  Puck's resolveAllData read it as the box's `items` slot. `buildPuckConfig` gives `look` a hidden object field. After the
+  restart: the stored page renders (`/` 200), `/services/one-on-one-enneagram-reading` carries the record blocks (another
+  session's change, shipped with this build), `/forum` 200, no errors since Ready. Only this row in `site_config` had such a
+  look; sunjay, elktours and innergathering carry the fault until rebuilt with the fix.
 - Tests and open items: `docs/editor.md` "Round 7".
 
 ## 2026-11-08 · Round 6: Puck-first (preview only; live not rebuilt)
