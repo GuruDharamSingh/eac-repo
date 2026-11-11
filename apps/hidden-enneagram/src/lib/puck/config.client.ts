@@ -5,6 +5,8 @@ import { contractOf } from "@elkdonis/blocks/contract";
 import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { buildPuckConfig } from "@elkdonis/page-builder/config";
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
+import { BOX_BLOCKS, BOX_ROOT } from "@elkdonis/direct-edit/puck/blocks";
+import type { Block } from "@elkdonis/blocks";
 import { fontVariables } from "@/lib/fonts";
 import { CATALOGUE } from "@/lib/puck/catalogue";
 import { figurePlacement } from "@/blocks/enneagram-block";
@@ -73,12 +75,23 @@ function CanvasFonts({ children }: { settings: Record<string, unknown>; children
 /** What each block declares: its settings, and its parts to click into (the look layer). */
 export const canvasContract = contractOf(CATALOGUE);
 
-/** The published-shape config the "Edit look" popup draws a block with. */
-export const canvasConfig = buildPuckConfig({ resolvers: clientResolvers, blocks: CATALOGUE, morph: MorphMark, root: { props: [], wrap: CanvasFonts } });
+/**
+ * 2026-11-11 (canvas first): the canvas's own box, words and picture blocks join the
+ * catalogue, so a page laid out in the canvas draws in every editor and on the site.
+ */
+const blocks = [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])];
 
+/**
+ * The published-shape config: the canvas page editor (components/studio/CanvasEditor.tsx)
+ * and the "Edit look" popup draw with it. The canvas is not an iframe: the page's
+ * <html> carries the fonts, so the root is the canvas's own (a page look, a background).
+ */
+export const canvasConfig = buildPuckConfig({ resolvers: clientResolvers, blocks, morph: MorphMark, root: BOX_ROOT });
+
+/** Puck's own editor (/studio/<slug>/blocks): a block's settings when the canvas's right column cannot draw them. */
 export const puckConfig = buildEditorConfig({
   resolvers: clientResolvers,
-  blocks: CATALOGUE,
+  blocks,
   morph: MorphMark,
   root: { props: [], wrap: CanvasFonts },
   media: {

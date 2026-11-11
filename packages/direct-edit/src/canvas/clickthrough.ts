@@ -73,6 +73,8 @@ export interface ClickThroughOptions {
   onMenu?(id: string, el: HTMLElement): void;
   /** Passed to the menu: scrolling in this target leaves it open. */
   menuKeepsOnScroll?(target: Node): boolean;
+  /** A Shift+click on the page while something is selected: what is under the pointer, outermost first (multiple selection, 2026-11-11). Absent: Shift is ignored, as before. */
+  onExtend?(chain: HTMLElement[], ev: MouseEvent): void;
   /** A handle was pressed. */
   onHandle?(ev: PointerEvent, handle: string, el: HTMLElement): void;
   /** The selection was pressed and pulled more than a few px. */
@@ -144,7 +146,7 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
         b.appendChild(s);
       }
       // A box that can be resized wears all four corners; the top left one does nothing, because a box grows from there.
-      if (hs.includes("se")) { const c = document.createElement("span"); c.className = "de-corner nw"; b.appendChild(c); }
+      if (hs.includes("se") && !hs.includes("nw")) { const c = document.createElement("span"); c.className = "de-corner nw"; b.appendChild(c); }
     }
     if (hover && hover !== sel) box(hover, "hov", src.name(hover));
     o.onDraw?.(sel);
@@ -216,6 +218,7 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
     // Held (a preview, a tool): the page stays inert and the selection stays put.
     if (held) { ev.preventDefault(); ev.stopPropagation(); return; }
     const chain = chainFor(ev);
+    if (ev.shiftKey && o.onExtend && sel && chain.length) { ev.preventDefault(); ev.stopPropagation(); o.onExtend(chain, ev); return; }
     if (!chain.length) { select(o.emptyTarget?.(ev.target as Element) ?? null); return; }
     ev.preventDefault();
     ev.stopPropagation();

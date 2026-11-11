@@ -1,13 +1,75 @@
 # The Hidden Enneagram: the editor, the Figure and the house look
 > Re-stood 2026-11-07 in the katie-the-potter / sunjay shape. Log of every fix: `docs/PATCH_NOTES.md`.
 
-Ario's site (hiddenenneagram.com, port 3012, org `hidden-enneagram`). Puck places
-blocks; the look layer (direct-edit) shapes them; Site style sets the whole site.
+Ario's site (hiddenenneagram.com, port 3012, org `hidden-enneagram`). Since 2026-11-11 (round 7, source
+only) the canvas is the page editor: a page is a tree of boxes, words and pictures laid out and restyled
+in place, with the live blocks sealed inside it; Puck's editor opens per sealed block (Settings…) for what the canvas's right column cannot draw. Site style sets the whole site. Rounds 1-6
+below describe the Puck-first editor that came before; their block and page facts still hold.
 The shared kits are the same as katie's: `@elkdonis/page-builder` (server code imports
 `/config` and `/server` only), `@elkdonis/direct-edit`, `@elkdonis/blocks` (+ `/record`),
 `@elkdonis/cms-ui/manage`.
 
-## Three layers, three jobs
+## Round 7 (2026-11-11): canvas first (live since the 2026-11-11 16:08 EST rebuild, build `x1208XcyQNNKDLCCERj2y`)
+
+Direction from the developer (2026-11-11): layout is the canvas's job and must be deeply customisable;
+Puck is for small changes to how one component is used, opened per sealed block; pages are not Puck-first.
+This reverses "Puck places blocks" from the 2026-11-06 editor-house model for this site.
+
+| Address | What it is |
+|---|---|
+| `/studio/<slug>` | The canvas (`components/studio/CanvasEditor.tsx`, `mountTreePage` from `@elkdonis/direct-edit/puck`). Every link and "Edit this page" lands here. |
+| `/studio/<slug>/blocks` | Puck's editor on the whole page (moved from `/studio/<slug>`), with the parts plugin and its Pages tab. Kept as a fallback; nothing in the canvas links to it since step 2. |
+
+- **Step 2, Puck per sealed block (2026-11-11):** a sealed block's **Settings…** (right column, or right-click) opens
+  that one block in Puck's editor over the canvas (`openBlockSettings`, `packages/page-builder/src/block-settings.tsx`):
+  the block selected, Puck's fields on the right, its live preview in the middle; drawer, drag, duplicate, delete and
+  insert off; the canvas paused. **Apply** hands the props back as one undo step (resolver keys removed); the canvas
+  then resolves the block again where it sits (`withProps` + `resolveAllData` in `CanvasEditor.tsx`) and keeps each
+  settings' rows so undo and redo draw the right ones (direct-edit `editSettings`). **Cancel** changes nothing.
+  Verified 2026-11-11 in the same isolated test page (real `CanvasEditor`, save stubbed): the services shelf's
+  heading changed in Puck, applied, drawn with its real service card; undo, redo, Cancel; saved props carry the new
+  heading and `blkStyle`, no `items`; no page errors; the earlier drag/Add/save pass unchanged. Puck's left rail
+  (Blocks, Outline) still shows, inert for adding. Not verified: signed in, a rows prop (reading steps, works) edited
+  this way, a resolver change of source (shelf → feed) drawn after Apply.
+
+- **Step 3, Figma basics (2026-11-11; direct-edit `designTools`, on here, opt-in):** Shift+click adds a box to the
+  selection or takes it out (the box beside the selection under the pointer); the panel for several offers Align in
+  parent (Start, Centre, End, Fill), Width / Height of the first, Spread across the parent (`justify: space-between`
+  on a stack parent), Group in a row / column (same parent only) and Delete; Delete key removes all; a plain click
+  selects one again. Eight resize handles: top and left pull the other way (a box is capped at its parent's width).
+  Resizing snaps a moving edge to the neighbours' and the parent's inner edges, or a size to a neighbour's, within
+  6 px, with a red guide and "snapped" in the size tag; Alt or Ctrl pulls free. Still stacks and grids only; a drag
+  moves only the first selected box. Verified 2026-11-11 in the test page: 8 handles; left handle in 60 px →
+  371 to 311 px; right edge 4 px short of the column edge snapped to it (guide shown, removed on release);
+  Shift+click → "2 selected", Centre → both `align-self: center`, Group in a column → both in a new box, saved;
+  steps 1 and 2 passes unchanged; no page errors. Not verified: signed in, touch (no Shift there), selections
+  across different parents beyond the disabled buttons.
+- **Word blocks become boxes.** Welcome, Opening, Passage and Glow (`he-welcome`, `he-hero`, `he-passage`,
+  `he-orb`) open in the canvas as the boxes they draw, same tags and classes (`lib/puck/boxify.ts`); a
+  block's generic Style (`blkStyle`) moves to its outer box. Visitors see no change until Save. A block with
+  a part look (`morph`) stays sealed (its look cannot carry over yet).
+- **Kept sealed:** every block that draws a record or does something (figure, shelf, service, post, person,
+  forum, course, contact, reading, music web, works) and `he-type` (its popup reads the row's data attributes).
+- **Add** (right-click → Add): Box, Words, Picture, then the four as starting layouts (boxes, new ids each
+  time; `presets` option of the tree editor), then the sealed blocks. The four are not offered sealed.
+- **`he-sigil`** (new block, "The figure (ornament)"): the Opening's drawn figure, which cannot be copied into boxes.
+- **CSS:** each `[data-*]` rule of those blocks has a class twin (`he-side-yes`, `he-links-aside`, `he-width-reading`,
+  `he-drop`, `he-size-small`), at the same specificity (`:is()`), in `app/site.css`. Rich text in boxes keeps
+  b, i, u, links and lists: `<em>`/`<strong>` become `<i>`/`<b>` (twin rules added), and the Opening's lit
+  phrase is the title's `<i>` (drawn in the accent, upright).
+- **Published root:** box blocks are in both configs; `lib/puck/page-root.tsx` draws the canvas root only when a
+  page sets a look or background on it, so stored pages publish the markup they did.
+- Code tab off (`developer: false`). Detach stays offered on sealed blocks (the tree editor's `developer`
+  switch hides only the Code tab): open item.
+- Verified 2026-11-11 (isolated, no DB writes): tsc 0 (app, direct-edit); 27 word blocks on the default pages and
+  the live `puck:home` render the same markup as boxes after `cleanBoxDoc` (attribute order and the listed tag
+  swaps aside); the four pages as blocks and as boxes in headless Chrome with the live site's CSS plus this
+  `site.css`: every element at the same position and size at 1280 and 390 px, pixels equal except animated
+  glow/figure frames; the real `CanvasEditor` mounted on the boxed home page (save stubbed): layer tree, a heading
+  dragged between boxes and saved, Add rows as above, no page errors. Not verified: signed in on the preview or live,
+  a real save, the template pages (`service`, `post`, `person`) in the canvas, touch.
+
+## Three layers, three jobs (rounds 1-6, Puck Studio; now at /studio/<slug>/blocks)
 
 | Layer | Changes | Where | Stored as |
 |---|---|---|---|

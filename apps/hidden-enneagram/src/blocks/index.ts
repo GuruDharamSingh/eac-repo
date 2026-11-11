@@ -23,6 +23,8 @@
 //   Round 6 (2026-11-08, Puck-first):
 //   he-post        The post in the address: title, date, author, cover, text (smart; the /<feed>/<slug> template)
 //                  (he-person's "page" shape is the /about/<slug> template)
+//   2026-11-11 (canvas first):
+//   he-sigil       The figure as ornament, for pages laid out as boxes (lib/puck/boxify.ts)
 //
 // Styles: components/aeon/aeon.css + sound.css, components/reading/reading.css,
 // components/music/music.css, imported at the ROOT (app/globals.css) so Puck's
@@ -42,9 +44,10 @@ import { heType } from "./type-chapter";
 import { heContact, heForum, hePerson } from "./records";
 import { heService } from "./service";
 import { hePost } from "./post";
+import { heSigil } from "./sigil";
 
-export { heHero, hePassage, heEnneagram, heReading, heMusicWeb, heCourse, heWelcome, heOrb, heWorks, heShelf, heType, heContact, heForum, hePerson, heService, hePost };
+export { heHero, hePassage, heEnneagram, heReading, heMusicWeb, heCourse, heWelcome, heOrb, heWorks, heShelf, heType, heContact, heForum, hePerson, heService, hePost, heSigil };
 
 export const SITE_BLOCKS = [
-  heWelcome, heHero, hePassage, heEnneagram, heType, heShelf, heService, hePost, heWorks, hePerson, heContact, heForum, heOrb, heReading, heMusicWeb, heCourse,
+  heWelcome, heHero, hePassage, heEnneagram, heType, heShelf, heService, hePost, heWorks, hePerson, heContact, heForum, heOrb, heSigil, heReading, heMusicWeb, heCourse,
 ] as unknown as Block<never>[];

@@ -29,6 +29,9 @@ export type { EditorConfigOptions } from "./config.client";
 
 export { PuckEditor } from "./editor";
 export type { PuckEditorProps } from "./editor";
+// One block's settings in Puck over the canvas editor (2026-11-11).
+export { openBlockSettings } from "./block-settings";
+export type { BlockSettingsOptions } from "./block-settings";
 export type { Viewports } from "@puckeditor/core";
 
 export { ImageField } from "./fields/image-field";

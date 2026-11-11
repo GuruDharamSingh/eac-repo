@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import { sampleKeysOf, type EditorContract } from "../block/contract";
 import type { PuckDoc, PuckNode, SlotMap } from "../block/puck-tree";
 import type { PictureChooser } from "../canvas/edit-shell";
-import { mountTreeEditor, type NestedEditor, type TreeEditorHandle } from "../canvas/tree-editor";
+import { mountTreeEditor, type NestedEditor, type TreeEditorHandle, type TreeEditorOptions } from "../canvas/tree-editor";
 import type { Binding, RecordSources } from "../canvas/records";
 import { TreeCanvas, type TreeConfig } from "./TreeCanvas";
 
@@ -38,6 +38,15 @@ export interface TreePageOptions {
   nested?: NestedEditor;
   /** The developer tools (tree-editor `developer`): only `false` removes them. */
   developer?: boolean;
+  /** Figma basics: multiple selection, top and left handles, snapping (tree-editor `designTools`). Absent: as before. */
+  designTools?: boolean;
+  /** Starting layouts offered in Add (tree-editor `presets`). Absent: as before. */
+  presets?: TreeEditorOptions["presets"];
+  /**
+   * A sealed block's settings in the host's editor (tree-editor `editSettings`, 2026-11-11): the new props, and the rows
+   * its resolver draws with them where the block sits (by node id, like `resolved`; never saved). Absent: as before.
+   */
+  editSettings?(node: PuckNode): Promise<{ props: Record<string, unknown>; resolved?: Record<string, unknown> | null } | null>;
   /** The host's sanitiser for rich text typed in place (tree-editor `cleanRich`). */
   cleanRich?(html: string): string;
   /**
@@ -118,6 +127,30 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
     drawn: (type, prop, value) => cache.get(cacheKey(type, prop, value)),
     remember: (type, prop, value, drawn) => { cache.set(cacheKey(type, prop, value), drawn); },
   } : undefined;
+  // What a block drew with each set of settings it has had in this session, so undo and redo draw the right rows (editSettings).
+  const settingsRows = new Map<string, Map<string, Record<string, unknown> | null>>();
+  const settingsKey = (p: Record<string, unknown>) => JSON.stringify(Object.keys(p).filter((k) => k !== "id" && k !== "morph").sort().map((k) => [k, p[k]]));
+  const syncSettings = (doc: PuckDoc) => {
+    if (!settingsRows.size) return;
+    eachNode(doc.content, (n) => {
+      const rows = settingsRows.get(n.props.id)?.get(settingsKey(n.props));
+      if (rows === undefined) return;
+      if (rows) resolved[n.props.id] = rows;
+      else delete resolved[n.props.id];
+    });
+  };
+  const editSettings: TreeEditorOptions["editSettings"] = o.editSettings && !o.nested
+    ? async (node) => {
+      const id = node.props.id;
+      const was = settingsRows.get(id) ?? new Map<string, Record<string, unknown> | null>();
+      if (!was.has(settingsKey(node.props))) was.set(settingsKey(node.props), resolved[id] ?? null);
+      const r = await o.editSettings!(node);
+      if (!r) return null;
+      was.set(settingsKey(r.props), r.resolved ?? null);
+      settingsRows.set(id, was);
+      return r.props;
+    }
+    : undefined;
   const zones = new Map();
   const slots = slotsOf(o.config);
   const labels: Record<string, string> = {};
@@ -133,15 +166,16 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
   const draw = (doc: PuckDoc) => {
     version++;
     syncBound(doc);
+    syncSettings(doc);
     // The editor measures the page right after this returns.
     flushSync(() => root.render(createElement(TreeCanvas, { config: o.config, doc, slots, resolved, samples, version, metadata: o.metadata, zones })));
   };
   const drawsSample = (n: PuckNode) => sampleKeysOf(o.contract, n.type).length > 0 && !resolved[n.props.id];
   // The popup is this same mount on a working copy of one block. Only with a contract, and never inside itself.
   const mountNested: Parameters<typeof mountTreeEditor>[0]["mountNested"] = o.contract && !o.nested
-    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined })
+    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: undefined })
     : undefined;
-  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding });
+  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, designTools: o.designTools });
   return {
     ...editor,
     dispose() {

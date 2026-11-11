@@ -24,6 +24,18 @@ Statements about GrapesJS beyond this repo are from general knowledge, **not che
 - Free objects remember where they were created, can later be inserted into a published page, and have a submit-for-developer-review option.
 - Work that goes beyond this gets its own agent. Developer space: `DEV_SPACE_PROPOSAL_2026-11-02.md`.
 
+## Direction change (developer, 2026-11-11)
+
+Pages are canvas-first: the canvas lays a page out and must allow deep repositioning; Puck is opened per sealed
+block for small changes to how that component is used. This replaces "Puck places blocks; the direct editor shapes
+their look" (2026-11-06 editor-house model) where a site adopts it. First adopter: hiddenenneagram
+(`apps/hidden-enneagram/docs/editor.md` "Round 7"). Shared additions, both opt-in (absent: hosts unchanged):
+tree editor `presets` (starting layouts in Add, fresh ids per add) and `editSettings` (a sealed block's settings in
+the host's editor; one undo step; `mountTreePage` keeps rows per settings for undo), with page-builder
+`openBlockSettings` (Puck on one block in a dialog), and `designTools` (Shift+click multiple selection with align,
+same size, spread, group, delete; top and left handles; snapping guides while resizing; `de-design` class scopes
+its CSS; `box-drag.ts` `sides`/`snap`; click-through `onExtend`). Stacks and grids only; per-width overrides deferred.
+
 ## Progress (2026-11-02, source only: not rebuilt, not committed)
 
 Changed from the proposal: following the guardrail that the layer is visual, the first node model is a box tree read off the rendered page,

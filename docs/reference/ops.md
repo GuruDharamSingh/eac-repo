@@ -276,7 +276,9 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
 3. Build inside the app's own production container, which already has
    `NODE_ENV=production`:
    `docker compose exec -T <svc> sh -c 'cd /app/apps/<app> && NEXT_BUILD_CPUS=4 pnpm build'`
-   (arts-collective: `NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2`).
+   (arts-collective: `NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2`; hidden-enneagram too: its container
+   sets `--max-old-space-size=1024`, and the build died in "Running TypeScript" with heap out of memory on 2026-11-11,
+   then passed with 3584 (claude, 2026-11-11)).
    `next build` clears `.next` early, so the site can fail requests during the
    build and stays down if the build fails.
    (claude, 2026-11-04) A build can fail with `next/font/google queries have exactly one entry` through no fault of the code: Google Fonts sometimes answers with a `fonts.gstatic.com/l/font?kit=…&skey=…` URL instead of `/s/<family>/…` (1 of 12 direct requests; 1 of 7 sunjay builds, Fraunces only). Verified: same source passed on the next run. Rerun the build at once; any other failure means restore.

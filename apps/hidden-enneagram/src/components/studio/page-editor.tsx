@@ -43,7 +43,7 @@ export type StudioPageLink = { slug: string; label: string };
 
 /**
  * Round 3: the page switcher, a "Pages" tab in the left rail. Each is a plain
- * link to /studio/<slug> (Puck keys on the slug, so the next page loads
+ * link to /studio/<slug>/blocks (Puck keys on the slug, so the next page loads
  * fresh); unpublished changes stay behind, as with any navigation.
  */
 function pagesPlugin(pages: StudioPageLink[], current: string): Plugin {
@@ -61,7 +61,7 @@ function pagesPlugin(pages: StudioPageLink[], current: string): Plugin {
         {pages.map((p) => (
           <a
             key={p.slug}
-            href={`/studio/${p.slug}`}
+            href={`/studio/${p.slug}/blocks`}
             aria-current={p.slug === current ? "page" : undefined}
             style={{
               padding: "8px 10px",

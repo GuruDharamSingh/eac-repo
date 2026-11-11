@@ -1,6 +1,27 @@
 # The Hidden Enneagram: patch notes
 > Your friendly neighbourhood patch log: what changed, why, and what it touched. Newest first.
 > Guide to the editor and blocks: `docs/editor.md`.
+## 2026-11-11 · Round 7: canvas first (live since the 16:08 EST rebuild)
+
+### Thwip: the canvas is the page editor
+- `/studio/<slug>` opens the canvas (boxes, words, pictures; move, group, resize, layers) on the same stored
+  document; Puck's editor moved to `/studio/<slug>/blocks` and opens from a sealed block's "Edit its settings".
+- Welcome, Opening, Passage and Glow open as boxes with their own tags and classes (`lib/puck/boxify.ts`) and are
+  offered in Add as starting layouts. New block `he-sigil` holds the Opening's drawn figure.
+- `site.css`: class twins for the data-attribute rules; `<i>`/`<b>` twins for `<em>`/`<strong>`; the lit phrase as `<i>`.
+- Shared: `@elkdonis/direct-edit` tree editor gains an opt-in `presets` option (Add menu); hosts that do not pass it
+  are unchanged.
+- Step 2: **Settings…** on a sealed block opens that block alone in Puck over the canvas (Apply / Cancel, one undo
+  step); `@elkdonis/page-builder` exports `openBlockSettings`, direct-edit gains an opt-in `editSettings` option.
+- Step 3: Figma basics on (`designTools`): Shift+click multiple selection with align, same size, spread, group,
+  delete; top and left handles; snapping guides while resizing (Alt/Ctrl pulls free).
+- Deploy 16:08 EST (build `x1208XcyQNNKDLCCERj2y`, backup `~/eac-backups/next/hidden-enneagram-20261111-1605.tgz`): first
+  build died in "Running TypeScript" (heap out of memory at the container's `--max-old-space-size=1024`); rebuilt with
+  `NODE_OPTIONS=--max-old-space-size=3584`, passed. Through the edge: `/`, `/enneagram`, `/readings`, `/about`, `/writing`,
+  `/music`, `/about/aeon` 200 (`/` 22,763 bytes, as before); `/studio`, `/studio/home`, `/studio/home/blocks` 307 to login;
+  served CSS carries the class twins. Not yet opened signed in.
+- Tests and open items: `docs/editor.md` "Round 7".
+
 ## 2026-11-08 · Round 6: Puck-first (preview only; live not rebuilt)
 
 ### Thwip: articles are a template

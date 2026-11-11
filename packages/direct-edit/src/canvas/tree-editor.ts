@@ -19,7 +19,7 @@
 import { FONT_CATEGORIES, fontsIn, loadFont } from "@elkdonis/fonts";
 import { contractFor, hasOwn, parsePartRef, partRef, propKey, propNameOf, propSlotId, ROOT_PART, sampleHasRows, tokenKey, tokenNameOf, tokenSlotId, type BlockContract, type EditorContract } from "../block/contract";
 import { partLookOf, partSafeDecls, setPartLook, setToken, tokenOf } from "../block/morph";
-import { cleanBoxDoc, PART_TYPE, duplicatePuckNode, findPuckNode, insertPuckNode, isWithin, mayPlace, movePuckNode, nodeLevels, OWN_TYPES, removePuckNode, ROOT_ID, ROOT_SLOT, unwrapPuckNode, walkDoc, wrapPuckNode, BOX_TAGS, WORD_TAGS, type FoundNode, type PuckDoc, type PuckNode, type SlotMap, type Spot } from "../block/puck-tree";
+import { MAX_DEPTH, cleanBoxDoc, PART_TYPE, duplicatePuckNode, findPuckNode, insertPuckNode, isWithin, mayPlace, movePuckNode, nodeLevels, OWN_TYPES, removePuckNode, ROOT_ID, ROOT_SLOT, unwrapPuckNode, walkDoc, wrapPuckNode, BOX_TAGS, WORD_TAGS, type FoundNode, type PuckDoc, type PuckNode, type SlotMap, type Spot } from "../block/puck-tree";
 import { declsToString, safeDecls, type Decl, type PartStyle } from "../block/style";
 import { normHex } from "../model/color";
 import { History } from "../model/history";
@@ -64,6 +64,11 @@ export interface TreeEditorOptions {
   labels: Record<string, string>;
   /** Blocks that may be added, with their starting props. */
   catalogue?: Array<{ type: string; label: string; defaults: Record<string, unknown> }>;
+  /**
+   * Starting layouts offered in Add after Box, Words and Picture (2026-11-11): boxes, words and pictures ready to change,
+   * not sealed blocks. `make` returns a fresh subtree; every node in it is given a new id on each add. Absent: as before.
+   */
+  presets?: Array<{ id: string; label: string; make(): PuckNode }>;
   onSave(doc: PuckDoc): Promise<{ ok: boolean; error?: string }>;
   /** Said once before the first save (edit-shell). */
   saveNotice?: string;
@@ -71,6 +76,18 @@ export interface TreeEditorOptions {
   choosePicture?: PictureChooser;
   /** The old editor, on this same document: where a sealed block's settings are edited. */
   blockEditorHref?: string;
+  /**
+   * A sealed block's settings in the host's own editor (Puck, one block) over the canvas (2026-11-11). Resolves to the
+   * block's new props, or null when cancelled; the change is one undo step. With it, "Settings…" replaces the
+   * `blockEditorHref` link and joins the right-click menu. Absent: as before.
+   */
+  editSettings?(node: PuckNode): Promise<Record<string, unknown> | null>;
+  /**
+   * Figma basics (2026-11-11): Shift+click adds boxes to the selection (align in parent, same width or height, spread,
+   * group, delete for all of them), top and left resize handles, and snapping to the neighbours' and the parent's edges
+   * and sizes while resizing (Alt or Ctrl pulls free). Not in the popup. Absent: as before.
+   */
+  designTools?: boolean;
   /** The name on the left pill. Default: the page's title. */
   pageName?: string;
   /** Offer to go back to what the page was before it was a tree. */
@@ -200,6 +217,17 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   /** Shown in place of the hint for a while: the click that left a field may also select something, which redraws the top bar. */
   let heldNote: { text: string; until: number } | null = null;
   let popup: PopupHandle | null = null;
+  // Figma basics: the other boxes of a multiple selection (selId stays the first), drawn on a sheet of their own.
+  const design = !!o.designTools && !o.nested;
+  const extra = new Set<string>();
+  let extending = false;
+  const multiSheet = design ? document.createElement("div") : null;
+  if (multiSheet) {
+    multiSheet.className = "de-multi-sheet";
+    multiSheet.dataset.deUi = "";
+    document.body.append(multiSheet);
+    document.documentElement.classList.add("de-design");
+  }
   let panelWasHidden = false;
 
   const rootEl = () => scope.querySelector<HTMLElement>("[data-page-root]") ?? scope.querySelector<HTMLElement>(`[data-tree-slot="${ROOT_ID}:${ROOT_SLOT}"]`);
@@ -467,6 +495,30 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     });
   }
 
+  /** A sealed block's settings in the host's editor (o.editSettings), the page paused meanwhile; one undo step. */
+  let settingsOpen = false;
+  async function editSettingsFor(ref: string | null) {
+    const id = parsePartRef(ref)?.id ?? ref, f = found(id);
+    if (!id || !f || own(f.node) || f.node.type === PART_TYPE || !o.editSettings || o.nested || settingsOpen || popup) return;
+    settingsOpen = true;
+    pause(true);
+    let next: Record<string, unknown> | null = null;
+    try { next = await o.editSettings(clone(f.node)); } catch (err) { console.error("[canvas] settings:", err); }
+    settingsOpen = false;
+    pause(false);
+    if (!next) { selId = id; redraw(true); return; }
+    const props = next;
+    structural(() => {
+      const g = found(id);
+      if (!g) return id;
+      // A look set on the page stays with the block if the host's editor did not hand it back.
+      const keep = g.node.props.morph !== undefined && !("morph" in props) ? { morph: g.node.props.morph } : {};
+      g.node.props = { ...props, ...keep, id };
+      return id;
+    });
+    ct.select(elOf(id));
+  }
+
   function setTool(next: "select" | "hand") {
     tool = next;
     document.documentElement.classList.toggle("de-pan", next === "hand");
@@ -499,9 +551,11 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     }
     ct.adopt(elOf(selId));
     if (selId && !elOf(selId)) selId = null;
+    pruneMulti();
     panel.render(context(), fullPanel);
     shell.drawTop();
     renderBar();
+    drawMulti();
   }
   /** Change the document as one undo step, unless `live` runs coalesce under the same field. */
   function change(fn: () => void, field?: string, fullPanel = false) {
@@ -721,6 +775,111 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     };
   }
 
+  // ---------------------------------------------------------------- several at once (designTools)
+  function pruneMulti() {
+    for (const id of [...extra]) if (!found(id) || !elOf(id) || id === selId) extra.delete(id);
+    if (!selId || selId === ROOT_ID || parsePartRef(selId)) extra.clear();
+  }
+  function drawMulti() {
+    if (!multiSheet) return;
+    multiSheet.innerHTML = "";
+    for (const id of extra) {
+      const r = elOf(id)?.getBoundingClientRect();
+      if (!r) continue;
+      const b = document.createElement("div");
+      b.className = "de-multi";
+      Object.assign(b.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      multiSheet.append(b);
+    }
+  }
+  if (multiSheet) {
+    L.on(window, "scroll", () => drawMulti(), true);
+    L.on(window, "resize", () => drawMulti());
+  }
+  /** Shift+click: the box beside the selection under the pointer (else the one at the same depth) joins it, or leaves. */
+  function extendTo(chain: HTMLElement[]) {
+    const selEl = elOf(selId);
+    if (!selEl || !selId || selId === ROOT_ID || parsePartRef(selId)) return;
+    const parentEl = source.parent(selEl);
+    let target = chain.find((c) => c !== selEl && source.parent(c) === parentEl) ?? null;
+    if (!target) target = chain[Math.min(source.chain(selEl).length - 1, chain.length - 1)] ?? null;
+    const id = idOf(target);
+    if (!id || id === ROOT_ID || parsePartRef(id) || !found(id)) return;
+    if (id === selId) {
+      // Shift+click on the first one: the next takes its place.
+      const next = [...extra][0];
+      if (!next) return;
+      extra.delete(next);
+      extending = true;
+      ct.select(elOf(next));
+      extending = false;
+    } else if (extra.has(id)) extra.delete(id);
+    else extra.add(id);
+    drawMulti();
+    panel.render(context(), true);
+    renderBar();
+  }
+  const selection = () => (selId && selId !== ROOT_ID ? [selId, ...extra] : [...extra]).filter((id) => found(id));
+  /** All in one list (the same parent and region), in their order there; else null. */
+  function siblingsOf(ids: string[]): FoundNode[] | null {
+    const fs = ids.map((id) => found(id));
+    if (!fs.length || fs.some((f) => !f) || fs.some((f) => f!.list !== fs[0]!.list)) return null;
+    return (fs as FoundNode[]).slice().sort((a, b) => a.index - b.index);
+  }
+  function multiContext(base: PanelContext): PanelContext {
+    const ids = selection(), sibs = siblingsOf(ids);
+    const parentEl = sibs ? elOf(sibs[0]!.parent) : null;
+    const parentBox = sibs ? found(sibs[0]!.parent)?.node.type === "box" : false;
+    const stack = !!parentEl && /flex/.test(getComputedStyle(parentEl).display);
+    const btn = (op: string, label: string, off = false) => `<button type="button" class="de-picture-btn" data-tree-act="multi:${op}" data-f="multi-${op.replace(":", "-")}"${off ? " disabled" : ""}>${esc(label)}</button>`;
+    const html =
+      `<p class="de-note">Shift+click adds a box to the selection or takes it out. A plain click selects one again.</p>` +
+      `<p class="de-label">Align in parent</p><div class="de-multi-bar">${btn("self:start", "Start")}${btn("self:center", "Centre")}${btn("self:end", "End")}${btn("self:stretch", "Fill")}</div>` +
+      `<p class="de-label">Size</p><div class="de-multi-bar">${btn("match:w", "Width of the first")}${btn("match:h", "Height of the first")}</div>` +
+      `<p class="de-label">Arrange</p><div class="de-multi-bar">${btn("spread", "Spread across the parent", !sibs || !parentBox || !stack)}${btn("group:row", "Group in a row", !sibs)}${btn("group:column", "Group in a column", !sibs)}</div>` +
+      (sibs ? "" : `<p class="de-note">Spreading and grouping need boxes that sit in the same box.</p>`) +
+      `<div class="de-multi-bar">${btn("delete", `Delete ${ids.length}`)}</div>`;
+    return { ...base, key: `multi:${ids.join(",")}`, heading: `${ids.length} selected`, bottom: html };
+  }
+  function multiAct(op: string) {
+    const ids = selection();
+    if (ids.length < 2) return;
+    if (op.startsWith("self:")) {
+      const v = op.slice(5);
+      change(() => { for (const id of ids) writeLook(id, (s) => { s.self = v; if (v === "stretch") delete s.w; }); }, undefined, true);
+    } else if (op === "match:w" || op === "match:h") {
+      const r = elOf(ids[0]!)?.getBoundingClientRect();
+      if (!r) return;
+      const v = Math.round(op === "match:w" ? r.width : r.height);
+      change(() => { for (const id of ids.slice(1)) writeLook(id, (s) => { if (op === "match:w") { s.w = v; if (s.self === "stretch") delete s.self; } else s.h = v; }); }, undefined, true);
+    } else if (op === "spread") {
+      const sibs = siblingsOf(ids), pf = sibs ? found(sibs[0]!.parent) : null;
+      if (!pf || pf.node.type !== "box") return;
+      change(() => { pf.node.props.look = { ...((pf.node.props.look ?? {}) as PartStyle), justify: "space-between" }; }, undefined, true);
+    } else if (op === "group:row" || op === "group:column") groupMany(ids, op === "group:row" ? "row" : "column");
+    else if (op === "delete") {
+      const first = found(ids[0]!);
+      const after = first && first.parent !== ROOT_ID ? first.parent : null;
+      structural(() => { for (const id of ids) removePuckNode(doc, slots, id); extra.clear(); return after; });
+      ct.select(elOf(after));
+    }
+  }
+  function groupMany(ids: string[], dir: "row" | "column") {
+    const fs = siblingsOf(ids);
+    if (!fs) return;
+    const nodes = fs.map((f) => f.node);
+    const box: PuckNode = { type: "box", props: { id: newId("box"), tag: "div", look: { layout: "stack", dir, gap: 12 }, items: nodes } };
+    if (fs[0]!.depth + nodeLevels(box, slots) - 1 > MAX_DEPTH) { shell.drawTop("That would nest too deep."); return; }
+    structural(() => {
+      const list = fs[0]!.list, at = fs[0]!.index;
+      for (const n of nodes) list.splice(list.indexOf(n), 1);
+      list.splice(at, 0, box);
+      extra.clear();
+      return box.props.id;
+    });
+    ct.select(elOf(box.props.id));
+  }
+
   function context(): PanelContext {
     const f = found(selId), el = elOf(selId);
     const base: PanelContext = { tabs: devTabs(["props", "code"]), layersOnCode: true, key: "", heading: "", freedom: 2, slots: [], values: {}, overridden: {}, outside: [], theme: [], used: usedColoursIn(scope), layers: rows() };
@@ -731,6 +890,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       base.sectionTop = { layout: arrangeHtml({ label: arr.label, props: arr.node.props, inside: arr.inside, around: arr.around, aroundLabel: arr.aroundLabel, declaresParts: arr.declares, nested: arr.nested }) };
     }
     if (!f || !el) return { ...base, empty: `<p class="de-note de-pad">Click a part of the page, or a row above. Click again to go inside it.</p>` };
+    if (design && extra.size) return multiContext(base);
     const node = f.node;
     const pr = parsePartRef(selId);
     if (pr) return partContext(base, node, pr.part, el) ?? { ...base, empty: `<p class="de-note de-pad">Click a part of the page, or a row above. Click again to go inside it.</p>` };
@@ -741,7 +901,9 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       }
       const refusal = detachRefusal(node, el);
       const detach = `<button type="button" class="de-picture-btn" data-tree-act="detach" data-f="detach-block"${refusal ? " disabled" : ""}>Detach: edit its HTML and CSS</button>`;
-      const open = o.blockEditorHref ? ` <a class="de-picture-btn" href="${esc(o.blockEditorHref)}" data-f="block-editor">Edit its settings</a>` : "";
+      const open = o.editSettings
+        ? ` <button type="button" class="de-picture-btn" data-tree-act="settings" data-f="block-settings">Settings…</button>`
+        : o.blockEditorHref ? ` <a class="de-picture-btn" href="${esc(o.blockEditorHref)}" data-f="block-editor">Edit its settings</a>` : "";
       const def = defOf(node);
       const declared = Object.keys(def?.parts ?? {});
       const changed = declared.filter((name) => Object.keys(partLookOf(node.props, name)).length > 0).length;
@@ -1023,6 +1185,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     else if (a === "clear-picture") { const f = found(selId); if (f) change(() => { delete f.node.props.image; delete f.node.props.imageFit; }); }
     else if (a === "wrap") wrap("column");
     else if (a === "detach") detach(selId);
+    else if (a === "settings") void editSettingsFor(selId);
+    else if (a?.startsWith("multi:")) multiAct(a.slice(6));
     else if (a?.startsWith("bind:")) chooseRecordFor(selId, a.slice(5));
   });
   /** A sealed block's props that hold a reference this host can choose. */
@@ -1100,7 +1264,12 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     if (kind === "box") node = { type: "box", props: { id: newId("box"), tag: "div", look: { layout: "stack", dir: "column", gap: 12, padding: 16 }, items: [] } };
     else if (kind === "words") node = { type: "words", props: { id: newId("words"), tag: "p", html: "" } };
     else if (kind === "picture") node = { type: "picture", props: { id: newId("picture"), src: "", alt: "" } };
-    else {
+    else if (kind.startsWith("preset:")) {
+      const p = o.presets?.find((x) => x.id === kind.slice(7));
+      if (!p) return;
+      node = clone(p.make());
+      walkDoc({ content: [node] }, o.slots, (c) => { c.node.props.id = newId(c.node.type); });
+    } else {
       const b = o.catalogue?.find((c) => c.type === kind);
       if (!b) return;
       node = { type: kind, props: { ...clone(b.defaults), id: newId(kind) } };
@@ -1137,6 +1306,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     else if (lost) shell.drawTop(`Detached.${looks} Undo brings the block back.`);
   }
   function remove() {
+    if (design && extra.size) { multiAct("delete"); return; }
     const f = selId === ROOT_ID ? null : found(selId);
     if (!f) return;
     const next = f.list[f.index + 1]?.props.id ?? f.list[f.index - 1]?.props.id ?? f.parent;
@@ -1399,10 +1569,12 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     }
     const addKids: MenuItem[] = [
       { id: "add:box", label: "Box" }, { id: "add:words", label: "Words" }, { id: "add:picture", label: "Picture" },
+      ...(o.presets ?? []).map((p, i) => ({ id: `add:preset:${p.id}`, label: p.label, sep: i === 0 })),
       ...(o.catalogue ?? []).filter((c) => !OWN_TYPES.has(c.type)).map((c, i) => ({ id: `add:${c.type}`, label: c.label, sep: i === 0 })),
     ];
     return [
       ...(canOpenLarge(ref) ? [{ id: "open-large", label: "Open this block large", hint: "Double-click" }] : []),
+      ...(o.editSettings && !o.nested && !isOwn && !onPart && f.node.type !== PART_TYPE ? [{ id: "settings", label: "Settings…" }] : []),
       { id: "parent", label: "Select parent", hint: "Esc", disabled: !source.parent(el), sep: canOpenLarge(ref) },
       { id: "add", label: "Add", kids: addKids, sep: true },
       { id: "group", label: "Group in a row", hint: "Ctrl+G", disabled: onPart },
@@ -1423,6 +1595,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   function runTool(id: string, el: HTMLElement) {
     const nodeId = idOf(el);
     if (id === "open-large") { openLarge(nodeId); return; }
+    if (id === "settings") { void editSettingsFor(nodeId); return; }
     if (parsePartRef(nodeId) && NODE_ONLY.has(id)) return;
     selId = nodeId;
     if (id.startsWith("add:")) return addNew(id.slice(4));
@@ -1469,9 +1642,10 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     // A right-click selects, and a shorter panel then clamps its own scroll. A sealed block's panel is often the longer one. With no contract the menu is as it was.
     menuKeepsOnScroll: o.contract ? (t) => side.contains(t) : undefined,
     onDraw() { renderBar(); },
-    onSelect(el) { selId = idOf(el); shell.closePicture(); panel.render(context(), true); shell.drawTop(); renderBar(); },
+    onSelect(el) { selId = idOf(el); if (!extending) extra.clear(); pruneMulti(); shell.closePicture(); panel.render(context(), true); shell.drawTop(); renderBar(); drawMulti(); },
+    onExtend: design ? (chain) => extendTo(chain) : undefined,
     onDouble(el) { const id = idOf(el); if (canOpenLarge(id)) openLarge(id); else if (id && !startOwnWords(id)) startWords(id); },
-    handles(el) { return idOf(el) !== ROOT_ID && own(found(idOf(el))?.node) ? ["e", "s", "se", "ne", "sw"] : []; },
+    handles(el) { return idOf(el) !== ROOT_ID && own(found(idOf(el))?.node) ? (design ? ["n", "e", "s", "w", "ne", "nw", "se", "sw"] : ["e", "s", "se", "ne", "sw"]) : []; },
     onHandle(ev, handle, el) {
       const id = idOf(el);
       if (!id) return;
@@ -1481,7 +1655,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       bar.hide();
       ct.hold(true);
       startBoxResize({
-        ev, el, handle,
+        ev, el, handle, sides: design, snap: design,
         onChange(c) {
           writeLook(id, (s) => {
             if (c.cspan !== undefined) s.cspan = c.cspan;
@@ -1573,6 +1747,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       inline?.finish(true);
       bar.destroy();
       shell.dispose(); L.dispose(); ct.dispose(); panel.destroy(); side.remove();
+      multiSheet?.remove();
+      if (multiSheet) document.documentElement.classList.remove("de-design");
       if (!o.nested) document.documentElement.classList.remove("de-vpanel-open", "de-present", "de-pan", "de-panning");
     },
   };

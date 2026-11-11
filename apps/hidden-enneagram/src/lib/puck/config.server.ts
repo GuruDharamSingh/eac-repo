@@ -4,6 +4,10 @@ import { loadThreadFeed } from "@elkdonis/blocks/server";
 import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder/config";
 // Server-safe: draws a block's stored look (`morph`); with none set the markup is unchanged.
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
+// Server-safe: the canvas's box, words and picture blocks (2026-11-11, canvas first).
+import { BOX_BLOCKS } from "@elkdonis/direct-edit/puck/blocks";
+import type { Block } from "@elkdonis/blocks";
+import { PublishedRoot } from "@/lib/puck/page-root";
 import { currentOrgId } from "@/lib/site-org";
 import { CATALOGUE } from "@/lib/puck/catalogue";
 import { loadCourse } from "@/lib/course";
@@ -45,6 +49,8 @@ const serverResolvers: BlockResolvers = {
 
 export const serverPuckConfig = buildPuckConfig({
   resolvers: serverResolvers,
-  blocks: CATALOGUE,
+  blocks: [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])],
   morph: MorphMark,
+  // A page with no look on its root draws no wrapper: stored pages publish the markup they did before.
+  root: { props: [], wrap: PublishedRoot },
 });
