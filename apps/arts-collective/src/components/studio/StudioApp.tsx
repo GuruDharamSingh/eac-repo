@@ -25,6 +25,7 @@ import { artworkFormContextAction, listArtworkFormAction, loadArtworkFormAction,
 import { listServiceFormAction, loadServiceFormAction, saveServiceFormAction, serviceFormContextAction } from "@/lib/service-form-actions";
 import { formExtension, richTextBodySlot } from "@elkdonis/studio/forms/focus";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
+import type { ChannelLinkRequest } from "@elkdonis/utils/host";
 
 const PERSONAL_ORG_ID = "oad";
 
@@ -133,7 +134,19 @@ export function StudioApp({
     ],
     [video, post, meeting, gathering, artworkForm, serviceForm, recording, orgs]
   );
-  return <StudioShell {...shell} extensions={extensions} />;
+  const links = React.useMemo(() => ({ ...shell.links, channelHref: channelPieceHref }), [shell.links]);
+  return <StudioShell {...shell} links={links} extensions={extensions} />;
+}
+
+/**
+ * A piece's board in this app's Channel (2026-11-11): /channel/piece/<thread|artwork>/<id>, with
+ * `?org=` for an org's own piece (Channel treats an unknown or personal org as the artist's scope,
+ * lib/channel/load.ts). The Studio's Board link and its "Continue in Channel" use it.
+ */
+function channelPieceHref(o: ChannelLinkRequest): string | null {
+  if (!o.id) return null;
+  const org = o.org && o.org !== PERSONAL_ORG_ID ? `?org=${encodeURIComponent(o.org)}` : "";
+  return `/channel/piece/${o.store}/${encodeURIComponent(o.id)}${org}`;
 }
 
 /** This app's links and pickers for the forms: the Studio is /studio here; never guessed inside the package. */
@@ -158,6 +171,7 @@ function gatheringHost(
       return `/studio${qs ? `?${qs}` : ""}`;
     },
     viewHref: (ref) => ref.href ?? null,
+    channelHref: channelPieceHref,
     loginHref: (next) => `/login?next=${encodeURIComponent(next)}`,
     preview: {},
     feeds: [],

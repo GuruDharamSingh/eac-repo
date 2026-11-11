@@ -5,9 +5,11 @@ import { STUDIO_KINDS } from './kinds';
 import { STUDIO_LAYOUTS } from './types';
 import { MediaBrowser } from '@elkdonis/cms-ui/files';
 import { WritingEditor, type SaveState } from './writing/WritingEditor';
-import { StudioFrameContext, type StudioExtension, type StudioFrameApi } from './frame';
+import { StudioFrameContext, type StudioExtension, type StudioFrameApi, type StudioPieceRef } from './frame';
+import { BoardSheet } from './board';
 import type {
   StudioActions,
+  StudioBoardLoader,
   StudioIdentity,
   StudioLinks,
   StudioListing,
@@ -95,6 +97,16 @@ export interface StudioShellProps {
   initialFocus?: boolean | null;
   /** `?preset=`: handed to the kind through useStudioFrame().preset (the forms read it). */
   initialPreset?: string | null;
+  /**
+   * `?next=` (2026-11-11): the Channel page the person came from, checked by the host (a Channel
+   * path only). After Publish the notice and the forms' confirmation link back to it.
+   */
+  initialNext?: string | null;
+  /**
+   * The Board sheet's loader (2026-11-11): one item's state in Channel, read on the server for the
+   * signed-in person. Unset, the bar's Board is a plain link to the item's board.
+   */
+  loadBoard?: StudioBoardLoader;
 }
 
 /** A piece that exists only in the browser until its first save. */
@@ -152,6 +164,8 @@ export function StudioShell({
   showSoon = true,
   initialFocus = null,
   initialPreset = null,
+  initialNext = null,
+  loadBoard,
 }: StudioShellProps) {
   const [kind, setKind] = React.useState<string>(
     initialKind && extensions.some((e) => e.id === initialKind) ? initialKind : 'writing'
@@ -226,6 +240,13 @@ export function StudioShell({
   }, []);
   const [save, setSave] = React.useState<SaveState>({ state: 'saved', at: null });
   const [error, setError] = React.useState<string | null>(null);
+  // Studio ↔ Channel (2026-11-11): the open item an extension kind reports, and the line after a publish.
+  const [extPiece, setExtPiece] = React.useState<StudioPieceRef | null>(null);
+  const [notice, setNotice] = React.useState<{ text: string; href: string; label: string } | null>(null);
+  // The Board sheet: open or not, and how far down the window it starts (under the sticky bar).
+  const [boardOpen, setBoardOpen] = React.useState(false);
+  const [boardTop, setBoardTop] = React.useState(0);
+  const barRef = React.useRef<HTMLElement | null>(null);
 
   const [focus, setFocus] = React.useState(true);
   React.useEffect(() => {
@@ -454,6 +475,14 @@ export function StudioShell({
     }
     onSaved(res.value);
     setSave({ state: 'saved', at: new Date().toISOString() });
+    // Publish hands back to Channel (developer, 2026-11-11): to the page the person came from, else the piece's board.
+    if (status === 'published') {
+      const home = res.value.orgId && res.value.orgId !== PERSONAL_ORG_ID ? res.value.orgId : null;
+      const href = initialNext ?? links.channelHref?.({ store: 'thread', id: res.value.id, org: home }) ?? null;
+      setNotice(href ? { text: 'Published.', href, label: initialNext ? 'Back to Channel' : 'Continue in Channel' } : null);
+    } else {
+      setNotice(null);
+    }
   }
 
   async function setSeo(field: 'title' | 'description' | 'imageUrl' | 'noindex', value: string | boolean) {
@@ -541,6 +570,44 @@ export function StudioShell({
 
   // Focus mode is writing's; any other kind gets the full frame.
   const layoutFocus = focus && !ext;
+  // The bar's Board link: the open, saved item's board in Channel. Writing pieces are threads; an
+  // extension kind reports its own item (setPiece), or nothing when Channel does not cover it.
+  const pieceRef: StudioPieceRef | null = ext
+    ? extPiece
+    : piece?.id
+      ? { store: 'thread', id: piece.id, orgId: piece.orgId && piece.orgId !== PERSONAL_ORG_ID ? piece.orgId : null }
+      : null;
+  const boardHref = pieceRef && links.channelHref ? links.channelHref({ store: pieceRef.store, id: pieceRef.id, org: pieceRef.orgId }) : null;
+  const boardKey = pieceRef ? `${pieceRef.store}:${pieceRef.id}` : null;
+  const boardShown = boardOpen && !!pieceRef && !!loadBoard;
+  // A new or unsaved item has no board: close the sheet.
+  React.useEffect(() => {
+    if (!boardKey) setBoardOpen(false);
+  }, [boardKey]);
+  // Keep the sheet under the bar, which is sticky at the top of the window.
+  React.useEffect(() => {
+    if (!boardShown) return;
+    const place = () => setBoardTop(Math.max(0, Math.round(barRef.current?.getBoundingClientRect().bottom ?? 0)));
+    place();
+    window.addEventListener('scroll', place, { passive: true });
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place);
+      window.removeEventListener('resize', place);
+    };
+  }, [boardShown, layoutFocus]);
+  const closeBoard = React.useCallback(() => setBoardOpen(false), []);
+  // The bar's Board control: a toggle for the sheet when the host loads it, else a link to Channel.
+  const boardControl = (cls: string) =>
+    loadBoard && pieceRef ? (
+      <button type="button" className={cls} aria-pressed={boardShown} aria-expanded={boardShown} title="This piece in Channel: its next weeks and next moves" onClick={() => setBoardOpen((v) => !v)}>
+        Board
+      </button>
+    ) : boardHref ? (
+      <a className={cls} href={boardHref} title="This piece in Channel: its queue and board">
+        Board
+      </a>
+    ) : null;
   const frameApi: StudioFrameApi = {
     orgId,
     orgs: allOrgs,
@@ -554,6 +621,8 @@ export function StudioShell({
     statusSlot,
     newRequest,
     preset: initialPreset,
+    next: initialNext,
+    setPiece: setExtPiece,
   };
   const kindSwitch =
     extensions.length > 0 ? (
@@ -577,7 +646,7 @@ export function StudioShell({
       data-side={layoutFocus ? (side ?? undefined) : undefined}
     >
       {layoutFocus ? (
-        <header className="studio-fbar">
+        <header className="studio-fbar" ref={barRef}>
           <button
             type="button"
             className="studio-fbtn studio-fbtn--menu"
@@ -611,6 +680,7 @@ export function StudioShell({
           <button type="button" className="studio-fbtn" aria-pressed={preview} disabled={!piece} onClick={() => setPreview((v) => !v)}>
             {preview ? 'Edit' : 'Preview'}
           </button>
+          {boardControl('studio-fbtn')}
           {piece?.status === 'published' ? (
             <button type="button" className="studio-fbtn" onClick={() => void setStatus('draft')}>
               Unpublish
@@ -628,7 +698,7 @@ export function StudioShell({
           )}
         </header>
       ) : (
-      <header className="studio-top">
+      <header className="studio-top" ref={barRef}>
         <a className="studio-back" href={links.hubHref} title="Back to the hub">
           ←
         </a>
@@ -710,6 +780,7 @@ export function StudioShell({
           <>
             <span className="studio-status" aria-live="polite" ref={setStatusSlot} />
             <span className="studio-actions" ref={setActionsSlot} />
+            {boardControl('studio-btn')}
             <button type="button" className="studio-btn studio-btn--icon" title="Light / dark" onClick={toggleTheme}>
               ◐
             </button>
@@ -772,6 +843,7 @@ export function StudioShell({
         <button type="button" className="studio-btn" aria-pressed={preview} disabled={!piece} onClick={() => setPreview((v) => !v)}>
           {preview ? 'Editing' : 'Preview'}
         </button>
+        {boardControl('studio-btn')}
         {piece?.status === 'published' ? (
           <button type="button" className="studio-btn" onClick={() => void setStatus('draft')}>
             Unpublish
@@ -796,6 +868,23 @@ export function StudioShell({
         <div className="studio-error" role="alert">
           {error}
           <button type="button" onClick={() => setError(null)} aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
+
+      {boardShown && pieceRef && loadBoard && (
+        <BoardSheet key={boardKey} piece={pieceRef} load={loadBoard} fallbackHref={links.channelHomeHref ?? null} top={boardTop} onClose={closeBoard} />
+      )}
+
+      {notice && (
+        <div className="studio-notice" role="status">
+          <span>{notice.text}</span>
+          <a className="studio-notice__link" href={notice.href}>
+            {notice.label} →
+          </a>
+          <span className="studio-spacer" />
+          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
             ✕
           </button>
         </div>

@@ -15,6 +15,7 @@
 // ============================================================================
 
 import type { EssayDoc, ThreadCardAttrs } from '@elkdonis/utils/essay';
+import type { ChannelLinkRequest } from '@elkdonis/utils/host';
 
 export type StudioKindId =
   | 'writing'
@@ -195,4 +196,55 @@ export interface StudioLinks {
   library?: { mine?: string; org?: string };
   /** Where to connect Facebook, Instagram or Threads (the profile's Connections tab). */
   connectionsHref?: string;
+  /**
+   * A piece's board in Channel (2026-11-11). A function, so only a client module can set it (the
+   * arts-collective StudioApp adds it over the server page's links); unset hides the Board link
+   * and the "Continue in Channel" notice.
+   */
+  channelHref?: (o: ChannelLinkRequest) => string | null;
+  /** Channel's home on this host ("/channel"), for the Board sheet when Channel does not list the item. */
+  channelHomeHref?: string;
 }
+
+// ── the Board sheet (2026-11-11) ───────────────────────────────────────────
+//
+// One open item as Channel sees it, drawn in a right sheet from the Studio's
+// bar (canvas R1, "In Channel"). Plain JSON the host builds on the server for
+// the signed-in person; the shell only draws it. The full board stays in
+// Channel (`links.board`).
+
+export type StudioBoardState = 'published' | 'scheduled' | 'live' | 'draft' | 'failed' | 'suggested' | 'info';
+
+export interface StudioBoardItem {
+  id: string;
+  /** ISO time. */
+  at: string;
+  label: string;
+  state: StudioBoardState;
+  href?: string | null;
+}
+
+export interface StudioBoardView {
+  title: string;
+  /** "Gathering", "Writing", "Artwork" … */
+  typeLabel: string;
+  /** Channel's status word for the item. */
+  status: string;
+  timeZone: string;
+  /** ISO time of the read. */
+  now: string;
+  /** First day (YYYY-MM-DD, a Monday) of each column of the window drawn. */
+  weeks: string[];
+  /** Lanes with anything in the window, in a fixed order. `cells[i]` holds what falls in `weeks[i]`. */
+  lanes: Array<{ id: string; label: string; cells: StudioBoardItem[][] }>;
+  /** What the board suggests next (chip text, sentence, why); each opens the item's plan in Channel. */
+  next: Array<{ id: string; chip: string; text: string; reason: string; href: string }>;
+  /** Where it has gone, newest first (at most three). */
+  recent: StudioBoardItem[];
+  links: { board: string; plan: string; queue: string; compose: string | null; public: string | null };
+  /** False while Channel's planning tables are absent: suggestions cannot be accepted yet. */
+  planning: boolean;
+}
+
+/** The host's loader for the sheet: null when the item is not in the person's Channel. */
+export type StudioBoardLoader = (ref: { store: 'thread' | 'artwork'; id: string; orgId: string | null }) => Promise<StudioBoardView | null>;

@@ -56,6 +56,7 @@ import {
   renameRecordingAction,
 } from "@/lib/recording-actions";
 import { obsConfigured } from "@elkdonis/services/obs";
+import { loadStudioBoardAction } from "@/lib/studio-board-action";
 import {
   listStudioIdentities,
   listStudioPieces,
@@ -104,11 +105,21 @@ export const metadata: Metadata = { title: "Studio — Elkdonis Arts Collective"
 const PERSONAL_ORG_ID = "oad";
 const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
 
-type Props = { searchParams: Promise<{ org?: string; id?: string; kind?: string; focus?: string; preset?: string }> };
+type Props = { searchParams: Promise<{ org?: string; id?: string; kind?: string; focus?: string; preset?: string; next?: string }> };
+
+/**
+ * `?next=`: where Publish hands back to (2026-11-11). Only a path inside this app's Channel is
+ * kept, so the parameter cannot send anyone to another site.
+ */
+function channelNext(raw: string | undefined): string | null {
+  if (!raw || raw.length > 512) return null;
+  if (!/^\/channel(?:[/?#]|$)/.test(raw) || raw.includes("//") || raw.includes("\\")) return null;
+  return raw;
+}
 
 export default async function StudioPage({ searchParams }: Props) {
   const user = await requireUser("/login?next=/studio");
-  const { org, id, kind, focus, preset } = await searchParams;
+  const { org, id, kind, focus, preset, next } = await searchParams;
   const isVideo = kind === "video";
   const isPost = kind === "post";
   const isMeeting = kind === "meeting";
@@ -157,6 +168,9 @@ export default async function StudioPage({ searchParams }: Props) {
         // The Publish card's hand-off (packages/content studioNewHref): focus for this visit, and a preset.
         initialFocus: focus === "1",
         initialPreset: preset ?? null,
+        initialNext: channelNext(next),
+        // The bar's Board sheet: this piece in the person's Channel (read-only, session-scoped).
+        loadBoard: loadStudioBoardAction,
         actions: {
           listPieces: listStudioPieces,
           loadPiece: loadStudioPiece,
@@ -180,6 +194,7 @@ export default async function StudioPage({ searchParams }: Props) {
           // The person's own Nextcloud pictures, and the acting org's library.
           library: { mine: "/api/my-files?path=Media/Images&kind=image", org: "/api/media/library?org=:org" },
           connectionsHref: "/hub/network?surface=me:connections",
+          channelHomeHref: "/channel",
         },
       }}
       video={{

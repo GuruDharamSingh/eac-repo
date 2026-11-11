@@ -52,6 +52,23 @@ export interface StudioFrameApi {
   newRequest: number;
   /** `?preset=` from the hand-off (2026-11-08): the kind applies it once, on a new item. Null when none. */
   preset?: string | null;
+  /**
+   * `?next=` (2026-11-11): where the person came from in Channel, already checked by the host to be
+   * a Channel path. After Publish, "Back to Channel" goes here instead of the piece's board.
+   */
+  next?: string | null;
+  /**
+   * The kind reports the saved item that is open (null when none, or when Channel does not cover it),
+   * so the shell's bar can link to its board in Channel (2026-11-11).
+   */
+  setPiece?: (ref: StudioPieceRef | null) => void;
+}
+
+/** An open, saved item as Channel keys it. `orgId` is the item's own org; null for a personal piece. */
+export interface StudioPieceRef {
+  store: 'thread' | 'artwork';
+  id: string;
+  orgId: string | null;
 }
 
 export const StudioFrameContext = React.createContext<StudioFrameApi | null>(null);

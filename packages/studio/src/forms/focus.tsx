@@ -22,6 +22,7 @@ import { useNewRequest, useStudioFrame, type StudioExtension } from '../frame';
 import type { Answers, FormActions, FormContext, FormHost, FormKindSchema, FormPreset, FormTheme } from './contract';
 import type { BlocksSlot, BodySlot } from './fields/FieldRenderer';
 import { orderPresets } from './presets';
+import { PERSONAL_ORG, channelStoreOf } from './channel-link';
 import { FormShell, useFormUi } from './shell';
 import { useFormState } from './state';
 
@@ -113,6 +114,16 @@ function FormExtensionBody(o: FormExtensionOptions & { fields: Record<string, un
   const [ui, setUi] = useFormUi();
   const [presets, setPresets] = React.useState<FormPreset[]>([]);
   const setError = frame.setError;
+
+  // Tell the shell which saved item is open, so its bar can link to the item's board in Channel
+  // (2026-11-11). Kinds Channel does not cover report nothing.
+  const store = channelStoreOf(o.schema.id);
+  const setPiece = frame.setPiece;
+  React.useEffect(() => {
+    if (!setPiece) return;
+    setPiece(store && form.state.id ? { store, id: form.state.id, orgId: store === 'thread' && orgId !== PERSONAL_ORG ? orgId : null } : null);
+    return () => setPiece(null);
+  }, [setPiece, store, form.state.id, orgId]);
 
   // An existing item: load it once.
   React.useEffect(() => {

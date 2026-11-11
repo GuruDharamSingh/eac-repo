@@ -6,12 +6,18 @@ import { Input } from '../fields/Input';
 import { feedName } from '../preview/format';
 import { Icon } from '../theme/context';
 import { KIND_NOUN, clockIn } from './ui';
+import { StudioFrameContext } from '../../frame';
+import { PERSONAL_ORG, channelStoreOf } from '../channel-link';
 
 // ============================================================================
 // After publish, focus mode (design 1j). The form column gives way to a plain
 // confirmation: the time, where it went, the link with Copy, View on site,
-// Keep editing, and "Make another". No share or Channel step (by request).
-// Every link is the host's: viewHref for the page, never a guessed route.
+// Keep editing, and "Make another". ~~No share or Channel step (by request).~~
+// Correction (developer, 2026-11-11): Publish hands back to Channel. The
+// primary action is "Back to Channel" when the Studio was opened from Channel
+// (the frame's `next`), else "Continue in Channel" to the item's board.
+// Every link is the host's: viewHref for the page, channelHref for Channel,
+// never a guessed route.
 // ============================================================================
 
 const VISIBILITY: Record<string, string> = { PUBLIC: 'Public', ORGANIZATION: 'Members only', INVITE_ONLY: 'Invited people only' };
@@ -43,6 +49,14 @@ export function AfterPublish({ schema, state, host, ctx, kinds, scope = '', onKe
   const href = state.id
     ? host.viewHref?.({ kind: schema.codeKind(state.answers), id: state.id, slug: slugOf(state.record), href: recordHref(state.record) }) ?? null
     : null;
+  // Back into Channel: where the person came from, else this item's board (null when Channel does not cover the kind).
+  const frame = React.useContext(StudioFrameContext);
+  const store = channelStoreOf(schema.id);
+  const channel =
+    frame?.next ??
+    (state.id && store
+      ? host.channelHref?.({ store, id: state.id, org: store === 'thread' && ctx.orgId !== PERSONAL_ORG ? ctx.orgId : null }) ?? null
+      : null);
   const [copied, setCopied] = React.useState(false);
   const linkRef = React.useRef<HTMLInputElement>(null);
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,8 +104,13 @@ export function AfterPublish({ schema, state, host, ctx, kinds, scope = '', onKe
         </div>
       )}
       <div className="frm-done-row">
+        {channel && (
+          <a className="frm-btn frm-btn--primary" href={channel}>
+            {frame?.next ? 'Back to Channel' : 'Continue in Channel'}
+          </a>
+        )}
         {href && (
-          <a className="frm-btn frm-btn--primary" href={href} target="_blank" rel="noopener noreferrer">
+          <a className={channel ? 'frm-btn frm-btn--secondary' : 'frm-btn frm-btn--primary'} href={href} target="_blank" rel="noopener noreferrer">
             View on site
             <Icon name="external" size={16} />
           </a>

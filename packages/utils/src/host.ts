@@ -39,10 +39,23 @@ export interface HostItemRef {
   href?: string | null;
 }
 
+/**
+ * What a Channel link is asked for (2026-11-11): one piece's board. `store`
+ * is the table the piece lives in, as Channel keys pieces (`thread:<id>`,
+ * `artwork:<id>`); `org` is the piece's own org, or null for a personal one.
+ */
+export interface ChannelLinkRequest {
+  store: 'thread' | 'artwork';
+  id: string;
+  org?: string | null;
+}
+
 /** Link builders. Functions, so a server page passes the host from a client module. */
 export interface HostLinks {
   /** The authoring Studio on this host. */
   studioHref(o: StudioLinkRequest): string;
+  /** A piece's board in Channel; null (or unset) when this host has no Channel or Channel does not cover the piece. */
+  channelHref?(o: ChannelLinkRequest): string | null;
   /** An item's public page; null when it has none on this host. */
   viewHref?(ref: HostItemRef): string | null;
   /** A management screen by its logical name ("pages", "people", "content"); null when this host lacks it. */
