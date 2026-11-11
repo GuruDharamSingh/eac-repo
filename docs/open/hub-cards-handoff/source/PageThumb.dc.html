@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/styles.css">
+<script src="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/_ds_bundle.js"></script>
+</helmet>
+<div style="position:relative;width:100%;height:100%;container-type:inline-size;overflow:hidden;background:{{ bg }};outline:1px solid var(--color-divider);outline-offset:-1px">
+<sc-if value="{{ hasShape }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:0;right:0;top:0;height:9%;background:{{ t.surface }};border-bottom:1px solid {{ t.line }};display:flex;align-items:center;gap:3%;padding:0 5%">
+    <div style="font-family:{{ headFam }};font-size:3.4cqw;font-weight:700;color:{{ t.ink }};white-space:nowrap;overflow:hidden;margin-right:auto;max-width:55%">{{ site }}</div>
+    <div style="width:7%;height:1.3cqw;background:{{ t.ink }};opacity:.35"></div>
+    <div style="width:7%;height:1.3cqw;background:{{ t.ink }};opacity:.35"></div>
+    <div style="width:7%;height:1.3cqw;background:{{ t.accent }}"></div>
+  </div>
+
+  <sc-if value="{{ isHero }}">
+    <div style="position:absolute;left:0;right:0;top:9%;height:46%;background:{{ t.accent2 }}"></div>
+    <div style="position:absolute;left:7%;top:21%;width:78%;font-family:{{ headFam }};font-size:8cqw;line-height:1.05;color:{{ t.paper }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+    <div style="position:absolute;left:7%;top:37%;width:40%;height:1.8cqw;background:{{ t.paper }};opacity:.6"></div>
+    <div style="position:absolute;left:7%;top:44%;width:17%;height:4.6cqw;background:{{ t.accent }}"></div>
+    <div style="position:absolute;left:7%;right:7%;top:62%;height:29%;display:flex;gap:4%">
+      <sc-for list="{{ three }}" as="c"><div style="flex:1;background:{{ cardBg }};border:{{ cardBd }};padding:3%;display:flex;flex-direction:column;gap:8%"><div style="height:46%;background:{{ t.line }}"></div><div style="width:72%;height:1.5cqw;background:{{ t.ink }};opacity:.45"></div><div style="width:48%;height:1.5cqw;background:{{ t.ink }};opacity:.25"></div></div></sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isGrid }}">
+    <div style="position:absolute;left:7%;right:7%;top:15%;font-family:{{ headFam }};font-size:7cqw;line-height:1.05;color:{{ t.ink }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+    <div style="position:absolute;left:7%;top:28%;width:36%;height:1.5cqw;background:{{ t.ink }};opacity:.3"></div>
+    <div style="position:absolute;left:7%;right:7%;top:36%;bottom:7%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:4cqw 3cqw">
+      <sc-for list="{{ cells }}" as="c"><div style="display:flex;flex-direction:column;gap:1.4cqw;background:{{ cardBg }};border:{{ cardBd }}"><div style="flex:1;background:{{ c.tone }};opacity:.85"></div><div style="width:70%;height:1.3cqw;background:{{ t.ink }};opacity:.35"></div></div></sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isText }}">
+    <div style="position:absolute;left:14%;right:14%;top:17%;font-family:{{ headFam }};font-size:7cqw;line-height:1.05;color:{{ t.ink }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+    <div style="position:absolute;left:14%;right:14%;top:33%;display:flex;flex-direction:column;gap:2.6cqw">
+      <sc-for list="{{ lines }}" as="l"><div style="width:{{ l.w }};height:1.5cqw;background:{{ t.ink }};opacity:.28"></div></sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSplit }}">
+    <div style="position:absolute;left:7%;width:46%;top:17%;font-family:{{ headFam }};font-size:7cqw;line-height:1.05;color:{{ t.ink }};font-weight:700;overflow:hidden;max-height:17cqw">{{ title }}</div>
+    <div style="position:absolute;left:7%;width:44%;top:44%;display:flex;flex-direction:column;gap:2.4cqw">
+      <sc-for list="{{ shortLines }}" as="l"><div style="width:{{ l.w }};height:1.5cqw;background:{{ t.ink }};opacity:.28"></div></sc-for>
+      <div style="width:34%;height:4.4cqw;margin-top:1.5cqw;background:{{ t.accent }}"></div>
+    </div>
+    <div style="position:absolute;right:7%;width:36%;top:17%;bottom:10%;background:{{ t.accent2 }};border:{{ cardBd }}"></div>
+  </sc-if>
+
+  <sc-if value="{{ isList }}">
+    <div style="position:absolute;left:10%;right:10%;top:15%;font-family:{{ headFam }};font-size:7cqw;line-height:1.05;color:{{ t.ink }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+    <div style="position:absolute;left:10%;right:10%;top:32%;display:flex;flex-direction:column;gap:2.6cqw">
+      <sc-for list="{{ four }}" as="r"><div style="display:flex;align-items:center;gap:3cqw;padding-bottom:2.4cqw;border-bottom:1px solid {{ t.line }}"><div style="width:10cqw;height:6.4cqw;flex:none;background:{{ t.accent2 }};opacity:.85"></div><div style="flex:1;display:flex;flex-direction:column;gap:1.4cqw"><div style="width:62%;height:1.6cqw;background:{{ t.ink }};opacity:.5"></div><div style="width:38%;height:1.3cqw;background:{{ t.ink }};opacity:.25"></div></div></div></sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isChrome }}">
+    <div style="position:absolute;left:0;right:0;top:9%;bottom:24%;display:grid;place-items:center"><div style="width:44%;display:flex;flex-direction:column;gap:2.4cqw;opacity:.5"><div style="height:1.5cqw;background:{{ t.line }}"></div><div style="width:70%;height:1.5cqw;background:{{ t.line }}"></div></div></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:24%;background:{{ t.ink }};display:flex;align-items:center;gap:6%;padding:0 7%">
+      <div style="font-family:{{ headFam }};font-size:3.6cqw;font-weight:700;color:{{ t.paper }};white-space:nowrap;overflow:hidden;max-width:50%">{{ site }}</div>
+      <div style="flex:1;height:1.3cqw;background:{{ t.paper }};opacity:.35"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isBlank }}">
+    <div style="position:absolute;left:14%;top:20%;width:40%;height:4cqw;background:{{ t.ink }};opacity:.14"></div>
+    <div style="position:absolute;left:14%;right:14%;top:34%;bottom:14%;border:1px dashed {{ t.line }}"></div>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ noShape }}">
+  <div style="position:absolute;inset:0;background-color:var(--color-bg);background-image:linear-gradient(var(--color-neutral-200) 1px, transparent 1px),linear-gradient(90deg, var(--color-neutral-200) 1px, transparent 1px);background-size:12.5% 20%"></div>
+  <div style="position:absolute;inset:7%;border:1px dashed var(--color-neutral-400);background:color-mix(in srgb, var(--color-bg) 82%, transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.6cqw;text-align:center;padding:5%">
+    <sc-if value="{{ big }}">
+      <div style="font-family:var(--font-heading);font-weight:600;font-size:8.5cqw;line-height:1.05;color:var(--color-neutral-800);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ title }}</div>
+      <div style="font-family:var(--font-body);font-size:4.4cqw;line-height:1.3;color:var(--color-neutral-700);max-width:30ch">No preview yet. One is taken the next time this page is saved.</div>
+    </sc-if>
+    <sc-if value="{{ small }}">
+      <svg viewBox="0 0 24 24" style="width:26%;height:auto;fill:none;stroke:var(--color-neutral-600);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>
+    </sc-if>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:200},&quot;shape&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;&quot;,&quot;hero&quot;,&quot;grid&quot;,&quot;text&quot;,&quot;split&quot;,&quot;list&quot;,&quot;chrome&quot;,&quot;blank&quot;],&quot;default&quot;:&quot;hero&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;small&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = this.props;
+    const t = P.theme || { paper: '#f8f5ef', surface: '#fffdf8', ink: '#171615', line: '#d8d0c2', accent: '#9a3f2f', accent2: '#273d54', frame: '#9c40d8', headFam: 'Georgia, serif', skin: 'paper', site: 'Site' };
+    const shape = P.shape || '';
+    const skin = t.skin || 'paper';
+    const has = !!shape;
+    return {
+      t, site: t.site || '', title: P.title || '', headFam: t.headFam,
+      hasShape: has, noShape: !has,
+      isHero: shape === 'hero', isGrid: shape === 'grid', isText: shape === 'text', isSplit: shape === 'split',
+      isList: shape === 'list', isChrome: shape === 'chrome', isBlank: shape === 'blank',
+      big: !P.small, small: !!P.small,
+      bg: has ? t.paper : 'transparent',
+      cardBd: skin === 'framed' ? `2px solid ${t.frame}` : skin === 'gallery' ? '0' : `1px solid ${t.line}`,
+      cardBg: skin === 'gallery' ? t.surface : 'transparent',
+      three: [0, 1, 2], four: [0, 1, 2, 3],
+      cells: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ({ tone: i % 3 === 1 ? t.accent2 : t.line })),
+      lines: [94, 88, 96, 62, 90, 80, 44].map(w => ({ w: w + '%' })),
+      shortLines: [96, 84, 90, 52].map(w => ({ w: w + '%' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

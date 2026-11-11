@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/styles.css">
+<script src="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--color-bg);font-family:var(--font-body);color:var(--color-text)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}</style>
+</helmet>
+<section id="t1" style="padding:44px 48px 48px;scroll-margin-top:16px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:20px"><a href="#t1" style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-text);color:var(--color-bg);text-decoration:none">1</a><span style="font-size:14px;font-weight:600">Site builder hub card: collapsed card, pop-up, detail page</span></div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,560px) minmax(0,560px) minmax(0,520px);gap:48px;margin-bottom:12px">
+    <div>
+      <h1 style="margin:0 0 10px;font-size:48px">Site builder</h1>
+      <p style="margin:0;font-size:16px;line-height:1.5;max-width:56ch;text-wrap:pretty">Everything about the site itself in one card: its pages, its copy, its look and what kind of site it is. Every frame is live. Open the pop-up from the card, expand a template page to edit its copy, add a page, set what kind of org it is.</p>
+    </div>
+    <div>
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">What folds in</div>
+      <div style="display:flex;flex-direction:column;font-size:15px;line-height:1.4">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:7px 0;border-bottom:1px solid var(--color-divider)"><span>Page builder and Site copy (sunjay and others)</span><span style="color:var(--color-accent-700)">Pages</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:7px 0;border-bottom:1px solid var(--color-divider)"><span>Appearance (IFAC) and other sites’ theme editors</span><span style="color:var(--color-accent-700)">Theme</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:7px 0;border-bottom:1px solid var(--color-divider)"><span>The org card form on /center</span><span style="color:var(--color-accent-700)">Profile</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:7px 0;border-bottom:1px solid var(--color-divider)"><span>Book Readers: The book, Structure of a meeting, Books ahead, Hero, banner &amp; copy</span><span style="color:var(--color-accent-700)">Copy slots on Home</span></div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:7px 0;border-bottom:1px solid var(--color-divider)"><span>Book Readers: Reading groups, Overview, Suggested</span><span style="color:var(--color-neutral-700)">Content / Series card</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Assumptions to check</div>
+      <ol style="margin:0;padding-left:18px;font-size:15px;line-height:1.5;display:flex;flex-direction:column;gap:6px">
+        <li>Template pages (and their copy slots) come from each app. Owners can’t create new ones; new pages are always editor pages.</li>
+        <li>The theme itself is changed in the existing theme editor. This card shows what the site uses and which pages are exceptions; exceptions change colours only.</li>
+        <li>Profile replaces the org card form on /center. It describes the org to the network and doesn’t switch hub cards on or off.</li>
+        <li>Sites of four pages or fewer open in the list with rows expanded; bigger sites open in the grid.</li>
+        <li>A nested page sits under its parent’s address and is listed under it in Pages. A saved template is a snapshot: pages made from it don’t change when it does.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:48px 0 18px;display:flex;align-items:baseline;gap:12px">Collapsed card<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">Page count, last edited page, theme swatch, and two ways in: the page editor or the page list</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1a" data-screen-label="1a Card IFAC" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1a" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1a</a>IFAC, 20 pages</div>
+      <div style="width:440px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="card" hint-size="440px,368px"></dc-import></div></div>
+    <div id="1b" data-screen-label="1b Card Book Readers" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1b" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1b</a>Fourth Way Book Readers, 2 pages</div>
+      <div style="width:440px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="card" org="bookreaders" hint-size="440px,368px"></dc-import></div></div>
+    <div id="1c" data-screen-label="1c Thumbnail placeholder" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1c" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1c</a>Page with no thumbnail yet, at each size it appears</div>
+      <div style="width:620px;padding:22px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);display:grid;grid-template-columns:288px minmax(0,1fr);gap:24px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:6px"><dc-import name="PageThumb" shape="" title="Collecting guide" style="display:block;width:288px;height:180px" hint-size="288px,180px"></dc-import><span style="font-size:13px;color:var(--color-neutral-700)">Grid</span></div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;gap:12px"><dc-import name="PageThumb" shape="" title="Collecting guide" small="{{ true }}" style="width:104px;height:65px;flex:none" hint-size="104px,65px"></dc-import><span style="font-size:13px;color:var(--color-neutral-700)">List row</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><dc-import name="PageThumb" shape="" title="Collecting guide" small="{{ true }}" style="width:80px;height:50px;flex:none" hint-size="80px,50px"></dc-import><span style="font-size:13px;color:var(--color-neutral-700)">Pop-up</span></div>
+          <p style="margin:0;font-size:14px;line-height:1.45;color:var(--color-neutral-800);text-wrap:pretty">A drafting grid in the hub’s own colours, never the site’s, so it can’t be mistaken for a real render. Large sizes give the page title and say when a preview will appear.</p>
+        </div>
+      </div></div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:52px 0 18px;display:flex;align-items:baseline;gap:12px">Pop-up<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">Every page in one list. Editor pages get Edit page and View; template pages expand to show their copy slots</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1d" data-screen-label="1d Pop-up IFAC" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1d" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1d</a>IFAC: all 20 pages, scrolling</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="popup" hint-size="1280px,900px"></dc-import></div></div>
+    <div id="1e" data-screen-label="1e Pop-up Book Readers" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1e" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1e</a>Book Readers: Home expanded with its copy slots</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="popup" org="bookreaders" expanded="home" hint-size="1280px,900px"></dc-import></div></div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:52px 0 18px;display:flex;align-items:baseline;gap:12px">Detail page: Pages<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">Thumbnail grid or list, both kinds of page together</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1f" data-screen-label="1f Pages grid" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1f" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1f</a>IFAC, 20 pages as thumbnails</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="grid" hint-size="1280px,1900px"></dc-import></div></div>
+    <div id="1g" data-screen-label="1g Pages list editor row" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1g" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1g</a>List, an editor page expanded: notes and page settings</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="list" expanded="after-image" hint-size="1280px,1900px"></dc-import></div></div>
+    <div id="1h" data-screen-label="1h Pages list template row" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1h" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1h</a>List, a template page expanded: notes and copy slots</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="list" expanded="artists" hint-size="1280px,1900px"></dc-import></div></div>
+    <div id="1i" data-screen-label="1i Pages 2-page site" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1i" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1i</a>Book Readers, 2 pages: the old landing tabs as copy slots on Home</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" org="bookreaders" expanded="home" hint-size="1280px,1200px"></dc-import></div></div>
+    <div id="1j" data-screen-label="1j New page" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1j" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1j</a>New page: from a starting layout or blank</div>
+      <div style="width:1280px;height:1180px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="grid" demo="newPage" hint-size="1280px,1180px"></dc-import></div></div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:52px 0 18px;display:flex;align-items:baseline;gap:12px">Nested pages and saved templates<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">Placing a page under another, saving a page’s layout to reuse</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1o" data-screen-label="1o New page under Exhibitions, from the saved Exhibition template" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1o" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1o</a>New page under Exhibitions, from the saved Exhibition template</div>
+      <div style="width:1280px;height:1180px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="list" demo="newNested" hint-size="1280px,1180px"></dc-import></div></div>
+    <div id="1p" data-screen-label="1p Saving After-Image’s layout as a template" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1p" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1p</a>Saving After-Image’s layout as a template</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="pages" layout="list" expanded="after-image" demo="saveTemplate" hint-size="1280px,1900px"></dc-import></div></div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:52px 0 18px;display:flex;align-items:baseline;gap:12px">Detail page: Theme<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">The site-wide theme as a live preview and a plain statement of what it uses, then the pages that are exceptions</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1k" data-screen-label="1k Theme whole site" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1k" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1k</a>Site theme and page exceptions</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="theme" hint-size="1280px,1300px"></dc-import></div></div>
+  </div>
+
+  <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;margin:52px 0 18px;display:flex;align-items:baseline;gap:12px">Detail page: Profile<span style="font-family:var(--font-body);font-weight:400;font-size:14px;color:var(--color-neutral-700)">The org’s identity card: what kind of org the platform sees</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1m" data-screen-label="1m Profile IFAC" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1m" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1m</a>IFAC: mostly a collective, also artist, store and gatherings</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="profile" hint-size="1280px,900px"></dc-import></div></div>
+    <div id="1n" data-screen-label="1n Profile Book Readers" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px"><div style="display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--color-neutral-800)"><a href="#1n" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1n</a>Book Readers: mostly gatherings, also writing</div>
+      <div style="width:1280px;border:1px solid var(--color-divider);box-shadow:var(--shadow-sm);overflow:hidden"><dc-import name="SiteBuilderCard" view="detail" tab="profile" org="bookreaders" hint-size="1280px,900px"></dc-import></div></div>
+  </div>
+</section>
+
+<template id="__bundler_thumbnail" data-bg-color="#f2f2f3"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect x="36" y="36" width="48" height="48" fill="none" stroke="#5980a6" stroke-width="3"></rect><path d="M36 52h48M52 84V52" stroke="#5980a6" stroke-width="3"></path></svg></template></x-dc>
+</body>
+</html>

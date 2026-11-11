@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/styles.css">
+<script src="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<style>body{margin:0;background:var(--color-bg)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-600)}button,.btn,.seg-opt,.tag{white-space:nowrap}</style>
+</helmet>
+<div data-screen-label="Quick compose" style="position:relative;width:100%;min-height:{{ frameH }};overflow:hidden;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+
+  <div class="nav" style="padding:16px min(56px,5%);gap:min(24px,4%)">
+    <span class="nav-brand">Elkdonis Arts Collective</span>
+    <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+      <a href="#" aria-current="page">Lab work</a><a href="#">Gatherings</a><a href="#">Series</a><a href="#">Store</a><a href="#">About</a>
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-700)"><i class="ph-duotone ph-user-circle" style="font-size:18px"></i>Mara</span>
+    </sc-if>
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}"><i class="ph-duotone ph-list" style="font-size:22px"></i></sc-if>
+  </div>
+
+  <div style="padding:28px min(56px,5%) 48px;max-width:780px;display:flex;flex-direction:column;gap:10px">
+    <h1 style="margin:0">Lab work</h1>
+    <p style="margin:0 0 26px;font-size:17px;color:var(--color-neutral-800)">Notes, nights and experiments from the print lab.</p>
+    <div style="display:flex;align-items:center;gap:16px">
+      <h3 style="margin:0">Coming up</h3>
+      <div style="position:relative">
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;background:var(--color-accent-100);border-color:var(--color-accent-300);color:var(--color-accent-800)"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add</button>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;top:calc(100% + 12px);left:-14px;width:440px;z-index:3;background:var(--color-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)">
+            <span style="position:absolute;top:-6px;left:34px;width:12px;height:12px;background:var(--color-bg);transform:rotate(45deg);box-shadow:-2px -2px 3px color-mix(in srgb,var(--color-neutral-900) 6%,transparent)"></span>
+            <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;display:flex;flex-direction:column;gap:14px;padding:16px 18px 14px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="seg">
+                    <label class="seg-opt" style="padding:5px 10px;font-size:12px"><input type="radio" checked="{{ k.gathering }}" onChange="{{ setK.gathering }}">Gathering</label>
+                    <label class="seg-opt" style="padding:5px 10px;font-size:12px"><input type="radio" checked="{{ k.post }}" onChange="{{ setK.post }}">Post</label>
+                    <label class="seg-opt" style="padding:5px 10px;font-size:12px"><input type="radio" checked="{{ k.artwork }}" onChange="{{ setK.artwork }}">Artwork</label>
+                  </div>
+                  <button class="btn btn-icon" aria-label="Close" style="margin-left:auto;width:30px;height:30px"><i class="ph-duotone ph-x" style="font-size:16px"></i></button>
+                </div>
+                <input value="{{ title }}" onChange="{{ onTitle }}" placeholder="{{ titlePh }}" aria-label="Title" style="width:100%;border:0;background:transparent;padding:0;font-family:var(--font-heading);font-weight:600;font-size:23px;line-height:1.2;color:var(--color-text);caret-color:var(--color-accent)">
+
+                <sc-if value="{{ k.gathering }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:8px">
+                    <div class="input" style="flex:1 1 140px;width:auto;display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone ph-calendar-blank" style="font-size:15px;color:var(--color-accent)"></i>Thu 19 Nov</div>
+                    <div class="input" style="flex:0 0 84px;width:auto;display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone ph-clock" style="font-size:15px;color:var(--color-accent)"></i>18:30</div>
+                    <div class="input" style="flex:0 0 74px;width:auto;display:flex;align-items:center;gap:6px;font-size:13px">2h<i class="ph-duotone ph-caret-down" style="font-size:11px;margin-left:auto"></i></div>
+                  </div>
+                  <div class="input" style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone ph-map-pin" style="font-size:15px;color:var(--color-accent)"></i><span style="flex:1;min-width:0">Studio 4, 120 Harbord St</span><span style="display:flex;gap:2px;color:var(--color-neutral-600)"><i class="ph-duotone ph-map-pin" style="font-size:15px;padding:2px;color:var(--color-accent);background:var(--color-accent-100);border-radius:1px"></i><i class="ph-duotone ph-link" style="font-size:15px;padding:2px"></i><i class="ph-duotone ph-video-camera" style="font-size:15px;padding:2px"></i></span></div>
+                  <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md)">
+                    <div style="display:flex;gap:2px;padding:4px 8px;font-size:12px;border-bottom:1px solid var(--color-divider)"><span style="padding:2px 6px;font-weight:600">B</span><span style="padding:2px 6px;font-style:italic">I</span><span style="padding:2px 6px">• List</span><span style="padding:2px 6px">Link</span></div>
+                    <div style="padding:8px 10px 12px;font-size:13px;line-height:1.55;min-height:58px">Bring a sketch or work from ours. Relief and monotype set up; all levels.</div>
+                  </div>
+                  <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-700)">From <span style="font-weight:600">Thursday open studio</span>: 24 places, RSVP on, a reminder the day before. <a href="#">Change</a></span>
+                </sc-if>
+
+                <sc-if value="{{ k.post }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md)">
+                    <div style="display:flex;gap:2px;padding:4px 8px;font-size:12px;border-bottom:1px solid var(--color-divider)"><span style="padding:2px 6px;font-weight:600">B</span><span style="padding:2px 6px;font-style:italic">I</span><span style="padding:2px 6px">H2</span><span style="padding:2px 6px">• List</span><span style="padding:2px 6px">“ ”</span><span style="padding:2px 6px">Link</span></div>
+                    <div style="padding:8px 10px 12px;font-size:13px;line-height:1.55;min-height:110px;color:var(--color-neutral-700)">Write it here. Pictures, pull quotes and cards are in Studio.</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap;margin-left:-5px"><span style="font-size:13px;padding-left:5px">Cover</span><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-upload-simple" style="font-size:15px"></i>Upload</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-images" style="font-size:15px"></i>Library</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-camera" style="font-size:15px"></i>Camera</button></div>
+                </sc-if>
+
+                <sc-if value="{{ k.artwork }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:12px">
+                    <div style="flex:0 0 112px;aspect-ratio:4/5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px dashed var(--color-neutral-400);border-radius:var(--radius-md);font-size:12px;text-align:center;color:var(--color-accent-700)"><i class="ph-duotone ph-image" style="font-size:22px"></i>Add pictures</div>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+                      <div class="input" style="display:flex;align-items:center;gap:6px;padding:4px 8px"><span class="tag tag-accent">Mara Okafor</span></div>
+                      <div class="seg" style="align-self:flex-start"><span class="seg-opt" style="padding:5px 9px;font-size:12px;background:var(--color-accent);color:var(--color-bg)">Price</span><span class="seg-opt" style="padding:5px 9px;font-size:12px">On request</span></div>
+                      <div class="input" style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="color:var(--color-neutral-700)">$</span>180<span style="margin-left:auto;font-size:12px;color:var(--color-neutral-700)">CAD</span></div>
+                    </div>
+                  </div>
+                </sc-if>
+                <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-700)"><i class="ph-duotone ph-globe" style="font-size:14px"></i>Goes on Lab work · Public</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--color-surface);border-radius:0 0 var(--radius-lg) var(--radius-lg)">
+                <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-arrows-out-simple" style="font-size:15px"></i>Open in Studio</button>
+                <button class="btn btn-secondary" style="margin-left:auto;font-size:13px;padding:7px 12px">Save draft</button>
+                <button class="btn btn-primary" style="font-size:13px;padding:7px 14px">Publish</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isPublished }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative;display:flex;flex-direction:column;gap:12px;padding:18px 18px 16px">
+                <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-accent-700)"><i class="ph-duotone ph-check-circle" style="font-size:20px;color:var(--color-accent)"></i>Published</span>
+                <span style="font-size:22px;font-weight:600;line-height:1.2">{{ titleOut }}</span>
+                <span style="font-size:13px;color:var(--color-neutral-700)">It’s on Lab work under Coming up. RSVPs are open.</span>
+                <div style="display:flex;gap:8px">
+                  <div class="input" style="flex:1;min-width:0;display:flex;align-items:center;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">elkdonis.art/lab-work/open-studio-printmaking-night</div>
+                  <button onClick="{{ copy }}" class="btn btn-secondary" style="font-size:13px;padding:7px 12px"><i class="ph-duotone {{ copyIcon }}" style="font-size:15px"></i>{{ copyLabel }}</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--color-surface);border-radius:0 0 var(--radius-lg) var(--radius-lg)">
+                <button class="btn btn-ghost" style="font-size:13px">Open in Studio</button>
+                <button class="btn btn-ghost" style="font-size:13px">Add another</button>
+                <button class="btn btn-primary" style="margin-left:auto;font-size:13px;padding:7px 14px">Done</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;margin-top:14px">
+      <sc-if value="{{ isPublished }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:14px 0;background:var(--color-accent-100);margin:0 -12px;padding-inline:12px">
+          <span style="font-size:13px;line-height:1.7">Thu 19 Nov</span>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:600">{{ titleOut }}<span class="tag tag-accent">New</span></span><span style="font-size:13px;color:var(--color-neutral-700)">18:30 · Studio 4 · 24 places</span></div>
+        </div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:14px 0"><span style="font-size:13px;line-height:1.7">Sat 21 Nov</span><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:600">Bookbinding, a Saturday</span><span style="font-size:13px;color:var(--color-neutral-700)">10:00 · Studio 2 · 6 places left</span></div></div>
+      <div style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:14px 0"><span style="font-size:13px;line-height:1.7">Wed 2 Dec</span><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:600">Paper mill visit</span><span style="font-size:13px;color:var(--color-neutral-700)">Leaves 09:00 from the lab</span></div></div>
+      <div style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:14px 0"><span style="font-size:13px;line-height:1.7">Thu 10 Dec</span><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:600">Members’ print swap</span><span style="font-size:13px;color:var(--color-neutral-700)">19:00 · Members</span></div></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 45%,transparent)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;background:var(--color-bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+      <span style="align-self:center;width:40px;height:4px;margin:8px 0 4px;border-radius:2px;background:var(--color-neutral-400)"></span>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:8px 18px 16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="seg">
+            <label class="seg-opt" style="padding:6px 10px;font-size:13px"><input type="radio" checked="{{ k.gathering }}" onChange="{{ setK.gathering }}">Gathering</label>
+            <label class="seg-opt" style="padding:6px 10px;font-size:13px"><input type="radio" checked="{{ k.post }}" onChange="{{ setK.post }}">Post</label>
+            <label class="seg-opt" style="padding:6px 10px;font-size:13px"><input type="radio" checked="{{ k.artwork }}" onChange="{{ setK.artwork }}">Artwork</label>
+          </div>
+          <button class="btn btn-icon" aria-label="Close" style="margin-left:auto;width:44px;height:44px"><i class="ph-duotone ph-x" style="font-size:20px"></i></button>
+        </div>
+        <input value="{{ title }}" onChange="{{ onTitle }}" placeholder="{{ titlePh }}" aria-label="Title" style="width:100%;border:0;background:transparent;padding:0;font-family:var(--font-heading);font-weight:600;font-size:23px;line-height:1.2;color:var(--color-text);caret-color:var(--color-accent)">
+        <div style="display:flex;gap:8px">
+          <div class="input" style="flex:1;min-height:44px;display:flex;align-items:center;gap:8px;font-size:14px"><i class="ph-duotone ph-calendar-blank" style="font-size:16px;color:var(--color-accent)"></i>Thu 19 Nov</div>
+          <div class="input" style="flex:0 0 92px;min-height:44px;display:flex;align-items:center;gap:8px;font-size:14px"><i class="ph-duotone ph-clock" style="font-size:16px;color:var(--color-accent)"></i>18:30</div>
+          <div class="input" style="flex:0 0 66px;min-height:44px;display:flex;align-items:center;gap:6px;font-size:14px">2h<i class="ph-duotone ph-caret-down" style="font-size:11px;margin-left:auto"></i></div>
+        </div>
+        <div class="input" style="min-height:44px;display:flex;align-items:center;gap:8px;font-size:14px"><i class="ph-duotone ph-map-pin" style="font-size:16px;color:var(--color-accent)"></i>Studio 4, 120 Harbord St</div>
+        <div class="input" style="min-height:72px;font-size:14px;line-height:1.5">Bring a sketch or work from ours. Relief and monotype set up; all levels.</div>
+        <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-700)">From <span style="font-weight:600">Thursday open studio</span>: 24 places, RSVP on, a reminder the day before. Goes on Lab work, public.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:12px 18px 24px;background:var(--color-surface)">
+        <button class="btn btn-primary" style="min-height:44px">Publish</button>
+        <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1;min-height:44px">Save draft</button><button class="btn btn-ghost" style="flex:1;min-height:44px;justify-content:center"><i class="ph-duotone ph-arrows-out-simple" style="font-size:16px"></i>Open in Studio</button></div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:820},&quot;viewport&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;desktop&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;'desktop'|'mobile'&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;edit&quot;,&quot;published&quot;],&quot;default&quot;:&quot;edit&quot;,&quot;tsType&quot;:&quot;'edit'|'published'&quot;}}">
+class Component extends DCLogic {
+  state = { kind: 'gathering', titles: { gathering: 'Open studio: printmaking night', post: '', artwork: '' }, copied: false };
+  renderVals() {
+    const p = this.props || {}, s = this.state;
+    const mob = p.viewport === 'mobile', pub = p.stage === 'published' && !mob;
+    const k = {}, setK = {};
+    ['gathering', 'post', 'artwork'].forEach(v => { k[v] = s.kind === v; setK[v] = () => this.setState({ kind: v }); });
+    const title = s.titles[s.kind] || '';
+    return {
+      isDesktop: !mob, isMobile: mob, isEdit: !pub, isPublished: pub, frameH: mob ? '844px' : '820px',
+      k, setK, title, titleOut: title || 'Untitled',
+      titlePh: { gathering: 'What is happening?', post: 'Title', artwork: 'Title of the piece' }[s.kind],
+      onTitle: e => { const v = e.target.value; this.setState(st => ({ titles: { ...st.titles, [st.kind]: v } })); },
+      copy: () => { this.setState({ copied: true }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ copied: false }), 1600); },
+      copyLabel: s.copied ? 'Copied' : 'Copy', copyIcon: s.copied ? 'ph-check' : 'ph-copy'
+    };
+  }
+}
+</script>
+</body>
+</html>

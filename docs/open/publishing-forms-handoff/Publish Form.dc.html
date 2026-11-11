@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/styles.css">
+<script src="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<style>body{margin:0;background:var(--color-bg)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-600)}button,.btn,.seg-opt,.tag{white-space:nowrap}</style>
+</helmet>
+<div data-screen-label="{{ kindLabel }}" style="width:100%;min-height:100%;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:16px;padding:14px 24px 14px 14px">
+  <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-arrow-left" style="font-size:16px"></i>Studio</button>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:18px;font-weight:600">{{ kindLabel }}</span>
+    <i class="ph-duotone ph-caret-down" style="font-size:14px;color:var(--color-neutral-700)"></i>
+    <span class="{{ statusClass }}">{{ statusTag }}</span>
+    <span style="font-size:12px;color:var(--color-neutral-700)">{{ savedLine }}</span>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ showTopToggle }}" hint-placeholder-val="{{ false }}"><button onClick="{{ togglePv }}" aria-pressed="{{ pvOpen }}" class="btn btn-secondary" style="margin-right:8px;background:{{ pvBtnBg }};color:{{ pvBtnFg }};border-color:{{ pvBtnBd }}"><i class="ph-duotone {{ pvIcon }}" style="font-size:16px"></i>Preview</button></sc-if>
+      <button class="btn btn-secondary">Save draft</button>
+      <button class="btn btn-secondary"><i class="ph-duotone ph-clock" style="font-size:16px"></i>Schedule…</button>
+      <button class="btn btn-primary">Publish</button>
+    </sc-if>
+    <sc-if value="{{ isPublished }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-ghost">Unpublish</button>
+      <button class="btn btn-secondary">Back to Studio</button>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:8px 12px 10px">
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="btn btn-icon" aria-label="Close"><i class="ph-duotone ph-x" style="font-size:20px"></i></button>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25">
+      <span style="font-size:16px;font-weight:600">{{ kindLabel }}</span>
+      <span style="font-size:11px;color:var(--color-neutral-700)">{{ savedLine }}</span>
+    </div>
+    <button class="btn btn-primary">Publish</button>
+  </div>
+  <div class="seg" style="display:flex">
+    <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" checked="{{ tab.form }}" onChange="{{ setTab.form }}">Form</label>
+    <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" checked="{{ tab.preview }}" onChange="{{ setTab.preview }}">Preview</label>
+  </div>
+</div>
+</sc-if>
+
+<div style="flex:1;display:flex;align-items:stretch">
+
+<sc-if value="{{ showRail }}" hint-placeholder-val="{{ true }}">
+<div style="flex:0 0 220px;padding:28px 18px 32px 24px;display:flex;flex-direction:column;gap:34px">
+  <sc-if value="{{ showRailSeg }}" hint-placeholder-val="{{ false }}">
+    <div class="seg" style="display:flex;margin-bottom:-10px">
+      <label class="seg-opt" style="flex:1;justify-content:center;font-size:12px;padding:6px 8px"><input type="radio" checked="{{ pvClosed }}" onChange="{{ closePv }}">Sections</label>
+      <label class="seg-opt" style="flex:1;justify-content:center;font-size:12px;padding:6px 8px"><input type="radio" checked="{{ pvOpen }}" onChange="{{ openPv }}"><i class="ph-duotone ph-eye" style="font-size:14px"></i>Preview</label>
+    </div>
+  </sc-if>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Start from</span>
+    <div class="input" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><i class="ph-duotone ph-stack" style="font-size:16px;color:var(--color-accent)"></i><span style="flex:1;min-width:0">{{ presetName }}</span><i class="ph-duotone ph-caret-down" style="font-size:12px"></i></div>
+    <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-700)">{{ presetNote }}</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:4px">Essentials</span>
+    <sc-for list="{{ railEss }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex;align-items:center;gap:9px;font-size:14px;padding:3px 0;color:{{ it.tc }}"><i class="ph-duotone {{ it.icon }}" style="font-size:16px;color:{{ it.color }}"></i>{{ it.label }}</div>
+    </sc-for>
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin:22px 0 4px">More</span>
+    <sc-for list="{{ railMore }}" as="it" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center;gap:9px;font-size:14px;padding:3px 0;color:{{ it.tc }}"><i class="ph-duotone {{ it.icon }}" style="font-size:16px;color:{{ it.color }}"></i>{{ it.label }}</div>
+    </sc-for>
+  </div>
+  <div style="margin-top:auto;display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.4;color:{{ ready.tc }}"><i class="ph-duotone {{ ready.icon }}" style="font-size:18px;color:{{ ready.color }}"></i><span>{{ ready.text }}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showFormCol }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-width:0;padding:28px min(48px,5%) 64px">
+
+<sc-if value="{{ isEdit }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:600px;display:flex;flex-direction:column;gap:30px">
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:var(--color-neutral-700)">Start from</span><div class="input" style="flex:1;display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone ph-stack" style="font-size:16px;color:var(--color-accent)"></i><span style="flex:1;min-width:0">{{ presetName }}</span><i class="ph-duotone ph-caret-down" style="font-size:12px"></i></div></div>
+  </sc-if>
+
+  <sc-if value="{{ showErr }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="display:flex;gap:12px;padding:14px 16px;background:var(--color-accent-2-100);color:var(--color-accent-2-800);border-radius:var(--radius-md)">
+      <i class="ph-duotone ph-warning-circle" style="font-size:22px;flex:none"></i>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:16px;font-weight:600">Two things before this can go out</span>
+        <div style="display:flex;flex-wrap:wrap;gap:2px 18px;font-size:13px"><a href="#when" style="color:inherit">When: the date has passed</a><a href="#where" style="color:inherit">Where: no joining link</a></div>
+        <span style="font-size:12px">Your draft is saved. Nothing has been sent.</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:-14px">Essentials</span>
+
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+    <input value="{{ title }}" onChange="{{ onTitle }}" placeholder="Title" aria-label="Title" style="width:100%;border:0;background:transparent;padding:0;font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.15;letter-spacing:-0.015em;color:var(--color-text);caret-color:var(--color-accent)">
+  </sc-if>
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <textarea value="{{ title }}" onChange="{{ onTitle }}" rows="2" placeholder="Title" aria-label="Title" style="width:100%;field-sizing:content;overflow:hidden;border:0;background:transparent;padding:0;resize:none;font-family:var(--font-heading);font-weight:600;font-size:27px;line-height:1.15;letter-spacing:-0.015em;color:var(--color-text);caret-color:var(--color-accent)"></textarea>
+  </sc-if>
+
+  <!-- ═══ POST ═══ -->
+  <sc-if value="{{ isPost }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:-12px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--color-neutral-700)"><span class="tag tag-neutral">Blocks</span>412 words, about 2 minutes</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:4px 6px;width:fit-content;max-width:100%;background:var(--color-bg);box-shadow:var(--shadow-md);border-radius:var(--radius-md);font-size:13px">
+        <span style="padding:4px 8px;font-weight:600">+</span><span style="width:1px;height:16px;background:var(--color-divider)"></span>
+        <span style="padding:4px 7px">H2</span><span style="padding:4px 7px">H3</span><span style="width:1px;height:16px;background:var(--color-divider)"></span>
+        <span style="padding:4px 7px;font-weight:600">B</span><span style="padding:4px 7px;font-style:italic">I</span><span style="padding:4px 7px;text-decoration:underline">U</span><span style="width:1px;height:16px;background:var(--color-divider)"></span>
+        <span style="padding:4px 7px">“ ”</span><span style="padding:4px 7px">• List</span><span style="padding:4px 7px">1. List</span><span style="padding:4px 7px">Link</span>
+      </div>
+      <div style="font-size:16px;line-height:1.65;display:flex;flex-direction:column;gap:14px;text-wrap:pretty">
+        <p style="margin:0">Two days, four presses and about a kilo of soy ink. We set out to learn whether the lab could give up solvent clean-up for good.</p>
+        <p style="margin:0">The short answer is yes, with two catches. Soy inks stay open longer on the slab, which is lovely for monotype and a nuisance for anything that needs a crisp second colour.</p>
+        <div style="position:relative;padding:6px 0 6px 28px">
+          <span style="position:absolute;left:-26px;top:10px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-neutral-500)"><i class="ph-duotone ph-dots-six-vertical" style="font-size:16px"></i></span>
+          <p style="margin:0;font-size:21px;line-height:1.4;font-style:italic">Nobody missed the smell of white spirit.</p>
+        </div>
+        <figure style="display:flex;flex-direction:column;gap:6px">
+          <div style="aspect-ratio:16/8;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"></div>
+          <figcaption style="font-size:12px;color:var(--color-neutral-700);margin:0">The second-colour pass on the Albion.</figcaption>
+        </figure>
+      </div>
+      <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add a block</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:14px;font-weight:600">Cover</span><span style="font-size:12px;color:var(--color-neutral-700)">On cards, at the top of the page and in link previews.</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+        <div style="flex:0 0 200px;aspect-ratio:16/9;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"></div>
+        <div style="flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:8px">
+          <div class="input" style="display:flex;align-items:center;font-size:13px">Inking the Albion press, first morning</div>
+          <span style="font-size:12px;color:var(--color-neutral-700)">Alt text, read aloud to people who can’t see the picture.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-left:-5px">
+            <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-crosshair" style="font-size:15px"></i>Focal point</button>
+            <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-upload-simple" style="font-size:15px"></i>Upload</button>
+            <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-images" style="font-size:15px"></i>Library</button>
+            <button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-camera" style="font-size:15px"></i>Camera</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:14px;font-weight:600">Goes on</span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <div class="input" style="flex:1 1 260px;width:auto;display:flex;align-items:center;gap:8px;font-size:14px"><i class="ph-duotone ph-newspaper" style="font-size:16px;color:var(--color-accent)"></i>Lab work<span style="color:var(--color-neutral-700)">· Elkdonis Arts Collective</span><i class="ph-duotone ph-caret-down" style="font-size:12px;margin-left:auto"></i></div>
+        <div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)"><i class="ph-duotone ph-globe" style="font-size:15px"></i>Public</span><span class="seg-opt"><i class="ph-duotone ph-lock" style="font-size:15px"></i>Members</span></div>
+      </div>
+      <span style="font-size:12px;color:var(--color-neutral-700)">Members-only posts show a locked card to everyone else.</span>
+    </div>
+
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin:18px 0 -22px">More</span>
+    <div style="display:flex;flex-direction:column">
+      <button onClick="{{ tg.excerpt }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.excerpt }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Excerpt</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">From the opening of the body</span></button>
+      <sc-if value="{{ op.excerpt }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px;padding:4px 0 22px 25px"><div class="input" style="min-height:72px;font-size:14px;color:var(--color-neutral-700)">One or two lines for cards and link previews. Left empty, it is taken from the body.</div></div></sc-if>
+
+      <button onClick="{{ tg.tags }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.tags }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Tags</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">printmaking, soy ink</span></button>
+      <sc-if value="{{ op.tags }}" hint-placeholder-val="{{ false }}"><div style="padding:4px 0 22px 25px"><div class="input" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 8px"><span class="tag tag-accent">printmaking ×</span><span class="tag tag-accent">soy ink ×</span><span style="font-size:13px;color:var(--color-neutral-700)">Add a tag</span></div></div></sc-if>
+
+      <button onClick="{{ tg.alsoOn }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.alsoOn }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Also show on</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Your profile</span></button>
+      <sc-if value="{{ op.alsoOn }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0 22px 25px;font-size:14px">
+          <label style="display:flex;gap:10px;align-items:flex-start;opacity:0.6"><input type="checkbox" checked="{{ true }}" disabled="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:2px 0 0"><span style="display:flex;flex-direction:column"><span>Lab work · Elkdonis Arts Collective</span><span style="font-size:12px">Where it lives. Change it under Goes on.</span></span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:2px 0 0"><span style="display:flex;flex-direction:column"><span>Your profile · Mara Okafor</span><span style="font-size:12px;color:var(--color-neutral-700)">Listed with your other writing.</span></span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:2px 0 0"><span style="display:flex;flex-direction:column"><span>Inner Gathering</span><span style="font-size:12px;color:var(--color-neutral-700)">Another org. Their editors approve it before it shows.</span></span></label>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.schedule }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.schedule }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Schedule</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Goes out when you press Publish</span></button>
+      <sc-if value="{{ op.schedule }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:4px 0 22px 25px;font-size:14px">
+          <div class="input" style="width:auto;flex:1 1 160px;display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-calendar-blank" style="font-size:16px"></i>Tue 10 Nov 2026</div>
+          <div class="input" style="width:auto;flex:0 0 100px;display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-clock" style="font-size:16px"></i>09:00</div>
+          <span style="font-size:12px;color:var(--color-neutral-700);flex-basis:100%">Publish then becomes Schedule. Eastern time (Toronto).</span>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.poll }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.poll }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Poll or questions</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">None</span></button>
+      <sc-if value="{{ op.poll }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px 0 22px 25px">
+          <button class="btn btn-secondary" style="font-size:13px"><i class="ph-duotone ph-chart-bar-horizontal" style="font-size:15px"></i>Add a poll</button>
+          <button class="btn btn-secondary" style="font-size:13px"><i class="ph-duotone ph-list-checks" style="font-size:15px"></i>Add questions</button>
+          <button class="btn btn-ghost" style="font-size:13px">Attach one you made</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ GATHERING ═══ -->
+  <sc-if value="{{ isGathering }}" hint-placeholder-val="{{ false }}">
+    <div id="when" style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:14px;font-weight:600">When</span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <sc-if value="{{ noErr }}" hint-placeholder-val="{{ true }}"><div class="input" style="width:auto;flex:1 1 170px;display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-calendar-blank" style="font-size:16px;color:var(--color-accent)"></i>Thu 19 Nov 2026</div></sc-if>
+        <sc-if value="{{ showErr }}" hint-placeholder-val="{{ false }}"><div class="input" aria-invalid="true" style="width:auto;flex:1 1 170px;display:flex;align-items:center;gap:8px;border-color:var(--color-accent-2);box-shadow:inset 0 0 0 1px var(--color-accent-2)"><i class="ph-duotone ph-calendar-blank" style="font-size:16px;color:var(--color-accent-2)"></i>Thu 5 Nov 2026</div></sc-if>
+        <div class="input" style="width:auto;flex:0 0 96px;display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-clock" style="font-size:16px;color:var(--color-accent)"></i>18:30</div>
+        <div class="seg"><span class="seg-opt">1h</span><span class="seg-opt">1½h</span><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">2h</span><span class="seg-opt">3h</span><span class="seg-opt">Other</span></div>
+      </div>
+      <sc-if value="{{ showErr }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-2-700)"><i class="ph-duotone ph-warning-circle" style="font-size:16px"></i>This date has passed. Pick a day from today on.</span></sc-if>
+      <span style="font-size:12px;color:var(--color-neutral-700)">Ends 20:30 · Eastern time (Toronto) · <a href="#">Change</a></span>
+      <button onClick="{{ toggleRepeat }}" role="switch" aria-checked="{{ repeat }}" style="display:flex;align-items:center;gap:12px;align-self:flex-start;margin-top:6px;padding:4px 0;background:none;border:0;font:inherit;color:inherit;cursor:pointer;text-align:left">
+        <sc-if value="{{ repeat }}" hint-placeholder-val="{{ false }}"><span style="position:relative;flex:none;width:34px;height:20px;border-radius:var(--radius-md);background:var(--color-accent)"><span style="position:absolute;top:3px;left:17px;width:14px;height:14px;border-radius:1px;background:var(--color-bg)"></span></span></sc-if>
+        <sc-if value="{{ notRepeat }}" hint-placeholder-val="{{ true }}"><span style="position:relative;flex:none;width:34px;height:20px;border-radius:var(--radius-md);background:var(--color-neutral-400)"><span style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:1px;background:var(--color-bg)"></span></span></sc-if>
+        <span style="font-size:14px;font-weight:600">Repeats</span>
+        <span style="font-size:13px;color:var(--color-neutral-700)">{{ repeatSummary }}</span>
+      </button>
+      <sc-if value="{{ repeat }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0 0 46px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px">
+            <span>Every</span><div class="input" style="width:auto;display:flex;align-items:center;gap:8px">week<i class="ph-duotone ph-caret-down" style="font-size:12px"></i></div>
+            <span>on</span><div class="input" style="width:auto;display:flex;align-items:center;gap:8px">Thursday<i class="ph-duotone ph-caret-down" style="font-size:12px"></i></div>
+            <div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">8 sessions</span><span class="seg-opt">Until a date</span></div>
+          </div>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer"><input type="checkbox" checked="{{ asSeries }}" onChange="{{ toggleSeries }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:2px 0 0"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">Present it as a series</span><span style="font-size:12px;color:var(--color-neutral-700)">It gets a series page that lists every session. People can join the whole run or single evenings.</span></span></label>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ series }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-size:14px;font-weight:600">Sessions</span><span style="font-size:12px;color:var(--color-neutral-700)">{{ sessionSummary }}</span></div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:24px 82px minmax(0,1fr) 30px;gap:10px;padding:0 0 8px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);border-bottom:1px solid var(--color-divider)"><span>No.</span><span>Date</span><span>Title and note</span><span></span></div>
+          <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:24px 82px minmax(0,1fr) 30px;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)">
+              <sc-if value="{{ s.on }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:15px;font-weight:600;line-height:1.4">{{ s.no }}</span>
+                <span style="font-size:13px;line-height:1.6">{{ s.d }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <sc-if value="{{ s.hasTitle }}" hint-placeholder-val="{{ true }}"><span style="font-size:15px;line-height:1.4">{{ s.t }}</span></sc-if>
+                  <sc-if value="{{ s.noTitle }}" hint-placeholder-val="{{ false }}"><span style="font-size:15px;line-height:1.4;color:var(--color-neutral-600);font-style:italic">{{ s.ph }}</span></sc-if>
+                  <sc-if value="{{ s.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-style:italic;color:var(--color-neutral-700)">{{ s.n }}</span></sc-if>
+                  <sc-if value="{{ s.noNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-accent-700)">+ note</span></sc-if>
+                </div>
+                <button onClick="{{ s.toggle }}" title="Skip this date" aria-label="Skip this date" class="btn btn-icon" style="width:30px;height:30px;color:var(--color-neutral-700)"><i class="ph-duotone ph-calendar-x" style="font-size:17px"></i></button>
+              </sc-if>
+              <sc-if value="{{ s.off }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:15px;line-height:1.4;color:var(--color-neutral-500)">–</span>
+                <span style="font-size:13px;line-height:1.6;color:var(--color-neutral-600);text-decoration:line-through">{{ s.d }}</span>
+                <span style="font-size:14px;line-height:1.5;font-style:italic;color:var(--color-neutral-700)">Skipped: {{ s.reason }}</span>
+                <button onClick="{{ s.toggle }}" title="Put this date back" aria-label="Put this date back" class="btn btn-icon" style="width:30px;height:30px;color:var(--color-accent)"><i class="ph-duotone ph-arrow-counter-clockwise" style="font-size:17px"></i></button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-left:-5px"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add a session</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-calendar-x" style="font-size:15px"></i>Skip dates…</button></div>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Each session gets its own page and RSVP. Untitled sessions read “Session 8”.</span>
+      </div>
+    </sc-if>
+
+    <div id="where" style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:14px;font-weight:600">Where</span>
+      <div class="seg" style="align-self:flex-start;max-width:100%">
+        <label class="seg-opt"><input type="radio" checked="{{ w.place }}" onChange="{{ setW.place }}"><i class="ph-duotone ph-map-pin" style="font-size:15px"></i>Place</label>
+        <label class="seg-opt"><input type="radio" checked="{{ w.link }}" onChange="{{ setW.link }}"><i class="ph-duotone ph-link" style="font-size:15px"></i>Online link</label>
+        <label class="seg-opt"><input type="radio" checked="{{ w.talk }}" onChange="{{ setW.talk }}"><i class="ph-duotone ph-video-camera" style="font-size:15px"></i>Talk room</label>
+      </div>
+      <sc-if value="{{ w.place }}" hint-placeholder-val="{{ true }}">
+        <div class="input" style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-map-pin" style="font-size:16px;color:var(--color-accent)"></i>Studio 4, 120 Harbord St, Toronto</div>
+        <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px;margin-left:-5px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Also online</button>
+      </sc-if>
+      <sc-if value="{{ linkOk }}" hint-placeholder-val="{{ false }}">
+        <div class="input" style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-link" style="font-size:16px;color:var(--color-accent)"></i>https://meet.jit.si/elkdonis-open-studio</div>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Only people who RSVP see the link, in their confirmation and reminder.</span>
+      </sc-if>
+      <sc-if value="{{ linkErr }}" hint-placeholder-val="{{ false }}">
+        <div class="input" aria-invalid="true" style="display:flex;align-items:center;gap:8px;border-color:var(--color-accent-2);box-shadow:inset 0 0 0 1px var(--color-accent-2);color:var(--color-neutral-700)"><i class="ph-duotone ph-link" style="font-size:16px;color:var(--color-accent-2)"></i>Paste the joining link</div>
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-2-700)"><i class="ph-duotone ph-warning-circle" style="font-size:16px"></i>Add the joining link, or switch to a Talk room.</span>
+      </sc-if>
+      <sc-if value="{{ w.talk }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+          <span style="font-size:13px;line-height:1.5;color:var(--color-neutral-700)">A room is made in the collective’s Nextcloud when you publish. People join from the page; the link goes out with their RSVP.</span>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Let people in without an account</label>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Open the room 10 minutes early</label>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:14px;font-weight:600">Description</span>
+      <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md)">
+        <div style="display:flex;flex-wrap:wrap;gap:2px;padding:5px 8px;font-size:12px;border-bottom:1px solid var(--color-divider)"><span style="padding:3px 6px;font-weight:600">B</span><span style="padding:3px 6px;font-style:italic">I</span><span style="padding:3px 6px;text-decoration:underline">U</span><span style="padding:3px 6px">H2</span><span style="padding:3px 6px">H3</span><span style="padding:3px 6px">• List</span><span style="padding:3px 6px">1. List</span><span style="padding:3px 6px">Link</span></div>
+        <div style="padding:10px 12px 14px;font-size:14px;line-height:1.6;min-height:88px">An evening on the presses. Bring a sketch or work from ours; relief and monotype will be set up, with someone on hand to help. All levels.</div>
+      </div>
+    </div>
+
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin:18px 0 -22px">More</span>
+    <div style="display:flex;flex-direction:column">
+      <button onClick="{{ tg.hosts }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.hosts }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Hosts</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">You</span></button>
+      <sc-if value="{{ op.hosts }}" hint-placeholder-val="{{ false }}"><div style="padding:4px 0 22px 25px"><div class="input" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 8px"><span class="tag tag-accent">Mara Okafor (you)</span><span style="font-size:13px;color:var(--color-neutral-700)">Add a co-host</span></div></div></sc-if>
+
+      <button onClick="{{ tg.rsvp }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.rsvp }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Places and RSVP</span>
+        <sc-if value="{{ noErr }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">24 places · closes when it starts</span></sc-if>
+        <sc-if value="{{ showErr }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--color-accent-2-700);min-width:0"><i class="ph-duotone ph-warning" style="font-size:14px"></i>Needs 12 to go ahead, but only 10 places</span></sc-if>
+      </button>
+      <sc-if value="{{ op.rsvp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;padding:4px 0 22px 25px">
+          <div style="display:flex;flex-wrap:wrap;gap:14px">
+            <div style="flex:1 1 120px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Places</span><div class="input" style="display:flex;align-items:center">24</div><span style="font-size:12px;color:var(--color-neutral-700)">Empty means no cap.</span></div>
+            <div style="flex:1 1 120px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Needs at least</span><div class="input" style="display:flex;align-items:center">6</div><span style="font-size:12px;color:var(--color-neutral-700)">Below this, we ask you two days ahead.</span></div>
+            <div style="flex:1 1 150px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">RSVPs close</span><div class="input" style="display:flex;align-items:center;gap:8px">When it starts<i class="ph-duotone ph-caret-down" style="font-size:12px;margin-left:auto"></i></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600">Answers people can give</span>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:14px">
+              <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Going</label>
+              <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Maybe</label>
+              <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Can’t come</label>
+              <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Waitlist when full</label>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px;margin-left:-5px"><i class="ph-duotone ph-list-checks" style="font-size:15px"></i>Ask something when people RSVP</button>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.emails }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.emails }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Emails</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Confirmation, reminder a day before, changes</span></button>
+      <sc-if value="{{ op.emails }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px;padding:4px 0 22px 25px;font-size:14px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><label style="display:flex;gap:10px;align-items:center;flex:1 1 220px"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">When someone RSVPs, a confirmation</label><a href="#" style="font-size:13px">Edit wording</a></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">A reminder</label><div class="input" style="width:auto;min-height:30px;padding:3px 8px;display:flex;align-items:center;gap:6px;font-size:13px">1 day<i class="ph-duotone ph-caret-down" style="font-size:11px"></i></div><span style="flex:1 1 auto">before</span><a href="#" style="font-size:13px">Edit wording</a></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><label style="display:flex;gap:10px;align-items:center;flex:1 1 220px"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">If the time or place changes</label></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><label style="display:flex;gap:10px;align-items:center;flex:1 1 220px"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Afterwards, thanks with the materials</label></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><label style="display:flex;gap:10px;align-items:center;flex:1 1 220px"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">To hosts, the morning’s RSVPs</label></div>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.assets }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.assets }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Cover and pictures</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">None yet</span></button>
+      <sc-if value="{{ op.assets }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0 22px 25px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px;border:1px dashed var(--color-neutral-400);border-radius:var(--radius-md);font-size:13px;text-align:center"><i class="ph-duotone ph-image" style="font-size:24px;color:var(--color-accent)"></i>Drop pictures here. The first one is the cover.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-left:-5px"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-upload-simple" style="font-size:15px"></i>Upload</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-images" style="font-size:15px"></i>Library</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-camera" style="font-size:15px"></i>Camera</button></div>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.materials }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.materials }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Materials</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Files, links or a shared document</span></button>
+      <sc-if value="{{ op.materials }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px;padding:4px 0 22px 25px;font-size:14px">
+          <div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-left:-5px"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-paperclip" style="font-size:15px"></i>Add files</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-link" style="font-size:15px"></i>Add a link</button></div>
+          <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:2px 0 0"><span style="display:flex;flex-direction:column"><span>Make a living document</span><span style="font-size:12px;color:var(--color-neutral-700)">A shared page in Nextcloud for notes and a running order.</span></span></label>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.poll }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.poll }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Poll or questions</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">None</span></button>
+      <sc-if value="{{ op.poll }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px 0 22px 25px">
+          <button class="btn btn-secondary" style="font-size:13px"><i class="ph-duotone ph-chart-bar-horizontal" style="font-size:15px"></i>Add a poll</button>
+          <button class="btn btn-secondary" style="font-size:13px"><i class="ph-duotone ph-list-checks" style="font-size:15px"></i>Add questions</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ series }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ tg.seriesPage }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.seriesPage }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Series page</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Listed on Series · colour picked for you</span></button>
+        <sc-if value="{{ op.seriesPage }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;padding:4px 0 22px 25px;font-size:14px">
+            <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Listed on the Series page</label>
+            <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">In the landing page slides</label>
+            <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ false }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Featured, first on Series and the landing page</label>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <button onClick="{{ tg.advanced }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.advanced }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Publishing</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Public · Lab work · Elkdonis Arts Collective</span></button>
+      <sc-if value="{{ op.advanced }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px 0 22px 25px">
+          <div class="input" style="flex:1 1 240px;width:auto;display:flex;align-items:center;gap:8px;font-size:14px"><i class="ph-duotone ph-newspaper" style="font-size:16px;color:var(--color-accent)"></i>Lab work<span style="color:var(--color-neutral-700)">· Elkdonis Arts Collective</span><i class="ph-duotone ph-caret-down" style="font-size:12px;margin-left:auto"></i></div>
+          <div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">Public</span><span class="seg-opt">Members</span></div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ ARTWORK ═══ -->
+  <sc-if value="{{ isArtwork }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:14px;font-weight:600">Pictures</span><span style="font-size:12px;color:var(--color-neutral-700)">Drag to reorder. The first is the one on cards.</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        <div style="flex:1 1 220px;max-width:300px;aspect-ratio:4/5;position:relative;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"><span class="tag tag-accent" style="position:absolute;left:8px;top:8px">On cards</span></div>
+        <div style="flex:1 1 150px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:start">
+          <div style="aspect-ratio:1;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"></div>
+          <div style="aspect-ratio:1;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"></div>
+          <div style="aspect-ratio:1;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300);border-radius:var(--radius-sm)"></div>
+          <div style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px dashed var(--color-neutral-400);border-radius:var(--radius-sm);font-size:12px;color:var(--color-accent-700)"><i class="ph-duotone ph-plus" style="font-size:18px"></i>Add</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-left:-5px"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-upload-simple" style="font-size:15px"></i>Upload</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-images" style="font-size:15px"></i>Library</button><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-camera" style="font-size:15px"></i>Camera</button></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:14px;font-weight:600">Maker and credits</span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <div class="input" style="flex:0 0 120px;width:auto;display:flex;align-items:center;gap:6px;font-size:13px">Artist<i class="ph-duotone ph-caret-down" style="font-size:11px;margin-left:auto"></i></div>
+        <div class="input" style="flex:1 1 200px;width:auto;display:flex;align-items:center;gap:6px;padding:5px 8px"><span class="tag tag-accent">Mara Okafor</span></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <div class="input" style="flex:0 0 120px;width:auto;display:flex;align-items:center;gap:6px;font-size:13px">Printed by<i class="ph-duotone ph-caret-down" style="font-size:11px;margin-left:auto"></i></div>
+        <div class="input" style="flex:1 1 200px;width:auto;display:flex;align-items:center;font-size:14px">Elkdonis Lab</div>
+      </div>
+      <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px;margin-left:-5px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Another credit</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:14px;font-weight:600">Price</span>
+      <div class="seg" style="align-self:flex-start;max-width:100%">
+        <label class="seg-opt"><input type="radio" checked="{{ pr.price }}" onChange="{{ setPr.price }}">Price</label>
+        <label class="seg-opt"><input type="radio" checked="{{ pr.request }}" onChange="{{ setPr.request }}">On request</label>
+        <label class="seg-opt"><input type="radio" checked="{{ pr.nfs }}" onChange="{{ setPr.nfs }}">Not for sale</label>
+      </div>
+      <sc-if value="{{ pr.price }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px"><div class="input" style="width:150px;display:flex;align-items:center;gap:6px"><span style="color:var(--color-neutral-700)">$</span>180</div><span style="font-size:13px;color:var(--color-neutral-700)">CAD</span></div>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Variants below set their own prices. The card reads “From $180”.</span>
+      </sc-if>
+      <sc-if value="{{ pr.request }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-neutral-700)">The page shows “Price on request” and an Ask button that emails you.</span></sc-if>
+      <sc-if value="{{ pr.nfs }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-neutral-700)">Shown in the gallery with no price and no button.</span></sc-if>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:14px;font-weight:600">Availability</span>
+      <div class="seg" style="align-self:flex-start"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">Available</span><span class="seg-opt">Reserved</span><span class="seg-opt">Sold</span></div>
+      <span style="font-size:12px;color:var(--color-neutral-700)">18 of 25 left. Turns to Sold by itself when the last one goes.</span>
+    </div>
+
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin:18px 0 -22px">More</span>
+    <div style="display:flex;flex-direction:column">
+      <button onClick="{{ tg.details }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.details }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Details</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Etching · 40 × 50 cm · 2026</span></button>
+      <sc-if value="{{ op.details }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;padding:4px 0 22px 25px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Medium</span><div class="input" style="display:flex;align-items:center;font-size:14px">Etching and aquatint on Hahnemühle, 300 gsm</div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+            <div style="flex:1 1 220px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Size</span><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-700)"><div class="input" style="flex:1;display:flex;align-items:center;color:var(--color-text)">40</div>×<div class="input" style="flex:1;display:flex;align-items:center;color:var(--color-text)">50</div>×<div class="input" style="flex:1;display:flex;align-items:center">depth</div></div></div>
+            <div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">cm</span><span class="seg-opt">in</span></div>
+            <div style="flex:0 0 90px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Year</span><div class="input" style="display:flex;align-items:center">2026</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.edition }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.edition }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Edition and variants</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Edition of 25 · 2 variants</span></button>
+      <sc-if value="{{ op.edition }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;padding:4px 0 22px 25px">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <div class="seg"><span class="seg-opt">One of a kind</span><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">Edition</span><span class="seg-opt">Open</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:14px">of<div class="input" style="width:64px;display:flex;align-items:center">25</div>+<div class="input" style="width:52px;display:flex;align-items:center">3</div><span style="font-size:12px;color:var(--color-neutral-700)">proofs</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 64px;gap:10px;padding-bottom:8px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);border-bottom:1px solid var(--color-divider)"><span>Variant</span><span>Price</span><span>In stock</span></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 64px;gap:10px;padding:10px 0;font-size:14px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)"><span>Unframed sheet</span><span>$180</span><span>14</span></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 64px;gap:10px;padding:10px 0;font-size:14px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)"><span>Framed in oak</span><span>$320</span><span>4</span></div>
+          </div>
+          <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px;margin-left:-5px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add a variant</button>
+        </div>
+      </sc-if>
+
+      <button onClick="{{ tg.description }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.description }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Description</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">None yet</span></button>
+      <sc-if value="{{ op.description }}" hint-placeholder-val="{{ false }}"><div style="padding:4px 0 22px 25px"><div class="input" style="min-height:88px;font-size:14px;color:var(--color-neutral-700)">The story of the piece, how it was made, how to care for it.</div></div></sc-if>
+
+      <button onClick="{{ tg.where }}" style="display:flex;align-items:baseline;gap:12px;width:calc(100% + 20px);margin:0 -10px;padding:11px 10px;background:none;border:0;border-radius:var(--radius-md);font:inherit;color:inherit;text-align:left;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)"><i class="ph-duotone {{ ic.where }}" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600;flex:none">Where it shows</span><span style="font-size:13px;color:var(--color-neutral-700);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Store and gallery · Elkdonis Arts Collective</span></button>
+      <sc-if value="{{ op.where }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px;padding:4px 0 22px 25px;font-size:14px">
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Store</label>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" checked="{{ true }}" onChange="{{ noop }}" style="accent-color:var(--color-accent);width:16px;height:16px;margin:0">Gallery on your profile</label>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<!-- ═══ PUBLISHED ═══ -->
+<sc-if value="{{ isPublished }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:600px;display:flex;flex-direction:column;gap:22px;padding-top:36px">
+  <span style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--color-accent-700)"><i class="ph-duotone ph-check-circle" style="font-size:22px;color:var(--color-accent)"></i>Published at 12:14</span>
+  <h1 style="margin:0;font-size:42px;text-wrap:pretty">It’s on Lab work.</h1>
+  <p style="margin:0;font-size:16px;line-height:1.55;color:var(--color-neutral-700)">Public, on Elkdonis Arts Collective and on your profile.</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+    <span style="font-size:14px;font-weight:600">Link</span>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <div class="input" style="flex:1 1 280px;width:auto;display:flex;align-items:center;font-size:13px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">elkdonis.art/lab-work/notes-from-the-first-press-weekend</div>
+      <button onClick="{{ copy }}" class="btn btn-secondary"><i class="ph-duotone {{ copyIcon }}" style="font-size:16px"></i>{{ copyLabel }}</button>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    <a href="#" class="btn btn-primary">View on site<i class="ph-duotone ph-arrow-square-out" style="font-size:16px"></i></a>
+    <button class="btn btn-secondary">Keep editing</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-top:28px">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Make another</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-left:-5px">
+      <button class="btn btn-ghost" style="font-size:14px"><i class="ph-duotone ph-stack" style="font-size:16px"></i>Post with these settings</button>
+      <button class="btn btn-ghost" style="font-size:14px">Blank post</button>
+      <button class="btn btn-ghost" style="font-size:14px">Gathering</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</sc-if>
+
+<!-- ═══ PREVIEW ═══ -->
+<sc-if value="{{ showPreviewCol }}" hint-placeholder-val="{{ true }}">
+<div style="flex:0 1 420px;min-width:0;order:{{ pvOrder }};background:var(--color-surface);padding:22px 24px 32px;display:flex;flex-direction:column;gap:14px">
+  <sc-if value="{{ showRailSeg }}" hint-placeholder-val="{{ false }}">
+    <div class="seg" style="display:flex;background:var(--color-bg);margin-bottom:6px">
+      <label class="seg-opt" style="flex:1;justify-content:center;font-size:12px;padding:6px 8px"><input type="radio" checked="{{ pvClosed }}" onChange="{{ closePv }}">Sections</label>
+      <label class="seg-opt" style="flex:1;justify-content:center;font-size:12px;padding:6px 8px"><input type="radio" checked="{{ pvOpen }}" onChange="{{ openPv }}"><i class="ph-duotone ph-eye" style="font-size:14px"></i>Preview</label>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showPvClose }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ togglePv }}" class="btn btn-icon" aria-label="Hide preview" style="align-self:flex-end;width:30px;height:30px;margin:-10px -12px -14px 0"><i class="ph-duotone ph-x" style="font-size:15px"></i></button>
+  </sc-if>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Preview</span>
+    <span style="font-size:12px;color:var(--color-neutral-700)">on {{ pvWhere }}</span>
+    <div class="seg" style="margin-left:auto;background:var(--color-bg)">
+      <label class="seg-opt" style="padding:5px 10px;font-size:12px"><input type="radio" checked="{{ pv.card }}" onChange="{{ setPv.card }}">Card</label>
+      <label class="seg-opt" style="padding:5px 10px;font-size:12px"><input type="radio" checked="{{ pv.page }}" onChange="{{ setPv.page }}">Page</label>
+    </div>
+  </div>
+  <div style="background:var(--color-bg);box-shadow:var(--shadow-md);padding:18px 18px 22px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;gap:8px;font-size:11px;color:var(--color-neutral-700)"><span style="font-weight:600;color:var(--color-text);font-size:13px">Elkdonis Arts Collective</span><span>/ {{ pvWhere }}</span></div>
+
+    <sc-if value="{{ pv.card }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ isPost }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:0;gap:0;overflow:hidden">
+          <div style="aspect-ratio:16/9;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"></div>
+          <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px">
+            <span class="card-kicker" style="color:var(--color-accent-700)">Lab work</span>
+            <span class="card-title" style="font-size:19px">{{ titleOut }}</span>
+            <p class="card-body" style="opacity:1;color:var(--color-neutral-800)">Two days, four presses and about a kilo of soy ink. We set out to learn whether the lab could give up solvent clean-up for good.</p>
+            <span class="card-meta" style="color:var(--color-neutral-700)">Mara Okafor · 2 min read</span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ gatheringOne }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:0;gap:0;overflow:hidden">
+          <div style="aspect-ratio:16/7;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"></div>
+          <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px">
+            <span class="card-kicker" style="color:var(--color-accent-700)">{{ whenKicker }}</span>
+            <span class="card-title" style="font-size:19px">{{ titleOut }}</span>
+            <span style="font-size:13px;color:var(--color-neutral-800)">{{ whereLine }}</span>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span class="btn btn-primary" style="font-size:13px;padding:6px 12px">I’m coming</span><span style="font-size:12px;color:var(--color-neutral-700)">24 places</span></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ series }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:0;gap:0;overflow:hidden">
+          <div style="aspect-ratio:16/7;position:relative;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"><span class="tag tag-accent" style="position:absolute;left:10px;top:10px">Starts 19 Nov</span></div>
+          <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px">
+            <span class="card-kicker" style="color:var(--color-accent-700)">Series · Thursdays, 18:30</span>
+            <span class="card-title" style="font-size:19px">{{ titleOut }}</span>
+            <span style="font-size:13px;color:var(--color-neutral-800)">{{ sessionCount }} sessions, 19 Nov to 21 Jan · Studio 4</span>
+            <span style="font-size:13px;color:var(--color-neutral-700)">First: <span style="font-style:italic">{{ nextSession }}</span></span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isArtwork }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:240px">
+          <div style="aspect-ratio:4/5;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"></div>
+          <span style="font-size:18px;font-weight:600;line-height:1.2">{{ titleOut }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-800)">Mara Okafor · Etching, 2026</span>
+          <div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600">{{ priceLine }}</span><span class="tag tag-accent">Available</span></div>
+        </div>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:4px;opacity:0.45;padding:4px 2px 0"><span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase">Earlier</span><span style="font-size:15px;font-weight:600">{{ neighbour }}</span></div>
+    </sc-if>
+
+    <sc-if value="{{ pv.page }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-if value="{{ notArtwork }}" hint-placeholder-val="{{ true }}">
+          <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">{{ pageKicker }}</span>
+          <span style="font-size:24px;font-weight:600;line-height:1.15;letter-spacing:-0.015em">{{ titleOut }}</span>
+          <span style="font-size:12px;color:var(--color-neutral-700)">{{ pageMeta }}</span>
+          <div style="aspect-ratio:16/9;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"></div>
+          <sc-if value="{{ isGathering }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px"><span class="btn btn-primary" style="font-size:13px;padding:6px 12px">I’m coming</span><span class="btn btn-secondary" style="font-size:13px;padding:6px 12px">Maybe</span></div></sc-if>
+          <p style="margin:0;font-size:13px;line-height:1.6">{{ pageBody }}</p>
+        </sc-if>
+        <sc-if value="{{ isArtwork }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:8px">
+            <div style="aspect-ratio:4/5;background:radial-gradient(circle,color-mix(in srgb,var(--color-text) 20%,transparent) 30%,transparent 33%) 0 0/4px 4px,var(--color-neutral-300)"></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="aspect-ratio:1;background:var(--color-neutral-300)"></div><div style="aspect-ratio:1;background:var(--color-neutral-300)"></div><div style="aspect-ratio:1;background:var(--color-neutral-300)"></div></div>
+          </div>
+          <span style="font-size:22px;font-weight:600;line-height:1.15">{{ titleOut }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-800)">Mara Okafor · printed by Elkdonis Lab</span>
+          <span style="font-size:12px;color:var(--color-neutral-700)">Etching and aquatint · 40 × 50 cm · 2026 · Edition of 25</span>
+          <div class="seg" style="align-self:flex-start"><span class="seg-opt" style="font-size:12px;padding:5px 10px;background:var(--color-accent);color:var(--color-bg)">Unframed $180</span><span class="seg-opt" style="font-size:12px;padding:5px 10px">Framed $320</span></div>
+          <span class="btn btn-primary" style="align-self:flex-start;font-size:13px;padding:6px 14px">Buy</span>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+  <span style="font-size:12px;color:var(--color-neutral-700)">{{ pvNote }}</span>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;gap:10px;padding:12px 16px 22px;background:var(--color-bg);box-shadow:0 -1px 0 var(--color-divider)">
+    <button class="btn btn-secondary" style="flex:1">Save draft</button>
+    <button class="btn btn-secondary" style="flex:1"><i class="ph-duotone ph-clock" style="font-size:16px"></i>Schedule</button>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:1000},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;post&quot;,&quot;gathering&quot;,&quot;artwork&quot;],&quot;default&quot;:&quot;post&quot;,&quot;tsType&quot;:&quot;'post'|'gathering'|'artwork'&quot;},&quot;viewport&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;desktop&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;'desktop'|'mobile'&quot;},&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;split&quot;,&quot;toggle&quot;,&quot;rail&quot;],&quot;default&quot;:&quot;split&quot;,&quot;tsType&quot;:&quot;'split'|'toggle'|'rail'&quot;},&quot;previewOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;repeat&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;errors&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;edit&quot;,&quot;published&quot;],&quot;default&quot;:&quot;edit&quot;,&quot;tsType&quot;:&quot;'edit'|'published'&quot;},&quot;expand&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;preview&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;card&quot;,&quot;page&quot;],&quot;default&quot;:&quot;card&quot;,&quot;tsType&quot;:&quot;'card'|'page'&quot;},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;form&quot;,&quot;preview&quot;],&quot;default&quot;:&quot;form&quot;,&quot;tsType&quot;:&quot;'form'|'preview'&quot;}}">
+class Component extends DCLogic {
+  state = (() => {
+    const p = this.props || {};
+    const k = p.kind || 'post', rep = !!p.repeat;
+    const defOpen = { post: 'alsoOn', gathering: rep ? '' : 'rsvp', artwork: 'details,edition' };
+    const open = {};
+    String(p.expand ?? defOpen[k] ?? '').split(',').filter(Boolean).forEach(x => { open[x.trim()] = true; });
+    const titles = { post: 'Notes from the first press weekend', gathering: rep ? 'Thursday printmaking' : 'Open studio: printmaking night', artwork: 'Tidewater, No. 3' };
+    return {
+      title: titles[k], open, repeat: rep, asSeries: true,
+      where: p.errors ? 'link' : 'place', pv: p.preview || 'card', tab: p.tab || 'form', pvOpen: !!p.previewOpen, price: 'price', copied: false,
+      sessions: [
+        { d: 'Thu 19 Nov', t: 'Monotype basics', n: 'Aprons provided. Wear old shoes.' },
+        { d: 'Thu 26 Nov', t: 'Relief: cutting lino', n: '' },
+        { d: 'Thu 3 Dec', t: 'Two-colour registration', n: 'Bring a sketch for the two-colour plate.' },
+        { d: 'Thu 10 Dec', t: 'Open press', n: '' },
+        { d: 'Thu 17 Dec', t: 'Holiday cards', n: '' },
+        { d: 'Thu 24 Dec', t: '', n: '', off: true, reason: 'Christmas Eve' },
+        { d: 'Thu 31 Dec', t: '', n: '', off: true, reason: 'New Year’s Eve' },
+        { d: 'Thu 7 Jan', t: 'Drypoint on acetate', n: '' },
+        { d: 'Thu 14 Jan', t: 'Editioning and signing', n: '' },
+        { d: 'Thu 21 Jan', t: '', n: '' }
+      ]
+    };
+  })();
+
+  renderVals() {
+    const p = this.props || {}, s = this.state, k = p.kind || 'post';
+    const mob = p.viewport === 'mobile', pub = p.stage === 'published', err = !!p.errors && !pub;
+    const layout = p.layout || 'split';
+    const ids = ['excerpt', 'tags', 'alsoOn', 'schedule', 'poll', 'hosts', 'rsvp', 'emails', 'assets', 'materials', 'seriesPage', 'advanced', 'details', 'edition', 'description', 'where'];
+    const op = {}, tg = {}, ic = {};
+    ids.forEach(id => {
+      op[id] = !!s.open[id];
+      ic[id] = op[id] ? 'ph-minus' : 'ph-plus';
+      tg[id] = () => this.setState(st => ({ open: { ...st.open, [id]: !st.open[id] } }));
+    });
+    const isG = k === 'gathering', series = isG && s.repeat && s.asSeries;
+
+    const ok = { icon: 'ph-check-circle', color: 'var(--color-accent)', tc: 'var(--color-text)' };
+    const opt = { icon: 'ph-circle', color: 'var(--color-neutral-500)', tc: 'var(--color-neutral-700)' };
+    const bad = { icon: 'ph-warning-circle', color: 'var(--color-accent-2)', tc: 'var(--color-accent-2-700)' };
+    const warn = { icon: 'ph-warning', color: 'var(--color-accent-2-600)', tc: 'var(--color-accent-2-700)' };
+    const it = (label, st) => ({ label, ...st });
+    let ess = [], more = [];
+    if (k === 'post') {
+      ess = [it('Title', ok), it('Body', ok), it('Cover', ok), it('Goes on', ok)];
+      more = [it('Excerpt', opt), it('Tags', ok), it('Also show on', ok), it('Schedule', opt), it('Poll or questions', opt)];
+    } else if (isG) {
+      ess = [it('Title', ok), it('When', err ? bad : ok), it('Where', err ? bad : ok), it('Description', ok)];
+      if (series) ess.splice(2, 0, it('Sessions', ok));
+      more = [it('Hosts', ok), it('Places and RSVP', err ? warn : ok), it('Emails', ok), it('Cover and pictures', opt), it('Materials', opt), it('Poll or questions', opt)];
+      if (series) more.push(it('Series page', ok));
+      more.push(it('Publishing', ok));
+    } else {
+      ess = [it('Pictures', ok), it('Title', ok), it('Maker and credits', ok), it('Price', ok), it('Availability', ok)];
+      more = [it('Details', ok), it('Edition and variants', ok), it('Description', opt), it('Where it shows', ok)];
+    }
+    const ready = pub ? { ...ok, text: 'Published at 12:14. Edits go live when you save.' }
+      : err ? { ...bad, text: '2 things to fix before it can go out. 1 warning.' }
+      : { ...ok, text: 'Ready to publish' };
+
+    let no = 0;
+    const sessions = s.sessions.map((x, i) => {
+      const on = !x.off; if (on) no++;
+      return {
+        ...x, on, off: !on, no, hasTitle: on && !!x.t, noTitle: on && !x.t, ph: 'Session ' + no + ', no title yet',
+        hasNote: on && !!x.n, noNote: on && !x.n,
+        toggle: () => this.setState(st => ({ sessions: st.sessions.map((y, j) => j === i ? { ...y, off: !y.off, reason: y.reason || 'by hand' } : y) }))
+      };
+    });
+    const count = sessions.filter(x => x.on).length, skipped = sessions.length - count;
+    const firstOn = sessions.find(x => x.on && x.t);
+
+    const kindLabel = k === 'post' ? 'New post' : k === 'artwork' ? 'New artwork' : series ? 'New series' : 'New gathering';
+    const preset = {
+      post: ['Blank post', 'Or: Lab notes, Announcement, or your last post’s settings.'],
+      gathering: [series ? 'Thursday open studio' : 'Thursday open studio', 'This org’s usual setup: Studio 4, 2 hours, 24 places, a reminder the day before.'],
+      artwork: ['Editioned print', 'Edition of 25, framed and unframed variants, in the store.']
+    }[k] || ['Blank', ''];
+    const whereLine = s.where === 'place' ? 'Studio 4, 120 Harbord St' : s.where === 'talk' ? 'Online, in a Talk room' : 'Online';
+    const setW = {}, w = {};
+    ['place', 'link', 'talk'].forEach(v => { w[v] = s.where === v; setW[v] = () => this.setState({ where: v }); });
+    const pv = { card: s.pv === 'card', page: s.pv === 'page' }, setPv = { card: () => this.setState({ pv: 'card' }), page: () => this.setState({ pv: 'page' }) };
+    const tab = { form: s.tab === 'form', preview: s.tab === 'preview' }, setTab = { form: () => this.setState({ tab: 'form' }), preview: () => this.setState({ tab: 'preview' }) };
+    const pr = {}, setPr = {};
+    ['price', 'request', 'nfs'].forEach(v => { pr[v] = s.price === v; setPr[v] = () => this.setState({ price: v }); });
+
+    const titleOut = s.title && s.title.trim() ? s.title : 'Untitled';
+    const pageBody = {
+      post: 'Two days, four presses and about a kilo of soy ink. We set out to learn whether the lab could give up solvent clean-up for good. The short answer is yes, with two catches.',
+      gathering: 'An evening on the presses. Bring a sketch or work from ours; relief and monotype will be set up, with someone on hand to help. All levels.'
+    }[k] || '';
+
+    return {
+      isDesktop: !mob, isMobile: mob, isPost: k === 'post', isGathering: isG, isArtwork: k === 'artwork', notArtwork: k !== 'artwork',
+      gatheringOne: isG && !series,
+      isEdit: !pub, isPublished: pub, showErr: err, noErr: !err,
+      showFormCol: !mob || s.tab === 'form',
+      showPreviewCol: mob ? s.tab === 'preview' : (layout === 'split' || s.pvOpen),
+      showRail: !mob && !(layout === 'rail' && s.pvOpen),
+      showTopToggle: !mob && layout === 'toggle', showRailSeg: !mob && layout === 'rail', showPvClose: !mob && layout === 'toggle',
+      pvOrder: layout === 'rail' ? -1 : 0, pvOpen: s.pvOpen, pvClosed: !s.pvOpen,
+      togglePv: () => this.setState(st => ({ pvOpen: !st.pvOpen })), openPv: () => this.setState({ pvOpen: true }), closePv: () => this.setState({ pvOpen: false }),
+      pvIcon: s.pvOpen ? 'ph-eye' : 'ph-eye-slash',
+      pvBtnBg: s.pvOpen ? 'var(--color-accent-100)' : 'transparent', pvBtnFg: s.pvOpen ? 'var(--color-accent-800)' : 'var(--color-text)', pvBtnBd: s.pvOpen ? 'var(--color-accent-300)' : 'var(--color-divider)',
+      kindLabel, statusTag: pub ? 'Published' : 'Draft', statusClass: pub ? 'tag tag-accent' : 'tag tag-neutral',
+      savedLine: pub ? 'Live since 12:14' : 'Draft saved 12:04',
+      presetName: preset[0], presetNote: preset[1],
+      railEss: ess, railMore: more, ready,
+      title: s.title, titleOut, onTitle: e => this.setState({ title: e.target.value }),
+      op, tg, ic, noop: () => {},
+      repeat: s.repeat, notRepeat: !s.repeat, toggleRepeat: () => this.setState(st => ({ repeat: !st.repeat })),
+      repeatSummary: s.repeat ? 'Every week on Thursday, 8 sessions' : 'Does not repeat',
+      asSeries: s.asSeries, toggleSeries: () => this.setState(st => ({ asSeries: !st.asSeries })), series,
+      sessions, sessionCount: count, nextSession: firstOn ? firstOn.t : 'to be announced',
+      sessionSummary: count + ' sessions · 19 Nov to 21 Jan · ' + skipped + (skipped === 1 ? ' date' : ' dates') + ' skipped',
+      w, setW, linkOk: w.link && !err, linkErr: w.link && err, whereLine,
+      whenKicker: err ? 'Thu 5 Nov · 18:30 to 20:30' : 'Thu 19 Nov · 18:30 to 20:30',
+      pv, setPv, tab, setTab, pr, setPr,
+      priceLine: s.price === 'price' ? 'From $180' : s.price === 'request' ? 'Price on request' : 'Not for sale',
+      pvWhere: k === 'artwork' ? 'Store' : series ? 'Series' : 'Lab work',
+      pvNote: pub ? 'This is what visitors see now.' : 'Updates as you type. A draft only you can see.',
+      neighbour: { post: 'A visit to the paper mill', gathering: 'Bookbinding, a Saturday', artwork: 'Low tide, No. 1' }[k],
+      pageKicker: k === 'post' ? 'Lab work' : series ? 'Series · Thursdays' : (err ? 'Thu 5 Nov' : 'Thu 19 Nov') + ' · 18:30',
+      pageMeta: k === 'post' ? 'Mara Okafor · 10 Nov 2026 · 2 min read' : whereLine + ' · hosted by Mara Okafor',
+      pageBody,
+      copy: () => { this.setState({ copied: true }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ copied: false }), 1600); },
+      copyLabel: s.copied ? 'Copied' : 'Copy link', copyIcon: s.copied ? 'ph-check' : 'ph-copy'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/styles.css">
+<script src="_ds/industry-df9fe537-5dfd-405e-92a6-62246c74a606/_ds_bundle.js"></script>
+<style>@keyframes mmspin{to{transform:rotate(360deg)}} a{color:var(--color-accent)} a:hover{color:var(--color-accent-700)}</style>
+</helmet>
+<div style="position:relative;width:100%;min-height:{{ rootMinH }};background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:14px;line-height:1.45;overflow:hidden">
+
+<sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 28px;border-bottom:1px solid var(--color-divider)">
+  <div style="display:flex;align-items:center;gap:10px;margin-right:auto">
+    <div style="width:26px;height:26px;border:1px solid var(--color-text);display:grid;place-items:center;font-family:var(--font-heading);font-weight:600;font-size:12px">{{ org.mark }}</div>
+    <span style="font-family:var(--font-heading);font-weight:600;font-size:18px">{{ org.name }}</span>
+    <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">Hub</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="width:26px;height:26px;display:grid;place-items:center;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ me.initials }}</div>
+    <div style="line-height:1.15"><div style="font-size:13px">{{ me.name }}</div><div style="font-size:11px;color:var(--color-neutral-700)">{{ me.roleLabel }}</div></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showHub }}" hint-placeholder-val="{{ true }}">
+<div style="padding:28px">
+  <sc-if value="{{ showChrome }}">
+  <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
+    <h2 style="margin:0">Hub</h2>
+    <span style="font-size:13px;color:var(--color-neutral-700)">Back office for {{ org.name }}</span>
+  </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:repeat(3,380px);gap:24px;align-items:start">
+
+    <div onClick="{{ openPopup }}" class="card blueprint" style="min-height:268px;padding:18px 18px 14px;gap:14px;cursor:{{ cardCursor }};transition:border-color .15s" style-hover="border-color:var(--color-accent)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="display:flex;color:var(--color-accent)"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="card-title" style="font-size:21px">Members</span>
+        <span style="margin-left:auto;display:flex;color:var(--color-neutral-600)"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg></span>
+      </div>
+
+      <sc-if value="{{ cLedger }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--color-divider);border:1px solid var(--color-divider)">
+        <sc-for list="{{ roleCounts }}" as="rc" hint-placeholder-count="4">
+          <div style="background:var(--color-bg);padding:10px 10px 8px">
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1">{{ rc.n }}</div>
+            <div style="margin-top:5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">{{ rc.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:1px;background:var(--color-divider);border:1px solid var(--color-divider)">
+        <div style="flex:1;background:var(--color-bg);padding:10px;display:flex;align-items:baseline;gap:6px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:24px;line-height:1">{{ arrivalsN }}</span><span style="font-size:12px;color:var(--color-neutral-700)">new arrivals</span>
+        </div>
+        <sc-if value="{{ isOwner }}">
+        <div style="flex:1;background:var(--color-bg);padding:10px;display:flex;align-items:baseline;gap:6px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:24px;line-height:1">{{ visitorsWeekFmt }}</span><span style="font-size:12px;color:var(--color-neutral-700)">visitors this week</span>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ cBar }}">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--font-heading);font-weight:600;font-size:52px;line-height:.9">{{ count }}</span><span style="font-size:14px;color:var(--color-neutral-700)">people</span></div>
+      <div style="display:flex;gap:2px;height:12px">
+        <sc-for list="{{ roleCounts }}" as="rc"><div style="flex:{{ rc.n }};background:{{ rc.bg }}"></div></sc-for>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--color-neutral-800)">
+        <sc-for list="{{ roleCounts }}" as="rc"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:{{ rc.bg }}"></span>{{ rc.legend }}</span></sc-for>
+      </div>
+      <div style="display:flex;gap:18px;font-size:13px;align-items:baseline">
+        <span><span style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ arrivalsN }}</span> new arrivals</span>
+        <sc-if value="{{ isOwner }}"><span><span style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ visitorsWeekFmt }}</span> visitors this week</span></sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ cFaces }}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;padding-right:6px">
+          <sc-for list="{{ faceArr }}" as="f"><div style="width:32px;height:32px;margin-right:-6px;display:grid;place-items:center;background:var(--color-bg);border:1px dashed var(--color-accent);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ f.initials }}</div></sc-for>
+        </div>
+        <div style="line-height:1.25;min-width:0"><div style="font-size:14px"><span style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ arrivalsN }}</span> arrived from the network</div><div style="font-size:12px;color:var(--color-neutral-700)">{{ faceNames }}</div></div>
+      </div>
+      <sc-if value="{{ isOwner }}">
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <div style="display:flex;align-items:flex-end;gap:3px;height:40px;width:112px;border-bottom:1px solid var(--color-divider)"><sc-for list="{{ spark }}" as="s"><div style="flex:1;height:{{ s.pct }}%;background:var(--color-accent)"></div></sc-for></div>
+        <div style="line-height:1.1"><div style="font-family:var(--font-heading);font-weight:600;font-size:24px">{{ visitorsWeekFmt }}</div><div style="font-size:12px;color:var(--color-neutral-700)">visitors this week</div></div>
+      </div>
+      </sc-if>
+      <div style="font-size:12px;color:var(--color-neutral-700)">{{ roleLine }}</div>
+      </sc-if>
+
+      <sc-if value="{{ cSmall }}">
+      <div style="display:grid;gap:1px;background:var(--color-divider);border:1px solid var(--color-divider)">
+        <sc-for list="{{ cardPeople }}" as="cp">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--color-bg)">
+            <div style="width:26px;height:26px;flex:none;display:grid;place-items:center;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:11px">{{ cp.initials }}</div>
+            <span style="font-size:14px">{{ cp.name }}</span>
+            <sc-if value="{{ cp.isSelf }}"><span style="font-size:11px;color:var(--color-neutral-600)">you</span></sc-if>
+            <span class="tag" style="margin-left:auto;background:{{ cp.chipBg }};color:{{ cp.chipFg }};border:1px solid {{ cp.chipBd }}">{{ cp.roleLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:18px;font-size:13px;color:var(--color-neutral-800)">
+        <span>{{ arrivalsN }} new arrivals</span>
+        <sc-if value="{{ isOwner }}"><span>{{ visitorsWeekFmt }} visitors this week</span></sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ cSolo }}">
+      <div style="font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.1;margin-top:6px">Just you so far</div>
+      <p style="margin:0;font-size:13px;color:var(--color-neutral-700);text-wrap:pretty;max-width:34ch">People who sign in from other sites on the network land here as arrivals, ready to be welcomed.</p>
+      </sc-if>
+
+      <div style="margin-top:auto;display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid var(--color-divider);font-size:13px">
+        <span style="width:7px;height:7px;flex:none;background:{{ attnDot }}"></span>
+        <span style="color:{{ attnFg }}">{{ attn }}</span>
+      </div>
+    </div>
+
+    <sc-if value="{{ showChrome }}">
+      <div style="height:268px;border:1px dashed var(--color-neutral-300);display:flex;align-items:flex-end;padding:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">Other hub card</div>
+      <div style="height:268px;border:1px dashed var(--color-neutral-300);display:flex;align-items:flex-end;padding:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">Other hub card</div>
+      <div style="height:268px;border:1px dashed var(--color-neutral-300);display:flex;align-items:flex-end;padding:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">Other hub card</div>
+      <div style="height:268px;border:1px dashed var(--color-neutral-300);display:flex;align-items:flex-end;padding:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">Other hub card</div>
+      <div style="height:268px;border:1px dashed var(--color-neutral-300);display:flex;align-items:flex-end;padding:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">Other hub card</div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPopup }}">
+<div onClick="{{ closePopup }}" style="position:absolute;left:0;right:0;top:52px;bottom:0;z-index:5;background:color-mix(in srgb, var(--color-neutral-900) 32%, transparent)"></div>
+<div class="blueprint elev-lg" style="position:absolute;z-index:6;top:112px;left:28px;width:540px;background:var(--color-bg);display:flex;flex-direction:column">
+  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 14px 12px 18px">
+    <span style="display:flex;color:var(--color-accent)"><svg width="18" height="18" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+    <span style="font-family:var(--font-heading);font-weight:600;font-size:22px">Members</span>
+    <span style="font-size:13px;color:var(--color-neutral-700)">{{ count }} people</span>
+    <button class="btn btn-ghost" style="margin-left:auto" onClick="{{ openDetail }}">Open page<svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg></button>
+    <button class="btn btn-ghost" aria-label="Close" style="width:32px;height:32px;padding:0;color:var(--color-text)" onClick="{{ closePopup }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+  </div>
+  <div style="padding:0 18px 10px;position:relative">
+    <span style="position:absolute;left:29px;top:10px;display:flex;color:var(--color-neutral-600)"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></span>
+    <input class="input" value="{{ pq }}" onChange="{{ onPq }}" placeholder="Find a person by name or @handle" style="padding-left:34px">
+  </div>
+  <div style="padding:4px 18px 6px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">{{ popLabel }}</div>
+  <div style="display:flex;flex-direction:column">
+    <sc-for list="{{ prows }}" as="r" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 18px;min-height:52px;background:{{ r.pBg }};border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+        <div style="width:30px;height:30px;flex:none;display:grid;place-items:center;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ r.initials }}</div>
+        <div style="flex:1;min-width:0;line-height:1.25">
+          <div style="font-size:14px;font-weight:500">{{ r.name }}</div>
+          <div style="font-size:12px;color:{{ r.subFg }};display:flex;align-items:center;gap:5px"><sc-if value="{{ r.showSpin }}">{{ spinner }}</sc-if>{{ r.sub }}</div>
+        </div>
+        <sc-if value="{{ r.showSelect }}">
+          <select class="input" value="{{ r.role }}" onChange="{{ r.onSelectInline }}" style="width:112px;min-height:30px;padding:3px 8px;font-size:13px;background:transparent">
+            <option value="owner">Owner</option><option value="guide">Guide</option><option value="member">Member</option><option value="viewer">Viewer</option>
+          </select>
+        </sc-if>
+        <sc-if value="{{ r.showChip }}">
+          <span class="tag" title="{{ r.reason }}" style="background:{{ r.chipBg }};color:{{ r.chipFg }};border:1px solid {{ r.chipBd }}">{{ r.roleLabel }}</span>
+        </sc-if>
+        <sc-if value="{{ r.confirming }}">
+          <button class="btn btn-secondary" style="padding:4px 10px" onClick="{{ r.onCancel }}">Cancel</button>
+          <button class="btn btn-primary blueprint" style="padding:4px 10px" onClick="{{ r.onConfirm }}"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ r.pcta }}</button>
+        </sc-if>
+      </div>
+    </sc-for>
+    <sc-if value="{{ popEmpty }}"><div style="padding:14px 18px;font-size:13px;color:var(--color-neutral-700);border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">No one in {{ org.name }} matches “{{ pq }}”.</div></sc-if>
+  </div>
+
+  <div style="margin-top:10px;border-top:1px solid var(--color-divider)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 18px 6px">
+      <span style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">Arrivals · {{ arrivalsN }} waiting</span>
+      <sc-if value="{{ hasArrivals }}"><span style="font-size:12px;color:var(--color-neutral-600)">Oldest first</span></sc-if>
+    </div>
+    <sc-for list="{{ popArrivals }}" as="a">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 14px 8px 18px;border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+        <div style="width:30px;height:30px;flex:none;display:grid;place-items:center;border:1px dashed var(--color-accent);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ a.initials }}</div>
+        <div style="flex:1;min-width:0;line-height:1.25">
+          <div style="font-size:14px;font-weight:500">{{ a.name }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.meta }}</div>
+        </div>
+        <sc-if value="{{ isOwner }}">
+          <select class="input" value="{{ a.role }}" onChange="{{ a.onRole }}" aria-label="Role on welcome" style="width:96px;min-height:30px;padding:3px 8px;font-size:13px;background:transparent">
+            <option value="guide">Guide</option><option value="member">Member</option><option value="viewer">Viewer</option>
+          </select>
+        </sc-if>
+        <button class="btn btn-primary blueprint" style="padding:5px 12px" onClick="{{ a.onWelcome }}"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ a.welcomeLabel }}</button>
+        <button class="btn btn-ghost" aria-label="Dismiss" title="Dismiss" style="width:30px;height:30px;padding:0;color:var(--color-neutral-700)" onClick="{{ a.onDismiss }}"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+      </div>
+    </sc-for>
+    <sc-if value="{{ moreArr }}"><div style="padding:4px 12px 0"><button class="btn btn-ghost" onClick="{{ openArrivals }}">{{ moreArrText }}</button></div></sc-if>
+    <sc-if value="{{ noArrivals }}"><div style="padding:2px 18px 6px;font-size:13px;color:var(--color-neutral-700)">No one waiting.</div></sc-if>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 18px;margin-top:10px;border-top:1px solid var(--color-divider)">
+    <button class="btn btn-secondary" disabled title="Invites arrive with the roster service"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path></svg>Invite</button>
+    <span style="font-size:12px;color:var(--color-neutral-600)">Coming with the roster service</span>
+    <sc-if value="{{ isOwner }}">
+      <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-accent-700)">
+        <sc-if value="{{ syncPending }}">{{ spinner }}</sc-if>
+        <sc-if value="{{ syncClear }}"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+        {{ syncText }}
+      </span>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDetail }}">
+<div style="padding:20px 28px 44px">
+  <div style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:12px">
+    <button class="btn btn-ghost" onClick="{{ goHub }}"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>Hub</button>
+    <span style="color:var(--color-neutral-500)">/</span>
+    <span>Members</span>
+  </div>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:18px">
+    <div>
+      <div style="display:flex;align-items:center;gap:12px"><h1 style="margin:0">Members</h1><sc-if value="{{ isGuide }}"><span class="tag tag-outline">Viewing as guide</span></sc-if></div>
+      <div style="font-size:14px;color:var(--color-neutral-700)">{{ summary }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <sc-if value="{{ isOwner }}">
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-700)">
+          <sc-if value="{{ syncPending }}">{{ spinner }}</sc-if>
+          <sc-if value="{{ syncClear }}"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+          {{ syncTextLong }}
+        </span>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <button class="btn btn-secondary" disabled title="Invites arrive with the roster service"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path></svg>Invite</button>
+        <span style="font-size:11px;color:var(--color-neutral-600)">Coming with the roster service</span>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showTabs }}">
+  <div style="display:flex;border-bottom:1px solid var(--color-divider);margin-bottom:18px">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+      <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:7px;padding:10px 16px;margin-bottom:-1px;border:0;border-bottom:2px solid {{ t.line }};background:transparent;font-family:var(--font-heading);font-weight:600;font-size:17px;color:{{ t.fg }};cursor:{{ t.cursor }}">
+        <sc-if value="{{ t.locked }}"><svg width="13" height="13" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><rect width="18" height="11" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></sc-if>
+        {{ t.label }}
+        <sc-if value="{{ t.hasCount }}"><span style="font-family:var(--font-body);font-weight:400;font-size:11px;padding:1px 6px;background:{{ t.countBg }};color:{{ t.countFg }}">{{ t.count }}</span></sc-if>
+        <sc-if value="{{ t.locked }}"><span style="font-family:var(--font-body);font-weight:400;font-size:11px">Owners only</span></sc-if>
+      </button>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showPeopleTab }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+    <div style="position:relative;width:240px">
+      <span style="position:absolute;left:10px;top:10px;display:flex;color:var(--color-neutral-600)"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></span>
+      <input class="input" value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search people" style="padding-left:34px">
+    </div>
+    <div style="display:inline-flex;border:1px solid var(--color-divider)">
+      <sc-for list="{{ roleOpts }}" as="o"><button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border:0;border-left:1px solid var(--color-divider);margin-left:-1px;font:inherit;font-size:13px;background:{{ o.bg }};color:{{ o.fg }};cursor:pointer" style-hover="box-shadow:inset 0 0 0 1px var(--color-accent)">{{ o.label }}<span style="font-size:11px;opacity:.7">{{ o.n }}</span></button></sc-for>
+    </div>
+    <div style="display:inline-flex;border:1px solid var(--color-divider)">
+      <sc-for list="{{ listedOpts }}" as="o"><button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border:0;border-left:1px solid var(--color-divider);margin-left:-1px;font:inherit;font-size:13px;background:{{ o.bg }};color:{{ o.fg }};cursor:pointer" style-hover="box-shadow:inset 0 0 0 1px var(--color-accent)">{{ o.label }}</button></sc-for>
+    </div>
+    <span style="margin-left:auto;font-size:12px;color:var(--color-neutral-700)">{{ showingText }}</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ cols }};gap:12px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--color-divider);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700)">
+    <span>Person</span><span>Role</span><span>Listed</span><sc-if value="{{ isOwner }}"><span>Storage</span></sc-if><span>Joined</span><span>Last seen</span><span></span>
+  </div>
+  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+    <div onClick="{{ r.onExpand }}" style="display:grid;grid-template-columns:{{ cols }};gap:12px;align-items:center;padding:8px 12px;min-height:50px;cursor:pointer;background:{{ r.rowBg }};border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)" style-hover="background:color-mix(in srgb, var(--color-text) 4%, transparent)">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;flex:none;display:grid;place-items:center;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ r.initials }}</div>
+        <div style="min-width:0;line-height:1.25">
+          <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500">{{ r.name }}<sc-if value="{{ r.isSelf }}"><span style="font-size:11px;font-weight:400;color:var(--color-neutral-600)">you</span></sc-if></div>
+          <div style="font-size:12px;color:var(--color-neutral-700)">{{ r.handle }}</div>
+        </div>
+      </div>
+      <div><span class="tag" title="{{ r.reason }}" style="background:{{ r.chipBg }};color:{{ r.chipFg }};border:1px solid {{ r.chipBd }}">{{ r.roleLabel }}</span></div>
+      <div>
+        <button onClick="{{ r.onListed }}" aria-label="Listed publicly" title="{{ r.listedText }}" style="position:relative;display:block;width:32px;height:18px;padding:0;border:1px solid {{ r.tgBd }};background:{{ r.tgBg }};cursor:{{ r.tgCursor }};opacity:{{ r.tgOpacity }}"><span style="position:absolute;top:2px;left:{{ r.tgKnob }};width:12px;height:12px;background:{{ r.tgKnobBg }};transition:left .15s"></span></button>
+      </div>
+      <sc-if value="{{ isOwner }}">
+      <div>
+        <sc-if value="{{ r.isSynced }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-700)"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg>Synced</span></sc-if>
+        <sc-if value="{{ r.isPending }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-700);padding:1px 8px 1px 6px;border:1px solid var(--color-accent-400)">{{ spinner }}Syncing</span></sc-if>
+        <sc-if value="{{ r.isNone }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-600)">— No access</span></sc-if>
+      </div>
+      </sc-if>
+      <span style="font-size:13px;color:var(--color-neutral-700)">{{ r.joined }}</span>
+      <span style="font-size:13px;color:var(--color-neutral-700)">{{ r.seen }}</span>
+      <span style="display:flex;justify-content:center;color:var(--color-neutral-600);transform:{{ r.chev }};transition:transform .15s"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="m9 18 6-6-6-6"></path></svg></span>
+    </div>
+    <sc-if value="{{ r.isExpanded }}">
+    <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) auto;gap:28px;padding:16px 16px 18px 52px;background:color-mix(in srgb, var(--color-accent) 6%, transparent);border-bottom:1px solid var(--color-divider)">
+      <div>
+        <div style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Role</div>
+        <div style="display:inline-flex;border:1px solid var(--color-divider);background:var(--color-bg)">
+          <sc-for list="{{ r.roleBtns }}" as="rb"><button disabled="{{ rb.disabled }}" onClick="{{ rb.onClick }}" style="padding:6px 12px;border:0;border-left:1px solid var(--color-divider);margin-left:-1px;font:inherit;font-size:13px;background:{{ rb.bg }};color:{{ rb.fg }};opacity:{{ rb.op }};cursor:{{ rb.cursor }}" style-hover="box-shadow:inset 0 0 0 1px var(--color-accent)">{{ rb.label }}</button></sc-for>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--color-neutral-700)">{{ r.reason }}</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Directory</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onClick="{{ r.onListed }}" aria-label="Listed publicly" style="position:relative;display:block;flex:none;width:32px;height:18px;padding:0;border:1px solid {{ r.tgBd }};background:{{ r.tgBg }};cursor:{{ r.tgCursor }};opacity:{{ r.tgOpacity }}"><span style="position:absolute;top:2px;left:{{ r.tgKnob }};width:12px;height:12px;background:{{ r.tgKnobBg }};transition:left .15s"></span></button>
+          <span style="font-size:13px">{{ r.listedText }}</span>
+        </div>
+        <sc-if value="{{ r.hasFrom }}"><div style="margin-top:10px;font-size:12px;color:var(--color-neutral-700)">{{ r.fromText }}</div></sc-if>
+      </div>
+      <div>
+        <sc-if value="{{ isOwner }}">
+          <div style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Shared storage</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <sc-if value="{{ r.isPending }}">{{ spinner }}</sc-if>
+            <sc-if value="{{ r.isSynced }}"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:var(--color-accent-700);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+            {{ r.access }}
+          </div>
+          <div style="margin-top:4px;font-size:12px;color:var(--color-neutral-700);text-wrap:pretty">{{ r.storageNote }}</div>
+        </sc-if>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:flex-end">
+        <sc-if value="{{ r.canRemove }}"><button class="btn btn-secondary" onClick="{{ r.onRemove }}"><svg width="15" height="15" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 11h-6"></path></svg>Remove from {{ org.name }}</button></sc-if>
+      </div>
+    </div>
+    </sc-if>
+  </sc-for>
+  <sc-if value="{{ noResults }}"><div style="padding:28px 12px;font-size:14px;color:var(--color-neutral-700)">No one matches these filters.</div></sc-if>
+  </sc-if>
+
+  <sc-if value="{{ showArrivalsTab }}">
+  <p style="margin:0 0 18px;font-size:14px;color:var(--color-neutral-800);max-width:70ch;text-wrap:pretty">{{ arrivalsIntro }}</p>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px">
+    <sc-for list="{{ arows }}" as="a" hint-placeholder-count="4">
+      <div class="blueprint" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;flex:none;display:grid;place-items:center;border:1px dashed var(--color-accent);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:15px">{{ a.initials }}</div>
+          <div style="flex:1;min-width:0;line-height:1.3">
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ a.name }}</div>
+            <div style="font-size:13px;color:var(--color-neutral-700)">{{ a.handle }} · signed in from <span style="color:var(--color-accent-700)">{{ a.from }}</span> {{ a.when }}</div>
+          </div>
+          <sc-if value="{{ a.oldest }}"><span class="tag tag-accent">Waiting {{ a.wait }}</span></sc-if>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+          <sc-if value="{{ isOwner }}">
+            <span style="font-size:13px;color:var(--color-neutral-700)">Join as</span>
+            <select class="input" value="{{ a.role }}" onChange="{{ a.onRole }}" style="width:110px;min-height:32px;padding:4px 8px;font-size:13px;background:transparent">
+              <option value="guide">Guide</option><option value="member">Member</option><option value="viewer">Viewer</option>
+            </select>
+          </sc-if>
+          <sc-if value="{{ isGuide }}"><span style="font-size:13px;color:var(--color-neutral-700)">Joins as viewer. An owner can change the role later.</span></sc-if>
+          <button class="btn btn-ghost" style="margin-left:auto;color:var(--color-neutral-800)" onClick="{{ a.onDismiss }}">Dismiss</button>
+          <button class="btn btn-primary blueprint" onClick="{{ a.onWelcome }}"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ a.welcomeLabel }}</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ noArrivals }}">
+    <div class="blueprint" style="padding:36px;max-width:560px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h4 style="margin:0 0 6px">No one waiting</h4>
+      <p style="margin:0;font-size:14px;color:var(--color-neutral-700);text-wrap:pretty">People who sign in here from other sites on the network appear in this queue, ready to be welcomed.</p>
+    </div>
+  </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ showVisitorsTab }}">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:18px">
+    <p style="margin:0;font-size:14px;color:var(--color-neutral-800);max-width:70ch">Anonymous traffic to the {{ org.name }} site. Signed-in people from other network sites show up under Arrivals instead.</p>
+    <div style="display:inline-flex;border:1px solid var(--color-divider);flex:none">
+      <sc-for list="{{ ranges }}" as="o"><button onClick="{{ o.onClick }}" style="padding:7px 12px;border:0;border-left:1px solid var(--color-divider);margin-left:-1px;font:inherit;font-size:13px;background:{{ o.bg }};color:{{ o.fg }};cursor:pointer" style-hover="box-shadow:inset 0 0 0 1px var(--color-accent)">{{ o.label }}</button></sc-for>
+    </div>
+  </div>
+  <div class="blueprint" style="padding:20px 22px 16px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:46px;line-height:1">{{ vTotal }}</span>
+      <span style="font-size:14px">visits</span>
+      <span style="font-size:13px;color:var(--color-neutral-700)">{{ vPeriod }} · {{ vDelta }}</span>
+    </div>
+    <div style="position:relative;height:190px;margin-top:22px">
+      <sc-for list="{{ ticks }}" as="tk"><div style="position:absolute;left:0;right:0;bottom:{{ tk.pct }}%;border-top:1px dashed var(--color-neutral-300)"><span style="position:absolute;right:0;top:-17px;font-size:11px;color:var(--color-neutral-600)">{{ tk.label }}</span></div></sc-for>
+      <div style="position:absolute;top:0;bottom:0;left:0;right:48px;display:flex;align-items:flex-end;gap:{{ barGap }}">
+        <sc-for list="{{ bars }}" as="b">
+          <div onMouseEnter="{{ b.onEnter }}" onMouseLeave="{{ b.onLeave }}" style="position:relative;flex:1;height:{{ b.pct }}%;background:{{ b.bg }}">
+            <sc-if value="{{ b.hover }}"><span style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:6px;font-size:12px;white-space:nowrap;padding:2px 7px;background:var(--color-text);color:var(--color-bg);z-index:2">{{ b.tip }}</span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;gap:{{ barGap }};margin-right:48px;margin-top:8px">
+      <sc-for list="{{ bars }}" as="b"><div style="flex:1;display:flex;justify-content:center;font-size:11px;color:var(--color-neutral-700);white-space:nowrap">{{ b.label }}</div></sc-for>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:24px">
+    <div class="blueprint" style="padding:18px 20px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h5 style="margin:0 0 6px;font-size:18px">Top pages</h5>
+      <sc-for list="{{ pages }}" as="pg">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+          <div><div style="font-size:14px">{{ pg.path }}</div><div style="height:4px;margin-top:6px;background:var(--color-neutral-200)"><div style="height:100%;width:{{ pg.pct }}%;background:var(--color-accent)"></div></div></div>
+          <div style="text-align:right;font-size:14px;font-variant-numeric:tabular-nums">{{ pg.n }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div class="blueprint" style="padding:18px 20px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h5 style="margin:0 0 12px;font-size:18px">Where visits come from</h5>
+      <div style="display:flex;gap:2px;height:14px;margin-bottom:14px">
+        <sc-for list="{{ sources }}" as="sc"><div style="flex:{{ sc.pct }};background:{{ sc.bg }}"></div></sc-for>
+      </div>
+      <sc-for list="{{ sources }}" as="sc">
+        <div style="display:grid;grid-template-columns:12px minmax(0,1fr) 48px;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+          <span style="width:10px;height:10px;background:{{ sc.bg }}"></span>
+          <div><div style="font-size:14px">{{ sc.label }}</div><sc-if value="{{ sc.hasSub }}"><div style="font-size:12px;color:var(--color-neutral-700)">{{ sc.sub }}</div></sc-if></div>
+          <span style="text-align:right;font-size:14px;font-variant-numeric:tabular-nums">{{ sc.pctText }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ smallLayout }}">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:32px;align-items:start">
+    <div>
+      <h4 style="margin:0 0 12px">People</h4>
+      <div class="blueprint" style="display:grid;gap:1px;background:var(--color-divider)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:{{ smallCols }};gap:16px;align-items:center;padding:14px 16px;background:var(--color-bg)">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0">
+              <div style="width:38px;height:38px;flex:none;display:grid;place-items:center;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:14px">{{ r.initials }}</div>
+              <div style="min-width:0;line-height:1.3">
+                <div style="display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500">{{ r.name }}<sc-if value="{{ r.isSelf }}"><span style="font-size:11px;font-weight:400;color:var(--color-neutral-600)">you</span></sc-if></div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">{{ r.meta }}</div>
+              </div>
+            </div>
+            <div>
+              <sc-if value="{{ r.canEdit }}">
+                <select class="input" value="{{ r.role }}" onChange="{{ r.onSelect }}" style="min-height:32px;padding:4px 8px;font-size:13px;background:transparent">
+                  <option value="owner">Owner</option><option value="guide">Guide</option><option value="member">Member</option><option value="viewer">Viewer</option>
+                </select>
+              </sc-if>
+              <sc-if value="{{ r.cantEdit }}"><span class="tag" title="{{ r.reason }}" style="background:{{ r.chipBg }};color:{{ r.chipFg }};border:1px solid {{ r.chipBd }}">{{ r.roleLabel }}</span></sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button onClick="{{ r.onListed }}" aria-label="Listed publicly" style="position:relative;display:block;flex:none;width:32px;height:18px;padding:0;border:1px solid {{ r.tgBd }};background:{{ r.tgBg }};cursor:{{ r.tgCursor }};opacity:{{ r.tgOpacity }}"><span style="position:absolute;top:2px;left:{{ r.tgKnob }};width:12px;height:12px;background:{{ r.tgKnobBg }};transition:left .15s"></span></button>
+              <span style="font-size:13px">{{ r.listedShort }}</span>
+            </div>
+            <sc-if value="{{ isOwner }}">
+            <div>
+              <sc-if value="{{ r.isSynced }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-700)"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg>Synced</span></sc-if>
+              <sc-if value="{{ r.isPending }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-accent-700);padding:1px 8px 1px 6px;border:1px solid var(--color-accent-400)">{{ spinner }}Syncing</span></sc-if>
+              <sc-if value="{{ r.isNone }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-600)">— No access</span></sc-if>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <sc-if value="{{ r.canRemove }}"><button class="btn btn-ghost" aria-label="Remove" title="Remove from {{ org.name }}" style="width:32px;height:32px;padding:0;color:var(--color-neutral-700)" onClick="{{ r.onRemove }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 11h-6"></path></svg></button></sc-if>
+            </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ isSoloOrg }}"><p style="margin:16px 0 0;font-size:14px;color:var(--color-neutral-700);max-width:56ch;text-wrap:pretty">It’s just you for now. When someone signs in from another site on the network, they’ll show up under Arrivals and you can welcome them with a role.</p></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div class="blueprint" style="padding:16px 18px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><h5 style="margin:0;font-size:18px">Arrivals</h5><span style="font-size:12px;color:var(--color-neutral-700)">{{ arrivalsN }} waiting</span></div>
+        <sc-for list="{{ arows }}" as="a">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+            <div style="width:28px;height:28px;flex:none;display:grid;place-items:center;border:1px dashed var(--color-accent);color:var(--color-accent-800);font-family:var(--font-heading);font-weight:600;font-size:11px">{{ a.initials }}</div>
+            <div style="flex:1;min-width:0;line-height:1.25"><div style="font-size:14px">{{ a.name }}</div><div style="font-size:12px;color:var(--color-neutral-700)">From {{ a.from }}</div></div>
+            <button class="btn btn-primary blueprint" style="padding:4px 10px" onClick="{{ a.onWelcome }}"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>Welcome</button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noArrivals }}"><p style="margin:0;font-size:13px;color:var(--color-neutral-700);text-wrap:pretty">No one waiting. People who sign in from other sites on the network appear here, ready to be welcomed.</p></sc-if>
+      </div>
+      <sc-if value="{{ isOwner }}">
+      <div class="blueprint" style="padding:16px 18px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <h5 style="margin:0 0 8px;font-size:18px">Visitors this week</h5>
+        <sc-if value="{{ hasVisits }}">
+          <div style="display:flex;align-items:flex-end;gap:16px">
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ visitorsWeekFmt }}</span>
+            <div style="display:flex;align-items:flex-end;gap:3px;height:36px;width:112px;border-bottom:1px solid var(--color-divider)"><sc-for list="{{ spark }}" as="s"><div style="flex:1;height:{{ s.pct }}%;background:var(--color-accent)"></div></sc-for></div>
+          </div>
+          <div style="margin-top:8px;font-size:13px;color:var(--color-neutral-700)">Most visited: {{ org.top }}</div>
+        </sc-if>
+        <sc-if value="{{ noVisits }}"><p style="margin:0;font-size:13px;color:var(--color-neutral-700)">No visits recorded yet.</p></sc-if>
+      </div>
+      </sc-if>
+      <button class="btn btn-secondary" style="align-self:flex-start" onClick="{{ togglePerms }}">{{ permsBtn }}</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showMatrix }}">
+  <div style="max-width:900px;margin-top:{{ matrixTop }}">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h4 style="margin:0">Who can do what</h4><span class="tag tag-neutral">Read-only</span></div>
+    <p style="margin:0 0 16px;font-size:14px;color:var(--color-neutral-700)">Your column is highlighted. Nobody can change their own role, and no one can change an owner’s.</p>
+    <div class="blueprint">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) repeat(4,120px);border-bottom:1px solid var(--color-divider)">
+        <span style="padding:10px 14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700)">Capability</span>
+        <sc-for list="{{ mhead }}" as="h"><div style="padding:10px 14px;background:{{ h.bg }};display:flex;align-items:center;gap:6px"><span class="tag" style="background:{{ h.chipBg }};color:{{ h.chipFg }};border:1px solid {{ h.chipBd }}">{{ h.label }}</span><sc-if value="{{ h.mine }}"><span style="font-size:11px;color:var(--color-neutral-700)">you</span></sc-if></div></sc-for>
+      </div>
+      <sc-for list="{{ matrix }}" as="m">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) repeat(4,120px);border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+          <span style="padding:10px 14px;font-size:14px">{{ m.cap }}</span>
+          <sc-for list="{{ m.cells }}" as="c">
+            <div style="padding:10px 14px;background:{{ c.bg }};display:flex;align-items:center;font-size:13px">
+              <sc-if value="{{ c.yes }}"><svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:var(--color-accent-700);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+              <sc-if value="{{ c.no }}"><span style="color:var(--color-neutral-400)">—</span></sc-if>
+              <sc-if value="{{ c.isTxt }}"><span style="color:var(--color-accent-800)">{{ c.txt }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasConfirm }}">
+<div onClick="{{ onConfirmCancel }}" style="position:absolute;inset:0;z-index:20;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent)"></div>
+<div class="dialog blueprint elev-lg" style="position:absolute;z-index:21;top:{{ confirmTop }};left:50%;transform:translateX(-50%);background:var(--color-bg)">
+  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+  <div class="dialog-title">{{ cf.title }}</div>
+  <div class="dialog-body" style="text-wrap:pretty">{{ cf.body }}</div>
+  <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--color-accent-300);font-size:13px;color:var(--color-accent-800)">
+    <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+    <span>{{ cf.note }}</span>
+  </div>
+  <div class="dialog-actions">
+    <button class="btn btn-secondary" onClick="{{ onConfirmCancel }}">Cancel</button>
+    <button class="btn btn-primary blueprint" onClick="{{ onConfirmOk }}"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ cf.cta }}</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}">
+<div class="blueprint elev-md" style="position:absolute;z-index:30;top:64px;right:28px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--color-bg);font-size:13px">
+  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+  <span style="display:flex;color:var(--color-accent-700)">{{ spinner }}</span>{{ toast }}
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;hub&quot;,&quot;card&quot;,&quot;popup&quot;,&quot;detail&quot;],&quot;default&quot;:&quot;hub&quot;,&quot;tsType&quot;:&quot;'hub'|'card'|'popup'|'detail'&quot;},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;people&quot;,&quot;arrivals&quot;,&quot;visitors&quot;,&quot;permissions&quot;],&quot;default&quot;:&quot;people&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;viewer&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;owner&quot;,&quot;guide&quot;],&quot;default&quot;:&quot;owner&quot;,&quot;tsType&quot;:&quot;'owner'|'guide'&quot;},&quot;org&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ifac&quot;,&quot;sunjay&quot;,&quot;solo&quot;],&quot;default&quot;:&quot;ifac&quot;,&quot;tsType&quot;:&quot;'ifac'|'sunjay'|'solo'&quot;},&quot;cardStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ledger&quot;,&quot;bar&quot;,&quot;faces&quot;],&quot;default&quot;:&quot;ledger&quot;,&quot;tsType&quot;:&quot;'ledger'|'bar'|'faces'&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;&quot;,&quot;expanded&quot;,&quot;confirmRemove&quot;,&quot;demoteInline&quot;,&quot;arrivals&quot;],&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;expanded&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;syncSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:1,&quot;max&quot;:15,&quot;step&quot;:1,&quot;unit&quot;:&quot;s&quot;,&quot;default&quot;:4,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const d = this.seed(props.org || 'ifac');
+    const demo = props.demo || '';
+    this.state = {
+      view: props.view || 'hub',
+      tab: props.tab || 'people',
+      people: d.people, arrivals: d.arrivals,
+      pq: demo === 'demoteInline' ? 'ana' : '',
+      query: '', roleF: 'all', listedF: 'all',
+      expanded: props.expanded || (demo === 'expanded' ? 'p9' : demo === 'confirmRemove' ? 'p8' : null),
+      confirm: demo === 'confirmRemove' ? { kind: 'remove', id: 'p8' } : null,
+      pconfirm: demo === 'demoteInline' ? { id: 'p4', to: 'viewer' } : null,
+      arrRole: demo === 'arrivals' ? { a3: 'member' } : {},
+      range: '7d', hoverBar: -1, toast: null, showPerms: false
+    };
+    this.timers = [];
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); clearTimeout(this.tt); }
+
+  seed(org) {
+    const P = (id, name, handle, role, listed, storage, joined, seen, seenMin, from) => ({ id, name, handle, role, listed, storage, joined, seen, seenMin, from });
+    const A = (id, name, handle, from, when, wait) => ({ id, name, handle, from, when, wait });
+    if (org === 'sunjay') return { arrivals: [], people: [
+      P('s1', 'Sunjay Rao', '@sunjay', 'owner', true, 'synced', 'Jan 2025', 'Today', 3),
+      P('s2', 'Leila Moradi', '@leila', 'guide', true, 'synced', 'Mar 2025', 'Yesterday', 1300),
+      P('s3', 'Tom Archer', '@tomarcher', 'member', false, 'synced', 'Sep 2026', '4 days ago', 5800, 'print-collective')] };
+    if (org === 'solo') return { arrivals: [], people: [P('v1', 'Ada Moreau', '@ada', 'owner', false, 'synced', 'Nov 2026', 'Today', 1)] };
+    return {
+      people: [
+        P('p1', 'Mara Okafor', '@mara', 'owner', true, 'synced', 'Mar 2021', 'Today', 5),
+        P('p2', 'Julien Ferrand', '@jferrand', 'owner', true, 'synced', 'Jun 2021', '2 days ago', 2900),
+        P('p3', 'Theo Lindqvist', '@theo', 'guide', true, 'synced', 'Jan 2022', 'Today', 40),
+        P('p4', 'Ana Ruiz', '@anaruiz', 'guide', false, 'synced', 'Sep 2022', '5 days ago', 7200),
+        P('p5', 'Kofi Mensah', '@kofi', 'guide', true, 'pending', 'Feb 2023', '1 hour ago', 60),
+        P('p6', 'Hana Sato', '@hanasato', 'member', true, 'synced', 'Apr 2023', 'Yesterday', 1500),
+        P('p7', 'Dev Patel', '@devp', 'member', true, 'synced', 'Jul 2023', '3 days ago', 4300),
+        P('p8', 'Lucía Benítez', '@lucia.b', 'member', false, 'synced', 'Nov 2023', '2 weeks ago', 20000),
+        P('p9', 'Oskar Nyberg', '@oskar', 'member', true, 'pending', 'Jan 2024', 'Today', 120),
+        P('p10', 'Priya Raman', '@priya', 'member', true, 'synced', 'May 2024', '1 week ago', 10000),
+        P('p11', 'Sam Adeyemi', '@samade', 'member', false, 'synced', 'Aug 2025', '4 days ago', 5800, 'sunjay'),
+        P('p12', 'Elif Kaya', '@elif', 'viewer', false, 'none', 'Feb 2026', '3 weeks ago', 30000),
+        P('p13', 'Marco Bellini', '@mbellini', 'viewer', false, 'none', 'Jun 2026', 'Yesterday', 1400),
+        P('p14', 'Ines Duarte', '@ines', 'viewer', false, 'none', 'Aug 2026', '6 days ago', 8600),
+        P('p15', 'Ren Watanabe', '@renw', 'viewer', false, 'none', 'Oct 2026', '2 days ago', 2800, 'studio-north'),
+        P('p16', 'Zoe Hart', '@zoehart', 'viewer', false, 'none', 'Oct 2026', 'Today', 200, 'sunjay')
+      ],
+      arrivals: [
+        A('a4', 'Yusuf Celik', '@yusuf', 'sunjay', '5 days ago', '5 days'),
+        A('a3', 'Amara Diallo', '@amara', 'print-collective', '3 days ago', '3 days'),
+        A('a2', 'Felix Brandt', '@felixb', 'studio-north', 'yesterday', '1 day'),
+        A('a1', 'Noor Haddad', '@noor', 'sunjay', '2 hours ago', '2 hours')
+      ]
+    };
+  }
+  orgMeta(org) {
+    return ({
+      ifac: { name: 'IFAC', mark: 'IF', week: [142, 168, 201, 189, 236, 198, 150], top: '/artists' },
+      sunjay: { name: 'sunjay', mark: 'SR', week: [9, 14, 11, 16, 12, 15, 9], top: '/work' },
+      solo: { name: 'Vale Press', mark: 'VP', week: [0, 0, 0, 0, 0, 0, 0], top: '' }
+    })[org] || null;
+  }
+  meId() {
+    const o = this.props.org || 'ifac', v = this.props.viewer === 'guide' ? 'guide' : 'owner';
+    return ({ ifac: { owner: 'p1', guide: 'p3' }, sunjay: { owner: 's1', guide: 's2' }, solo: { owner: 'v1', guide: 'v1' } })[o][v];
+  }
+  label(r) { return { owner: 'Owner', guide: 'Guide', member: 'Member', viewer: 'Viewer' }[r]; }
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: null }), 3400); }
+  queueSync(id) {
+    const t = setTimeout(() => this.setState(s => ({ people: s.people.map(p => p.id === id ? { ...p, storage: p.role === 'viewer' ? 'none' : 'synced' } : p) })), (this.props.syncSeconds ?? 4) * 1000);
+    this.timers.push(t);
+  }
+  requestRole(id, to, inline) {
+    const p = this.state.people.find(x => x.id === id);
+    if (!p || p.role === to) return;
+    const R = { owner: 4, guide: 3, member: 2, viewer: 1 };
+    if (R[to] < R[p.role] || to === 'owner') {
+      if (inline) this.setState({ pconfirm: { id, to } });
+      else this.setState({ confirm: { kind: to === 'owner' ? 'owner' : 'demote', id, to } });
+      return;
+    }
+    this.applyRole(id, to);
+  }
+  applyRole(id, to) {
+    const p = this.state.people.find(x => x.id === id);
+    this.setState(s => ({ people: s.people.map(x => x.id === id ? { ...x, role: to, storage: 'pending' } : x), confirm: null, pconfirm: null }));
+    this.queueSync(id);
+    if (p) this.flash(`${p.name} is now ${this.label(to).toLowerCase()} · syncing shared storage`);
+  }
+  removePerson(id) {
+    const p = this.state.people.find(x => x.id === id);
+    this.setState(s => ({ people: s.people.filter(x => x.id !== id), confirm: null, expanded: null }));
+    if (p) this.flash(`Removed ${p.name} · storage access revoked in the next sync`);
+  }
+  welcome(aid) {
+    const a = this.state.arrivals.find(x => x.id === aid);
+    if (!a) return;
+    const role = this.props.viewer === 'guide' ? 'viewer' : (this.state.arrRole[aid] || 'viewer');
+    const np = { id: 'n' + aid, name: a.name, handle: a.handle, role, listed: false, storage: 'pending', joined: 'Nov 2026', seen: 'Just now', seenMin: 0, from: a.from };
+    this.setState(s => ({ arrivals: s.arrivals.filter(x => x.id !== aid), people: [...s.people, np] }));
+    this.queueSync(np.id);
+    this.flash(`${a.name} welcomed as ${role} · syncing shared storage`);
+  }
+
+  visitData(range) {
+    const fmt = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (range === '30d') {
+      const vals = [], labels = [], tips = [];
+      for (let i = 0; i < 30; i++) {
+        vals.push(Math.round(168 + 42 * Math.sin(i / 1.1) + ((i * 53) % 37) - 18));
+        const s = fmt(new Date(2026, 9, 10 + i));
+        tips.push(s); labels.push((29 - i) % 7 === 0 ? s : '');
+      }
+      return { vals, labels, tips, period: 'Oct 10 – Nov 8', delta: '+6% on the previous 30 days', step: 50 };
+    }
+    if (range === '90d') {
+      const vals = [], labels = [], tips = [];
+      for (let i = 0; i < 13; i++) {
+        vals.push(Math.round(1080 + 190 * Math.sin(i / 1.8) + ((i * 71) % 130)));
+        const s = fmt(new Date(2026, 10, 2 - 7 * (12 - i)));
+        tips.push('Week of ' + s); labels.push((12 - i) % 2 === 0 ? s : '');
+      }
+      return { vals, labels, tips, period: 'Aug 10 – Nov 8', delta: '+18% on the previous 90 days', step: 250 };
+    }
+    const l = ['Mon 2', 'Tue 3', 'Wed 4', 'Thu 5', 'Fri 6', 'Sat 7', 'Sun 8'];
+    return { vals: [142, 168, 201, 189, 236, 198, 150], labels: l, tips: l, period: 'Nov 2 – 8', delta: '+12% on the previous week', step: 50 };
+  }
+
+  renderVals() {
+    const P = this.props, S = this.state;
+    const orgKey = P.org || 'ifac';
+    const O = this.orgMeta(orgKey) || this.orgMeta('ifac');
+    const isOwner = P.viewer !== 'guide', isGuide = !isOwner;
+    const meId = this.meId();
+    const LBL = { owner: 'Owner', guide: 'Guide', member: 'Member', viewer: 'Viewer' };
+    const PL = { owner: 'Owners', guide: 'Guides', member: 'Members', viewer: 'Viewers' };
+    const CHIP = {
+      owner: ['var(--color-accent-800)', 'var(--color-bg)', 'var(--color-accent-800)'],
+      guide: ['var(--color-accent-300)', 'var(--color-accent-900)', 'var(--color-accent-300)'],
+      member: ['var(--color-accent-100)', 'var(--color-accent-800)', 'var(--color-accent-200)'],
+      viewer: ['transparent', 'var(--color-neutral-700)', 'var(--color-neutral-300)']
+    };
+    const BAR = { owner: 'var(--color-accent-800)', guide: 'var(--color-accent-500)', member: 'var(--color-accent-300)', viewer: 'var(--color-neutral-300)' };
+    const ACCESS = { owner: 'Full access', guide: 'Can edit', member: 'Can view', viewer: 'No access' };
+    const ROLES = ['owner', 'guide', 'member', 'viewer'];
+    const R = { owner: 4, guide: 3, member: 2, viewer: 1 };
+    const people = S.people, arrivals = S.arrivals, count = people.length;
+    const ini = n => n.split(' ').map(w => w[0]).slice(0, 2).join('');
+    const first = n => n.split(' ')[0];
+    const me = people.find(p => p.id === meId) || people[0];
+    const pending = people.filter(p => p.storage === 'pending').length;
+    const view = S.view;
+    const isCard = view === 'card', isPopup = view === 'popup', isDetail = view === 'detail';
+    const sizeKind = count <= 1 ? 'solo' : count <= 5 ? 'small' : 'large';
+    const cs = P.cardStyle || 'ledger';
+
+    const roleCounts = ROLES.map(k => {
+      const n = people.filter(p => p.role === k).length;
+      return { key: k, n, label: PL[k], bg: BAR[k], legend: `${n} ${(n === 1 ? LBL[k] : PL[k]).toLowerCase()}` };
+    });
+    const roleLine = `${count} people · ` + roleCounts.map(r => r.legend).join(' · ');
+    const weekTotal = O.week.reduce((a, b) => a + b, 0);
+    const wmax = Math.max(...O.week, 1);
+
+    let attn = 'All caught up', attnOn = false;
+    if (arrivals.length) { const o = arrivals[0]; attn = `${arrivals.length} arrival${arrivals.length > 1 ? 's' : ''} waiting · ${o.name} for ${o.wait}`; attnOn = true; }
+    else if (isOwner && pending) { attn = `${pending} storage sync${pending > 1 ? 's' : ''} in flight`; attnOn = true; }
+    else if (count === 1) attn = 'Nothing needs attention';
+
+    const mkRow = p => {
+      const self = p.id === meId, can = isOwner && !self && p.role !== 'owner';
+      const reason = self ? 'You can’t change your own role.' : p.role === 'owner' ? 'An owner’s role can’t be changed.' : !isOwner ? 'Only owners change roles.' : 'Demoting asks you to confirm. Every change queues a storage sync.';
+      const [cb, cf, cbd] = CHIP[p.role];
+      const exp = S.expanded === p.id;
+      return {
+        ...p, initials: ini(p.name), isSelf: self, roleLabel: LBL[p.role], chipBg: cb, chipFg: cf, chipBd: cbd,
+        canEdit: can, cantEdit: !can, canRemove: can, reason,
+        isSynced: p.storage === 'synced', isPending: p.storage === 'pending', isNone: p.storage === 'none',
+        access: ACCESS[p.role],
+        storageNote: p.storage === 'pending' ? `Sync in flight: updating access to match the ${LBL[p.role].toLowerCase()} role.` : p.storage === 'synced' ? `Synced with ${O.name} shared storage.` : `Viewers don’t get shared storage.`,
+        listedText: p.listed ? 'Listed in the public directory' : 'Not shown publicly',
+        listedShort: p.listed ? 'Listed' : 'Unlisted',
+        tgBg: p.listed ? 'var(--color-accent)' : 'transparent', tgBd: p.listed ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+        tgKnob: p.listed ? '16px' : '2px', tgKnobBg: p.listed ? 'var(--color-bg)' : 'var(--color-neutral-500)',
+        tgCursor: isOwner ? 'pointer' : 'default', tgOpacity: isOwner ? 1 : 0.55,
+        onListed: e => { e && e.stopPropagation(); if (isOwner) this.setState(s => ({ people: s.people.map(x => x.id === p.id ? { ...x, listed: !x.listed } : x) })); },
+        isExpanded: exp, rowBg: exp ? 'color-mix(in srgb, var(--color-accent) 7%, transparent)' : 'transparent', chev: exp ? 'rotate(90deg)' : 'none',
+        onExpand: () => this.setState({ expanded: exp ? null : p.id }),
+        roleBtns: ROLES.map(k => ({
+          label: LBL[k], disabled: !can || p.role === k,
+          onClick: () => can && this.requestRole(p.id, k, false),
+          bg: p.role === k ? 'var(--color-accent)' : 'transparent', fg: p.role === k ? 'var(--color-bg)' : 'var(--color-text)',
+          cursor: can && p.role !== k ? 'pointer' : 'default', op: can || p.role === k ? 1 : 0.4
+        })),
+        onSelect: e => this.requestRole(p.id, e.target.value, false),
+        onSelectInline: e => this.requestRole(p.id, e.target.value, true),
+        onRemove: e => { e && e.stopPropagation(); this.setState({ confirm: { kind: 'remove', id: p.id } }); },
+        hasFrom: !!p.from, fromText: p.from ? `Arrived from ${p.from}` : '',
+        meta: `Joined ${p.joined} · seen ${p.seen.toLowerCase()}`
+      };
+    };
+
+    // popup
+    const pq = S.pq.trim().toLowerCase();
+    const match = (p, q) => p.name.toLowerCase().includes(q) || p.handle.toLowerCase().includes(q);
+    const popList = pq ? people.filter(p => match(p, pq)).slice(0, 6) : people.filter(p => p.id !== meId).sort((a, b) => a.seenMin - b.seenMin).slice(0, 5);
+    const prows = popList.map(p => {
+      const r = mkRow(p), pc = S.pconfirm && S.pconfirm.id === p.id;
+      const to = pc ? S.pconfirm.to : null;
+      let sub = r.isPending ? 'Syncing shared storage' : `${p.handle} · seen ${p.seen.toLowerCase()}`;
+      if (pc) sub = to === 'owner' ? `Make ${first(p.name)} an owner? No one can undo it.` : `Demote to ${LBL[to].toLowerCase()}? ${to === 'viewer' ? 'Loses shared storage access.' : 'Storage access drops to view.'}`;
+      return {
+        ...r, confirming: !!pc, showSelect: !pc && r.canEdit, showChip: !pc && !r.canEdit,
+        showSpin: !pc && r.isPending, sub, subFg: pc ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+        pBg: pc ? 'var(--color-accent-100)' : 'transparent', pcta: to === 'owner' ? 'Make owner' : 'Demote',
+        onConfirm: () => this.applyRole(p.id, to), onCancel: () => this.setState({ pconfirm: null })
+      };
+    });
+
+    const arows = arrivals.map((a, i) => ({
+      ...a, initials: ini(a.name), oldest: i === 0 && arrivals.length > 1,
+      role: S.arrRole[a.id] || 'viewer',
+      onRole: e => { const v = e.target.value; this.setState(s => ({ arrRole: { ...s.arrRole, [a.id]: v } })); },
+      onWelcome: () => this.welcome(a.id),
+      onDismiss: () => { this.setState(s => ({ arrivals: s.arrivals.filter(x => x.id !== a.id) })); this.flash(`Dismissed ${a.name}`); },
+      meta: `From ${a.from} · ${a.when}`,
+      welcomeLabel: isOwner ? 'Welcome' : 'Welcome as viewer'
+    }));
+
+    // detail
+    const smallLayout = isDetail && sizeKind !== 'large';
+    let tab = S.tab; if (!isOwner && tab === 'visitors') tab = 'people';
+    const q = S.query.trim().toLowerCase();
+    const filtered = people.filter(p => (S.roleF === 'all' || p.role === S.roleF) && (S.listedF === 'all' || (S.listedF === 'listed') === p.listed) && (!q || match(p, q)));
+    const rows = (smallLayout ? people : filtered).map(mkRow);
+    const segStyle = a => ({ bg: a ? 'var(--color-accent)' : 'transparent', fg: a ? 'var(--color-bg)' : 'var(--color-text)' });
+    const roleOpts = [{ k: 'all', label: 'All', n: count }].concat(roleCounts.map(r => ({ k: r.key, label: r.label, n: r.n })))
+      .map(o => ({ ...o, ...segStyle(S.roleF === o.k), onClick: () => this.setState({ roleF: o.k }) }));
+    const listedOpts = [['all', 'Any'], ['listed', 'Listed'], ['unlisted', 'Unlisted']]
+      .map(([k, label]) => ({ label, ...segStyle(S.listedF === k), onClick: () => this.setState({ listedF: k }) }));
+    const tabs = [
+      { key: 'people', label: 'People', count },
+      { key: 'arrivals', label: 'Arrivals', count: arrivals.length },
+      { key: 'visitors', label: 'Visitors', locked: !isOwner },
+      { key: 'permissions', label: 'Permissions' }
+    ].map(t => {
+      const active = tab === t.key;
+      return { ...t, locked: !!t.locked, hasCount: t.count != null, line: active ? 'var(--color-accent)' : 'transparent',
+        fg: t.locked ? 'var(--color-neutral-500)' : active ? 'var(--color-text)' : 'var(--color-neutral-700)',
+        cursor: t.locked ? 'not-allowed' : 'pointer',
+        countBg: active ? 'var(--color-accent)' : 'var(--color-neutral-200)', countFg: active ? 'var(--color-bg)' : 'var(--color-neutral-800)',
+        onClick: () => { if (!t.locked) this.setState({ tab: t.key }); } };
+    });
+
+    const V = this.visitData(S.range);
+    const vmax = Math.max(...V.vals);
+    const niceMax = Math.ceil(vmax * 1.1 / V.step) * V.step;
+    const bars = V.vals.map((v, i) => ({
+      pct: v / niceMax * 100, label: V.labels[i], tip: `${V.tips[i]} · ${v.toLocaleString('en-US')}`,
+      hover: S.hoverBar === i, bg: S.hoverBar === i ? 'var(--color-accent-700)' : 'var(--color-accent)',
+      onEnter: () => this.setState({ hoverBar: i }), onLeave: () => this.setState({ hoverBar: -1 })
+    }));
+    const mult = { '7d': 1, '30d': 4.2, '90d': 12.4 }[S.range];
+    const basePages = [['/artists', 412], ['/exhibitions/after-image', 288], ['/', 254], ['/artists/hana-sato', 131], ['/visit', 96], ['/dealers', 74]];
+    const pages = basePages.map(([path, n]) => ({ path, n: Math.round(n * mult).toLocaleString('en-US'), pct: n / basePages[0][1] * 100 }));
+    const sources = [
+      { label: 'Network sites', pct: 38, sub: 'sunjay 14% · studio-north 11% · print-collective 8% · 3 others 5%', bg: 'var(--color-accent-800)' },
+      { label: 'Search', pct: 27, bg: 'var(--color-accent-600)' },
+      { label: 'Direct', pct: 21, bg: 'var(--color-accent-400)' },
+      { label: 'Social', pct: 9, bg: 'var(--color-accent-300)' },
+      { label: 'Other', pct: 5, bg: 'var(--color-neutral-300)' }
+    ].map(s => ({ ...s, hasSub: !!s.sub, pctText: s.pct + '%' }));
+    const ranges = [['7d', '7 days'], ['30d', '30 days'], ['90d', '90 days']].map(([k, label]) => ({ label, ...segStyle(S.range === k), onClick: () => this.setState({ range: k, hoverBar: -1 }) }));
+
+    const M = [
+      ['See people and arrivals', 'y', 'y', 'n', 'n'],
+      ['Welcome arrivals', 'y', 'As viewer', 'n', 'n'],
+      ['Give or change roles', 'Below owner', 'n', 'n', 'n'],
+      ['List or unlist in the directory', 'y', 'n', 'n', 'n'],
+      ['Remove people', 'y', 'n', 'n', 'n'],
+      ['Shared storage', 'Full', 'Edit', 'View', 'n'],
+      ['Storage controls', 'y', 'n', 'n', 'n'],
+      ['Visitor analytics', 'y', 'n', 'n', 'n']
+    ];
+    const myCol = ROLES.indexOf(me ? me.role : 'owner');
+    const hl = 'color-mix(in srgb, var(--color-accent) 9%, transparent)';
+    const matrix = M.map(r => ({ cap: r[0], cells: r.slice(1).map((v, i) => ({ yes: v === 'y', no: v === 'n', isTxt: v !== 'y' && v !== 'n', txt: v, bg: i === myCol ? hl : 'transparent' })) }));
+    const mhead = ROLES.map((k, i) => ({ label: LBL[k], mine: i === myCol, bg: i === myCol ? hl : 'transparent', chipBg: CHIP[k][0], chipFg: CHIP[k][1], chipBd: CHIP[k][2] }));
+
+    let cf = null;
+    if (S.confirm) {
+      const p = people.find(x => x.id === S.confirm.id);
+      if (p) {
+        const k = S.confirm.kind, to = S.confirm.to, fn = first(p.name);
+        if (k === 'remove') cf = { title: `Remove ${p.name} from ${O.name}?`, body: `${fn} loses the ${LBL[p.role].toLowerCase()} role${p.listed ? ' and comes off the public directory' : ''}. Their account stays, and they can come back later as an arrival.`, note: `Storage access is revoked in the next sync.`, cta: 'Remove' };
+        else if (k === 'owner') cf = { title: `Make ${p.name} an owner?`, body: `No one can change an owner’s role, including you, so this can’t be undone from here.`, note: `Queues a sync: storage access becomes full access.`, cta: 'Make owner' };
+        else cf = { title: `Demote ${p.name} to ${LBL[to].toLowerCase()}?`, body: `${fn} goes from ${LBL[p.role].toLowerCase()} to ${LBL[to].toLowerCase()}.`, note: to === 'viewer' ? `Queues a sync: ${fn} loses access to ${O.name} shared storage.` : `Queues a sync: storage access drops to “${ACCESS[to].toLowerCase()}”.`, cta: 'Demote' };
+      }
+    }
+
+    const fmtN = n => n.toLocaleString('en-US');
+    return {
+      org: O, me: { initials: me ? ini(me.name) : '', name: me ? me.name : '', roleLabel: me ? LBL[me.role] : '' },
+      rootMinH: isCard ? '0px' : '820px',
+      showChrome: !isCard, showHub: !isDetail, isPopup, isDetail, isOwner, isGuide,
+      cardCursor: view === 'hub' ? 'pointer' : 'default',
+      openPopup: () => { if (this.state.view === 'hub') this.setState({ view: 'popup' }); },
+      closePopup: () => this.setState({ view: 'hub', pconfirm: null }),
+      openDetail: () => this.setState({ view: 'detail', tab: 'people', pconfirm: null }),
+      openArrivals: () => this.setState({ view: 'detail', tab: 'arrivals', pconfirm: null }),
+      goHub: () => this.setState({ view: 'hub', confirm: null }),
+      cLedger: sizeKind === 'large' && cs === 'ledger', cBar: sizeKind === 'large' && cs === 'bar', cFaces: sizeKind === 'large' && cs === 'faces',
+      cSmall: sizeKind === 'small', cSolo: sizeKind === 'solo', isSoloOrg: sizeKind === 'solo',
+      roleCounts, roleLine, count, arrivalsN: arrivals.length,
+      visitorsWeekFmt: fmtN(weekTotal), hasVisits: weekTotal > 0, noVisits: weekTotal === 0,
+      spark: O.week.map(v => ({ pct: Math.max(v / wmax * 100, 2) })),
+      faceArr: arrivals.slice(0, 4).map(a => ({ initials: ini(a.name) })),
+      faceNames: arrivals.map(a => first(a.name)).join(', '),
+      cardPeople: people.map(mkRow),
+      attn, attnDot: attnOn ? 'var(--color-accent)' : 'var(--color-neutral-400)', attnFg: attnOn ? 'var(--color-text)' : 'var(--color-neutral-700)',
+      pq: S.pq, onPq: e => this.setState({ pq: e.target.value, pconfirm: null }),
+      popLabel: pq ? `${popList.length} match${popList.length === 1 ? '' : 'es'}` : 'Recently active',
+      prows, popEmpty: popList.length === 0,
+      hasArrivals: arrivals.length > 0, noArrivals: arrivals.length === 0,
+      popArrivals: arows.slice(0, 3), moreArr: arrivals.length > 3, moreArrText: `${arrivals.length - 3} more waiting · open the queue`,
+      syncPending: pending > 0, syncClear: pending === 0,
+      syncText: pending ? `${pending} sync${pending > 1 ? 's' : ''} in flight` : 'Storage in sync',
+      syncTextLong: pending ? `${pending} change${pending > 1 ? 's' : ''} syncing to shared storage` : 'Shared storage in sync',
+      summary: sizeKind === 'large' ? roleLine : `${count} ${count === 1 ? 'person' : 'people'}`,
+      showTabs: !smallLayout, tabs,
+      showPeopleTab: !smallLayout && tab === 'people', showArrivalsTab: !smallLayout && tab === 'arrivals',
+      showVisitorsTab: !smallLayout && tab === 'visitors' && isOwner,
+      showMatrix: isDetail && ((!smallLayout && tab === 'permissions') || (smallLayout && S.showPerms)),
+      matrixTop: smallLayout ? '36px' : '0px',
+      smallLayout, togglePerms: () => this.setState(s => ({ showPerms: !s.showPerms })), permsBtn: S.showPerms ? 'Hide who can do what' : 'Who can do what',
+      query: S.query, onQuery: e => this.setState({ query: e.target.value }),
+      roleOpts, listedOpts, showingText: `Showing ${filtered.length} of ${count}`,
+      cols: isOwner ? 'minmax(0,1fr) 112px 80px 130px 96px 104px 28px' : 'minmax(0,1fr) 112px 80px 96px 104px 28px',
+      smallCols: isOwner ? 'minmax(0,1fr) 124px 116px 116px 32px' : 'minmax(0,1fr) 124px 116px',
+      rows, noResults: !smallLayout && filtered.length === 0,
+      arows, arrivalsIntro: isOwner ? `Signed-in people who came over from another site on the network. Welcome them as a viewer, or pick a role first. Every welcome queues a storage sync.` : `Signed-in people who came over from another site on the network. Guides can welcome them as viewers; owners give other roles.`,
+      ranges, bars, barGap: V.vals.length > 20 ? '3px' : V.vals.length > 10 ? '6px' : '12px',
+      ticks: [0, niceMax / 2, niceMax].map(t => ({ pct: t / niceMax * 100, label: fmtN(t) })),
+      vTotal: fmtN(V.vals.reduce((a, b) => a + b, 0)), vPeriod: V.period, vDelta: V.delta,
+      pages, sources, matrix, mhead,
+      hasConfirm: !!cf, cf: cf || { title: '', body: '', note: '', cta: '' },
+      confirmTop: smallLayout ? '160px' : '220px',
+      onConfirmCancel: () => this.setState({ confirm: null }),
+      onConfirmOk: () => { const c = this.state.confirm; if (!c) return; if (c.kind === 'remove') this.removePerson(c.id); else this.applyRole(c.id, c.to); },
+      hasToast: !!S.toast, toast: S.toast || '',
+      spinner: React.createElement('svg', { width: 13, height: 13, viewBox: '0 0 24 24', style: { flex: 'none', fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', animation: 'mmspin .9s linear infinite' } }, React.createElement('path', { d: 'M21 12a9 9 0 1 1-6.219-8.56' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

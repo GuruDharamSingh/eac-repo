@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/styles.css">
+<script src="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<style>body{margin:0;background:var(--color-neutral-200);font-family:var(--font-body);color:var(--color-text)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-600)}button,.btn,.seg-opt,.tag{white-space:nowrap}.dv-turn{padding:44px 48px 40px;scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 11px var(--font-body);padding:3px 7px;background:var(--color-text);color:var(--color-bg);border-radius:2px;text-decoration:none}.dv-tname{font:600 15px/1.2 var(--font-body);color:var(--color-text)}.dv-group{font:600 22px/1.2 var(--font-heading);margin:56px 0 18px;letter-spacing:-0.01em}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 11px var(--font-body);padding:2px 7px;background:color-mix(in srgb,var(--color-text) 10%,transparent);color:var(--color-text);border-radius:2px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 13px/1.35 var(--font-body);color:var(--color-neutral-800)}.dv-card{max-width:100%;background:var(--color-bg);box-shadow:var(--shadow-md);overflow:hidden}.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}.dv-next{margin:44px 0 0;font:14px/1.5 var(--font-body);color:var(--color-neutral-700)}</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname"><a class="dv-oid" href="#1a">1a</a> again, with the preview behind a toggle</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Preview off by default, so the writing gets the room. The Preview button in the top bar slides it back in on the right.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="post" layout="toggle" hint-size="1320px,1400px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>The left sidebar switches between Sections and Preview, so there are only two columns. Shown on Preview.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="post" layout="rail" preview-open="{{ true }}" hint-size="1320px,1400px"></dc-import></div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: “use <a class="dv-oid" href="#2a">2a</a> for every kind” · “put the toggle in <a class="dv-oid" href="#2b">2b</a> on mobile too” · “more picture blocks like the one in <a class="dv-oid" href="#1a">1a</a>”</p>
+</section>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Publishing forms, one family</span></div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:24px 64px;max-width:1320px;margin-bottom:8px">
+    <div style="flex:1 1 420px;max-width:560px;display:flex;flex-direction:column;gap:12px">
+      <h1 style="margin:0;font-size:44px">Publishing forms</h1>
+      <p style="margin:0;font-size:18px;line-height:1.5;text-wrap:pretty">One form for Post, Gathering, Series and Artwork, with Poll and Questions as add-ons. It runs in Studio focus mode and, with fewer fields, as quick compose on a site page.</p>
+    </div>
+    <div style="flex:1 1 300px;max-width:380px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5">
+      <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">The shell</span>
+      <span><strong>Top bar.</strong> Kind, draft status, Save draft, Schedule, Publish.</span>
+      <span><strong>Index.</strong> Start from (presets), then every section with its state.</span>
+      <span><strong>Form.</strong> Title first, set as the headline. 3 to 5 essentials, then More rows that show their value while closed.</span>
+      <span><strong>Preview.</strong> The card or page as the site will print it, updating as you type.</span>
+    </div>
+    <div style="flex:1 1 300px;max-width:380px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5">
+      <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Assumptions</span>
+      <span>Gathering covers meetings. With Repeat on and “Present it as a series” ticked, it becomes a Series in place.</span>
+      <span>Block editor for Post in focus mode; toolbar editor in quick compose.</span>
+      <span>After publish is a plain confirmation, with no Channel hand-off.</span>
+      <span style="color:var(--color-neutral-700)">Live here: titles, More rows, Card/Page, Where, Repeat, skipping sessions, price mode, kind switch, Copy link.</span>
+    </div>
+  </div>
+
+  <h2 class="dv-group">The shell, with Post</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Focus mode. Essentials, then More, with “Also show on” open.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="post" hint-size="1320px,1400px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Gathering, and Gathering with Repeat on</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>RSVP and Emails open. Switch Where between Place, Online link and Talk room; turn on Repeat.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="gathering" expand="rsvp,emails" hint-size="1320px,1700px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Repeat on and “Present it as a series”: the title bar reads New series and a session planner grows under When. Skip or restore a date.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="gathering" repeat="{{ true }}" hint-size="1320px,1700px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Session planner, two alternates</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Calendar. Pick a session to title it; skipping happens on the date itself. Replaces the list in <a class="dv-oid" href="#1c">1c</a>.</div>
+      <div class="dv-card" style="width:780px;padding:28px 32px 32px">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-size:14px;font-weight:600">Sessions</span><span style="font-size:12px;color:var(--color-neutral-700)">{{ calSummary }}</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+            <div style="flex:1 1 420px;display:flex;flex-wrap:wrap;gap:22px">
+              <sc-for list="{{ months }}" as="m" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:13px;font-weight:600">{{ m.name }}</span>
+                  <div style="display:grid;grid-template-columns:repeat(7,26px);gap:2px;font-size:10px;color:var(--color-neutral-700);text-align:center"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+                  <div style="display:grid;grid-template-columns:repeat(7,26px);gap:2px">
+                    <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="30">
+                      <sc-if value="{{ c.blank }}" hint-placeholder-val="{{ false }}"><span style="height:26px"></span></sc-if>
+                      <sc-if value="{{ c.plain }}" hint-placeholder-val="{{ true }}"><span style="height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;color:{{ c.color }}">{{ c.n }}</span></sc-if>
+                      <sc-if value="{{ c.session }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.pick }}" title="Session {{ c.no }}" style="height:26px;padding:0;border:0;border-radius:1px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};box-shadow:{{ c.ring }}">{{ c.n }}</button></sc-if>
+                      <sc-if value="{{ c.skipped }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.pick }}" title="Skipped" style="height:26px;padding:0;border:1px dashed var(--color-neutral-500);border-radius:1px;background:none;font:inherit;font-size:12px;color:var(--color-neutral-600);text-decoration:line-through;cursor:pointer;box-shadow:{{ c.ring }}">{{ c.n }}</button></sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1 1 240px;display:flex;flex-direction:column;gap:12px;padding:16px 18px;background:var(--color-surface);border-radius:var(--radius-md)">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">{{ sel.kicker }}</span>
+              <span style="font-size:15px;font-weight:600">{{ sel.date }}</span>
+              <sc-if value="{{ sel.on }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Title</span><div class="input" style="display:flex;align-items:center;background:var(--color-bg);font-size:14px">{{ sel.t }}</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Note</span><div class="input" style="min-height:58px;background:var(--color-bg);font-size:13px;font-style:italic">{{ sel.n }}</div></div>
+                <span style="font-size:12px;color:var(--color-neutral-700)">18:30 to 20:30, Studio 4. <a href="#">Change for this session</a></span>
+              </sc-if>
+              <sc-if value="{{ sel.off }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;font-style:italic;color:var(--color-neutral-700)">No session this week: {{ sel.reason }}. The series page says so.</span></sc-if>
+              <button onClick="{{ sel.toggle }}" class="btn btn-secondary" style="align-self:flex-start;background:var(--color-bg);font-size:13px"><i class="ph-duotone {{ sel.icon }}" style="font-size:15px"></i>{{ sel.action }}</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--color-neutral-700)"><span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:var(--color-accent-200)"></span>Session</span><span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border:1px dashed var(--color-neutral-500)"></span>Skipped</span><span>Click any Thursday to add or skip it.</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Programme. The planner is set the way the series page will print it; titles edit in place.</div>
+      <div class="dv-card" style="width:620px;padding:30px 36px 34px">
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px">
+          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">The programme</span>
+          <span style="font-size:14px;color:var(--color-neutral-800)">Thursdays, 18:30 to 20:30 · Studio 4 · {{ calSummary }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <sc-for list="{{ prog }}" as="s" hint-placeholder-count="8">
+            <sc-if value="{{ s.on }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:64px minmax(0,1fr) 32px;gap:16px;align-items:start">
+                <div class="cmyk-num" style="font-size:44px;font-weight:600"><span class="paper">{{ s.no }}</span><span class="plate plate-c" aria-hidden="true">{{ s.no }}</span><span class="plate plate-m" aria-hidden="true">{{ s.no }}</span><span class="plate plate-y" aria-hidden="true">{{ s.no }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">{{ s.d }}</span>
+                  <sc-if value="{{ s.editing }}" hint-placeholder-val="{{ false }}"><span style="font-size:21px;font-weight:600;line-height:1.25;border-bottom:2px solid var(--color-accent);padding-bottom:2px">{{ s.t }}<span style="display:inline-block;width:2px;height:22px;margin-left:2px;vertical-align:-3px;background:var(--color-accent)"></span></span></sc-if>
+                  <sc-if value="{{ s.static }}" hint-placeholder-val="{{ true }}"><span style="font-size:21px;font-weight:600;line-height:1.25;color:{{ s.tc }}">{{ s.tOut }}</span></sc-if>
+                  <sc-if value="{{ s.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;font-style:italic;color:var(--color-neutral-700)">{{ s.n }}</span></sc-if>
+                </div>
+                <button onClick="{{ s.toggle }}" class="btn btn-icon" title="Skip this date" aria-label="Skip this date" style="width:32px;height:32px;color:var(--color-neutral-700)"><i class="ph-duotone ph-calendar-x" style="font-size:17px"></i></button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s.off }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:64px minmax(0,1fr) 32px;gap:16px;align-items:center">
+                <span></span>
+                <span style="font-size:14px;font-style:italic;color:var(--color-neutral-700)">No session on {{ s.long }}: {{ s.reason }}.</span>
+                <button onClick="{{ s.toggle }}" class="btn btn-icon" title="Put this date back" aria-label="Put this date back" style="width:32px;height:32px;color:var(--color-accent)"><i class="ph-duotone ph-arrow-counter-clockwise" style="font-size:17px"></i></button>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin:20px 0 0 75px"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add a session</button></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Artwork</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Pictures, title, maker, price, availability. Details and Edition open. Try On request.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="artwork" hint-size="1320px,1700px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Quick compose on a site page</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>The same fields, fewer of them, in a popover from Add. The preset fills the rest; Open in Studio carries everything over.</div>
+      <div class="dv-card" style="width:1180px"><dc-import name="Quick Compose" hint-size="1180px,820px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Validation and errors</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Publish pressed with two blocking problems and one warning. The summary links to each field; the index marks them too.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="gathering" errors="{{ true }}" expand="" hint-size="1320px,1500px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1i">
+      <div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Field states shared by every kind.</div>
+      <div class="dv-card" style="width:900px;padding:32px 36px 36px">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px 28px">
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Empty</span><span style="font-size:14px;font-weight:600">Place</span><div class="input" style="display:flex;align-items:center;color:var(--color-neutral-700)">An address or a room</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Focused</span><span style="font-size:14px;font-weight:600">Place</span><div class="input" style="display:flex;align-items:center;border-color:var(--color-accent);outline:2px solid var(--color-accent);outline-offset:0">Studio 4<span style="width:1.5px;height:17px;margin-left:1px;background:var(--color-accent)"></span></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Filled, with hint</span><span style="font-size:14px;font-weight:600">Places</span><div class="input" style="display:flex;align-items:center">24</div><span style="font-size:12px;color:var(--color-neutral-700)">Empty means no cap.</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-2-700)">Error, blocks publishing</span><span style="font-size:14px;font-weight:600">Starts</span><div class="input" style="display:flex;align-items:center;gap:8px;border-color:var(--color-accent-2);box-shadow:inset 0 0 0 1px var(--color-accent-2)"><i class="ph-duotone ph-calendar-blank" style="font-size:16px;color:var(--color-accent-2)"></i>Thu 5 Nov 2026</div><span style="display:flex;align-items:flex-start;gap:6px;font-size:13px;color:var(--color-accent-2-700)"><i class="ph-duotone ph-warning-circle" style="font-size:16px;margin-top:1px"></i>This date has passed. Pick a day from today on.</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Warning, still publishes</span><span style="font-size:14px;font-weight:600">Needs at least</span><div class="input" style="display:flex;align-items:center;border-color:var(--color-accent-2-400)">12</div><span style="display:flex;align-items:flex-start;gap:6px;font-size:13px;color:var(--color-neutral-800)"><i class="ph-duotone ph-warning" style="font-size:16px;margin-top:1px;color:var(--color-accent-2-600)"></i>More than the 10 places. It can never go ahead.</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">From a preset</span><span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600">Reminder<span class="tag tag-neutral" style="font-weight:400"><i class="ph-duotone ph-stack" style="font-size:12px;margin-right:4px"></i>Thursday open studio</span></span><div class="input" style="display:flex;align-items:center">1 day before</div><span style="font-size:12px;color:var(--color-neutral-700)">Change it here, for this one only.</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Set by the series</span><div style="display:flex;flex-direction:column;gap:8px;opacity:0.45"><span style="font-size:14px;font-weight:600">Time</span><div class="input" style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-lock" style="font-size:15px"></i>18:30</div></div><span style="font-size:12px;color:var(--color-neutral-700)"><a href="#">Change for this session</a></span></div>
+          <div style="grid-column:span 2;display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:6px">More rows: closed, closed with a problem</span>
+            <div style="display:flex;align-items:baseline;gap:12px;padding:10px 0"><i class="ph-duotone ph-plus" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600">Emails</span><span style="font-size:13px;color:var(--color-neutral-700)">Confirmation, reminder a day before, changes</span></div>
+            <div style="display:flex;align-items:baseline;gap:12px;padding:10px 0"><i class="ph-duotone ph-plus" style="font-size:13px;color:var(--color-accent)"></i><span style="font-size:17px;font-weight:600">Places and RSVP</span><span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--color-accent-2-700)"><i class="ph-duotone ph-warning" style="font-size:14px"></i>Needs 12 to go ahead, but only 10 places</span></div>
+          </div>
+          <div style="grid-column:span 3;display:flex;flex-direction:column;gap:10px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">The main action</span>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+              <button class="btn btn-primary">Publish</button>
+              <button class="btn btn-primary"><i class="ph-duotone ph-clock" style="font-size:16px"></i>Schedule for Tue 10 Nov, 09:00</button>
+              <button class="btn btn-primary" style="background:var(--color-accent-700)"><i class="ph-duotone ph-circle-notch" style="font-size:16px"></i>Publishing…</button>
+              <button class="btn btn-primary" disabled="{{ true }}">Publish</button>
+              <span style="font-size:12px;color:var(--color-neutral-700)">Publish stays pressable until it is pressed, so the problems can be shown.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">After publish</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1j">
+      <div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>In focus mode the form gives way to a confirmation: view it, copy the link, keep editing, make another.</div>
+      <div class="dv-card" style="width:1320px"><dc-import name="Publish Form" kind="post" stage="published" hint-size="1320px,860px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1k">
+      <div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>From quick compose the popover confirms in place and the new gathering lands in the list behind it.</div>
+      <div class="dv-card" style="width:1180px"><dc-import name="Quick Compose" stage="published" hint-size="1180px,820px"></dc-import></div>
+    </div>
+  </div>
+
+  <h2 class="dv-group">Mobile</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1l"><div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Post, full scroll</div><div class="dv-card" style="width:390px"><dc-import name="Publish Form" kind="post" viewport="mobile" hint-size="390px,1900px"></dc-import></div></div>
+    <div class="dv-opt" id="1m"><div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Post, Preview tab</div><div class="dv-card" style="width:390px"><dc-import name="Publish Form" kind="post" viewport="mobile" tab="preview" hint-size="390px,800px"></dc-import></div></div>
+    <div class="dv-opt" id="1n"><div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>Gathering</div><div class="dv-card" style="width:390px"><dc-import name="Publish Form" kind="gathering" viewport="mobile" expand="" hint-size="390px,1500px"></dc-import></div></div>
+    <div class="dv-opt" id="1o"><div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Series planner</div><div class="dv-card" style="width:390px"><dc-import name="Publish Form" kind="gathering" viewport="mobile" repeat="{{ true }}" hint-size="390px,2000px"></dc-import></div></div>
+    <div class="dv-opt" id="1p"><div class="dv-olabel"><a class="dv-oid" href="#1p">1p</a>Artwork</div><div class="dv-card" style="width:390px"><dc-import name="Publish Form" kind="artwork" viewport="mobile" expand="details" hint-size="390px,1800px"></dc-import></div></div>
+    <div class="dv-opt" id="1q"><div class="dv-olabel"><a class="dv-oid" href="#1q">1q</a>Quick compose, as a sheet</div><div class="dv-card" style="width:390px"><dc-import name="Quick Compose" viewport="mobile" hint-size="390px,844px"></dc-import></div></div>
+  </div>
+
+  <h2 class="dv-group">Poll and Questions, the add-ons</h2>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1r">
+      <div class="dv-olabel"><a class="dv-oid" href="#1r">1r</a>A poll attached to a series. Opens from “Poll or questions” in any form.</div>
+      <div class="dv-card" style="width:540px;padding:26px 28px 28px">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)"><i class="ph-duotone ph-chart-bar-horizontal" style="font-size:15px"></i>Poll</span><span class="seg-opt"><i class="ph-duotone ph-list-checks" style="font-size:15px"></i>Questions</span></div>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-700);margin-left:auto"><i class="ph-duotone ph-link-simple" style="font-size:14px"></i>On Thursday printmaking</span>
+          </div>
+          <span style="font-size:23px;font-weight:600;line-height:1.2">Which evening suits you for the spring run?</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-dots-six-vertical" style="font-size:16px;color:var(--color-neutral-500)"></i><div class="input" style="flex:1;display:flex;align-items:center">Tuesday</div><button class="btn btn-icon" aria-label="Remove" style="width:30px;height:30px"><i class="ph-duotone ph-x" style="font-size:14px"></i></button></div>
+            <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-dots-six-vertical" style="font-size:16px;color:var(--color-neutral-500)"></i><div class="input" style="flex:1;display:flex;align-items:center">Wednesday</div><button class="btn btn-icon" aria-label="Remove" style="width:30px;height:30px"><i class="ph-duotone ph-x" style="font-size:14px"></i></button></div>
+            <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-dots-six-vertical" style="font-size:16px;color:var(--color-neutral-500)"></i><div class="input" style="flex:1;display:flex;align-items:center">Thursday, as now</div><button class="btn btn-icon" aria-label="Remove" style="width:30px;height:30px"><i class="ph-duotone ph-x" style="font-size:14px"></i></button></div>
+            <button class="btn btn-ghost" style="align-self:flex-start;font-size:13px;margin-left:19px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add an option</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px 22px">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">People pick</span><div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">One</span><span class="seg-opt">Several</span></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Results show</span><div class="seg"><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)">After voting</span><span class="seg-opt">At close</span><span class="seg-opt">Hosts only</span></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600">Closes</span><div class="input" style="width:150px;display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone ph-calendar-blank" style="font-size:15px"></i>Fri 18 Dec</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;background:var(--color-surface);border-radius:var(--radius-md)">
+            <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">On the page, after voting</span>
+            <div style="display:grid;grid-template-columns:110px minmax(0,1fr) 34px;gap:6px 10px;align-items:center;font-size:13px">
+              <span>Tuesday</span><span style="height:8px;width:22%;background:var(--color-accent-300)"></span><span>4</span>
+              <span>Wednesday</span><span style="height:8px;width:48%;background:var(--color-accent-300)"></span><span>9</span>
+              <span style="font-weight:600">Thursday, as now</span><span style="height:8px;width:70%;background:var(--color-accent)"></span><span style="font-weight:600">13</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1s">
+      <div class="dv-olabel"><a class="dv-oid" href="#1s">1s</a>Questions on their own, published to a page like any other kind.</div>
+      <div class="dv-card" style="width:540px;padding:26px 28px 28px">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="seg"><span class="seg-opt"><i class="ph-duotone ph-chart-bar-horizontal" style="font-size:15px"></i>Poll</span><span class="seg-opt" style="background:var(--color-accent);color:var(--color-bg)"><i class="ph-duotone ph-list-checks" style="font-size:15px"></i>Questions</span></div>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-700);margin-left:auto"><i class="ph-duotone ph-newspaper" style="font-size:14px"></i>On its own, on Lab work</span>
+          </div>
+          <span style="font-size:23px;font-weight:600;line-height:1.2">Spring workshop sign-up</span>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)"><span style="font-weight:600">1</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px">Your name</span><span style="font-size:12px;color:var(--color-neutral-700)">Short answer · required</span></span><i class="ph-duotone ph-dots-three" style="font-size:18px"></i></div>
+            <div style="display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)"><span style="font-weight:600">2</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px">Have you printed before?</span><span style="font-size:12px;color:var(--color-neutral-700)">One choice · Yes, A little, Never</span></span><i class="ph-duotone ph-dots-three" style="font-size:18px"></i></div>
+            <div style="display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)"><span style="font-weight:600">3</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px">Anything we should know?</span><span style="font-size:12px;color:var(--color-neutral-700)">Long answer</span></span><i class="ph-duotone ph-dots-three" style="font-size:18px"></i></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" style="font-size:13px"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add a question</button><div class="input" style="width:auto;min-height:30px;padding:3px 8px;display:flex;align-items:center;gap:6px;font-size:13px">Short answer<i class="ph-duotone ph-caret-down" style="font-size:11px"></i></div></div>
+          <span style="font-size:12px;color:var(--color-neutral-700)">Answers collect in Studio and can be exported. People who answer can be emailed with the same triggers as an RSVP.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="dv-next">Try next: “use the calendar from <a class="dv-oid" href="#1d">1d</a> inside <a class="dv-oid" href="#1c">1c</a>” · “show <a class="dv-oid" href="#1g">1g</a> for Post and Artwork as separate frames” · “try the shell in the dark IFAC look”</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    sel: 2,
+    rows: [
+      { y: 2026, m: 10, d: 19, t: 'Monotype basics', n: 'Aprons provided. Wear old shoes.' },
+      { y: 2026, m: 10, d: 26, t: 'Relief: cutting lino', n: '' },
+      { y: 2026, m: 11, d: 3, t: 'Two-colour registration', n: 'Bring a sketch for the two-colour plate.' },
+      { y: 2026, m: 11, d: 10, t: 'Open press', n: '' },
+      { y: 2026, m: 11, d: 17, t: 'Holiday cards', n: '' },
+      { y: 2026, m: 11, d: 24, t: '', n: '', off: true, reason: 'Christmas Eve' },
+      { y: 2026, m: 11, d: 31, t: '', n: '', off: true, reason: 'New Year’s Eve' },
+      { y: 2027, m: 0, d: 7, t: 'Drypoint on acetate', n: '' },
+      { y: 2027, m: 0, d: 14, t: 'Editioning and signing', n: '' },
+      { y: 2027, m: 0, d: 21, t: '', n: '' }
+    ]
+  };
+  toggle(i) { this.setState(st => ({ rows: st.rows.map((r, j) => j === i ? { ...r, off: !r.off, reason: r.reason || 'skipped by hand' } : r) })); }
+  renderVals() {
+    const s = this.state;
+    const MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const DN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    let no = 0;
+    const rows = s.rows.map((r, i) => { const on = !r.off; if (on) no++; return { ...r, i, on, no: on ? no : 0 }; });
+    const count = rows.filter(r => r.on).length, skipped = rows.length - count;
+    const key = (y, m, d) => y + '-' + m + '-' + d;
+    const idx = {}; rows.forEach(r => { idx[key(r.y, r.m, r.d)] = r; });
+    const months = [[2026, 10], [2026, 11], [2027, 0]].map(([y, m]) => {
+      const lead = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
+      const cells = [];
+      for (let b = 0; b < lead; b++) cells.push({ blank: true });
+      for (let d = 1; d <= days; d++) {
+        const r = idx[key(y, m, d)], isToday = y === 2026 && m === 10 && d === 8, past = y === 2026 && m === 10 && d < 8;
+        const selected = r && r.i === s.sel;
+        if (r) cells.push({ n: d, session: r.on, skipped: !r.on, no: r.no, pick: () => this.setState({ sel: r.i }),
+          bg: selected ? 'var(--color-accent)' : 'var(--color-accent-200)', fg: selected ? 'var(--color-bg)' : 'var(--color-accent-900)',
+          ring: selected ? '0 0 0 2px var(--color-bg), 0 0 0 3px var(--color-accent)' : 'none' });
+        else cells.push({ n: d, plain: true, color: isToday ? 'var(--color-accent-2-700)' : past ? 'var(--color-neutral-500)' : 'var(--color-text)' });
+      }
+      return { name: MN[m] + ' ' + y, cells };
+    });
+    const r = rows[s.sel] || rows[0];
+    const long = x => DN[new Date(x.y, x.m, x.d).getDay()] + ' ' + x.d + ' ' + MN[x.m];
+    const sel = {
+      kicker: r.on ? 'Session ' + r.no : 'Skipped', date: long(r), on: r.on, off: !r.on, reason: r.reason,
+      t: r.t || 'Session ' + r.no, n: r.n || 'A note for people coming, shown under the title.',
+      action: r.on ? 'Skip this date' : 'Put it back', icon: r.on ? 'ph-calendar-x' : 'ph-arrow-counter-clockwise',
+      toggle: () => this.toggle(r.i)
+    };
+    const prog = rows.map(x => ({
+      on: x.on, off: !x.on, no: x.no, d: long(x), long: x.d + ' ' + MN[x.m], reason: x.reason, n: x.n, hasNote: !!x.n,
+      t: x.t, editing: x.on && x.i === 3, static: x.on && x.i !== 3, tOut: x.t || 'Add a title', tc: x.t ? 'var(--color-text)' : 'var(--color-neutral-600)',
+      toggle: () => this.toggle(x.i)
+    }));
+    return { months, sel, prog, calSummary: count + ' sessions, 19 Nov to 21 Jan, ' + skipped + (skipped === 1 ? ' date' : ' dates') + ' skipped' };
+  }
+}
+</script>
+</body>
+</html>
