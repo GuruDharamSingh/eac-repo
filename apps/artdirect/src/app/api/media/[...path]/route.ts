@@ -6,11 +6,16 @@ import { getServerSession } from "@elkdonis/auth-server";
  * Media proxy.
  *
  * Serving is `serveMedia` in @elkdonis/services; what stays here is resolving
- * who is asking, and which prefixes this app will serve at all.
+ * who is asking.
  *
- * The prefix list is the important local part: this is a directory app, so it
- * serves its own org tree and the per-person tree, and nothing else. Without
- * it the service account would make this route a reader for every org's files.
+ * Serves the whole network tree (2026-11-11, developer). A person's page shows
+ * pieces whose pictures were filed under whichever org the Studio was acting
+ * for (`ifac/`, `hidden-enneagram/`, slug-named folders), and those returned
+ * 404 here under the old `artdirect/` + `users/` + `oad/` bound. Every public
+ * file is already served by arts-collective.com, so the bound protected
+ * nothing public; `canReadMedia` inside serveMedia still decides each
+ * `Private/` and workshop path.
+ * `docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md`.
  */
 export async function GET(
   request: NextRequest,
@@ -22,10 +27,7 @@ export async function GET(
   return serveMedia({
     filePath: path.join("/"),
     viewerId: session.user?.db_user_id ?? session.user?.id ?? null,
-    // `oad` is the collective's own org ("Just me" in the Studio): pictures a
-    // person puts in a piece from the Studio land under EAC_Network/oad/, and
-    // the piece reads here. serveMedia still gates anything under Private/.
-    allowedPrefixes: ["EAC_Network/artdirect/", "EAC_Network/users/", "EAC_Network/oad/"],
+    allowedPrefixes: ["EAC_Network/"],
     range: request.headers.get("range"),
   });
 }

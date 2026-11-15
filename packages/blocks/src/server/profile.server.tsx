@@ -1,6 +1,7 @@
 import {
   getAuthoredThreads,
   listUserGalleries,
+  galleryShownOn,
   getUserGallery,
   getUserGalleryById,
   getUserGalleryByPage,
@@ -157,10 +158,11 @@ export interface LoadProfileGalleriesOptions {
   /**
    * The site asking, as an org id.
    *
-   * A gallery names the sites it must NOT appear on (`hidden_on`, migration
-   * 146) — "a gallery made on Dana's site starts with {ifac}; appearing on
-   * IFAC is her choice". Passing the asking site is what makes that choice
-   * mean anything, and this loader is the only shared reader of the table.
+   * A gallery appears on the site that made it and on the sites its owner
+   * chose (`shown_on`, opt-in since migration 264; before it, `hidden_on`
+   * listed the sites it must not appear on). Passing the asking site is what
+   * makes that choice mean anything, and this loader is the only shared
+   * reader of the table.
    *
    * Optional rather than required so existing callers keep compiling, but a
    * host that leaves it out is showing galleries their owner excluded.
@@ -212,8 +214,8 @@ export interface LoadProfileGalleryOptions {
   /** A gallery's id or its slug. Omitted: the one for `pagePath`, else their first. */
   gallery?: string;
   /**
-   * The site asking, as an org id. A gallery listing it in `hidden_on` is not
-   * shown — see LoadProfileGalleriesOptions.site. An author placing the block
+   * The site asking, as an org id. A gallery not shown there (neither made
+   * there nor chosen for it) is not shown — see LoadProfileGalleriesOptions.site. An author placing the block
    * cannot override this; it is the gallery owner's setting, not the page's.
    */
   site?: string;
@@ -269,7 +271,7 @@ export async function loadProfileGallery(
 
     if (!chosen || chosen.userId !== userId) return null;
     if (!chosen.isPublic && !isSelf) return null;
-    if (options.site && chosen.hiddenOn.includes(options.site)) return null;
+    if (options.site && !galleryShownOn(chosen, options.site)) return null;
 
     const limit = Math.min(Math.max(Math.trunc(options.limit ?? 24), 1), 200);
     const href = (item: { url: string; artworkId?: string }): string => {
@@ -305,7 +307,7 @@ export async function loadProfileGallery(
 
 /** Their first gallery this site is allowed to show. */
 async function firstVisibleGallery(userId: string, isSelf: boolean, site?: string) {
-  // The listing already applies both `is_public` and `hidden_on`, so the
+  // The listing already applies both `is_public` and the site rule, so the
   // fallback cannot land on a gallery the site was never allowed to show.
   const [first] = await listUserGalleries(userId, { onlyPublic: !isSelf, site });
   return first ? await getUserGalleryById(first.id) : null;

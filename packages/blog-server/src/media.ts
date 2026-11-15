@@ -188,7 +188,18 @@ export function createMediaUploadHandler(config: BlogConfig) {
 
       const formData = await request.formData();
       const file = formData.get('file') as File | null;
-      const orgId = (formData.get('orgId') as string | null) || config.orgId;
+      // The deployment's org only, and only for its members. The org id used to
+      // come from the form with no role check, so any signed-in user could
+      // write into any org's Nextcloud tree (2026-11-11).
+      const orgId = config.orgId;
+      const [role] = await db<{ role: string }[]>`
+        SELECT role FROM user_organizations
+        WHERE user_id = ${userId} AND org_id = ${orgId} AND role IN ('owner', 'guide', 'member')
+        LIMIT 1
+      `;
+      if (!role) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const visibility = (formData.get('visibility') as MeetingVisibility) || 'PUBLIC';
 
       if (!file) {

@@ -519,8 +519,11 @@ export async function createCollaborativeDocument(
   initialContent?: string,
   /**
    * Where to write it, relative to the org root (the folder must exist), and
-   * under what name. Default: Media/Documents/<ts>-<id>.md, which has no
-   * Private segment, so media-authz serves it to anonymous visitors.
+   * under what name. Default: Private/Media/Documents/<ts>-<id>.md. The
+   * Private segment keeps /api/media from serving the file to anonymous
+   * visitors; people open it through the share link. Until 2026-11-11 the
+   * default was Media/Documents/, which was public; files written before then
+   * are still there.
    */
   placement?: { folder: string; filename: string }
 ): Promise<{
@@ -536,8 +539,20 @@ export async function createCollaborativeDocument(
     const filename = placement?.filename ?? `${timestamp}-${meetingId}.md`;
     const path = placement
       ? `EAC_Network/${orgId}/${placement.folder.replace(/^\/+|\/+$/g, '')}/${filename}`
-      : `EAC_Network/${orgId}/Media/Documents/${filename}`;
-    
+      : `EAC_Network/${orgId}/Private/Media/Documents/${filename}`;
+
+    if (!placement) {
+      // Orgs provisioned by createOrgFolders have this tree; MKCOL on an
+      // existing folder is refused harmlessly, and it does not create parents.
+      for (const folder of ['Private', 'Private/Media', 'Private/Media/Documents']) {
+        // eslint-disable-next-line no-await-in-loop
+        await fetch(`${NEXTCLOUD_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/EAC_Network/${orgId}/${folder}`, {
+          method: 'MKCOL',
+          headers: { Authorization: `Basic ${auth}` },
+        }).catch(() => undefined);
+      }
+    }
+
     // Create initial document content
     const content = initialContent || `# ${meetingTitle}
 
@@ -577,8 +592,11 @@ export async function createCollaborativeDocument(
       return null;
     }
 
-    // Create a public share with EDIT permissions (permissions=15 means read+write+create+delete)
-    const shareToken = await createPublicShare(path, 15);
+    // A link share that can read and update this one file (permissions 3).
+    // It was 15 (adds create and delete) until 2026-11-11. The link stays
+    // because most members have no Nextcloud account (org-documents.ts); it
+    // is a capability URL, so hand it out only behind a membership check.
+    const shareToken = await createPublicShare(path, 3);
     
     if (!shareToken) {
       console.error('[Nextcloud] Could not create public share');

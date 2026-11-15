@@ -29,7 +29,8 @@ import { getSiteOwnerUserId, getViewer } from './auth';
 //
 // Made here, a gallery:
 //   origin     'danamccool'
-//   hidden_on  ['ifac']   — appearing on her IFAC profile is her choice
+//   shown_on   []         — appearing on her IFAC profile is her choice
+//                           (opt-in since migration 264; hidden_on ['ifac'] before)
 //   folder     Galleries/<slug> in her storage — uploads into it land there
 // ============================================================================
 
@@ -119,7 +120,7 @@ export async function listGalleriesForHud(): Promise<Result<{ galleries: HudGall
       itemCount: g.itemCount,
       isPublic: g.isPublic,
       pagePath: g.pagePath,
-      showOnIfac: !g.hiddenOn.includes('ifac'),
+      showOnIfac: g.shownOn.includes('ifac'),
       origin: g.origin,
     })),
   };
@@ -191,7 +192,7 @@ export async function getGalleryForHud(
       itemCount: g.items.length,
       isPublic: g.isPublic,
       pagePath: g.pagePath,
-      showOnIfac: !g.hiddenOn.includes('ifac'),
+      showOnIfac: g.shownOn.includes('ifac'),
       origin: g.origin,
       folder: g.folder,
     },
@@ -223,10 +224,11 @@ export async function createGalleryAction(
     title,
     pagePath: options.pagePath ?? null,
     origin: SITE,
+    // Shown on this site only until she turns on "Show on IFAC" (shown_on,
+    // opt-in since migration 264). hidden_on is still written for builds made
+    // before 264. Her own pages show a linked gallery either way; see
+    // lib/galleries.ts.
     hiddenOn: ['ifac'],
-    // Hidden until her IFAC profile honours `hidden_on` (IFAC needs a rebuild
-    // for that) — a public gallery would otherwise appear there at once. Her
-    // own pages show a linked gallery either way; see lib/galleries.ts.
     isPublic: false,
   });
   if ('error' in result) return { ok: false, error: result.error };
@@ -249,6 +251,14 @@ export async function updateGalleryAction(
   const found = await ownedGallery(galleryId);
   if ('error' in found) return { ok: false, error: found.error };
   const g = found.gallery;
+  // shown_on is the switch (opt-in, migration 264); hidden_on is kept in
+  // step for builds made before it.
+  const shownOn =
+    input.showOnIfac === undefined
+      ? undefined
+      : input.showOnIfac
+        ? [...new Set([...g.shownOn, 'ifac'])]
+        : g.shownOn.filter((s) => s !== 'ifac');
   const hiddenOn =
     input.showOnIfac === undefined
       ? undefined
@@ -259,6 +269,7 @@ export async function updateGalleryAction(
     title: input.title,
     description: input.description,
     isPublic: input.isPublic,
+    shownOn,
     hiddenOn,
     pagePath: input.pagePath,
   });

@@ -29,6 +29,10 @@ export function GalleryPanel({
       editable={editable}
       uploadEndpoint="/api/upload"
       uploadExtraFields={{ memberSlug: slug }}
+      // What IFAC shows is chosen here (org_profiles.portfolio, migration
+      // 264): "Add from library" offers the person's own files and IFAC's.
+      libraryEndpoint="/api/my-media"
+      librarySourceLabels={{ user: "My files", org: "IFAC library" }}
       onChange={editable ? (next) => { void saveGalleryAction(profileUserId, next); } : undefined}
     />
   );

@@ -23,8 +23,8 @@ import { PictureWall, WALL_PROPS, type PictureWallProps } from "./picture-wall";
 // ── Where it may appear is the GALLERY's business ──────────────────────────
 //
 // Not a property of the pictures and not a setting on this block: a gallery
-// names the sites it must not appear on (`hidden_on`), and the loader is
-// handed the asking site. An author dropping this block cannot override that.
+// names the sites it appears on (`origin` + `shown_on`, opt-in), and the
+// loader is handed the asking site. An author dropping this block cannot override that.
 // ============================================================================
 
 const DATA_PROPS = [

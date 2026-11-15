@@ -564,3 +564,15 @@
 .eac-frame-tools button:hover {
   background: #000;
 }
+
+/* SitePortfolioEditor (2026-11-11): the note above a site's own portfolio
+   editor. Full page ink, no opacity and no accent colour, so its contrast is
+   the host's body-text pair. */
+.eac-site-portfolio-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+.eac-site-portfolio-note[role="alert"] {
+  font-weight: 600;
+}

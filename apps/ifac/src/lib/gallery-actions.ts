@@ -14,6 +14,7 @@ import {
 } from "@elkdonis/services";
 import type { SaveFieldPayload, SaveResult } from "@elkdonis/live-editor";
 import type { GalleryItem } from "@elkdonis/cms-ui/gallery";
+import { siteConfig } from "@/config/site";
 
 /**
  * Save actions behind a person's gallery pages on IFAC.
@@ -60,7 +61,10 @@ export async function createGalleryAction(
 ): Promise<{ ok: boolean; error?: string; slug?: string }> {
   const auth = await authorizeUser(profileUserId);
   if (!auth.ok) return auth;
-  const result = await createUserGallery(profileUserId, { title });
+  // Made on IFAC, so IFAC is its origin: since migration 264 a gallery shows
+  // only where it was made and where its owner chose (shown_on). Without an
+  // origin it would not show on IFAC itself.
+  const result = await createUserGallery(profileUserId, { title, origin: siteConfig.orgId });
   if (!result.ok) return result;
   await revalidateGalleryPaths(profileUserId, result.gallery.slug);
   return { ok: true, slug: result.gallery.slug };

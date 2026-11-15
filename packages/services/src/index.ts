@@ -293,6 +293,9 @@ export {
   ensureWorkshopMaterialsFolder,
   uploadWorkshopMaterial,
   deleteWorkshopMaterial,
+  // 2026-11-14: shared compose answers <-> workshop.
+  workshopInputFromAnswers,
+  workshopAnswersFromOffering,
 } from './workshop-offerings';
 export type {
   WorkshopMaterial,
@@ -386,6 +389,7 @@ export {
   getOrgHomeBySlug,
   getOrgIdentity,
   canEditOrgIdentity,
+  listOrgHosts,
 } from './org-domains';
 export type { OrgHome, OrgIdentity } from './org-domains';
 
@@ -444,6 +448,8 @@ export {
   canPublishOrgProfile,
   ensureUniqueUserSlug,
   updateProfile,
+  setOrgPortfolio,
+  appendOrgPortfolio,
   upsertOrgProfile,
   createUnclaimedProfile,
   requestClaim,
@@ -770,6 +776,7 @@ export {
   reorderUserGalleries,
   asGalleryItems,
   cleanGalleryLink,
+  galleryShownOn,
 } from './galleries';
 export type {
   UserGallery,
@@ -967,6 +974,10 @@ export {
   unsubscribeSeriesByEmail,
   ensureSeriesTalkRoom,
   saveSeriesSchedule,
+  // 2026-11-14: series on hand-picked dates (recurrence_pattern CUSTOM).
+  addSeriesSession,
+  SERIES_CUSTOM_PATTERN,
+  isCustomSeriesClock,
   SUBSCRIBED_STATUS,
   // 2026-10-13: week subtitle, rich write-up and cover framing (migration 205); series cover media.
   coverFrameOf,
@@ -1321,6 +1332,8 @@ export { recordMetaWebhookEvent } from './meta-webhooks';
 export { listOrgChannels, listChannelsForManager, setOrgChannel, isOrgChannel, type OrgChannel, type ChannelProvider } from './org-channels';
 export { startPublishJob, finishPublishJob, listPublishJobs, type PublishJobView } from './publish-jobs';
 export { centerRoutes } from './center-routes';
+// One site's portfolio of a person, chosen on that site (migration 264). See site-portfolio.ts.
+export { sitePortfolioRoutes } from './site-portfolio';
 
 // Connections audit log and the network Terms (migrations 223-224, 2026-11-01).
 export { logConnectionEvent, listConnectionEvents, type ConnectionEventName, type ConnectionEventView } from './connection-events';
@@ -1335,5 +1348,7 @@ export { MEETING_KINDS, meetingComposeContext, listOrgMeetings, loadMeetingConte
 // Join links: who receives a meeting's meeting_url / Talk token (RSVP yes|maybe, hosts, org editors).
 export { mayReceiveJoinLink, joinableThreadIds, withoutJoinLink, JOIN_LINK_RSVP_STATUSES } from "./join-link";
 export { eventsForViewer, placeWithoutLink, type CalendarViewer } from "./org-calendar";
+export { savePostContent, loadPostContent, removePostContent, listPostContent, type PostInput, type PostRecord, type PostResult, type SavePostOptions, type PostMaterial, type PostSummary } from "./site-post-content";
+export { createSiteSeries, type CreateSiteSeriesInput, type CreateSiteSeriesResult } from "./site-series-create";
 // Booking offers, org-checked (booking module phase 1, migrations 265-266, 2026-11-15).
 export { canEditBookingOffer, saveBookingOffer, loadBookingOfferForEdit, getPublicBookingOffer, bookFreeOffering, listMyHostBookings } from "./booking-offers";

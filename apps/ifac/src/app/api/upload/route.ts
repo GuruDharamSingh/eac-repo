@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { getServerSession } from "@elkdonis/auth-server";
 import { db } from "@elkdonis/db";
-import { uploadFile, getProxyFileUrl, uploadFilename, markArtist } from "@elkdonis/services";
+import { uploadFile, getProxyFileUrl, uploadFilename, markArtist, appendOrgPortfolio } from "@elkdonis/services";
 import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { nanoid } from "nanoid";
 import { canManageIfac } from "@/lib/data";
@@ -23,8 +23,9 @@ const MAX_SIZE_MB = 25;
  *
  * `target` ("gallery", default, or "avatar") decides what a successful
  * upload does to the member's row once it resolves — a plain "return me a
- * URL" response either way, but "gallery" appends to `users.portfolio`
- * (directory.ts reads this as `artworks`) while "avatar" does not, it only
+ * URL" response either way, but "gallery" appends to IFAC's own portfolio
+ * for the person, `org_profiles.portfolio` (migration 264; directory.ts reads
+ * this as `artworks`), while "avatar" does not, it only
  * records the `media` row. Before this distinction existed, EVERY upload
  * unconditionally appended to portfolio — so uploading a portrait through
  * the admin form was silently also adding a duplicate entry to the artist's
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const memberSlug = String(formData.get("memberSlug") ?? "").trim();
-    // "gallery" (default, legacy name) appends to users.portfolio; "avatar"
+    // "gallery" (default, legacy name) appends to IFAC's org_profiles.portfolio; "avatar"
     // and "file" only store the file and its media row — "file" is what the
     // gallery PAGES use, since each keeps its own item list (user_galleries).
     const rawTarget = String(formData.get("target") ?? "gallery");
@@ -134,10 +135,10 @@ export async function POST(request: NextRequest) {
         VALUES (${mediaId}, ${ORG_ID}, ${member.id}, ${filename}, ${relativePath}, ${fileUrl}, 'image', ${file.name}, ${file.size}, ${file.type})
       `;
       if (target === "gallery") {
-        await db`
-          UPDATE users SET portfolio = portfolio || ${db.json([{ id: mediaId, url: fileUrl, title: file.name }])}, updated_at = NOW()
-          WHERE id = ${member.id}
-        `;
+        // IFAC's own portfolio for this person (org_profiles.portfolio,
+        // migration 264), not their home list: the file is theirs (it is in
+        // their folder), and showing it on another site is chosen there.
+        await appendOrgPortfolio(ORG_ID, member.id, [{ id: mediaId, url: fileUrl, title: file.name }]);
       }
     }
 

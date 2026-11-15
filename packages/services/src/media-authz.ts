@@ -28,6 +28,7 @@
  */
 
 import { db } from '@elkdonis/db';
+import { ARTIST_SPACE_ORG_ID } from './artist-membership';
 import { canEditOrgIdentity } from './org-domains';
 import { isEnrolledInWorkshop } from './workshop-offerings';
 import { getIdentityIds } from './identities';
@@ -86,7 +87,16 @@ export function parseMediaPath(rawPath: string): MediaTarget | null {
   // EAC_Network/<org_id>/workshops/<thread_id>/...
   if (segments[2]?.toLowerCase() === 'workshops') {
     if (segments.length < 4) return null;
-    return { kind: 'workshop', orgId: segments[1], threadId: segments[3], isPrivate: true };
+    // Workshops/covers and Workshops/videos are where /api/upload/image has
+    // always put cover images and promo videos (its default context). They
+    // are listing imagery, not materials: read as a thread id, "covers" made
+    // them unreadable by everyone. Thread ids are 21-character nanoids, so
+    // neither name can be one. They fall through to the org rule below
+    // (2026-11-11).
+    const sub = segments[3].toLowerCase();
+    if (sub !== 'covers' && sub !== 'videos') {
+      return { kind: 'workshop', orgId: segments[1], threadId: segments[3], isPrivate: true };
+    }
   }
 
   // EAC_Network/<org_id>/...
@@ -179,6 +189,9 @@ async function sharesOrg(viewerId: string, ownerId: string): Promise<boolean> {
   try {
     // Same two-table reality as isOrgAffiliate: an org shared only via
     // org_profiles still counts.
+    // The artist space (oad) does not count as a shared org: everyone with a
+    // users/ folder is a member of it (markArtist), so counting it made every
+    // artist's Private/ tree readable by every other artist (2026-11-11).
     const rows = await db<Array<{ ok: number }>>`
       WITH viewer_orgs AS (
         -- Same 'viewer' exclusion as isOrgAffiliate, and for the same reason:
@@ -186,9 +199,11 @@ async function sharesOrg(viewerId: string, ownerId: string): Promise<boolean> {
         -- let anyone follow an org to read its members' private files.
         SELECT org_id FROM user_organizations
         WHERE user_id = ${viewerId} AND role <> 'viewer'
+          AND org_id <> ${ARTIST_SPACE_ORG_ID}
         UNION
         SELECT op.org_id FROM org_profiles op
         WHERE op.user_id = ${viewerId}
+          AND op.org_id <> ${ARTIST_SPACE_ORG_ID}
           AND NOT EXISTS (
             SELECT 1 FROM user_organizations uo
             WHERE uo.user_id = op.user_id AND uo.org_id = op.org_id

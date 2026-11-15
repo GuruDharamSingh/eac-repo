@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth";
-import { siteConfig } from "@/config/site";
 
 /**
  * Serves files out of Nextcloud. /api/upload writes media rows whose `url`
@@ -33,19 +32,13 @@ export async function GET(
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  // Three legitimate trees: this org's own assets, a person's own folder
-  // (a member's portrait/work follows the person, not the org), and any org's
-  // `Profile Pictures/` folder. A sanity bound on the subtree only —
-  // canReadMedia below is the access decision.
-  //
-  // The third is sunjay's exception (round 3, 2026-11-07), copied as written:
-  // `users.avatar_url` is network identity and points wherever the upload
-  // landed. Ario's is `EAC_Network/inner_group/Profile Pictures/…`, so the
-  // org-scoped bound 404'd his portrait on /about. Scoped to that exact folder
-  // name; canReadMedia still denies any path with a `private` segment.
-  const allowedPrefixes = [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"];
-  const isProfilePicture = /^EAC_Network\/[^/]+\/Profile Pictures\/[^/]+$/.test(filePath);
-  if (!isProfilePicture && !allowedPrefixes.some((p) => filePath.startsWith(p))) {
+  // The whole network tree (2026-11-11, developer). This replaces the
+  // `Profile Pictures/` exception of 2026-11-07 (Ario's portrait under
+  // `EAC_Network/inner_group/Profile Pictures/…` 404'd on /about): any file a
+  // page shows may be filed under another owner. Every public file is already
+  // served by arts-collective.com; canReadMedia below is the access decision
+  // for `Private/` and workshop paths. docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+  if (!filePath.startsWith("EAC_Network/")) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

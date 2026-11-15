@@ -164,7 +164,7 @@ export async function updateRun(viewer: LmsViewer, runId: string, p: UpdateRunIn
   if (!run || !(await isRunStaff(viewer, run))) return { ok: false, error: 'Guides only.' };
   if (run.isDefault && p.status && p.status !== 'open') return { ok: false, error: 'The at-your-own-pace run stays open; unlist the course instead.' };
   if (p.workshopThreadId) {
-    const [t] = await db`SELECT 1 FROM threads WHERE id = ${p.workshopThreadId}`;
+    const [t] = await db`SELECT 1 FROM threads WHERE id = ${p.workshopThreadId} AND org_id = ${run.orgId}`;
     if (!t) return { ok: false, error: 'No gathering with that id.' };
   }
   if (p.discussionFeed) {
@@ -203,6 +203,9 @@ export async function syncWorkshopEnrolments(viewer: LmsViewer, runId: string): 
   const run = await getRun(runId);
   if (!run || !(await isRunStaff(viewer, run))) return { ok: false, error: 'Guides only.' };
   if (!run.workshopThreadId) return { ok: false, error: 'This run isn’t bound to a gathering.' };
+  // Covers runs bound before the same-org check existed in createRun/updateRun.
+  const [own] = await db`SELECT 1 FROM threads WHERE id = ${run.workshopThreadId} AND org_id = ${run.orgId}`;
+  if (!own) return { ok: false, error: 'This run is bound to a gathering from another organization.' };
   const people = await db<Array<{ user_id: string }>>`
     SELECT user_id FROM thread_rsvps WHERE thread_id = ${run.workshopThreadId} AND status = 'yes'
     UNION

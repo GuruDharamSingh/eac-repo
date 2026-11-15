@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth";
-import { siteConfig } from "@/config/site";
 
 /**
  * Serves files out of Nextcloud.
@@ -34,17 +33,17 @@ export async function GET(
   const { path } = await params;
   const filePath = path.join("/");
 
-  // Path traversal guard, and scope to this org's folder only — this app has
-  // no business serving another org's media even though one admin account can
-  // technically reach all of it.
+  // Path traversal guard.
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  // Two legitimate trees: this org's own assets, and a person's own folder
-  // (a member's portrait/work follows the person, not the org). A sanity
-  // bound on the subtree only — canReadMedia below is the access decision.
-  const allowedPrefixes = [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"];
-  if (!allowedPrefixes.some((p) => filePath.startsWith(p))) {
+  // The whole network tree (2026-11-11, developer). A page here shows files
+  // from many owners (a person's folder, another org's portrait folder, this
+  // org's covers filed under its slug folder `amrit-canada/`), and an
+  // org-scoped bound returned 404 for them. Every public file is already served
+  // by arts-collective.com; canReadMedia below is the access decision for
+  // `Private/` and workshop paths. docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+  if (!filePath.startsWith("EAC_Network/")) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

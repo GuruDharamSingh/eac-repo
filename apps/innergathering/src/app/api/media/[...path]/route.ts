@@ -1,7 +1,6 @@
 import { type NextRequest } from "next/server";
 import { parseThumbnailWidth, serveMedia } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
-import { siteConfig } from "@/config/site";
 
 /**
  * Serves files out of Nextcloud.
@@ -36,10 +35,14 @@ export async function GET(
   return serveMedia({
     filePath: path.join("/"),
     viewerId: viewer?.userId ?? null,
-    // Two legitimate trees: this org's own assets, and a person's own folder
-    // (a member's portrait or work follows the person, not the org). A sanity
-    // bound on the subtree only — the access decision is inside serveMedia.
-    allowedPrefixes: [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"],
+    // The whole network tree (2026-11-11, developer). An org-scoped bound
+    // returned 404 for this org's own covers filed under its slug folder
+    // (`inner-gathering/`, the `astrology-reading` service) and for anything a
+    // page shows from another owner. Every public file is already served by
+    // arts-collective.com; the access decision for `Private/` and workshop
+    // paths is canReadMedia inside serveMedia.
+    // docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+    allowedPrefixes: ["EAC_Network/"],
     range: request.headers.get("range"),
     width: parseThumbnailWidth(request.nextUrl.searchParams.get("w")),
   });

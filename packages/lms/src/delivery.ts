@@ -95,7 +95,9 @@ export async function createRun(viewer: LmsViewer, courseId: string, input: Crea
   if (await getRunBySlug(courseId, slug)) return { ok: false, error: 'This course already has a run with that name.' };
   if (input.workshopThreadId) {
     const [t] = await db<Array<{ org_id: string }>>`SELECT org_id FROM threads WHERE id = ${input.workshopThreadId}`;
-    if (!t) return { ok: false, error: 'No such gathering to bind to.' };
+    // Same org only: syncWorkshopEnrolments enrols the thread's attendees and
+    // shows them on the roster, so another org's gathering must not bind.
+    if (!t || t.org_id !== course.orgId) return { ok: false, error: 'No such gathering to bind to.' };
   }
   const id = newId();
   const circleish = input.mode === 'cohort' || input.mode === 'circle';
@@ -173,7 +175,10 @@ export async function addRunGuide(viewer: LmsViewer, runId: string, userId: stri
 export async function isEntitled(viewer: LmsViewer, course: Course): Promise<boolean> {
   if (!viewer.userId) return false;
   if (course.visibility !== 'private') return true;
-  if (viewer.roles[course.orgId] || viewer.isGlobalAdmin) return true;
+  // 'viewer' is what a follow or a sign-up hands out ungated; it is not an
+  // org role for this purpose.
+  const role = viewer.roles[course.orgId];
+  if ((role && role !== 'viewer') || viewer.isGlobalAdmin) return true;
   const [e] = await db`SELECT 1 FROM lms_entitlements WHERE user_id = ${viewer.userId} AND course_id = ${course.id} AND revoked_at IS NULL`;
   return Boolean(e);
 }

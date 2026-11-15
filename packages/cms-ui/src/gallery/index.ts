@@ -6,4 +6,6 @@ export type { ProfileGalleryProps, GalleryItem } from "./ProfileGallery";
 export { SimpleLightbox } from "./SimpleLightbox";
 export type { SimpleLightboxProps, LightboxImage } from "./SimpleLightbox";
 export { LibraryPicker } from "./LibraryPicker";
+export { SitePortfolioEditor } from "./SitePortfolioEditor";
+export type { SitePortfolioEditorProps } from "./SitePortfolioEditor";
 export type { LibraryPickerProps, LibraryEntry } from "./LibraryPicker";

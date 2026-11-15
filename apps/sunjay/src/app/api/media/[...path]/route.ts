@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth";
-import { siteConfig } from "@/config/site";
 
 /**
  * Serves files out of Nextcloud.
@@ -34,32 +33,18 @@ export async function GET(
   const { path } = await params;
   const filePath = path.join("/");
 
-  // Path traversal guard, and scope to this org's folder only — this app has
-  // no business serving another org's media even though one admin account can
-  // technically reach all of it.
+  // Path traversal guard.
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  // Three legitimate trees: this org's own assets, a person's own folder
-  // (a member's portrait/work follows the person, not the org), and any org's
-  // `Profile Pictures/` folder. A sanity bound on the subtree only —
-  // canReadMedia below is the access decision.
-  //
-  // The third one is why this site could not draw its own subject's face.
-  // A person's portrait is NETWORK identity: `users.avatar_url` is one column,
-  // it follows them to every EAC site, and it points wherever the upload
-  // happened to land. Sunjay's is
-  // `EAC_Network/inner_group/Profile Pictures/…`, because he was photographed
-  // as an inner_group member — so an org-scoped bound 404s it here and the
-  // card renders alt text where his face should be. Every site that shows a
-  // cross-org roster has this bug latent.
-  //
-  // Scoped to that exact folder name, NOT to the whole foreign org tree, and
-  // `canReadMedia` still makes the real decision: it denies any path with a
-  // `private` segment regardless of what this bound permits.
-  const allowedPrefixes = [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"];
-  const isProfilePicture = /^EAC_Network\/[^/]+\/Profile Pictures\/[^/]+$/.test(filePath);
-  if (!isProfilePicture && !allowedPrefixes.some((p) => filePath.startsWith(p))) {
+  // The whole network tree (2026-11-11, developer). This replaces the
+  // `Profile Pictures/` exception: Sunjay's portrait is
+  // `EAC_Network/inner_group/Profile Pictures/…` and an org-scoped bound 404'd
+  // it here. The same holds for any file a page shows from another owner.
+  // Every public file is already served by arts-collective.com; canReadMedia
+  // below is the access decision for `Private/` and workshop paths.
+  // docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+  if (!filePath.startsWith("EAC_Network/")) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

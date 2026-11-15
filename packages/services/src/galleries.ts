@@ -43,8 +43,10 @@ export interface UserGallery {
   pagePath: string | null;
   /** The site that made it. */
   origin: string | null;
-  /** Sites that must not show it. */
+  /** Superseded by shownOn (migration 264); kept for builds made before it. */
   hiddenOn: string[];
+  /** Sites besides origin that show it (migration 264, opt-in). */
+  shownOn: string[];
   /** Its storage folder, relative to the owner's user root. */
   folder: string | null;
 }
@@ -62,6 +64,7 @@ export interface UserGallerySummary {
   pagePath: string | null;
   origin: string | null;
   hiddenOn: string[];
+  shownOn: string[];
 }
 
 type Row = {
@@ -80,6 +83,7 @@ type Row = {
   page_path: string | null;
   origin: string | null;
   hidden_on: string[] | null;
+  shown_on: string[] | null;
   folder: string | null;
 };
 
@@ -183,16 +187,27 @@ function rowToGallery(row: Row): UserGallery {
     pagePath: row.page_path,
     origin: row.origin,
     hiddenOn: row.hidden_on ?? [],
+    shownOn: row.shown_on ?? [],
     folder: row.folder,
   };
 }
 
-const COLS = `id, user_id, slug, title, description, cover_url, items, settings, is_public, sort_order, created_at, updated_at, page_path, origin, hidden_on, folder`;
+const COLS = `id, user_id, slug, title, description, cover_url, items, settings, is_public, sort_order, created_at, updated_at, page_path, origin, hidden_on, shown_on, folder`;
 
 /**
- * `site` — the site asking. A gallery whose `hidden_on` names it is left out,
- * so a gallery made on one site appears on another only by its owner's choice.
- * Omitted = no site filter (the owner's own management views).
+ * Whether a gallery appears on `site`: on the site that made it, and on the
+ * sites its owner chose (shown_on). Opt-in since migration 264; before it,
+ * hidden_on listed the sites that must not show it and every other site did.
+ */
+export function galleryShownOn(g: { origin: string | null; shownOn: string[] }, site: string): boolean {
+  return g.origin === site || g.shownOn.includes(site);
+}
+
+/**
+ * `site` — the site asking. Only galleries shown there are listed (made there,
+ * or chosen for it: galleryShownOn), so a gallery made on one site appears on
+ * another only by its owner's choice.
+ * Omitted = no site filter (the owner's own page and management views).
  */
 export async function listUserGalleries(
   userId: string,
@@ -202,10 +217,10 @@ export async function listUserGalleries(
     const rows = await db<Array<{
       id: string; slug: string; title: string; description: string | null;
       cover_url: string | null; item_count: number; is_public: boolean; sort_order: number;
-      page_path: string | null; origin: string | null; hidden_on: string[] | null;
+      page_path: string | null; origin: string | null; hidden_on: string[] | null; shown_on: string[] | null;
     }>>`
       SELECT id, slug, title, description, cover_url, is_public, sort_order,
-             page_path, origin, hidden_on,
+             page_path, origin, hidden_on, shown_on,
              jsonb_array_length(items) AS item_count
       FROM user_galleries
       WHERE user_id = ${userId}
@@ -216,7 +231,7 @@ export async function listUserGalleries(
         -- direct id, from the block that owns it.
         AND NOT is_backing
         ${options.onlyPublic ? db`AND is_public = TRUE` : db``}
-        ${options.site ? db`AND NOT (${options.site}::text = ANY(hidden_on))` : db``}
+        ${options.site ? db`AND (origin = ${options.site}::text OR ${options.site}::text = ANY(shown_on))` : db``}
       ORDER BY sort_order ASC, created_at ASC
     `;
     return rows.map((r) => ({
@@ -231,6 +246,7 @@ export async function listUserGalleries(
       pagePath: r.page_path,
       origin: r.origin,
       hiddenOn: r.hidden_on ?? [],
+      shownOn: r.shown_on ?? [],
     }));
   } catch (err) {
     console.error(`[galleries] listUserGalleries(${userId}):`, err);
@@ -258,7 +274,7 @@ export async function getUserGallery(
     const [row] = await db<Row[]>`
       SELECT ${db.unsafe(COLS)} FROM user_galleries
       WHERE user_id = ${userId} AND slug = ${slug}
-        ${options.site ? db`AND NOT (${options.site}::text = ANY(hidden_on))` : db``}
+        ${options.site ? db`AND (origin = ${options.site}::text OR ${options.site}::text = ANY(shown_on))` : db``}
       LIMIT 1
     `;
     return row ? rowToGallery(row) : null;
@@ -318,7 +334,10 @@ export interface CreateUserGalleryInput {
   items?: PortfolioItem[];
   pagePath?: string | null;
   origin?: string | null;
+  /** Superseded by shownOn (migration 264). */
   hiddenOn?: string[];
+  /** Sites besides origin that show it. Default: none (origin only). */
+  shownOn?: string[];
   folder?: string | null;
 }
 
@@ -336,7 +355,7 @@ export async function createUserGallery(
     const items = asGalleryItems(input.items ?? []);
     const [row] = await db<Row[]>`
       INSERT INTO user_galleries (id, user_id, slug, title, description, items, is_public, sort_order, cover_url,
-                                  page_path, origin, hidden_on, folder)
+                                  page_path, origin, hidden_on, shown_on, folder)
       VALUES (
         ${nanoid()}, ${userId}, ${slug}, ${title},
         ${input.description?.trim() || null},
@@ -347,6 +366,7 @@ export async function createUserGallery(
         ${cleanPagePath(input.pagePath)},
         ${input.origin && SITE_ID.test(input.origin) ? input.origin : null},
         ${cleanSites(input.hiddenOn)},
+        ${cleanSites(input.shownOn)},
         ${cleanFolder(input.folder)}
       )
       RETURNING ${db.unsafe(COLS)}
@@ -367,7 +387,9 @@ export interface UpdateUserGalleryInput {
   coverUrl?: string | null;
   settings?: ThemeVars;
   pagePath?: string | null;
+  /** Superseded by shownOn (migration 264). */
   hiddenOn?: string[];
+  shownOn?: string[];
   folder?: string | null;
 }
 
@@ -398,6 +420,7 @@ export async function updateUserGallery(
   if (input.settings !== undefined) sets.settings = jsonb(sanitizeThemeVars(input.settings));
   if (input.pagePath !== undefined) sets.page_path = cleanPagePath(input.pagePath);
   if (input.hiddenOn !== undefined) sets.hidden_on = cleanSites(input.hiddenOn);
+  if (input.shownOn !== undefined) sets.shown_on = cleanSites(input.shownOn);
   if (input.folder !== undefined) sets.folder = cleanFolder(input.folder);
   if (input.items !== undefined) {
     const items = asGalleryItems(input.items);
