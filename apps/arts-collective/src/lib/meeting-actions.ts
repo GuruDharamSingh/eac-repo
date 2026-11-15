@@ -10,8 +10,9 @@ import {
   type MeetingRecord,
 } from "@elkdonis/services";
 import type { StudioResult } from "@elkdonis/studio";
-import type { MeetingContextView, MeetingInputView, MeetingRecordView, MeetingSummaryView } from "@elkdonis/studio/meeting";
+import type { MeetingContextView, MeetingInputView, MeetingRecordView, MeetingSummaryView } from "@elkdonis/studio-forms/meeting";
 import { db } from "@elkdonis/db";
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/session";
 import { networkItemUrl } from "@/lib/org-url";
 
@@ -81,13 +82,31 @@ export async function saveMeetingAction(
     autosave: opts?.autosave === true,
   });
   if (r.ok === false) return { ok: false, error: r.error };
-  return { ok: true, value: { record: await withHref(r.value), warnings: r.warnings ?? [] } };
+  const record = await withHref(r.value);
+  await revalidateOrg(r.value.orgId);
+  return { ok: true, value: { record, warnings: r.warnings ?? [] } };
+}
+
+/**
+ * The org's shell pages under /sites/<slug> (the org host and subdomain rewrite there). They are
+ * force-dynamic, so this clears the client router cache rather than a stored page; the org-site
+ * copies of saveContentAction do the same for their own paths (2026-11-14).
+ */
+async function revalidateOrg(orgId: string): Promise<void> {
+  const [org] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${orgId}`.catch(
+    () => [] as Array<{ slug: string }>
+  );
+  if (org?.slug) revalidatePath(`/sites/${org.slug}`, "layout");
 }
 
 export async function removeMeetingAction(id: string): Promise<StudioResult> {
   const viewer = await viewerId();
   if (!viewer) return { ok: false, error: "Sign in first." };
+  const [row] = await db<Array<{ org_id: string }>>`SELECT org_id FROM threads WHERE id = ${id}`.catch(
+    () => [] as Array<{ org_id: string }>
+  );
   const r = await removeMeetingContent(viewer, id);
   if (r.ok === false) return { ok: false, error: r.error };
+  if (row) await revalidateOrg(row.org_id);
   return { ok: true };
 }

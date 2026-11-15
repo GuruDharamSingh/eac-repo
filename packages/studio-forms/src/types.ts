@@ -1,0 +1,251 @@
+// ============================================================================
+// The Studio's contract with its host.
+//
+// The Studio is the third layer of authoring on the network (brief:
+// docs/open/STUDIO_BRIEF_2026-09-27.md). The org sites keep their writing
+// desk for a quick piece, the compose surface keeps quick posts, and this is
+// where a person manages everything they have made. It has no data access of
+// its own: the host binds server actions and passes them in, the same rule
+// WritingDesk follows, so the package can sit in arts-collective today and in
+// ArtDirect later without knowing which.
+//
+// Kinds are registered, not hard-coded: the shell renders its tab row from
+// `StudioKind[]` and a kind that is not yet built appears as a tab that says
+// so. Writing is the first kind wired up.
+// ============================================================================
+
+import type { EssayDoc, ThreadCardAttrs } from '@elkdonis/utils/essay';
+import type { ChannelLinkRequest } from '@elkdonis/utils/host';
+
+export type StudioKindId =
+  | 'writing'
+  | 'artwork'
+  | 'event'
+  | 'meeting'
+  | 'workshop'
+  | 'service'
+  | 'question'
+  | 'video'
+  | 'post'
+  | 'recording'
+  | 'wordart'
+  | 'artwork-form'
+  | 'service-form';
+
+export interface StudioKind {
+  id: StudioKindId;
+  label: string;
+  /** What one of them is called: "piece", "work", "event". */
+  noun: string;
+  /** False renders the tab but not an editor behind it. */
+  ready: boolean;
+  /** A kind with its own page (Video: /studio/video) links there instead of opening an editor here. */
+  href?: string;
+  /** False keeps the kind out of "New ▾" while it stays in the kind list (Recordings, developer 2026-11-12). */
+  newMenu?: false;
+}
+
+/** An org the person may act for. `oad` is "Just me": the directory. */
+export interface StudioOrg {
+  orgId: string;
+  name: string;
+  slug: string;
+}
+
+export interface StudioViewer {
+  userId: string;
+  displayName: string;
+  /** Person slug on the directory; null when the profile has none yet. */
+  slug: string | null;
+}
+
+export interface StudioPieceSummary {
+  id: string;
+  slug: string;
+  title: string;
+  lede: string | null;
+  coverImageUrl: string | null;
+  status: 'draft' | 'published';
+  publishedAt: string | null;
+  updatedAt: string;
+  readingMinutes: number | null;
+  series: string | null;
+}
+
+export interface StudioPiece extends StudioPieceSummary {
+  authorId: string;
+  orgId: string;
+  bodyHtml: string;
+  /** The essay canvas's document when the piece was last saved from it. */
+  bodyDoc: EssayDoc | null;
+  bodyFormat: 'html' | 'md' | 'mdx' | 'doc';
+  layout: StudioLayout | null;
+  /** Published as: a pen name or an org identity; null = the author's own name. */
+  byline: { userId: string; name: string } | null;
+  seo: { title: string | null; description: string | null; imageUrl: string | null; noindex: boolean } | null;
+  /** Where this piece has been posted outside the network (Facebook, Instagram, Threads). */
+  shares?: StudioShare[];
+}
+
+/** One outside place a piece can be posted to: a Page, its Instagram account, or a Threads profile. */
+export interface StudioShareTarget {
+  /** `<connectionId>:<kind>[:<pageId>]`, opaque to the shell. */
+  id: string;
+  kind: 'page' | 'instagram' | 'threads';
+  /** "Elkdonis Arts (Facebook Page)", "@elkdonis (Instagram)". */
+  label: string;
+  /** Instagram needs a cover image; a target that cannot be used says why. */
+  disabledReason?: string | null;
+}
+
+export interface StudioShare {
+  targetId: string;
+  kind: StudioShareTarget['kind'];
+  label: string;
+  url: string | null;
+  at: string;
+}
+
+export interface StudioIdentity {
+  id: string;
+  name: string;
+  relation: 'self' | 'pseudonym' | 'organization';
+}
+
+export type StudioLayout = 'essay' | 'feature' | 'note' | 'announcement' | 'document';
+export const STUDIO_LAYOUTS: Array<{ id: StudioLayout; label: string; hint: string }> = [
+  { id: 'essay', label: 'Essay', hint: 'Cover above the title, a drop cap' },
+  { id: 'feature', label: 'Feature', hint: 'Cover across the page, a large title' },
+  { id: 'note', label: 'Note', hint: 'No cover, a small title' },
+  { id: 'announcement', label: 'Announcement', hint: 'Title on a coloured band' },
+  { id: 'document', label: 'Document', hint: 'The plain page' },
+];
+
+export interface StudioListing {
+  orgs: Array<{ orgId: string; name: string }>;
+  selected: string[];
+  homeOrgId: string;
+}
+
+export interface StudioPatch {
+  title?: string;
+  lede?: string | null;
+  bodyHtml?: string;
+  /** From the canvas; wins over bodyHtml and is rendered on the server. */
+  bodyDoc?: EssayDoc;
+  coverImageUrl?: string | null;
+  layout?: StudioLayout | null;
+  series?: string | null;
+  /** The identity id to publish as; null = own name. The host validates it. */
+  bylineId?: string | null;
+  seo?: { title?: string | null; description?: string | null; imageUrl?: string | null; noindex?: boolean } | null;
+  status?: 'draft' | 'published';
+}
+
+export type StudioResult<T = undefined> =
+  | ({ ok: true } & (T extends undefined ? { value?: undefined } : { value: T }))
+  | { ok: false; error: string };
+
+/**
+ * Everything the shell can do to the world. Server actions, bound by the
+ * host; every one re-checks the session and the row it touches.
+ */
+export interface StudioActions {
+  /** `orgId` null = everything the person has written; else what that org's site shows. */
+  listPieces(orgId: string | null): Promise<StudioPieceSummary[]>;
+  loadPiece(id: string): Promise<{ post: StudioPiece; listing: StudioListing } | null>;
+  startPiece(orgId: string, title: string): Promise<StudioResult<{ id: string }>>;
+  savePiece(id: string, patch: StudioPatch): Promise<StudioResult<StudioPiece>>;
+  removePiece(id: string): Promise<StudioResult>;
+  setListing(id: string, orgIds: string[]): Promise<StudioResult>;
+  /** The account's acting identities: self, pen names, orgs it may speak for. */
+  listIdentities(): Promise<StudioIdentity[]>;
+  /** The author's series, most recent first. */
+  listSeries(): Promise<Array<{ name: string; count: number }>>;
+  /** The canvas's card picker: the writer's own things of one kind, by title. */
+  searchThreads(kind: string, q: string): Promise<Array<Omit<ThreadCardAttrs, 'view'>>>;
+  /** Outside places the person has connected (profile → Connections). Hosts without sharing omit both. */
+  listShareTargets?(): Promise<StudioShareTarget[]>;
+  /** Post a published piece to one target now. */
+  sharePiece?(id: string, targetId: string): Promise<StudioResult<StudioShare>>;
+}
+
+export interface StudioUpload {
+  /** POST multipart: `file` plus `fields`; the response carries `{ url }`. */
+  endpoint: string;
+  /** Extra fields; `orgSlug` is added by the shell from the acting org. */
+  fields?: Record<string, string>;
+  /** The host's picture route (image/ImageEditor.tsx); with it, a cover gets "Edit". */
+  imageEndpoint?: string;
+}
+
+export interface StudioLinks {
+  /** Where "←" goes. */
+  hubHref: string;
+  /**
+   * Where a piece reads on the directory, without the trailing slug:
+   * `<ARTDIRECT_URL>/<person slug>/writing`. A string, not a function, because
+   * the host is a server component and React cannot pass a function to this
+   * client shell. Null when the person has no directory slug yet.
+   */
+  pieceBase: string | null;
+  /**
+   * Media libraries the drawer browses and drags from. `mine` is the person's
+   * own storage; `org` has `:org` replaced by the acting org's slug and is
+   * offered when the acting org is not the directory.
+   */
+  library?: { mine?: string; org?: string };
+  /** Where to connect Facebook, Instagram or Threads (the profile's Connections tab). */
+  connectionsHref?: string;
+  /**
+   * A piece's board in Channel (2026-11-11). A function, so only a client module can set it (the
+   * arts-collective StudioApp adds it over the server page's links); unset hides the Board link
+   * and the "Continue in Channel" notice.
+   */
+  channelHref?: (o: ChannelLinkRequest) => string | null;
+  /** Channel's home on this host ("/channel"), for the Board sheet when Channel does not list the item. */
+  channelHomeHref?: string;
+}
+
+// ── the Board sheet (2026-11-11) ───────────────────────────────────────────
+//
+// One open item as Channel sees it, drawn in a right sheet from the Studio's
+// bar (canvas R1, "In Channel"). Plain JSON the host builds on the server for
+// the signed-in person; the shell only draws it. The full board stays in
+// Channel (`links.board`).
+
+export type StudioBoardState = 'published' | 'scheduled' | 'live' | 'draft' | 'failed' | 'suggested' | 'info';
+
+export interface StudioBoardItem {
+  id: string;
+  /** ISO time. */
+  at: string;
+  label: string;
+  state: StudioBoardState;
+  href?: string | null;
+}
+
+export interface StudioBoardView {
+  title: string;
+  /** "Meeting", "Writing", "Artwork" … */
+  typeLabel: string;
+  /** Channel's status word for the item. */
+  status: string;
+  timeZone: string;
+  /** ISO time of the read. */
+  now: string;
+  /** First day (YYYY-MM-DD, a Monday) of each column of the window drawn. */
+  weeks: string[];
+  /** Lanes with anything in the window, in a fixed order. `cells[i]` holds what falls in `weeks[i]`. */
+  lanes: Array<{ id: string; label: string; cells: StudioBoardItem[][] }>;
+  /** What the board suggests next (chip text, sentence, why); each opens the item's plan in Channel. */
+  next: Array<{ id: string; chip: string; text: string; reason: string; href: string }>;
+  /** Where it has gone, newest first (at most three). */
+  recent: StudioBoardItem[];
+  links: { board: string; plan: string; queue: string; compose: string | null; public: string | null };
+  /** False while Channel's planning tables are absent: suggestions cannot be accepted yet. */
+  planning: boolean;
+}
+
+/** The host's loader for the sheet: null when the item is not in the person's Channel. */
+export type StudioBoardLoader = (ref: { store: 'thread' | 'artwork'; id: string; orgId: string | null }) => Promise<StudioBoardView | null>;

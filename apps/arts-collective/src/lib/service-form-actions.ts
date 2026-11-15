@@ -60,7 +60,7 @@ async function viewerId(): Promise<string | null> {
 }
 
 async function gate(viewer: string, orgId: string): Promise<string | null> {
-  if (orgId === PERSONAL_ORG_ID) return "An offering here belongs to an organisation. Choose the organisation under “Making as”.";
+  if (orgId === PERSONAL_ORG_ID) return "An offering here belongs to an organisation. Choose the organisation in the “On …” menu at the top.";
   const ok = await canModerateOrg(viewer, orgId).catch(() => false);
   return ok ? null : "Only an owner or guide of this organisation can publish an offering.";
 }
@@ -132,11 +132,12 @@ export async function loadServiceFormAction(
   return o ? { record: await toRecord(o), answers: answersOf(o) } : null;
 }
 
-export async function listServiceFormAction(orgId: string): Promise<Array<{ id: string; updatedAt: string }>> {
+export async function listServiceFormAction(orgId: string): Promise<Array<{ id: string; updatedAt: string; title: string; status: string }>> {
   const viewer = await viewerId();
   if (!viewer || (await gate(viewer, orgId))) return [];
   const list = await listAllServiceOfferingsForOrg(orgId);
-  return list.map((o) => ({ id: o.id, updatedAt: iso(o.updatedAt) ?? "" }));
+  // title and status (2026-11-11) for the Studio column's list.
+  return list.map((o) => ({ id: o.id, updatedAt: iso(o.updatedAt) ?? "", title: o.title, status: o.status }));
 }
 
 export async function saveServiceFormAction(
@@ -181,7 +182,8 @@ export async function saveServiceFormAction(
     const saved = await upsertServiceOffering(orgId, viewer, input, id ?? undefined);
     const o = await getServiceOfferingById(orgId, saved.id);
     if (!o) return { ok: false, error: "Saved, but the offering could not be read back." };
-    return { ok: true, value: { record: await toRecord(o), warnings: [] } };
+    // Booking settings are saved after the offering; a refusal there comes back as a warning.
+    return { ok: true, value: { record: await toRecord(o), warnings: saved.bookingWarning ? [saved.bookingWarning] : [] } };
   } catch (err) {
     console.error("[studio] saveServiceFormAction:", err);
     return { ok: false, error: "Could not save that offering. Try again." };

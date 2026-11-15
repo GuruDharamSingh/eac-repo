@@ -169,11 +169,15 @@ export async function loadArtworkFormAction(id: string): Promise<ArtworkFormReco
   return a ? toRecord(a) : null;
 }
 
-export async function listArtworkFormAction(): Promise<Array<{ id: string; updatedAt: string }>> {
+export async function listArtworkFormAction(): Promise<Array<{ id: string; updatedAt: string; title: string; status: string }>> {
   const viewer = await viewerId();
   if (!viewer) return [];
   const list = await listMyArtworks(viewer).catch(() => [] as Artwork[]);
-  return list.map((a) => ({ id: a.id, updatedAt: a.updatedAt }));
+  // title and status (2026-11-11) for the Studio column's list; status as the form record maps it (toRecord).
+  return list.map((a) => {
+    const listed = a.status === "available" || a.status === "reserved" || a.status === "sold";
+    return { id: a.id, updatedAt: a.updatedAt, title: a.title, status: listed ? "published" : a.status === "archived" ? "archived" : "draft" };
+  });
 }
 
 export async function saveArtworkFormAction(

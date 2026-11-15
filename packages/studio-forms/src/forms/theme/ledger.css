@@ -1,0 +1,820 @@
+/*
+  @elkdonis/studio-forms/ledger.css: the Ledger theme for the forms (2026-11-11).
+  Design: canvas https://claude.ai/artifact/KNaDwdpnHwyxRvAAVG7eu4 (round 4), the
+  developer's choices of 2026-11-11: the 1a ledger in the Studio's own look.
+
+  Three attributes on the forms root: [data-form-theme="ledger"] (light),
+  [data-form-theme="ledger-dark"], and [data-form-theme="ledger-quick"] (the
+  Quick-Form in a site's popup, 2026-11-14; its section is near the end). The tokens only redefine --frm-*; the layout
+  rules further down are scoped to those two attributes, so every other theme
+  draws exactly as before. No component reads this file.
+
+  Layout: labels right-aligned in a column (--frm-lab) against one soft pencil
+  rule; each section is a row with a pencil line under it; fields are filled
+  areas (greyed until focused, then brighter in light, darker in dark); square
+  corners; More sections sit as "+ Name" chips, and an open one spans the row
+  above the chips.
+
+  Colours: Studio grounds, blue for selection, links, focus and the caret, the
+  Studio gold kept for the primary action (--frm-primary, read only here).
+  Fonts: IBM Plex Sans for text and labels, Newsreader for the title. The host
+  loads them (the Studio already does).
+
+  Text size: forms.css multiplies every font size by --frm-text-scale, which
+  [data-text-size="large" | "largest"] on or above the forms root sets (1.2 / 1.4).
+
+  Contrast, WCAG 2.1 (computed from the hex values, 2026-11-11):
+    light: text #1c2128 on bg #fdfcf9 15.8; muted #555b66 on field #eceae4 5.7,
+           on bg 6.7; accent #2f56b8 on bg 6.5; white on accent 6.7; white on
+           primary #8a6d1f 4.9; accent-soft-ink #1d3a80 on #e6ebf7 8.9
+    dark:  text #e8e6df on bg #0e151d 14.7; muted #9aa7b3 on field #1f2b38 5.9,
+           on bg 7.5; accent #9fb4ea on bg 8.9; #1a1608 on primary #d6c38e 10.4;
+           text on accent-soft #22304a 10.6
+  Fields have no edge (--frm-control-line transparent): the fill is the cue, as
+  in Broadsheet, and the label names each one.
+*/
+
+[data-form-theme='ledger'].frm,
+[data-form-theme='ledger'] .frm,
+[data-form-theme='ledger-quick'].frm,
+[data-form-theme='ledger-quick'] .frm {
+  --frm-bg: #fdfcf9;
+  --frm-surface: #f4f3ef;
+  --frm-field: #eceae4;
+  --frm-field-on: #ffffff;
+  --frm-text: #1c2128;
+  --frm-strong: #2e3440;
+  --frm-muted: #555b66;
+  --frm-faint: #8a8f98;
+  --frm-placeholder: #555b66;
+  --frm-divider: #dcd9d1;
+  --frm-control-line: transparent;
+  --frm-control-hover: #b9b5ab;
+  --frm-track-off: #b9b5ab;
+  --frm-tag-bg: #eceae4;
+  --frm-tag-ink: #2e3440;
+  --frm-hover: rgba(28, 33, 40, 0.06);
+  --frm-hover-soft: rgba(28, 33, 40, 0.04);
+  --frm-press: rgba(28, 33, 40, 0.12);
+  --frm-media-bg: #dcd9d1;
+  --frm-media-dot: rgba(28, 33, 40, 0.18);
+  --frm-rule: rgba(28, 33, 40, 0.08);
+  --frm-color-scheme: light;
+
+  --frm-accent: #2f56b8;
+  --frm-accent-on: #ffffff;
+  --frm-accent-hover: #284a9f;
+  --frm-accent-press: #223f88;
+  --frm-accent-ink: #2f56b8;
+  --frm-accent-soft: #e6ebf7;
+  --frm-accent-soft-ink: #1d3a80;
+  --frm-accent-soft-line: #aebfe8;
+  --frm-ghost-ink: #2f56b8;
+  --frm-ghost-hover: rgba(47, 86, 184, 0.08);
+  --frm-focus: #2f56b8;
+  --frm-primary: #8a6d1f;
+  --frm-primary-on: #ffffff;
+  --frm-primary-hover: #7a5f18;
+
+  --frm-danger: #a63d3d;
+  --frm-danger-ink: #a63d3d;
+  --frm-danger-soft: #fbeceb;
+  --frm-danger-soft-ink: #6e1a14;
+  --frm-warn: #9a5208;
+  --frm-warn-line: #c78a2c;
+
+  --frm-pencil-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 6' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' x2='640' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%238f8d86' stop-opacity='0'/%3E%3Cstop offset='.06' stop-color='%238f8d86' stop-opacity='.55'/%3E%3Cstop offset='.8' stop-color='%238f8d86' stop-opacity='.45'/%3E%3Cstop offset='1' stop-color='%238f8d86' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='p' x='-2%25' y='-300%25' width='104%25' height='700%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='4' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='1.4' xChannelSelector='R' yChannelSelector='G'/%3E%3CfeGaussianBlur stdDeviation='.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M2 3.2 C 150 2.3, 300 4, 450 2.8 S 600 3.5, 638 2.6' fill='none' stroke='url%28%23g%29' stroke-width='1.1' stroke-linecap='round' stroke-dasharray='300 4 2000 0' filter='url%28%23p%29'/%3E%3C/svg%3E");
+  --frm-pencil-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 1000' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' x2='0' y1='0' y2='1000'%3E%3Cstop offset='0' stop-color='%238f8d86' stop-opacity='0'/%3E%3Cstop offset='.04' stop-color='%238f8d86' stop-opacity='.6'/%3E%3Cstop offset='.9' stop-color='%238f8d86' stop-opacity='.45'/%3E%3Cstop offset='1' stop-color='%238f8d86' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='p' x='-300%25' y='-2%25' width='700%25' height='104%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='9' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='1.4' xChannelSelector='R' yChannelSelector='G'/%3E%3CfeGaussianBlur stdDeviation='.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M3 2 C 2.3 260, 3.7 520, 2.8 760 S 3.2 940, 3 998' fill='none' stroke='url%28%23g%29' stroke-width='1.1' stroke-linecap='round' stroke-dasharray='300 6 420 4 2000 0' filter='url%28%23p%29'/%3E%3C/svg%3E");
+}
+
+[data-form-theme='ledger-dark'].frm,
+[data-form-theme='ledger-dark'] .frm {
+  --frm-bg: #0e151d;
+  --frm-surface: #16202b;
+  --frm-field: #1f2b38;
+  --frm-field-on: #0a1118;
+  --frm-text: #e8e6df;
+  --frm-strong: #d5d3cc;
+  --frm-muted: #9aa7b3;
+  --frm-faint: #7c8896;
+  --frm-placeholder: #9aa7b3;
+  --frm-divider: #2b3947;
+  --frm-control-line: transparent;
+  --frm-control-hover: #66727f;
+  --frm-track-off: #4a5868;
+  --frm-tag-bg: #1f2b38;
+  --frm-tag-ink: #d5d3cc;
+  --frm-hover: rgba(232, 230, 223, 0.07);
+  --frm-hover-soft: rgba(232, 230, 223, 0.05);
+  --frm-press: rgba(232, 230, 223, 0.12);
+  --frm-media-bg: #243241;
+  --frm-media-dot: rgba(232, 230, 223, 0.15);
+  --frm-rule: rgba(232, 230, 223, 0.08);
+  --frm-color-scheme: dark;
+
+  --frm-accent: #9fb4ea;
+  --frm-accent-on: #0e151d;
+  --frm-accent-hover: #b4c5ef;
+  --frm-accent-press: #8aa2e0;
+  --frm-accent-ink: #9fb4ea;
+  --frm-accent-soft: #22304a;
+  --frm-accent-soft-ink: #e8e6df;
+  --frm-accent-soft-line: #4b6296;
+  --frm-ghost-ink: #9fb4ea;
+  --frm-ghost-hover: rgba(159, 180, 234, 0.1);
+  --frm-focus: #9fb4ea;
+  --frm-primary: #d6c38e;
+  --frm-primary-on: #1a1608;
+  --frm-primary-hover: #e0cfa0;
+
+  --frm-danger: #e07b7b;
+  --frm-danger-ink: #e07b7b;
+  --frm-danger-soft: #3a1f22;
+  --frm-danger-soft-ink: #f2c4c4;
+  --frm-warn: #d9a95a;
+  --frm-warn-line: #a87a2e;
+  --frm-tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e151d' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");
+
+  --frm-pencil-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 6' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' x2='640' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%237d8a99' stop-opacity='0'/%3E%3Cstop offset='.06' stop-color='%237d8a99' stop-opacity='.55'/%3E%3Cstop offset='.8' stop-color='%237d8a99' stop-opacity='.45'/%3E%3Cstop offset='1' stop-color='%237d8a99' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='p' x='-2%25' y='-300%25' width='104%25' height='700%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='4' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='1.4' xChannelSelector='R' yChannelSelector='G'/%3E%3CfeGaussianBlur stdDeviation='.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M2 3.2 C 150 2.3, 300 4, 450 2.8 S 600 3.5, 638 2.6' fill='none' stroke='url%28%23g%29' stroke-width='1.1' stroke-linecap='round' stroke-dasharray='300 4 2000 0' filter='url%28%23p%29'/%3E%3C/svg%3E");
+  --frm-pencil-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 1000' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' x2='0' y1='0' y2='1000'%3E%3Cstop offset='0' stop-color='%237d8a99' stop-opacity='0'/%3E%3Cstop offset='.04' stop-color='%237d8a99' stop-opacity='.6'/%3E%3Cstop offset='.9' stop-color='%237d8a99' stop-opacity='.45'/%3E%3Cstop offset='1' stop-color='%237d8a99' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='p' x='-300%25' y='-2%25' width='700%25' height='104%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='9' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='1.4' xChannelSelector='R' yChannelSelector='G'/%3E%3CfeGaussianBlur stdDeviation='.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M3 2 C 2.3 260, 3.7 520, 2.8 760 S 3.2 940, 3 998' fill='none' stroke='url%28%23g%29' stroke-width='1.1' stroke-linecap='round' stroke-dasharray='300 6 420 4 2000 0' filter='url%28%23p%29'/%3E%3C/svg%3E");
+}
+
+/* shared by both: shape, type and the label column */
+[data-form-theme^='ledger'].frm,
+[data-form-theme^='ledger'] .frm {
+  --frm-radius-control: 0;
+  --frm-radius-panel: 0;
+  --frm-radius-mark: 0;
+  --frm-shadow-panel: none;
+  --frm-shadow-pop: 0 14px 34px rgba(10, 20, 30, 0.18);
+  --frm-font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --frm-font-heading: 'Newsreader', Georgia, serif;
+  --frm-heading-weight: 500;
+  --frm-label-weight: 500;
+  --frm-title-size: 32px;
+  --frm-title-size-sm: 26px;
+  --frm-lab: 7rem;
+  /* the space between the label column and the fields */
+  --frm-lab-gap: 22px;
+}
+
+/* ── the ledger: one label column, one rule, a row per section ─────────── */
+
+[data-form-theme^='ledger'] .frm-stack {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--frm-lab) minmax(0, 1fr);
+  column-gap: var(--frm-lab-gap);
+  row-gap: 0;
+  max-width: calc(var(--frm-lab) + var(--frm-lab-gap) + 620px);
+}
+[data-form-theme^='ledger'] .frm-stack::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  left: calc(var(--frm-lab) + 8px);
+  width: 6px;
+  background: var(--frm-pencil-v) no-repeat center / 6px 100%;
+  pointer-events: none;
+}
+[data-form-theme^='ledger'] .frm-stack > * {
+  grid-column: 1 / -1;
+}
+[data-form-theme^='ledger'] .frm-stack > .frm-eyebrow[data-at='essentials'] {
+  display: none;
+}
+[data-form-theme^='ledger'] .frm-stack > .frm-eyebrow[data-at='more'] {
+  grid-column: 1;
+  margin: 0;
+  padding-top: 15px;
+  text-align: right;
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--frm-muted);
+}
+[data-form-theme^='ledger'] .frm-stack > .frm-more-list {
+  grid-column: 2;
+}
+
+[data-form-theme^='ledger'] .frm-sec {
+  display: grid;
+  grid-template-columns: var(--frm-lab) minmax(0, 1fr);
+  column-gap: var(--frm-lab-gap);
+  row-gap: 10px;
+  padding: 12px 0 15px;
+  background: var(--frm-pencil-h) no-repeat calc(var(--frm-lab) + 4px) 100% / calc(100% - var(--frm-lab) - 4px) 6px;
+}
+[data-form-theme^='ledger'] .frm-sec > * {
+  grid-column: 2;
+  min-width: 0;
+}
+[data-form-theme^='ledger'] .frm-sec > :is(.frm-sec-label, .frm-sec-head) {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  padding-top: 9px;
+  text-align: right;
+}
+[data-form-theme^='ledger'] .frm-sec-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+[data-form-theme^='ledger'] .frm-sec-label {
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  font-weight: 500;
+  color: var(--frm-muted);
+}
+[data-form-theme^='ledger'] .frm-sec-sum {
+  font-size: calc(12px * var(--frm-text-scale, 1));
+  color: var(--frm-muted);
+  text-align: right;
+}
+
+/* A section that is one field and no heading: the field's label moves into the label column. */
+[data-form-theme^='ledger'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: var(--frm-lab) minmax(0, 1fr);
+  column-gap: var(--frm-lab-gap);
+  row-gap: 8px;
+}
+[data-form-theme^='ledger'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > * {
+  grid-column: 2;
+  min-width: 0;
+}
+[data-form-theme^='ledger'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head {
+  grid-column: 1;
+  grid-row: 1;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding-top: 9px;
+  text-align: right;
+}
+[data-form-theme^='ledger'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head .frm-label {
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  font-weight: 500;
+  color: var(--frm-muted);
+}
+
+/* The body in blocks: the Canvas hides its label, so the section's name comes from data-label. */
+[data-form-theme^='ledger'] .frm-sec[data-label]::before {
+  content: attr(data-label);
+  grid-column: 1;
+  grid-row: 1;
+  padding-top: 2px;
+  text-align: right;
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  font-weight: 500;
+  color: var(--frm-muted);
+}
+
+/* The title: its own label is read, not drawn, so the row draws "Title". */
+[data-form-theme^='ledger'] .frm-sec:has(> .frm-field .frm-title)::before {
+  content: 'Title';
+  grid-column: 1;
+  grid-row: 1;
+  padding-top: 15px;
+  text-align: right;
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  font-weight: 500;
+  color: var(--frm-muted);
+}
+[data-form-theme^='ledger'] .frm-sec:has(> .frm-field .frm-title) > .frm-field {
+  grid-row: 1;
+}
+[data-form-theme^='ledger'] .frm-title {
+  padding: 8px 12px;
+  background: var(--frm-field);
+  font-size: calc(var(--frm-title-size) * var(--frm-text-scale, 1));
+  transition: background 0.15s;
+}
+[data-form-theme^='ledger'] .frm .frm-title:focus-visible,
+[data-form-theme^='ledger'] .frm-title:focus {
+  background: var(--frm-field-on);
+  box-shadow: inset 0 0 0 1px var(--frm-focus);
+  outline: 3px solid var(--frm-accent-soft);
+  outline-offset: 0;
+}
+[data-form-theme^='ledger'] .frm-title[aria-invalid='true'] {
+  box-shadow: inset 0 0 0 1.5px var(--frm-danger);
+}
+/* the blinking line: an empty title, not yet focused, is the next thing to fill */
+[data-form-theme^='ledger'] .frm-field-control:has(> .frm-title:placeholder-shown:not(:focus)) {
+  position: relative;
+}
+[data-form-theme^='ledger'] .frm-field-control:has(> .frm-title:placeholder-shown:not(:focus))::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 2px;
+  height: 0.9em;
+  font-size: calc(var(--frm-title-size) * var(--frm-text-scale, 1));
+  transform: translateY(-50%);
+  background: var(--frm-accent);
+  animation: frm-ledger-blink 1.1s steps(2, start) infinite;
+  pointer-events: none;
+}
+[data-form-theme^='ledger'] .frm-title:placeholder-shown:not(:focus) {
+  padding-left: 22px;
+}
+@keyframes frm-ledger-blink {
+  to {
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-form-theme^='ledger'] .frm-field-control::before {
+    animation: none;
+  }
+}
+
+/* ── fields: filled areas ──────────────────────────────────────────────── */
+
+[data-form-theme^='ledger'] .frm-input:not([data-state]),
+[data-form-theme^='ledger'] .frm-textarea:not([aria-invalid='true']),
+[data-form-theme^='ledger'] .frm-lite:not([data-state]) {
+  background: var(--frm-field);
+  border-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+[data-form-theme^='ledger'] .frm-input:not([data-state]):hover,
+[data-form-theme^='ledger'] .frm-textarea:not([aria-invalid='true']):hover,
+[data-form-theme^='ledger'] .frm-lite:not([data-state]):hover {
+  border-color: var(--frm-control-hover);
+}
+[data-form-theme^='ledger'] .frm-input:focus-within,
+[data-form-theme^='ledger'] .frm .frm-textarea:focus,
+[data-form-theme^='ledger'] .frm-lite:focus-within {
+  background: var(--frm-field-on);
+  border-color: var(--frm-focus);
+  outline: 3px solid var(--frm-accent-soft);
+  outline-offset: 0;
+}
+[data-form-theme^='ledger'] .frm-seg {
+  border-color: var(--frm-divider);
+}
+[data-form-theme^='ledger'] .frm-seg-opt[data-checked] {
+  background: var(--frm-accent-soft);
+  color: var(--frm-accent-soft-ink);
+  box-shadow: inset 0 0 0 1px var(--frm-accent);
+}
+
+/* The essay Canvas in a form: the body in Newsreader, as Studio Writing sets it. */
+[data-form-theme^='ledger'] .frm-blocks {
+  --st-serif: var(--frm-font-heading);
+}
+
+/* ── buttons: the primary action keeps the Studio gold ─────────────────── */
+
+[data-form-theme^='ledger'] .frm-btn {
+  font-family: var(--frm-font-body);
+  font-weight: 500;
+}
+[data-form-theme^='ledger'] .frm-btn--primary {
+  background: var(--frm-primary);
+  color: var(--frm-primary-on);
+}
+[data-form-theme^='ledger'] .frm-btn--primary:hover {
+  background: var(--frm-primary-hover);
+}
+[data-form-theme^='ledger'] .frm-btn--primary:active,
+[data-form-theme^='ledger'] .frm-btn--primary[data-busy] {
+  background: var(--frm-primary);
+}
+
+/* ── More: "+ Name" chips; an open section spans the row above them ────── */
+
+[data-form-theme^='ledger'] .frm-more-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2px 6px;
+  padding: 7px 0 12px;
+}
+[data-form-theme^='ledger'] .frm-more {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+/* a closed body is hidden anyway; drawn, its width would size the chip */
+[data-form-theme^='ledger'] .frm-more:not([data-open]) .frm-more-body {
+  display: none;
+}
+[data-form-theme^='ledger'] .frm-more[data-open] {
+  order: -1;
+  flex-basis: 100%;
+  padding-bottom: 8px;
+  background: var(--frm-pencil-h) no-repeat 0 100% / 100% 6px;
+}
+[data-form-theme^='ledger'] .frm-more-btn {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 8px;
+  align-items: center;
+  gap: 6px;
+  color: var(--frm-ghost-ink);
+}
+[data-form-theme^='ledger'] .frm-more[data-open] .frm-more-btn {
+  width: 100%;
+  color: var(--frm-text);
+}
+[data-form-theme^='ledger'] .frm-more-btn:hover {
+  background: var(--frm-ghost-hover);
+}
+[data-form-theme^='ledger'] .frm-more-pm {
+  color: inherit;
+}
+[data-form-theme^='ledger'] .frm-more-name {
+  font-family: var(--frm-font-body);
+  font-size: calc(14px * var(--frm-text-scale, 1));
+  font-weight: 500;
+}
+[data-form-theme^='ledger'] .frm-more:not([data-open]) .frm-more-sum:not([data-tone]) {
+  display: none;
+}
+[data-form-theme^='ledger'] .frm-more-inner {
+  padding: 4px 0 10px 8px;
+}
+
+/* Text size: forms.css multiplies every size by --frm-text-scale (data-text-size on the root). */
+
+/* ── narrow columns (the phone, a small popup): labels above their fields ─ */
+
+@container frm (max-width: 560px) {
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-stack,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-stack::before {
+    display: none;
+  }
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec {
+    background-position: 0 100%;
+    background-size: 100% 6px;
+  }
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) :is(.frm-sec, .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field) > *,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-stack > .frm-more-list {
+    grid-column: 1;
+  }
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec > :is(.frm-sec-label, .frm-sec-head),
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec:has(> .frm-field .frm-title)::before,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec[data-label]::before,
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-stack > .frm-eyebrow[data-at='more'] {
+    grid-row: auto;
+    align-items: flex-start;
+    padding-top: 0;
+    text-align: left;
+  }
+  :is([data-form-theme='ledger'], [data-form-theme='ledger-dark']) .frm-sec:has(> .frm-field .frm-title) > .frm-field {
+    grid-row: auto;
+  }
+}
+
+/* ── Quick-Form (2026-11-14): Ledger rows in a site's popup ───────────────
+   Design: https://claude.ai/artifact/RLfYxi9Hj5v3WZgScS4nSo (boards Main and
+   Artwork), approved by the developer 2026-11-14 with the labels moved left:
+   the label text ends about 34px before the field. [data-form-theme="ledger-quick"]
+   takes the Ledger light tokens and layout above, then: no vertical rule, a
+   faded rule under each row across the full width, the title as a plain line
+   (the frame's head names the piece), a 2px inset blue ring on a focused field,
+   single choices as boxes with a dot, no helper text. The frame (head, foot)
+   is FormShell's dialog chrome, not this file.
+   Contrast: as Ledger light; accent-soft-ink #1d3a80 on #e6ebf7 8.9; muted
+   #555b66 on white boxes 6.9; the focus ring #2f56b8 on white 6.5 (3:1 needed). */
+
+[data-form-theme='ledger-quick'].frm,
+[data-form-theme='ledger-quick'] .frm {
+  --frm-lab: 66px;
+  --frm-lab-gap: 34px;
+  --frm-title-size: 14.5px;
+  --frm-title-size-sm: 14.5px;
+  --frm-box-bg: #ffffff;
+  --frm-row-rule: linear-gradient(to right, rgba(143, 141, 134, 0) 0, rgba(143, 141, 134, 0.55) 6%, rgba(143, 141, 134, 0.45) 80%, rgba(143, 141, 134, 0) 100%);
+}
+[data-form-theme='ledger-quick'] .frm-stack {
+  max-width: none;
+}
+[data-form-theme='ledger-quick'] .frm-stack::before {
+  display: none;
+}
+[data-form-theme='ledger-quick'] .frm-sec {
+  row-gap: 8px;
+  padding: 12px 0;
+  background: var(--frm-row-rule) no-repeat 0 100% / 100% 1px;
+}
+[data-form-theme='ledger-quick'] .frm-sec.frm-sec--card {
+  background: none;
+}
+[data-form-theme='ledger-quick'] .frm-sec:has(> .frm-field .frm-title)::before,
+[data-form-theme='ledger-quick'] .frm-sec[data-label]::before {
+  padding-top: 9px;
+}
+
+/* the title is a line like the others */
+[data-form-theme='ledger-quick'] .frm-title {
+  padding: 9px 10px;
+  font-family: var(--frm-font-body);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* fields: 14.5px text, a 2px inset ring when focused */
+[data-form-theme='ledger-quick'] .frm-input {
+  min-height: 40px;
+  padding: 9px 10px;
+  font-size: calc(14.5px * var(--frm-text-scale, 1));
+}
+[data-form-theme='ledger-quick'] .frm-textarea,
+[data-form-theme='ledger-quick'] .frm-lite-text {
+  font-size: calc(14.5px * var(--frm-text-scale, 1));
+}
+[data-form-theme='ledger-quick'] .frm-input:focus-within,
+[data-form-theme='ledger-quick'] .frm .frm-textarea:focus,
+[data-form-theme='ledger-quick'] .frm-lite:focus-within,
+[data-form-theme='ledger-quick'] .frm .frm-title:focus-visible,
+[data-form-theme='ledger-quick'] .frm-title:focus {
+  background: var(--frm-field-on);
+  border-color: transparent;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--frm-focus);
+}
+
+/* no helper text under or beside fields (developer, 2026-11-11 and 2026-11-14) */
+[data-form-theme='ledger-quick'] :is(.frm-hint, .frm-label-hint, .frm-k-hint, .frm-check-sub) {
+  display: none;
+}
+
+/* single choices: boxes with a dot (Price); the tick boxes are forms.css .frm-checks[data-boxes] */
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5em, 1fr));
+  gap: 6px;
+  align-self: stretch;
+  width: 100%;
+  overflow: visible;
+  border: 0;
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt,
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt + .frm-seg-opt {
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  background: var(--frm-box-bg);
+  border: 1px solid var(--frm-divider);
+  font-size: calc(13.5px * var(--frm-text-scale, 1));
+  white-space: normal;
+  text-align: left;
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt::before {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--frm-faint);
+  border-radius: 50%;
+  background: var(--frm-box-bg);
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt[data-checked] {
+  background: var(--frm-accent-soft);
+  border-color: var(--frm-accent-soft-line);
+  color: var(--frm-accent-soft-ink);
+  font-weight: 500;
+  box-shadow: none;
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt[data-checked]::before {
+  border: 4px solid var(--frm-accent);
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt:not([data-checked]):hover {
+  background: var(--frm-box-bg);
+  border-color: var(--frm-control-hover);
+}
+[data-form-theme='ledger-quick'] .frm-sec .frm-seg-opt:focus-within {
+  outline: 2px solid var(--frm-focus);
+  outline-offset: 1px;
+}
+
+/* tick boxes: one line each ("Talk room" fits three across at 460px) */
+[data-form-theme='ledger-quick'] .frm-checks[data-boxes] .frm-check {
+  gap: 7px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+/* no section summaries beside the labels ("Drag to reorder…") */
+[data-form-theme='ledger-quick'] .frm-sec-sum {
+  display: none;
+}
+
+/* Pictures: equal tiles, three across, the Add tile among them; alt text is left to the full
+   form (a picture saved without one takes the title, as the site saves do) */
+[data-form-theme='ledger-quick'] .frm-pics-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+[data-form-theme='ledger-quick'] :is(.frm-pics-primary, .frm-pics-thumbs) {
+  display: contents;
+}
+[data-form-theme='ledger-quick'] .frm-pics-tile,
+[data-form-theme='ledger-quick'] .frm-pics-add {
+  aspect-ratio: 1 !important;
+}
+[data-form-theme='ledger-quick'] .frm-pics-add[data-first] {
+  grid-column: 1 / -1;
+  aspect-ratio: auto !important;
+  min-height: 88px;
+}
+[data-form-theme='ledger-quick'] .frm-pics-chosen > :is(.frm-pics-chosen-h, .frm-input) {
+  display: none;
+}
+
+/* Quick-Form, narrow: its label column is short, so labels move above the fields only under 340px. */
+
+@container frm (max-width: 340px) {
+  [data-form-theme='ledger-quick'] .frm-stack,
+  [data-form-theme='ledger-quick'] .frm-sec,
+  [data-form-theme='ledger-quick'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  [data-form-theme='ledger-quick'] .frm-stack::before {
+    display: none;
+  }
+  [data-form-theme='ledger-quick'] .frm-sec {
+    background-position: 0 100%;
+    background-size: 100% 1px;
+  }
+  [data-form-theme='ledger-quick'] :is(.frm-sec, .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field) > *,
+  [data-form-theme='ledger-quick'] .frm-stack > .frm-more-list {
+    grid-column: 1;
+  }
+  [data-form-theme='ledger-quick'] .frm-sec > :is(.frm-sec-label, .frm-sec-head),
+  [data-form-theme='ledger-quick'] .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head,
+  [data-form-theme='ledger-quick'] .frm-sec:has(> .frm-field .frm-title)::before,
+  [data-form-theme='ledger-quick'] .frm-sec[data-label]::before,
+  [data-form-theme='ledger-quick'] .frm-stack > .frm-eyebrow[data-at='more'] {
+    grid-row: auto;
+    align-items: flex-start;
+    padding-top: 0;
+    text-align: left;
+  }
+  [data-form-theme='ledger-quick'] .frm-sec:has(> .frm-field .frm-title) > .frm-field {
+    grid-row: auto;
+  }
+}
+
+/* ── Site forms (2026-11-15): the label column folds away ────────────────
+   Only the forms drawn through @elkdonis/site-forms (.frm-site); the Studio
+   and the other Quick-Form hosts are unchanged. The labels stay in the page
+   (opacity 0, clipped), so each field keeps its accessible name.
+   With a mouse: the column is folded; a 16px strip on the form's left edge
+   (.frm-site-edge, SiteForm.tsx) opens it while the pointer is on the strip,
+   and the open strip covers the labels, so they stay open until the pointer
+   moves into a field.
+   On touch: the labels show until a text field is focused, and fold while it is. */
+
+.frm.frm-site[data-form-theme='ledger-quick'] {
+  position: relative;
+}
+.frm-site-edge {
+  display: none;
+}
+.frm-site[data-form-theme='ledger-quick'] :is(.frm-stack, .frm-sec, .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field) {
+  transition:
+    grid-template-columns 0.2s ease,
+    column-gap 0.2s ease;
+}
+.frm-site[data-form-theme='ledger-quick'] :is(.frm-sec > :is(.frm-sec-label, .frm-sec-head), .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head, .frm-stack > .frm-eyebrow[data-at='more']),
+.frm-site[data-form-theme='ledger-quick'] .frm-sec:has(> .frm-field .frm-title)::before,
+.frm-site[data-form-theme='ledger-quick'] .frm-sec[data-label]::before {
+  transition: opacity 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .frm.frm-site[data-form-theme='ledger-quick'] > .frm-site-edge {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    width: 16px;
+    transition: width 0.2s ease;
+  }
+  .frm.frm-site[data-form-theme='ledger-quick']:has(> .frm-site-edge:hover) > .frm-site-edge {
+    width: calc(var(--frm-lab) + var(--frm-lab-gap));
+  }
+  .frm.frm-site[data-form-theme='ledger-quick']:not(:has(> .frm-site-edge:hover)),
+  .frm.frm-site[data-form-theme='ledger-quick']:not(:has(> .frm-site-edge:hover)) .frm {
+    --frm-lab: 0px;
+    --frm-lab-gap: 16px;
+  }
+  .frm.frm-site[data-form-theme='ledger-quick']:not(:has(> .frm-site-edge:hover)) :is(.frm-sec > :is(.frm-sec-label, .frm-sec-head), .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head, .frm-stack > .frm-eyebrow[data-at='more']),
+  .frm.frm-site[data-form-theme='ledger-quick']:not(:has(> .frm-site-edge:hover)) .frm-sec:has(> .frm-field .frm-title)::before,
+  .frm.frm-site[data-form-theme='ledger-quick']:not(:has(> .frm-site-edge:hover)) .frm-sec[data-label]::before {
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus),
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus) .frm {
+    --frm-lab: 0px;
+    --frm-lab-gap: 0px;
+  }
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus) :is(.frm-sec > :is(.frm-sec-label, .frm-sec-head), .frm-sec:not(:has(> .frm-sec-label, > .frm-sec-head)) > .frm-field > .frm-field-head, .frm-stack > .frm-eyebrow[data-at='more']),
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus) .frm-sec:has(> .frm-field .frm-title)::before,
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus) .frm-sec[data-label]::before {
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+/* ── Site forms (2026-11-15): a single picture's buttons over the picture ─
+   A picture field whose side holds only its buttons (no alt text): the picture
+   takes the field's width and Upload, Library, Camera (and Remove) sit on a
+   dark band along its bottom. With a mouse they show on hover or keyboard focus,
+   or while a picker is open. On touch they show, and hide while a text field
+   is focused. The artwork Pictures grid (.frm-pics-*) is not this control. */
+
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) > .frm-media-thumb {
+  grid-area: 1 / 1;
+  width: 100%;
+  max-height: 22rem;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) > .frm-media-side {
+  grid-area: 1 / 1;
+  align-self: end;
+  z-index: 1;
+  padding: 22px 10px 8px;
+  background: linear-gradient(to top, rgba(14, 18, 24, 0.72), rgba(14, 18, 24, 0.5) 60%, rgba(14, 18, 24, 0));
+  transition: opacity 0.2s ease;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) > .frm-media-picker {
+  grid-column: 1;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) .frm-media-src {
+  margin-left: 0;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) .frm-media-src .frm-btn {
+  color: #ffffff;
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) .frm-media-src .frm-btn:is(:hover, [aria-expanded='true']) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))) .frm-media-src .frm-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .frm-site[data-form-theme='ledger-quick'] .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))):not(:hover, :focus-within, :has([aria-expanded='true'])) > .frm-media-side {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .frm.frm-site[data-form-theme='ledger-quick']:has(.frm-stack :is(input:not([type='checkbox'], [type='radio'], [type='button'], [type='file'], [type='range']), textarea, select, [contenteditable='true'], [contenteditable='']):focus) .frm-media:not([data-variant='drop']):not(:has(> .frm-media-side > :not(.frm-media-src))):not(:has([aria-expanded='true'])) > .frm-media-side {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frm-site[data-form-theme='ledger-quick'] :is(.frm-stack, .frm-sec, .frm-field, .frm-sec-label, .frm-sec-head, .frm-field-head, .frm-eyebrow, .frm-media-side, .frm-site-edge),
+  .frm-site[data-form-theme='ledger-quick'] .frm-sec::before {
+    transition: none;
+  }
+}
+
+/* ── Site forms in a surface popup (2026-11-15): the fields reach the popup's right edge ──────
+   Developer's ask. The popup's body (cms-ui surface.css) pads its content 22px a side and keeps a
+   scrollbar's width free on the right even when nothing scrolls, so the fields stopped about 37px
+   short. For a site form only: an 8px margin on the right, and the scrollbar takes room only when
+   the form scrolls. Other surfaces and SiteFormPage are unchanged. */
+.eac-surface-main:has(> .frm-site) {
+  padding-right: 8px;
+}
+.eac-surface-body:has(> .eac-surface-main > .frm-site) {
+  scrollbar-gutter: auto;
+}

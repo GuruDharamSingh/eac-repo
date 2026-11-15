@@ -1,0 +1,149 @@
+/*
+ * Booking section (BookingSection.tsx), on the forms' tokens only, so the
+ * Ledger, quick and site themes and dark mode reach it. Contrast is the
+ * forms' own (--frm-text / --frm-muted on --frm-bg, --frm-control-line for
+ * borders; measured in forms.css). Sizes scale with --frm-text-scale.
+ */
+
+.bks {
+  container: bks / inline-size;
+  display: grid;
+  gap: 14px;
+  color: var(--frm-text);
+  font-family: var(--frm-font-body, inherit);
+}
+
+.bks-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--frm-radius-control);
+  background: var(--frm-danger-soft);
+  color: var(--frm-danger-soft-ink);
+  font-size: calc(14px * var(--frm-text-scale, 1));
+}
+
+.bks-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 9rem) 1fr;
+  gap: 6px 16px;
+  align-items: start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--frm-divider);
+}
+
+.bks-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.bks-label {
+  padding-top: 8px;
+}
+
+.bks-cell {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bks-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bks-stack {
+  gap: 10px;
+}
+
+.bks-hint {
+  margin: 0;
+}
+
+.bks-sublabel {
+  color: var(--frm-muted);
+}
+
+.bks-box {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.bks-wide {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.bks-num input {
+  width: 4.5rem;
+}
+
+.bks-unit,
+.bks-dash {
+  color: var(--frm-muted);
+  font-size: calc(13px * var(--frm-text-scale, 1));
+  white-space: nowrap;
+}
+
+.bks .frm-input-el {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  min-width: 0;
+  width: 100%;
+  color-scheme: var(--frm-color-scheme, normal);
+}
+
+.bks-select {
+  cursor: pointer;
+  padding-right: 4px;
+}
+
+.bks-time input {
+  width: 6.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bks-hours {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.bks-hour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bks-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: calc(13px * var(--frm-text-scale, 1));
+}
+
+.bks-check input {
+  accent-color: var(--frm-accent);
+}
+
+.bks .frm-btn,
+.bks-cell > .frm-seg {
+  justify-self: start;
+}
+
+/* One column when the section itself is narrow (a form column, a phone). */
+@container bks (max-width: 34rem) {
+  .bks-row {
+    grid-template-columns: 1fr;
+  }
+  .bks-label {
+    padding-top: 0;
+  }
+}

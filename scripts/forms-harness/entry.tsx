@@ -1,7 +1,7 @@
 // The forms harness entry: one page, one look, from window.__PAGE__ / __THEME__ (build.mjs writes them).
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import { HarnessApp, type HarnessTheme } from "/repo/packages/studio/src/forms/harness";
+import { HarnessApp, type HarnessTheme } from "/repo/packages/studio-forms/src/forms/harness";
 
 declare global {
   interface Window {

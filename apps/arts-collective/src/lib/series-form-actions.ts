@@ -9,7 +9,7 @@ import {
   type SeriesPublishStep,
 } from "@elkdonis/services/series-form";
 import type { StudioResult } from "@elkdonis/studio";
-import type { MeetingContextView } from "@elkdonis/studio/meeting";
+import type { MeetingContextView } from "@elkdonis/studio-forms/meeting";
 import { db } from "@elkdonis/db";
 import { getCurrentUser } from "@/lib/session";
 import { networkItemUrl } from "@/lib/org-url";

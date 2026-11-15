@@ -35,9 +35,10 @@ const PAGES = [
   ["1a", 1320], ["2a", 1320], ["2b", 1320], ["1b", 1320], ["1h", 1320], ["1i", 900], ["1j", 1320],
   ["1l", 390], ["1m", 390], ["1n", 390], ["blank", 1320],
   // pass 2
-  ["1c", 1320], ["1c-page", 1320], ["1o", 390], ["1f", 1320], ["1f-page", 1320], ["1p", 390], ["service", 1320], ["service-page", 1320], ["service-m", 390], ["joints", 900], ["joints-m", 390],
+  ["1f", 1320], ["1f-page", 1320], ["1p", 390], ["service", 1320], ["service-page", 1320], ["service-m", 390], ["joints", 900], ["joints-m", 390],
+  ["q-meeting", 460], ["q-artwork", 460], ["q-event", 460], ["q-post", 460], ["q-series", 460], ["q-series-weekly", 460], ["q-workshop", 460],
 ];
-const LOOKS = ["", "-plain", "-dark"];
+const LOOKS = ["", "-plain", "-dark", "-ledger", "-ledger-dark", "-ledger-quick"];
 
 for (const [page, w] of PAGES) {
   for (const look of LOOKS) {

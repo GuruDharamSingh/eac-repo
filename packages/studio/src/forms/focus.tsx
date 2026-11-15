@@ -17,19 +17,32 @@ import * as React from 'react';
 import { RichTextEditor } from '@elkdonis/cms-ui/editor';
 import { localTimeZone } from '@elkdonis/cms-ui/compose';
 import { renderEssayHtml, type EssayDoc } from '@elkdonis/utils/essay';
-import { Canvas, type CanvasUpload, type ThreadCardSearchHit } from '../canvas';
-import { useNewRequest, useStudioFrame, type StudioExtension } from '../frame';
-import type { Answers, FormActions, FormContext, FormHost, FormKindSchema, FormPreset, FormTheme } from './contract';
-import type { BlocksSlot, BodySlot } from './fields/FieldRenderer';
-import { orderPresets } from './presets';
-import { PERSONAL_ORG, channelStoreOf } from './channel-link';
-import { FormShell, useFormUi } from './shell';
-import { useFormState } from './state';
+import { Canvas, type CanvasUpload, type ThreadCardSearchHit } from '@elkdonis/studio-forms/canvas';
+import { StudioColumns, useNewRequest, useStudioFrame, type StudioExtension } from '../frame';
+import { FormItemList, type FormListItem } from './item-list';
+import { PieceSummaryGate } from '../summary/gate';
+import {
+  FormShell,
+  PERSONAL_ORG,
+  channelStoreOf,
+  orderPresets,
+  useFormState,
+  useFormUi,
+  type Answers,
+  type BlocksSlot,
+  type BodySlot,
+  type FormActions,
+  type FormContext,
+  type FormHost,
+  type FormKindSchema,
+  type FormPreset,
+  type FormTheme,
+} from '@elkdonis/studio-forms';
 
 /** The essay Canvas as the `blocks` slot: HTML in, rendered HTML and the document out (body + body_doc). */
 export function canvasBlocksSlot(opts: { search?: (kind: string, q: string) => Promise<ThreadCardSearchHit[]>; upload?: CanvasUpload; placeholder?: string } = {}): BlocksSlot {
   const search = opts.search ?? (async () => []);
-  const BlocksBody: BlocksSlot = ({ value, doc, onChange }) => (
+  const BlocksBody: BlocksSlot = ({ value, doc, onChange, omit }) => (
     <Canvas
       doc={(doc as EssayDoc | null) ?? null}
       html={doc ? undefined : value}
@@ -37,19 +50,20 @@ export function canvasBlocksSlot(opts: { search?: (kind: string, q: string) => P
       card={{ search }}
       upload={opts.upload}
       placeholder={opts.placeholder ?? 'Start writing. Add a picture, a pull quote or a card.'}
+      omit={omit}
     />
   );
   return BlocksBody;
 }
 
-/** cms-ui's RichTextEditor as the `body` slot (a gathering's Description in focus mode). */
+/** cms-ui's RichTextEditor as the `body` slot (a meeting's Description in focus mode). */
 export function richTextBodySlot(placeholder = 'What happens, who it is for, what to bring.'): BodySlot {
   const Body: BodySlot = ({ value, onChange }) => <RichTextEditor value={value} onChange={onChange} toolbar="full" placeholder={placeholder} />;
   return Body;
 }
 
 export interface FormExtensionOptions {
-  /** The Studio kind id this replaces or adds ("meeting" for gatherings). */
+  /** The Studio kind id this replaces or adds. */
   id: string;
   label: string;
   listLabel?: string;
@@ -62,6 +76,14 @@ export interface FormExtensionOptions {
   /** Org/person presets from the host's store (pass 4); platform and "last settings" are added here. */
   presets?: (orgId: string) => Promise<FormPreset[]>;
   theme?: FormTheme | null;
+  /** Used instead of `theme` while the Studio frame is dark (2026-11-11). */
+  themeDark?: FormTheme | null;
+  /**
+   * The kind's items for the Studio column's "All pieces" (2026-11-11, canvas R1). Given, the kind
+   * draws the Studio's left column: its items under "All pieces", its rail under "This piece".
+   * Unset, the form keeps its own rail and no column (as before).
+   */
+  items?: (orgId: string) => Promise<FormListItem[]>;
 }
 
 /** A form kind as a StudioExtension: register it in the host's extensions list. */
@@ -89,19 +111,81 @@ function FormExtensionView(o: FormExtensionOptions) {
   }, [frame.orgId]);
 
   // "New ▾" on this kind: a fresh, empty form.
-  useNewRequest(() => {
+  const startNew = React.useCallback(() => {
     setOpenId(null);
     setGeneration((g) => g + 1);
-  });
+  }, []);
+  useNewRequest(startNew);
 
-  if (!fields) return <p className="frm-loading">Loading…</p>;
-  if (fields.canEdit === false) {
-    return <p className="frm-loading">{typeof fields.reason === 'string' ? fields.reason : 'You can’t make this here.'}</p>;
-  }
-  return <FormExtensionBody key={`${frame.orgId}:${generation}:${openId ?? 'new'}`} {...o} fields={fields} openId={openId} />;
+  // The column (when the host lists items): the list, and a host element the rail is drawn into.
+  const [items, setItems] = React.useState<FormListItem[] | null>(null);
+  const [listVersion, setListVersion] = React.useState(0);
+  const [currentId, setCurrentId] = React.useState<string | null>(o.initialId ?? null);
+  const [railHost, setRailHost] = React.useState<HTMLDivElement | null>(null);
+  const listItems = o.items;
+  React.useEffect(() => {
+    if (!listItems) return;
+    let live = true;
+    listItems(frame.orgId)
+      .then((l) => live && setItems(l))
+      .catch(() => live && setItems([]));
+    return () => {
+      live = false;
+    };
+  }, [listItems, frame.orgId, listVersion]);
+  // A first save or a publish changes the list.
+  const onRecord = React.useCallback((id: string | null) => {
+    setCurrentId(id);
+    setListVersion((v) => v + 1);
+  }, []);
+
+  const body = !fields ? (
+    <p className="frm-loading">Loading…</p>
+  ) : fields.canEdit === false ? (
+    <p className="frm-loading">{typeof fields.reason === 'string' ? fields.reason : 'You can’t make this here.'}</p>
+  ) : (
+    <FormExtensionBody
+      key={`${frame.orgId}:${generation}:${openId ?? 'new'}`}
+      {...o}
+      fields={fields}
+      openId={openId}
+      railTarget={listItems ? railHost : undefined}
+      onRecord={listItems ? onRecord : undefined}
+    />
+  );
+  if (!listItems) return body;
+  return (
+    <StudioColumns
+      drawer={
+        <FormItemList
+          noun={o.listLabel ?? o.label}
+          items={items}
+          currentId={currentId}
+          query={frame.query}
+          onOpen={(id) => {
+            setOpenId(id);
+            setCurrentId(id);
+            setGeneration((g) => g + 1);
+          }}
+          onNew={startNew}
+        />
+      }
+      main={body}
+      settings={<div className="studio-railhost" ref={setRailHost} />}
+    />
+  );
 }
 
-function FormExtensionBody(o: FormExtensionOptions & { fields: Record<string, unknown>; openId: string | null }) {
+function FormExtensionBody(
+  o: FormExtensionOptions & {
+    fields: Record<string, unknown>;
+    openId: string | null;
+    /** The column's "This piece" element: the rail goes there. */
+    railTarget?: HTMLElement | null;
+    /** The saved record's id when it changes (first save) and on publish, so the list refreshes. */
+    onRecord?: (id: string | null) => void;
+  }
+) {
   const frame = useStudioFrame();
   const orgId = frame.orgId;
   const orgName = frame.orgs.find((x) => x.orgId === orgId)?.name ?? '';
@@ -124,6 +208,12 @@ function FormExtensionBody(o: FormExtensionOptions & { fields: Record<string, un
     setPiece(store && form.state.id ? { store, id: form.state.id, orgId: store === 'thread' && orgId !== PERSONAL_ORG ? orgId : null } : null);
     return () => setPiece(null);
   }, [setPiece, store, form.state.id, orgId]);
+
+  // The column's list follows the first save and a publish.
+  const onRecord = o.onRecord;
+  React.useEffect(() => {
+    if (form.state.id) onRecord?.(form.state.id);
+  }, [onRecord, form.state.id, form.state.publishedAt]);
 
   // An existing item: load it once.
   React.useEffect(() => {
@@ -158,7 +248,9 @@ function FormExtensionBody(o: FormExtensionOptions & { fields: Record<string, un
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId]);
 
+  // A piece opened published shows its summary first (canvas C, 2026-11-14); off unless the host provides PieceSummaryHostContext.
   return (
+    <PieceSummaryGate openId={o.openId} id={form.state.id} publishedAt={form.state.publishedAt} record={form.state.record} answers={form.state.answers} store={store} orgId={orgId} orgName={orgName} schema={o.schema} ctx={ctx}>
     <FormShell
       schema={o.schema}
       state={form.state}
@@ -173,10 +265,12 @@ function FormExtensionBody(o: FormExtensionOptions & { fields: Record<string, un
       }}
       host={host}
       ctx={ctx}
-      theme={o.theme ?? null}
+      theme={(frame.dark && o.themeDark) || o.theme || null}
       presets={presets}
       kinds={[o.schema.id]}
+      railTarget={o.railTarget}
     />
+    </PieceSummaryGate>
   );
 }
 
@@ -189,3 +283,4 @@ function publishedAtOf(record: unknown): string | null {
 }
 
 export type { Answers };
+export type { FormListItem };

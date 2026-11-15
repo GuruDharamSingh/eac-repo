@@ -1,6 +1,6 @@
 # Forms render harness
 
-Renders the publication forms (`packages/studio/src/forms`: shell, fields, preview, theme)
+Renders the publication forms (`packages/studio-forms/src/forms`: shell, fields, preview, theme)
 with no server and no database, on soft tissue's sample data (`forms/kinds/*/sample.ts`), through
 the real `FormShell` and the bone's `useFormState`. Save actions are stubs that echo a record
 (`forms/harness/host.tsx`); the steps before a screenshot (a save, a Publish press) are replayed as
@@ -8,27 +8,29 @@ state events (`forms/harness/pages.ts`). `next/*` is stubbed (`stubs/`). Same se
 `scripts/channel-harness`.
 
 Pages (the canvas ids of `docs/open/publishing-forms-handoff/Publishing Forms.dc.html`):
-- pass 1: 1a, 2a, 2b, 1b, 1h, 1i, 1j, 1l, 1m, 1n, plus `blank` (a fresh gathering; the readiness
+- pass 1: 1a, 2a, 2b, 1b, 1h, 1i, 1j, 1l, 1m, 1n, plus `blank` (a fresh meeting; the readiness
   line must read "Four things left before it can go out.").
-- pass 2: 1c (a new series with the planner; soft tissue's gathering kind and
-  `GATHERING_SERIES_SAMPLE`), 1f (artwork), `service` (an offering), the phones 1o, 1p and
+- pass 2: 1c (a new series with the planner; soft tissue's meeting kind and
+  `MEETING_SERIES_SAMPLE`), 1f (artwork), `service` (an offering), the phones 1o, 1p and
   `service-m`, `1c-page`, `1f-page`, `service-page` (the preview on Page), and `joints` /
   `joints-m` (GridRows, PicturesField and CreditRows on their own, in every state, at 900 and
   390). 1d/1e (planner alternates) are pass 4.
 
-Each is built in three looks:
+Each is built in five looks:
 
 - `<id>`: Broadsheet (`[data-form-theme="broadsheet"]`, `broadsheet.css`)
 - `<id>-plain`: no theme and no site hooks, so every `--frm-*` falls back to the cms-ui surface defaults
 - `<id>-dark`: a dark site's `site_themes` vars at `:root` (surface hooks plus `@elkdonis/gradients`
   `deriveRoleRamps`), the forms reading them through the fallback chain
+- `<id>-ledger`, `<id>-ledger-dark`: the Ledger theme (`ledger.css`, `[data-form-theme="ledger"]` /
+  `"ledger-dark"`), added 2026-11-11; fonts Newsreader and IBM Plex Sans from Google Fonts
 
 Widths: 1320 (desktop, as designed), 900 (1i, joints), 390 (1l, 1m, 1n, 1o, 1p, service-m, joints-m). The Post
 pages pass the Studio essay Canvas as the focus `blocks` slot, as the Studio host will.
 
 Hosts compile the forms with their own, non-strict tsconfig (arts-collective). To check the forms
 the way they do: `tsc --noEmit -p ../../scripts/forms-harness/tsconfig.nonstrict.json` from
-`packages/studio` (in the admin container, as the studio check runs).
+`packages/studio-forms` (in the admin container, as the check-types script runs).
 
 ```bash
 H=$PWD/scripts/forms-harness   # run from the repo root
