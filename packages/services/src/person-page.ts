@@ -328,8 +328,8 @@ export interface GetPersonPageOptions {
   writingLimit?: number;
   threadLimit?: number;
   /**
-   * `user_galleries.hidden_on` site key; defaults to orgId. Pass null for no
-   * per-site filter.
+   * The site key galleries are filtered by (origin or `user_galleries.shown_on`,
+   * migration 264); defaults to orgId. Pass null for no per-site filter.
    */
   gallerySite?: string | null;
 }

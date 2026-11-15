@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getPersonPage, personThreadHref, type PersonThread } from "@elkdonis/services";
 import { PersonPage, PersonThreadList } from "@elkdonis/cms-ui/profile";
+import { SitePortfolioEditor } from "@elkdonis/cms-ui/gallery";
 import { getGuideBySlug } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
@@ -136,6 +137,18 @@ export default async function MemberPage({ params }: MemberPageProps) {
         ) : null
       }
       portfolio={page.portfolio.map((p) => ({ url: p.url, title: p.title }))}
+      // The person (or an admin) chooses what this site shows, from their
+      // own files (org_profiles.portfolio, migration 264); visitors keep
+      // the read-only list. Routes: app/api/center/portfolio.
+      featured={
+        page.canEdit && profile.slug ? (
+          <SitePortfolioEditor
+            items={page.portfolio.map((p, i) => ({ ...p, id: p.id ?? `${i}-${p.url}`, title: p.title ?? "" }))}
+            person={profile.slug}
+            siteName={siteConfig.orgName}
+          />
+        ) : undefined
+      }
       emptyFeatured={null}
       order={page.sections.map((s) => s.key)}
       slots={slots}

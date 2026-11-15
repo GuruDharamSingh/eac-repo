@@ -23,8 +23,9 @@ import { siteConfig } from "@/config/site";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
 import { DEFAULT_SERIES_ZONE } from "@/lib/series-time";
+import { SiteFormPage } from "@elkdonis/site-forms";
+import { ifacSiteForms } from "@/lib/forms/site";
 import { QuestionnairePageBody } from "./questionnaire-composer";
-import { WritingRoomPage } from "./writing-room-page";
 
 /**
  * IFAC's compose surface, in the hub.
@@ -82,6 +83,12 @@ export function ComposeWorkspace({
     ? (catalogue.find((option) => option.writes.kind === routedKind) ?? null)
     : picked;
   const siblings = groupOptions(catalogue, selected);
+  // The shared forms (@elkdonis/site-forms, 2026-11-14) draw post, meeting, event and series. Workshop keeps
+  // ContentBody (saveContentAction); questionnaire and poll keep their own page body.
+  const formSite = React.useMemo(() => ifacSiteForms(context.feeds ?? []), [context.feeds]);
+  const sharedKind = selected && ["post", "meeting", "event", "series"].includes(selected.writes.kind)
+    ? (selected.writes.kind as "post" | "meeting" | "event" | "series")
+    : null;
 
   const select = (option: ComposeOption) => {
     if (routed) router.push(`/hub/compose?kind=${encodeURIComponent(option.writes.kind)}`);
@@ -125,11 +132,9 @@ export function ComposeWorkspace({
         <ComposeGroupSwitch options={siblings} selected={selected} onSelect={switchKind} />
       ) : null}
 
-      {/* A post gets the writing room — the words with the finished page beside
-          them — not a textarea. It was the one kind whose page form was worse
-          than its popup. Everything else keeps the shared composer. */}
-      {selected.writes.kind === "post" ? (
-        <WritingRoomPage studioHref={studioHref} />
+      {/* Post, meeting, event and series: the shared form, as a page. A made series opens its planner. */}
+      {sharedKind ? (
+        <SiteFormPage key={sharedKind} kind={sharedKind} site={formSite} closeHref="/hub" />
       ) : selected.writes.table === "threads" ? (
         <ContentBody
           // Keyed by the door, not the kind: switching meeting ⇄ series keeps

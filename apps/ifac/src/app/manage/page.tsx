@@ -77,9 +77,10 @@ export default async function ManageOverviewPage() {
             </li>
           </ul>
           <p className="manage-note">
-            A person&rsquo;s bio, photo, links and portfolio are edited on their own
-            profile page, by them — this console controls whether they are published
-            here and what they may do, not what their page says.
+            A person&rsquo;s bio, photo and links are edited on their own profile page,
+            by them. The portfolio IFAC shows is IFAC&rsquo;s own, chosen on their IFAC
+            page from their files; their ArtDirect portfolio does not change it. This
+            console controls whether they are published here and what they may do.
           </p>
         </section>
 

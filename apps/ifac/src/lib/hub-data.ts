@@ -99,7 +99,7 @@ export async function getProfileSummary(
       }>
     >`
       SELECT u.slug, u.display_name, u.avatar_url, u.headline, u.bio,
-             u.portfolio, op.role_title, op.tags
+             op.portfolio, op.role_title, op.tags
       FROM users u
       LEFT JOIN org_profiles op
         ON op.user_id = u.id AND op.org_id = ${ORG}

@@ -127,6 +127,8 @@ export async function GET(
     title: row.title,
     slug: row.slug,
     kind: row.kind,
+    // The thread's own page (/forum/t/<id>/<slug>), so the popup offers "Open page" (2026-11-14, hand-test #7b).
+    href: threadHref(row),
     status: row.status,
     visibility: row.visibility,
     feed: feed ? { slug: feed.slug, name: feed.name } : null,

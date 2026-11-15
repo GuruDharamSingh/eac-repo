@@ -8,6 +8,7 @@ import {
   type MeetingBannerData,
 } from "@elkdonis/cms-ui/hubsite";
 import { HubDrawer } from "@/components/hub/HubDrawer";
+import { ForumSurfaceLink } from "@/components/hub/forum-surface-link";
 import { HUB_VIEWS } from "@/app/hub/views";
 
 /**
@@ -96,7 +97,10 @@ export function HubCardsBody({
 
         <HubCardGrid label="Files and forum" className="ifac-row-2">
           <HubLinkCard href="/hub/files" glyph="▤" title="Files" blurb="The group's folder and your own." />
-          <HubLinkCard href="/forum" glyph="☰" title="Forum" blurb="What is being discussed, every board in full." />
+          {/* Opens the forum surface over the hub, as the cards layout does (2026-11-14); a new-tab click still goes to /forum. */}
+          <ForumSurfaceLink>
+            <HubLinkCard href="/forum" glyph="☰" title="Forum" blurb="What is being discussed, every board in full." />
+          </ForumSurfaceLink>
         </HubCardGrid>
 
         {/* Under them: working together. Suggested ideas is left out for now

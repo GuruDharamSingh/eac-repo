@@ -1383,6 +1383,16 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   (`attachment` otherwise), and `private, no-store` vs
   `public, max-age=31536000, immutable` from `parseMediaPath().isPrivate`.
   `allowedPrefixes` is a subtree bound only.
+- Every live app's `/api/media/[...path]` serves all of `EAC_Network/`
+  (2026-11-11, developer; live on ifac, artdirect and innergathering since their
+  2026-11-11 16:05-16:12 EST rebuilds, the rest on their next rebuild): ifac,
+  artdirect, danamccool, katie-the-potter, innergathering, fourthwayBookreaders,
+  amrit-canada, elktours, hidden-enneagram, sunjay. Before this, org-scoped bounds
+  404'd files filed under another owner (artdirect/, slug folders such as
+  `inner-gathering/`, other orgs' `Profile Pictures/`). `canReadMedia` is unchanged
+  and still decides every `Private/` and workshop path. The retired
+  inner-gathering, elkdonis-arts-collective and the stopped pigeonshoot were not
+  changed. `docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md`. (claude, 2026-11-11)
 - Media read routes, 2026-09-23:
   - `serveMedia` with `?w=`: art-auction, arts-collective, danamccool,
     fourthwayBookreaders, ifac, innergathering, sophia.

@@ -88,6 +88,9 @@ Key columns (live `\d threads`):
   `pinned`, `locked`, `share_to_network` (ignored by the forum).
 - Body: `body text`, `excerpt`, `body_doc jsonb` (173: the essay canvas's TipTap document; `body` is rendered from it on the server when `body_format = 'doc'`), `body_format` (`html|md|mdx|doc`, CHECK; all 67 rows
   are `html`), `body_source`, `static_path`/`static_published_at`
+  (claude, 2026-11-11, source only, not deployed) Meetings keep a block description too: `meeting-content.ts` writeColumns takes
+  `MeetingInput.bodyDoc`, renders `body` from it (`renderEssayHtml` then `sanitizeRichText`) and sets `body_format = 'doc'`; without
+  one it clears `body_doc` (a `doc` row goes back to `html`), so an HTML edit from another composer is never overruled by an old document.
   (`thread-publish.ts`), `search_tsv` (generated, migration 114) with a trigram
   index on `title`.
 - Scheduling and attendance: `scheduled_at`, `duration_minutes`, `location`,
@@ -413,6 +416,7 @@ rows written before the write-path fix are served as stored. See Open items.
 - Use a sentinel user for anonymous authorship: `users.auth_user_id` must equal `id`.
 - Record a person's old slug when it changes: call `noteUserSlugChange` (`packages/services/src/profiles.ts`) from any new slug writer, because `user_slug_redirects` (migration 204, applied 2026-10-11) is what turns an old profile address into a 308; `updateProfile`, `saveProfileDetails`, `mergeProfile` and IFAC directory-admin already do. `ensureUniqueUserSlug` treats another user's old slug as taken. (claude, 2026-10-11)
 - Carry `org_profiles` in a merge with `ON CONFLICT DO UPDATE`, not `DO NOTHING`: every sign-up already has a blank row for its org, so `DO NOTHING` dropped the placeholder's tags, role and order (Kevin Meadows, 2026-10-10). (claude, 2026-10-11)
+- Read a person's portfolio on an org site from `org_profiles.portfolio`, not `users.portfolio` (migration 264, applied 2026-11-11): every `OrgProfile` reader in `profiles.ts` now returns that org's own list, and `users.portfolio` is the person's home list (ArtDirect, arts-collective `/artists`). Write it with `setOrgPortfolio`/`appendOrgPortfolio`. Galleries are opt-in per site: a gallery shows on its `origin` and on the sites in `user_galleries.shown_on` (`galleryShownOn`); `hidden_on` is no longer read by new builds, so set `origin` when creating one. A site's list is chosen on the site: mount `sitePortfolioRoutes({ orgId, who })` at `app/api/center/portfolio` and render `SitePortfolioEditor` (`@elkdonis/cms-ui/gallery`) for `page.canEdit` (sunjay, innergathering, hidden-enneagram; IFAC has its own `gallery-panel`). A site that draws a portfolio without a chooser shows a list nobody can change. `docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md`. (claude, 2026-11-11)
 
 ## Open items
 

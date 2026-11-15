@@ -462,7 +462,7 @@ function RosterTable({
                   href={`${process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "http://localhost:3013"}/${row.slug}/edit`}
                   target="_blank"
                   rel="noreferrer"
-                  title="Bio, photo, links and portfolio are edited on the artist's own ArtDirect page — this console only controls role and publish status here."
+                  title="Bio, photo and links are edited on the artist's own ArtDirect page. IFAC's portfolio for them is IFAC's own (their IFAC page, or Artworks here); their ArtDirect portfolio does not change it."
                 >
                   Edit on ArtDirect ↗
                 </a>

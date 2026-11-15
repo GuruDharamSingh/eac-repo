@@ -298,7 +298,11 @@ function mapOrgProfile(row: OrgProfileRow): OrgProfile {
 }
 
 const USER_COLS = `id, entity_type, slug, display_name, headline, bio, avatar_url, pronouns, city, region, country, postal_code, lat, lng, social_links, portfolio_url, portfolio, claim_status, claimed_by, created_by, verified, directory_listed, source_note, oad_dossier, profile_sections, profile_layout`;
-const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, u.portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.directory_listed, u.source_note, u.oad_dossier, u.profile_sections, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
+// `portfolio` on an org profile is that org's own list (org_profiles.portfolio,
+// migration 264), not the person's home list: what a site shows is chosen on
+// that site. NULL reads as empty; it never falls back to users.portfolio.
+// docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, COALESCE(op.portfolio, '[]'::jsonb) AS portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.directory_listed, u.source_note, u.oad_dossier, u.profile_sections, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
 
 /** A person's global identity, independent of any org. */
 export async function getProfile(userId: string): Promise<Profile | null> {
@@ -661,6 +665,33 @@ export interface UpdateProfileInput {
   slug?: string | null;
   oadDossier?: Record<string, unknown>;
   sourceNote?: string | null;
+}
+
+/**
+ * Replace one org site's portfolio for a person (org_profiles.portfolio,
+ * migration 264). Leaves users.portfolio, the person's home list, alone.
+ * Caller must have checked canEditProfile (or the org's own editor rule).
+ * Returns false when the person has no row on that org: a site lists only
+ * people it has a row for, and this does not create one.
+ */
+export async function setOrgPortfolio(orgId: string, userId: string, items: PortfolioItem[]): Promise<boolean> {
+  const rows = await db`
+    UPDATE org_profiles SET portfolio = ${jsonb(asPortfolio(items))}, updated_at = NOW()
+    WHERE org_id = ${orgId} AND user_id = ${userId}
+    RETURNING 1
+  `;
+  return rows.length > 0;
+}
+
+/** Append to one org site's portfolio (an upload made on that site). Same rules as setOrgPortfolio. */
+export async function appendOrgPortfolio(orgId: string, userId: string, items: PortfolioItem[]): Promise<boolean> {
+  const rows = await db`
+    UPDATE org_profiles
+       SET portfolio = COALESCE(portfolio, '[]'::jsonb) || ${jsonb(asPortfolio(items))}, updated_at = NOW()
+     WHERE org_id = ${orgId} AND user_id = ${userId}
+    RETURNING 1
+  `;
+  return rows.length > 0;
 }
 
 /** Self-editable identity fields. Caller must have checked canEditProfile. */
@@ -1062,12 +1093,17 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
       await tx`
         INSERT INTO org_profiles AS t (
           org_id, user_id, role_title, bio_override, photo_override,
-          sort_order, is_public, tags, sections
+          sort_order, is_public, tags, sections, portfolio
         )
         SELECT org_id, ${targetUserId}, role_title, bio_override, photo_override,
-               sort_order, is_public, tags, sections
+               sort_order, is_public, tags, sections, portfolio
         FROM org_profiles WHERE user_id = ${sentinelUserId}
         ON CONFLICT (org_id, user_id) DO UPDATE SET
+          portfolio      = CASE
+                             WHEN jsonb_typeof(t.portfolio) = 'array' AND jsonb_array_length(t.portfolio) > 0
+                             THEN t.portfolio
+                             ELSE EXCLUDED.portfolio
+                           END,
           role_title     = COALESCE(NULLIF(t.role_title, ''), EXCLUDED.role_title),
           bio_override   = COALESCE(NULLIF(t.bio_override, ''), EXCLUDED.bio_override),
           photo_override = COALESCE(NULLIF(t.photo_override, ''), EXCLUDED.photo_override),

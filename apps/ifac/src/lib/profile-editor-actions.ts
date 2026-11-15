@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "@elkdonis/auth-server";
-import { updateProfile, canEditProfile, getProfile, type UpdateProfileInput } from "@elkdonis/services";
+import { updateProfile, setOrgPortfolio, canEditProfile, getProfile, type UpdateProfileInput } from "@elkdonis/services";
+import { siteConfig } from "@/config/site";
 import type { SaveFieldPayload, SaveResult } from "@elkdonis/live-editor";
 import type { GalleryItem } from "@elkdonis/cms-ui/gallery";
 
@@ -69,13 +70,22 @@ export async function saveAvatarAction(profileUserId: string, avatarUrl: string)
   return { ok: true };
 }
 
+/**
+ * IFAC's own portfolio for this person (org_profiles.portfolio, migration
+ * 264). Their home list on ArtDirect (users.portfolio) is not touched: what
+ * IFAC shows is chosen here, and the rest of their library is offered through
+ * "Add from library". docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
+ */
 export async function saveGalleryAction(profileUserId: string, items: GalleryItem[]): Promise<SaveResult> {
   const auth = await authorize(profileUserId);
   if (!auth.ok) return auth;
 
-  await updateProfile(profileUserId, {
-    portfolio: items.map((i) => ({ id: i.id, url: i.url, title: i.title, x: i.x, y: i.y, w: i.w, h: i.h })),
-  });
+  const saved = await setOrgPortfolio(
+    siteConfig.orgId,
+    profileUserId,
+    items.map((i) => ({ id: i.id, url: i.url, title: i.title, x: i.x, y: i.y, w: i.w, h: i.h })),
+  );
+  if (!saved) return { ok: false, error: "This person is not on IFAC's roster." };
   await revalidateProfile(profileUserId);
   return { ok: true };
 }

@@ -24,6 +24,8 @@ import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction 
 import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction, canChangeOrgPeopleAction } from "@/lib/cms/org-people-actions";
 import { marketplaceLinks } from "@elkdonis/commerce/links";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
+import { siteFormConnectors } from "@elkdonis/site-forms";
+import { ifacSiteForms } from "@/lib/forms/site";
 import { siteConfig } from "@/config/site";
 import { FilesSurface } from "./FilesCard";
 import { SERIES_PEOPLE_ENDPOINT, SERIES_STATS_ENDPOINT } from "@elkdonis/series-site/hub";
@@ -111,6 +113,8 @@ export function HubSurfaces({
 }) {
   const router = useRouter();
   const market = marketplaceLinks(siteConfig.marketplaceUrl, { from: "ifac", handoff: true });
+
+  const formSite = React.useMemo(() => ifacSiteForms(feeds), [feeds]);
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () =>
@@ -375,6 +379,11 @@ export function HubSurfaces({
           // save path is per app and the shared surface cannot guess it.
           // IFAC has one, so both kinds appear in the popup alongside post,
           // event, meeting and workshop rather than only on the page.
+          // The shared forms (@elkdonis/site-forms, 2026-11-14) replace the catalogue's own meeting, event,
+          // post and series forms. Workshop, questionnaire, poll, art-piece and blog stay on the entries below
+          // and on saveThread.
+          ...siteFormConnectors(formSite, ["meeting", "event", "series", { id: "article", kind: "post" }]),
+
           "compose:questionnaire": () => (
             <QuestionnaireComposeSurface kind="questionnaire" />
           ),

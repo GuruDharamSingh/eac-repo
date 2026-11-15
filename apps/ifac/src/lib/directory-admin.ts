@@ -113,8 +113,11 @@ function normalize(row: RawRow): AdminDirectoryRow {
   };
 }
 
+// Artworks are IFAC's own list for the person (org_profiles.portfolio,
+// migration 264), not their home list (users.portfolio): what IFAC shows is
+// chosen on IFAC. docs/open/MEDIA_OWNERSHIP_AND_PLACEMENT_2026-11-11.md
 const SELECT = `u.id, u.slug, op.tags, u.display_name AS name, op.role_title AS role,
-  u.bio, u.avatar_url AS portrait_url, u.portfolio AS artworks, u.social_links,
+  u.bio, u.avatar_url AS portrait_url, COALESCE(op.portfolio, '[]'::jsonb) AS artworks, u.social_links,
   op.sort_order, op.is_public, u.updated_at, u.claim_status`;
 
 export async function listAllDirectory(): Promise<AdminDirectoryRow[]> {
@@ -143,17 +146,17 @@ export async function createProfile(input: DirectoryInput): Promise<AdminDirecto
   const newId = crypto.randomUUID();
 
   await db`
-    INSERT INTO users (id, auth_user_id, display_name, bio, avatar_url, slug, social_links, portfolio, claim_status)
+    INSERT INTO users (id, auth_user_id, display_name, bio, avatar_url, slug, social_links, claim_status)
     VALUES (${newId}, ${newId}, ${input.name}, ${input.bio.join("\n\n") || null}, ${input.portrait_url || null},
-            ${slug}, ${db.json(socialLinks)}, ${db.json(toDbArtworks(input.artworks))}, 'unclaimed')
+            ${slug}, ${db.json(socialLinks)}, 'unclaimed')
   `;
   await db`
-    INSERT INTO org_profiles (org_id, user_id, role_title, sort_order, is_public, tags)
+    INSERT INTO org_profiles (org_id, user_id, role_title, sort_order, is_public, tags, portfolio)
     VALUES (${siteConfig.orgId}, ${newId}, ${input.role || null}, ${sortOrder},
-            ${input.status === "published"}, ${db.array([input.kind])})
+            ${input.status === "published"}, ${db.array([input.kind])}, ${db.json(toDbArtworks(input.artworks))})
   `;
 
-  const [row] = await db<RawRow[]>`SELECT ${db.unsafe(SELECT)} FROM org_profiles op JOIN users u ON u.id = op.user_id WHERE u.id = ${newId}`;
+  const [row] = await db<RawRow[]>`SELECT ${db.unsafe(SELECT)} FROM org_profiles op JOIN users u ON u.id = op.user_id WHERE u.id = ${newId} AND op.org_id = ${siteConfig.orgId}`;
   return normalize(row);
 }
 
@@ -170,7 +173,7 @@ export async function updateProfile(id: string, input: DirectoryInput): Promise<
     UPDATE users SET
       display_name = ${input.name}, bio = ${input.bio.join("\n\n") || null},
       avatar_url = ${input.portrait_url || null}, slug = ${slug || null},
-      social_links = ${db.json(socialLinks)}, portfolio = ${db.json(toDbArtworks(input.artworks))},
+      social_links = ${db.json(socialLinks)},
       updated_at = NOW()
     WHERE id = ${id}
   `;
@@ -181,7 +184,8 @@ export async function updateProfile(id: string, input: DirectoryInput): Promise<
       role_title = ${input.role || null},
       is_public = ${input.status === "published"},
       sort_order = COALESCE(${input.sort_order ?? null}, sort_order),
-      tags = ${db.array([input.kind])}, updated_at = NOW()
+      tags = ${db.array([input.kind])}, portfolio = ${db.json(toDbArtworks(input.artworks))},
+      updated_at = NOW()
     WHERE org_id = ${siteConfig.orgId} AND user_id = ${id}
     RETURNING user_id
   `;

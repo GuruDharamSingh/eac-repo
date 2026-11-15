@@ -430,3 +430,4 @@ Corrections recorded 2026-09-23:
   true on 2026-09-20, not on 2026-09-23.
 - `CLAUDE.md` says "restart" `supabase-auth` after editing the allow-list; a
   restart does not re-read `.env`, so recreate it.
+- After a failed `next build`, check for a stale `.next/lock` before rerunning: system32-a2 reported on 2026-11-14 that a katie-the-potter build which failed on the Google Fonts glitch left one, and every retry failed on it until it was removed (reported, not reproduced here). (claude, 2026-11-14)
