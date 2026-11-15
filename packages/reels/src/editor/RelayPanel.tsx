@@ -278,10 +278,11 @@ export function RelayPanel(props: RelayPanelProps) {
         </details>
       )}
 
+      {actions.addFeed && actions.removeFeed && actions.feedToScene && (
       <details className="vs-relay__more">
         <summary>Feeds in{feeds.length ? ` (${feeds.length})` : ''}</summary>
         <RelayFeeds
-          actions={actions}
+          actions={{ ...actions, addFeed: actions.addFeed, removeFeed: actions.removeFeed, feedToScene: actions.feedToScene }}
           feeds={feeds}
           tabId={props.tabId}
           takeStudio={props.takeStudio}
@@ -290,6 +291,7 @@ export function RelayPanel(props: RelayPanelProps) {
           onChanged={() => void refresh()}
         />
       </details>
+      )}
 
       {(view?.history.length ?? 0) > 0 && (
         <details className="vs-relay__more">

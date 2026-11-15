@@ -197,6 +197,22 @@ export function VideoKind(props: VideoKindProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edit]);
 
+  // "New ▾" (developer, 2026-11-12): Video starts a clip reel and opens it in the clip editor;
+  // "Live" opens the Go live card in the left column instead.
+  const [liveFocus, setLiveFocus] = React.useState(0);
+  const { takeNew, newRequest, setColTab, setSheet } = frame;
+  React.useEffect(() => {
+    const n = takeNew?.('video');
+    if (!n) return;
+    if (n.as === 'live') {
+      setColTab?.('list');
+      setSheet('drawer');
+      setLiveFocus((c) => c + 1);
+    } else void newProject('clip');
+    // newProject closes over stable state setters and props; run on mount and on each New request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newRequest]);
+
   // Open a project: load its edit, renders and the music lists.
   const open = React.useCallback(
     (p: VideoProject | null) => {
@@ -428,7 +444,7 @@ export function VideoKind(props: VideoKindProps) {
         wideSettings
         drawer={
           <div className="vs-projects">
-          {props.broadcast && <LiveCard {...props.broadcast} />}
+          {props.broadcast && <LiveCard {...props.broadcast} focusSignal={liveFocus} />}
           <h2>New</h2>
           {Object.values(REEL_TEMPLATES).map((t) => (
             <button key={t.id} type="button" className="vs-template" onClick={() => void newProject(t.id)}>

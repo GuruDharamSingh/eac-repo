@@ -197,8 +197,19 @@ function mapDestination(r: any): StreamDestination {
   };
 }
 
-export async function listStreamDestinations(): Promise<StreamDestination[]> {
-  const rows = await db`SELECT * FROM stream_destinations ORDER BY created_at`;
+/**
+ * Whose destinations a call may see and use. Network admins share every saved destination
+ * (`owner` absent); an org owner going live from the Studio (2026-11-14) sees, edits, arms and
+ * removes only the ones they saved (`set_by`), so their stream never reaches another channel.
+ */
+export interface DestinationScope {
+  owner?: string | null;
+}
+
+export async function listStreamDestinations(scope: DestinationScope = {}): Promise<StreamDestination[]> {
+  const rows = scope.owner
+    ? await db`SELECT * FROM stream_destinations WHERE set_by = ${scope.owner} ORDER BY created_at`
+    : await db`SELECT * FROM stream_destinations ORDER BY created_at`;
   return rows.map(mapDestination);
 }
 
@@ -221,7 +232,7 @@ export interface StreamDestinationInput {
   chatChannel?: string | null;
 }
 
-export async function saveStreamDestination(userId: string, input: StreamDestinationInput): Promise<StreamDestination> {
+export async function saveStreamDestination(userId: string, input: StreamDestinationInput, scope: DestinationScope = {}): Promise<StreamDestination> {
   const preset: StreamPreset = isPreset(input.preset) ? input.preset : 'custom';
   const fixed = preset === 'custom' ? null : STREAM_PRESETS[preset].server;
   const server = fixed ?? checkServer(input.server ?? '');
@@ -246,24 +257,26 @@ export async function saveStreamDestination(userId: string, input: StreamDestina
     ? await db`
         UPDATE stream_destinations SET label = ${label}, preset = ${preset}, server = ${server}, key_enc = ${seal(key)},
           enabled = ${enabled}, chat_channel = ${chat}, set_by = ${userId}, updated_at = now()
-        WHERE id = ${input.id} RETURNING *
+        WHERE id = ${input.id} ${scope.owner ? db`AND set_by = ${scope.owner}` : db``} RETURNING *
       `
     : await db`
         UPDATE stream_destinations SET label = ${label}, preset = ${preset}, server = ${server},
           enabled = ${enabled}, chat_channel = ${chat}, set_by = ${userId}, updated_at = now()
-        WHERE id = ${input.id} RETURNING *
+        WHERE id = ${input.id} ${scope.owner ? db`AND set_by = ${scope.owner}` : db``} RETURNING *
       `;
   if (!rows[0]) throw new Error('That destination is gone');
   await streamEvent(userId, 'destination_updated', input.id, { label, keyChanged: Boolean(key) });
   return mapDestination(rows[0]);
 }
 
-export async function setStreamDestinationEnabled(id: string, enabled: boolean): Promise<void> {
-  await db`UPDATE stream_destinations SET enabled = ${enabled}, updated_at = now() WHERE id = ${id}`;
+export async function setStreamDestinationEnabled(id: string, enabled: boolean, scope: DestinationScope = {}): Promise<void> {
+  await db`UPDATE stream_destinations SET enabled = ${enabled}, updated_at = now()
+    WHERE id = ${id} ${scope.owner ? db`AND set_by = ${scope.owner}` : db``}`;
 }
 
-export async function removeStreamDestination(userId: string, id: string): Promise<void> {
-  const rows = await db`DELETE FROM stream_destinations WHERE id = ${id} RETURNING label`;
+export async function removeStreamDestination(userId: string, id: string, scope: DestinationScope = {}): Promise<void> {
+  const rows = await db`DELETE FROM stream_destinations
+    WHERE id = ${id} ${scope.owner ? db`AND set_by = ${scope.owner}` : db``} RETURNING label`;
   if (rows[0]) await streamEvent(userId, 'destination_removed', id, { label: rows[0].label });
 }
 
@@ -276,8 +289,10 @@ function joinUrl(server: string, key: string): string {
  * Arm the relay with every enabled destination (keys unsealed here, sent to
  * the agent, held in its memory). Returns the outputs as the agent reports them.
  */
-export async function armRelay(): Promise<RelayOutput[]> {
-  const rows = await db`SELECT * FROM stream_destinations WHERE enabled ORDER BY created_at`;
+export async function armRelay(scope: DestinationScope = {}): Promise<RelayOutput[]> {
+  const rows = scope.owner
+    ? await db`SELECT * FROM stream_destinations WHERE enabled AND set_by = ${scope.owner} ORDER BY created_at`
+    : await db`SELECT * FROM stream_destinations WHERE enabled ORDER BY created_at`;
   if (rows.length === 0) throw new Error('Tick at least one destination');
   const outputs = rows.map((r: any) => ({ id: r.id, label: r.label, url: joinUrl(r.server, unseal(r.key_enc)) }));
   const res = await agent<{ outputs: RelayOutput[] }>('POST', '/outputs', { outputs });
@@ -305,10 +320,12 @@ export async function streamEvent(userId: string | null, event: string, destinat
   }
 }
 
-export async function listStreamEvents(limit = 20): Promise<StreamEventRow[]> {
+/** `userId` limits the history to that person's own events (an org owner's view). */
+export async function listStreamEvents(limit = 20, userId?: string | null): Promise<StreamEventRow[]> {
   const rows = await db`
     SELECT e.at, e.event, e.detail, u.display_name
     FROM stream_events e LEFT JOIN users u ON u.id = e.user_id
+    ${userId ? db`WHERE e.user_id = ${userId}` : db``}
     ORDER BY e.at DESC LIMIT ${Math.min(Math.max(limit, 1), 100)}
   `;
   return rows.map((r: any) => ({

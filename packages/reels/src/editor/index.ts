@@ -16,5 +16,12 @@ export type * from './types';
 
 /** The Video kind, for a host's StudioShell `extensions`. */
 export function videoExtension(props: VideoKindProps): StudioExtension {
-  return { id: 'video', label: 'Video', listLabel: 'Reels', render: () => React.createElement(VideoKind, props) };
+  return {
+    id: 'video',
+    label: 'Video',
+    listLabel: 'Reels',
+    render: () => React.createElement(VideoKind, props),
+    // "Live" leads to the Go live card, which the host passes only to viewers who may go live (2026-11-12).
+    newEntries: props.broadcast ? [{ id: 'live', label: 'Live', as: 'live' }] : undefined,
+  };
 }

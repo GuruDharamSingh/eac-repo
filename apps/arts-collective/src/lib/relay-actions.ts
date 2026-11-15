@@ -1,6 +1,5 @@
 "use server";
 
-import { isAdmin } from "@elkdonis/auth-server";
 import { obsAddFeedScene, obsStream, obsStreamToRelay } from "@elkdonis/services/obs";
 import {
   armRelay,
@@ -18,28 +17,40 @@ import {
 import { listStreamChat, youtubeChatSources } from "@elkdonis/services/stream-chat";
 import type { RelayChatMessage, RelayDestinationInput, RelayFeedView, RelayResult, RelayView } from "@elkdonis/reels/editor";
 import { getCurrentUser } from "@/lib/session";
+import { goLiveRole } from "@/lib/go-live-access";
 
 /**
  * The stream relay from the Video kind's Go live card (docker/relay,
- * @elkdonis/services/relay). Admins only, like the OBS console. Go live and
+ * @elkdonis/services/relay). Admins run all of it; since 2026-11-14 an org owner runs the
+ * card with their own saved destinations only (lib/go-live-access.ts): no feeds, no chat,
+ * their own history. Go live and
  * Stop also drive OBS, so they need the studio's lease: the card claims it
  * first (broadcastClaim) and the holder is built here from the session,
  * `<user id>:<tab id>`, as in broadcast-actions.ts.
  */
 
 const TAB = /^[A-Za-z0-9_-]{8,40}$/;
-const DENIED = "Only network admins can run the stream relay";
+const DENIED = "Only network admins and organisation owners can go live";
+const ADMINS_ONLY = "Only network admins can do that";
 
-async function admin(): Promise<string | null> {
-  const user = await getCurrentUser();
-  return user && (await isAdmin(user.id)) ? user.id : null;
+interface Actor {
+  userId: string;
+  /** null for an admin (every destination); the user's own id for an org owner. */
+  owner: string | null;
 }
 
-async function guarded<T>(fn: (userId: string) => Promise<T>): Promise<RelayResult<T>> {
-  const userId = await admin();
-  if (!userId) return { ok: false, error: DENIED };
+async function actor(adminsOnly = false): Promise<Actor | null> {
+  const user = await getCurrentUser();
+  const role = await goLiveRole(user?.id);
+  if (!user || !role || (adminsOnly && role !== "admin")) return null;
+  return { userId: user.id, owner: role === "admin" ? null : user.id };
+}
+
+async function guarded<T>(fn: (userId: string, scope: { owner: string | null }) => Promise<T>, adminsOnly = false): Promise<RelayResult<T>> {
+  const who = await actor(adminsOnly);
+  if (!who) return { ok: false, error: adminsOnly ? ADMINS_ONLY : DENIED };
   try {
-    return { ok: true, value: await fn(userId) };
+    return { ok: true, value: await fn(who.userId, { owner: who.owner }) };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -51,14 +62,17 @@ function holderFor(userId: string, tabId: string): string {
 }
 
 export async function relayView(): Promise<RelayView> {
-  const userId = await admin();
-  if (!userId) return { relay: { connected: false }, destinations: [], history: [], error: DENIED };
-  const [relay, destinations, history, chatSources] = await Promise.all([
+  const who = await actor();
+  if (!who) return { relay: { connected: false }, destinations: [], history: [], error: DENIED };
+  const userId = who.userId;
+  const [status, destinations, history, chatSources] = await Promise.all([
     relayStatus(),
-    listStreamDestinations().catch(() => null),
-    listStreamEvents(8).catch(() => []),
+    listStreamDestinations({ owner: who.owner }).catch(() => null),
+    listStreamEvents(8, who.owner).catch(() => []),
     youtubeChatSources(userId).catch(() => []),
   ]);
+  // An org owner sees the relay's state but not its feeds (ingest keys are admins').
+  const relay = who.owner ? { ...status, feeds: undefined } : status;
   return {
     relay,
     destinations: destinations ?? [],
@@ -71,7 +85,7 @@ export async function relayView(): Promise<RelayView> {
 /** Viewer chat from the destinations (stream-chat service, migration 228) after `sinceId`. */
 export async function relayChat(sinceId: number | null): Promise<RelayResult<RelayChatMessage[]>> {
   const since = Number.isSafeInteger(sinceId) && (sinceId as number) > 0 ? (sinceId as number) : null;
-  return guarded(() => listStreamChat(since));
+  return guarded(() => listStreamChat(since), true);
 }
 
 /**
@@ -80,37 +94,37 @@ export async function relayChat(sinceId: number | null): Promise<RelayResult<Rel
  * connected themself; an edit that keeps the stored channel is allowed.
  */
 export async function relaySaveDestination(input: RelayDestinationInput) {
-  return guarded(async (userId) => {
+  return guarded(async (userId, scope) => {
     const channel = input.preset === "youtube" ? (input.chatChannel ?? "").trim() : "";
     if (channel) {
-      const kept = input.id ? (await listStreamDestinations()).find((d) => d.id === input.id)?.chatChannel === channel : false;
+      const kept = input.id ? (await listStreamDestinations(scope)).find((d) => d.id === input.id)?.chatChannel === channel : false;
       if (!kept && !(await youtubeChatSources(userId)).some((s) => s.channelId === channel)) {
         throw new Error("Pick a YouTube channel you have connected (Center → View profile → Connections)");
       }
     }
-    return saveStreamDestination(userId, input);
+    return saveStreamDestination(userId, input, scope);
   });
 }
 
 export async function relaySetEnabled(id: string, enabled: boolean) {
-  return guarded(async () => {
-    await setStreamDestinationEnabled(String(id), Boolean(enabled));
+  return guarded(async (_userId, scope) => {
+    await setStreamDestinationEnabled(String(id), Boolean(enabled), scope);
     return undefined;
   });
 }
 
 export async function relayRemoveDestination(id: string) {
-  return guarded(async (userId) => {
-    await removeStreamDestination(userId, String(id));
+  return guarded(async (userId, scope) => {
+    await removeStreamDestination(userId, String(id), scope);
     return undefined;
   });
 }
 
 /** Arm the relay with the ticked destinations, point OBS at it, start the stream. */
 export async function relayGoLive(tabId: string) {
-  return guarded(async (userId) => {
+  return guarded(async (userId, scope) => {
     const h = holderFor(userId, tabId);
-    const outputs = await armRelay();
+    const outputs = await armRelay(scope);
     try {
       await obsStreamToRelay(h);
       await obsStream(h, "start");
@@ -125,10 +139,13 @@ export async function relayGoLive(tabId: string) {
 
 /** Stop OBS's stream, then the relay's outputs; the summary goes to stream_events. */
 export async function relayStop(tabId: string) {
-  return guarded(async (userId) => {
+  return guarded(async (userId, scope) => {
     const h = holderFor(userId, tabId);
     let obsError: string | null = null;
     await obsStream(h, "stop").catch((err: Error) => (obsError = err.message));
+    // An org owner who does not hold the lease (OBS refused the holder) must not cut the outputs of
+    // whoever is live; admins keep the old behaviour (outputs stop regardless).
+    if (obsError && scope.owner) throw new Error(`Not stopped: ${obsError}`);
     const outputs = await relayStopOutputs();
     await streamEvent(userId, "stop", null, {
       outputs: outputs.map((o) => ({ id: o.id, label: o.label, liveSeconds: o.liveSeconds, bytes: o.bytes, retries: o.retries, lastError: o.lastError })),
@@ -144,7 +161,7 @@ export async function relayAddFeed(label: string) {
     const f = await addFeedOnRelay(String(label ?? ""));
     await streamEvent(userId, "feed_added", null, { label: f.label });
     return { ...f, ready: false };
-  });
+  }, true);
 }
 
 export async function relayRemoveFeed(key: string) {
@@ -153,7 +170,7 @@ export async function relayRemoveFeed(key: string) {
     await removeFeedOnRelay(String(key));
     await streamEvent(userId, "feed_removed", null, { label: feed?.label ?? null });
     return undefined;
-  });
+  }, true);
 }
 
 /** The feed as its own OBS scene ("Feed · <label>"). Needs the lease. */
@@ -163,5 +180,5 @@ export async function relayFeedToScene(tabId: string, key: string) {
     const feed = (await relayStatus()).feeds?.find((f) => f.key === key);
     if (!feed) throw new Error("That feed is gone");
     return obsAddFeedScene(h, feed.key, feed.label);
-  });
+  }, true);
 }

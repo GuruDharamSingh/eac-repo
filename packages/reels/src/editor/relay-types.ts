@@ -99,9 +99,10 @@ export interface RelayActions {
   removeDestination(id: string): Promise<RelayResult>;
   goLive(tabId: string): Promise<RelayResult>;
   stop(tabId: string): Promise<RelayResult>;
-  addFeed(label: string): Promise<RelayResult<RelayFeedView>>;
-  removeFeed(key: string): Promise<RelayResult>;
-  feedToScene(tabId: string, key: string): Promise<RelayResult<{ scene: string }>>;
+  /** Feeds in (ingest keys, guest cameras): network admins only; absent hides the section (org owners, 2026-11-14). */
+  addFeed?(label: string): Promise<RelayResult<RelayFeedView>>;
+  removeFeed?(key: string): Promise<RelayResult>;
+  feedToScene?(tabId: string, key: string): Promise<RelayResult<{ scene: string }>>;
   /** Viewer chat from the destinations after `sinceId` (null: the recent ones); absent hides the Chat panel. */
   chat?(sinceId: number | null): Promise<RelayResult<RelayChatMessage[]>>;
   /** Where feeds publish, as shown to people (e.g. rtmp://relay:1935/in). */

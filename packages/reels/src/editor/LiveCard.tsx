@@ -19,9 +19,12 @@ export interface LiveCardProps {
   stream(tabId: string, action: 'start' | 'stop'): Promise<BroadcastResult>;
   streamSettings(tabId: string, server: string, key: string): Promise<BroadcastResult>;
   releaseEndpoint: string;
-  consoleHref: string;
+  /** The OBS console (/studio/broadcast); network admins only, absent for org owners (2026-11-14). */
+  consoleHref?: string;
   /** The stream relay (docker/relay); passed when the server has one. */
   relay?: RelayActions;
+  /** Goes up when "New ▾ → Live" asks for the card: it opens and scrolls into view (2026-11-12). */
+  focusSignal?: number;
 }
 
 const DESTINATIONS = [
@@ -49,6 +52,12 @@ export function LiveCard(props: LiveCardProps) {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [open, setOpen] = React.useState(false);
+  const root = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    if (!props.focusSignal) return;
+    setOpen(true);
+    root.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [props.focusSignal]);
 
   // A look at OBS every 5 s; no lease needed for that.
   React.useEffect(() => {
@@ -135,7 +144,7 @@ export function LiveCard(props: LiveCardProps) {
   }
 
   return (
-    <section className="vs-live" aria-label="Go live">
+    <section className="vs-live" aria-label="Go live" ref={root}>
       <button type="button" className="vs-live__head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className={`vs-live__dot ${live ? 'is-live' : status?.connected ? 'is-ready' : ''}`} aria-hidden />
         <b>{live ? `Live · ${tc(status?.streaming?.timecode)}` : status?.connected ? 'Ready to stream' : 'Stream studio off'}</b>
@@ -192,7 +201,7 @@ export function LiveCard(props: LiveCardProps) {
           )}
           {status?.recording?.active && <p className="vs-faint">Recording · {tc(status.recording.timecode)}</p>}
           {error && <p className="studio-err">{error}</p>}
-          <a className="vs-faint" href={props.consoleHref}>Scenes, recordings and the live picture: open the console →</a>
+          {props.consoleHref ? <a className="vs-faint" href={props.consoleHref}>Scenes, recordings and the live picture: open the console →</a> : null}
         </div>
       )}
     </section>

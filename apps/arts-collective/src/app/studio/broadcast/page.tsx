@@ -4,6 +4,7 @@ import { isAdmin } from "@elkdonis/auth-server";
 import { obsStatus } from "@elkdonis/services/obs";
 import { BroadcastConsole } from "@elkdonis/reels/broadcast";
 import "@elkdonis/studio/studio.css";
+import "@elkdonis/studio-forms/canvas.css";
 import "@elkdonis/reels/editor.css";
 import "@elkdonis/reels/broadcast.css";
 import { requireUser } from "@/lib/session";

@@ -12,7 +12,7 @@ import { useBroadcastTab } from '../broadcast/tab-context';
 import type { RelayActions, RelayFeedView, RelayResult } from './relay-types';
 
 export interface RelayFeedsProps {
-  actions: Pick<RelayActions, 'view' | 'addFeed' | 'removeFeed' | 'feedToScene' | 'ingestUrl' | 'guestCameraPath'>;
+  actions: Required<Pick<RelayActions, 'view' | 'addFeed' | 'removeFeed' | 'feedToScene' | 'ingestUrl'>> & Pick<RelayActions, 'guestCameraPath'>;
   /** Feeds from a parent that already polls the relay; without it this panel polls on its own. */
   feeds?: RelayFeedView[];
   /** The lease holder's tab id; defaults to the console's (BroadcastTabContext). */

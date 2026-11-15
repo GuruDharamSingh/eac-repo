@@ -34,6 +34,7 @@ import type {
   BroadcastStatus,
 } from "@elkdonis/reels/broadcast";
 import { getCurrentUser } from "@/lib/session";
+import { goLiveRole } from "@/lib/go-live-access";
 
 /**
  * Studio Broadcast (/studio/broadcast): the server's one OBS instance.
@@ -46,17 +47,24 @@ import { getCurrentUser } from "@/lib/session";
 
 const TAB = /^[A-Za-z0-9_-]{8,40}$/;
 
-async function holder(tabId: string): Promise<{ userId: string; holder: string } | null> {
+/**
+ * `owners`: the call is part of the Studio's Go live card, which org owners may use too
+ * (2026-11-14, lib/go-live-access.ts): claim, peek, stream start/stop and stream settings.
+ * Everything else here (scenes, recordings, graphics, doors, the console) stays admins only.
+ */
+async function holder(tabId: string, opts: { owners?: boolean } = {}): Promise<{ userId: string; holder: string } | null> {
   if (!TAB.test(tabId ?? "")) return null;
   const user = await getCurrentUser();
-  if (!user || !(await isAdmin(user.id))) return null;
+  if (!user) return null;
+  const role = opts.owners ? await goLiveRole(user.id) : (await isAdmin(user.id)) ? "admin" : null;
+  if (!role) return null;
   return { userId: user.id, holder: `${user.id}:${tabId}` };
 }
 
 const DENIED = "Only network admins can run the broadcast studio";
 
-async function run(tabId: string, fn: (h: string) => Promise<unknown>): Promise<BroadcastResult> {
-  const h = await holder(tabId);
+async function run(tabId: string, fn: (h: string) => Promise<unknown>, opts: { owners?: boolean } = {}): Promise<BroadcastResult> {
+  const h = await holder(tabId, opts);
   if (!h) return { ok: false, error: DENIED };
   try {
     await fn(h.holder);
@@ -67,20 +75,20 @@ async function run(tabId: string, fn: (h: string) => Promise<unknown>): Promise<
 }
 
 export async function broadcastClaim(tabId: string): Promise<BroadcastClaim> {
-  const h = await holder(tabId);
+  const h = await holder(tabId, { owners: true });
   if (!h) return { held: false, lock: null, error: DENIED };
   const profile = await getProfile(h.userId);
   try {
-    return await obsClaim(h.holder, profile?.displayName?.trim() || "another admin");
+    return await obsClaim(h.holder, profile?.displayName?.trim() || "someone");
   } catch (err) {
     return { held: false, lock: null, error: (err as Error).message };
   }
 }
 
-/** OBS as it is, for the Video kind's "Go live" card: admins only, no lease. */
+/** OBS as it is, for the Video kind's "Go live" card: admins and org owners, no lease. */
 export async function broadcastPeek(): Promise<BroadcastStatus> {
   const user = await getCurrentUser();
-  if (!user || !(await isAdmin(user.id))) return { connected: false };
+  if (!user || !(await goLiveRole(user.id))) return { connected: false };
   return obsStatus();
 }
 
@@ -106,11 +114,11 @@ export async function broadcastRecord(tabId: string, action: "start" | "stop") {
 }
 
 export async function broadcastStream(tabId: string, action: "start" | "stop") {
-  return run(tabId, (h) => obsStream(h, action === "stop" ? "stop" : "start"));
+  return run(tabId, (h) => obsStream(h, action === "stop" ? "stop" : "start"), { owners: true });
 }
 
 export async function broadcastStreamSettings(tabId: string, server: string, key: string) {
-  return run(tabId, (h) => obsStreamSettings(h, server, key));
+  return run(tabId, (h) => obsStreamSettings(h, server, key), { owners: true });
 }
 
 export async function broadcastRecordings(tabId: string): Promise<BroadcastRecording[]> {

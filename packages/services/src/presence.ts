@@ -33,7 +33,7 @@ import { OFF_FEED_KINDS } from './thread-kinds';
 //   galleries × your page profile_sections.galleries +      switch
 //                         user_galleries.is_public
 //   galleries × org X     org_profiles.sections.galleries   switch (see the
-//                         + user_galleries.hidden_on ∋ X    galleries note in
+//                         + user_galleries.shown_on ∋ X     galleries note in
 //                                                            setPresence)
 //   S × org X             org_profiles.sections[S]          switch, for every
 //                         (migration 166)                    person-page section
@@ -124,8 +124,9 @@ function sectionCell(states: PersonSectionState[] | undefined, key: PersonSectio
 }
 
 async function listedOrgs(userId: string) {
-  return db<Array<{ org_id: string; org_name: string; org_slug: string; role: string; is_public: boolean | null }>>`
-    SELECT uo.org_id, o.name AS org_name, o.slug AS org_slug, uo.role, op.is_public
+  return db<Array<{ org_id: string; org_name: string; org_slug: string; role: string; is_public: boolean | null; portfolio_count: number | null }>>`
+    SELECT uo.org_id, o.name AS org_name, o.slug AS org_slug, uo.role, op.is_public,
+           CASE WHEN jsonb_typeof(op.portfolio) = 'array' THEN jsonb_array_length(op.portfolio) ELSE 0 END AS portfolio_count
       FROM user_organizations uo
       JOIN organizations o ON o.id = uo.org_id
       LEFT JOIN org_profiles op ON op.org_id = uo.org_id AND op.user_id = uo.user_id
@@ -184,8 +185,8 @@ export async function loadPresence(userId: string): Promise<Presence> {
       SELECT status FROM store WHERE owner_user_id = ${userId}
       ORDER BY (status = 'active') DESC, joined_at LIMIT 1
     `,
-    db<Array<{ is_public: boolean; hidden_on: string[] }>>`
-      SELECT is_public, hidden_on FROM user_galleries WHERE user_id = ${userId}
+    db<Array<{ is_public: boolean; origin: string | null; shown_on: string[] }>>`
+      SELECT is_public, origin, shown_on FROM user_galleries WHERE user_id = ${userId} AND NOT is_backing
     `,
   ]);
   if (!user) return { columns: [], rows: [] };
@@ -242,9 +243,16 @@ export async function loadPresence(userId: string): Promise<Presence> {
 
   const byKey = new Map<PersonSection, PresenceRow>();
 
-  // Featured work — the portfolio on the person's profile.
-  if (user.portfolio_count > 0) {
+  // Featured work. Each org site keeps its own list (org_profiles.portfolio,
+  // migration 264); the person's page keeps users.portfolio. A cell is the
+  // section switch, noted with how many pictures that site shows.
+  const orgPortfolio = new Map(orgs.map((o) => [o.org_id, Number(o.portfolio_count) || 0]));
+  if (user.portfolio_count > 0 || [...orgPortfolio.values()].some((n) => n > 0)) {
     const cells = addOrgCells({}, 'portfolio');
+    for (const [key, cell] of Object.entries(cells)) {
+      const n = orgPortfolio.get(key.slice('org:'.length)) ?? 0;
+      if (cell.state === 'switch') cells[key] = { ...cell, note: n > 0 ? `${n} ${n === 1 ? 'picture' : 'pictures'}` : 'None chosen for this site' };
+    }
     if (Object.keys(cells).length) byKey.set('portfolio', { key: 'portfolio', label: ROW_LABELS.portfolio, cells });
   }
 
@@ -301,18 +309,18 @@ export async function loadPresence(userId: string): Promise<Presence> {
             : `${publicCount} of ${galleries.length} shown`,
       },
     };
-    // Every org (the GALLERY_SITES = {'ifac'} limit is gone): getPersonPage
-    // reads galleries with `site = orgId`, so hidden_on applies on every org
-    // page. Shown on X = the section on for X AND at least one gallery not
-    // hidden on X.
+    // Every org: getPersonPage reads galleries with `site = orgId`, and a
+    // gallery appears on X only when made there or chosen for X (shown_on,
+    // opt-in since migration 264). Shown on X = the section on for X AND at
+    // least one gallery shown on X.
     for (const o of sectionOrgs) {
       const st = sectionStates.get(o.org_id)?.find((x) => x.key === 'galleries');
       if (!st || !st.offered) continue;
-      const hidden = galleries.filter((g) => (g.hidden_on ?? []).includes(o.org_id)).length;
+      const shown = galleries.filter((g) => g.origin === o.org_id || (g.shown_on ?? []).includes(o.org_id)).length;
       cells[`org:${o.org_id}`] = {
         state: 'switch',
-        on: st.on && hidden < galleries.length,
-        note: hidden > 0 && hidden < galleries.length ? `${galleries.length - hidden} of ${galleries.length} shown` : null,
+        on: st.on && shown > 0,
+        note: shown > 0 && shown < galleries.length ? `${shown} of ${galleries.length} shown` : shown === 0 ? 'None chosen for this site' : null,
       };
     }
     byKey.set('galleries', { key: 'galleries', label: ROW_LABELS.galleries, cells });
@@ -426,21 +434,28 @@ export async function setPresence(userId: string, change: PresenceChange): Promi
         return { ok: true };
       }
       if (orgId) {
-        // Galleries on org X: both the section override and hidden_on are
-        // written, so readers of either agree (IFAC's gallery reader checks
-        // hidden_on only; getPersonPage checks both). On clears X from every
-        // gallery's hidden_on, as before; off hides every gallery on X.
+        // Galleries on org X: the section override and shown_on (opt-in,
+        // migration 264) are written together. On adds X to every gallery's
+        // shown_on; off removes it from all. hidden_on is kept in step for
+        // builds made before 264 that still read it.
         const section = await setPersonOrgSection(userId, orgId, 'galleries', on);
         if (section.ok === false) return section;
         if (on) {
           await db`
-            UPDATE user_galleries SET hidden_on = array_remove(hidden_on, ${orgId}::text), updated_at = NOW()
-             WHERE user_id = ${userId}
+            UPDATE user_galleries
+               SET shown_on = CASE WHEN ${orgId}::text = ANY(shown_on) OR origin = ${orgId}::text
+                                   THEN shown_on ELSE array_append(shown_on, ${orgId}::text) END,
+                   hidden_on = array_remove(hidden_on, ${orgId}::text),
+                   updated_at = NOW()
+             WHERE user_id = ${userId} AND NOT is_backing
           `;
         } else {
           await db`
-            UPDATE user_galleries SET hidden_on = array_append(hidden_on, ${orgId}::text), updated_at = NOW()
-             WHERE user_id = ${userId} AND NOT (${orgId}::text = ANY(hidden_on))
+            UPDATE user_galleries
+               SET shown_on = array_remove(shown_on, ${orgId}::text),
+                   hidden_on = CASE WHEN ${orgId}::text = ANY(hidden_on) THEN hidden_on ELSE array_append(hidden_on, ${orgId}::text) END,
+                   updated_at = NOW()
+             WHERE user_id = ${userId} AND NOT is_backing
           `;
         }
         return { ok: true };
