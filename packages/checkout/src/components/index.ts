@@ -10,3 +10,5 @@ export {
 } from "./ServiceBookingForm";
 export { ProposeTimes, browserTimeZone, type ProposedTimesValue } from "./ProposeTimes";
 export { BookingScheduler, type BookingSchedulerProps, type BookingActionResult } from "./BookingScheduler";
+export { BookingPanel, type BookingPanelProps, type BookingPanelInput, type BookingPanelResult } from "./BookingPanel";
+export { BookingCancel, type BookingCancelResult } from "./BookingCancel";

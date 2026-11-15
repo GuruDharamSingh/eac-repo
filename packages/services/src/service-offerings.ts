@@ -2,6 +2,7 @@ import { db } from '@elkdonis/db';
 import { deriveExcerpt, sanitizePostBody } from '@elkdonis/utils';
 import { ensureUniqueThreadSlug as ensureUniqueSlug } from './thread-slug';
 import { nanoid } from 'nanoid';
+import { getOfferByThread, offerToInput, saveOffer, setOfferStatus, type BookingOfferInput } from '@elkdonis/booking';
 
 // ============================================================================
 // Service offerings — things a person sells (workshop seats, one-on-one
@@ -56,6 +57,11 @@ export interface ServiceOffering {
   sessionDurationHrs: number | null;
   recurrenceLabel: string | null;
   location: string | null;
+  /**
+   * The booking module's settings for this service (migration 265), loaded by
+   * getServiceOfferingById for editors; undefined elsewhere, null when none.
+   */
+  bookingOffer?: BookingOfferInput | null;
   coverImageUrl: string | null;
   bannerImageUrl: string | null;
   heroMediaUrl: string | null;
@@ -90,6 +96,12 @@ export interface ServiceOfferingInput {
   section?: string | null;
   /** threads.share_to_network. Left unchanged when omitted. */
   shareToNetwork?: boolean;
+  /**
+   * Booking module settings (answers.booking_offer). Omitted: left as they
+   * are. null: an existing offer is closed. An object: validated and saved by
+   * @elkdonis/booking after the thread, with the thread's author as host.
+   */
+  bookingOffer?: unknown;
 }
 
 type Row = Record<string, unknown>;
@@ -195,7 +207,10 @@ export async function getServiceOfferingById(orgId: string, id: string): Promise
         AND t.status <> 'archived'
       LIMIT 1
     `) as unknown as Row[];
-    return row ? mapOffering(row) : null;
+    if (!row) return null;
+    const offering = mapOffering(row);
+    const offer = await getOfferByThread(orgId, offering.id).catch(() => null);
+    return { ...offering, bookingOffer: offer ? offerToInput(offer) : null };
   } catch (err) {
     console.error(`[service-offerings] getServiceOfferingById(${orgId}, ${id}):`, err);
     return null;
@@ -246,7 +261,7 @@ export async function upsertServiceOffering(
   input: ServiceOfferingInput,
   threadId?: string,
   options: { authorOnly?: boolean } = {}
-): Promise<{ id: string; slug: string }> {
+): Promise<{ id: string; slug: string; bookingWarning?: string }> {
   const section = input.section === undefined ? 'services' : input.section;
   const slug = await ensureUniqueSlug(orgId, slugify(input.title), threadId);
   const publishedAt = input.status === 'published' ? new Date() : null;
@@ -337,7 +352,26 @@ export async function upsertServiceOffering(
     `;
   });
 
-  return { id, slug };
+  // Booking settings are saved after the thread, so a refusal there (an
+  // hours range that does not fit, say) never loses the thread's own edit: it
+  // comes back as a warning for the editor.
+  let bookingWarning: string | undefined;
+  if (input.bookingOffer !== undefined) {
+    try {
+      if (input.bookingOffer === null) {
+        await setOfferStatus(orgId, id, 'closed');
+      } else {
+        const saved = await saveOffer({ orgId, threadId: id, hostUserId: null, offer: input.bookingOffer });
+        if (saved.ok === false) bookingWarning = `Saved, but the booking settings were not: ${saved.error}`;
+      }
+    } catch (err) {
+      console.error(`[service-offerings] booking offer for ${id}:`, err);
+      bookingWarning = 'Saved, but the booking settings could not be saved. Try again.';
+    }
+  }
+
+  if (bookingWarning) console.warn(`[service-offerings] ${id}: ${bookingWarning}`);
+  return bookingWarning ? { id, slug, bookingWarning } : { id, slug };
 }
 
 /**
@@ -424,6 +458,8 @@ export function serviceInputFromAnswers(
     ...(answers.share_to_network !== undefined
       ? { shareToNetwork: answers.share_to_network === true || answers.share_to_network === 'true' }
       : {}),
+    // The Booking section's settings, passed as they are; @elkdonis/booking validates.
+    ...(answers.booking_offer !== undefined ? { bookingOffer: answers.booking_offer } : {}),
   };
 }
 
@@ -455,6 +491,7 @@ export function serviceAnswersFromOffering(o: ServiceOffering): Record<string, u
     location: o.location ?? '',
     banner_image_url: o.bannerImageUrl ?? '',
     share_to_network: o.shareToNetwork,
+    ...(o.bookingOffer !== undefined ? { booking_offer: o.bookingOffer } : {}),
   };
 }
 

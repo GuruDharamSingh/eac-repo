@@ -138,6 +138,12 @@ every membership query returns empty. When an authenticated render takes the
 signed-out or no-membership branch, re-query the account's `users` and
 `user_organizations` rows before investigating code.
 
+(claude, 2026-11-15) Saving a test offering through `saveOffering` (`artist-offerings.ts`)
+calls `markArtist`, which adds an `oad` member row and an `org_profiles` row and sets
+`users.directory_listed = TRUE`, so an unlisted test account appears in the ArtDirect
+directory. Record those three before a test and restore them after, or insert the
+test thread directly.
+
 ### Without a session
 To check an auth-gated client component, render it with `react-dom/server`
 from a script inside the app directory (outside it, `react-dom` does not

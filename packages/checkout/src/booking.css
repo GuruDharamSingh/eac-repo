@@ -153,3 +153,108 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── BookingPanel: pick a day, then a time (booking module, 2026-11-15) ──
+ * Pressed day/time = the accent fill with its on-token (16.9:1 fallback,
+ * as the submit button); unpressed = the field ground with the ink border.
+ */
+
+.eac-booking-panel {
+  max-width: 40rem;
+}
+
+.eac-booking-days,
+.eac-booking-slots,
+.eac-booking-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.eac-booking-days {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  padding-bottom: 0.25rem;
+}
+
+.eac-booking-day,
+.eac-booking-slot,
+.eac-booking-secondary {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--eac-booking-field, transparent);
+  border: 1px solid var(--eac-booking-border, currentColor);
+  border-radius: var(--eac-booking-radius, 0.375rem);
+}
+
+.eac-booking-day {
+  display: grid;
+  justify-items: center;
+  min-width: 4.25rem;
+  padding: 0.45rem 0.6rem;
+  flex: 0 0 auto;
+}
+
+.eac-booking-day-w {
+  font-size: 0.8rem;
+}
+
+.eac-booking-day-d {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.eac-booking-slot {
+  min-width: 5.5rem;
+  padding: 0.5rem 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.eac-booking-secondary {
+  justify-self: start;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+}
+
+.eac-booking-day[aria-pressed="true"],
+.eac-booking-slot[aria-pressed="true"] {
+  background: var(--eac-booking-accent, #1f1f1f);
+  color: var(--eac-booking-on-accent, #fff);
+  border-color: var(--eac-booking-accent, #1f1f1f);
+}
+
+.eac-booking-day:focus-visible,
+.eac-booking-slot:focus-visible,
+.eac-booking-secondary:focus-visible {
+  outline: 2px solid var(--eac-booking-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.eac-booking-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+}
+
+.eac-booking-facts dt {
+  font-weight: 600;
+}
+
+.eac-booking-facts dd {
+  margin: 0;
+}
+
+.eac-booking-item {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--eac-booking-border, currentColor);
+}
+
+@media (max-width: 30rem) {
+  .eac-booking-facts {
+    grid-template-columns: 1fr;
+  }
+}

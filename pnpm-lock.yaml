@@ -518,6 +518,9 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/booking':
+        specifier: workspace:*
+        version: link:../../packages/booking
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -551,6 +554,9 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -3009,6 +3015,62 @@ importers:
         specifier: ^5.0.0
         version: 5.9.2
 
+  packages/booking:
+    dependencies:
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../email
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
+  packages/channel:
+    dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../actions
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../auth-server
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../content
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      next:
+        specifier: ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: ^19
+        version: 19.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   packages/chat:
     dependencies:
       '@elkdonis/nextcloud':
@@ -3054,6 +3116,9 @@ importers:
 
   packages/checkout:
     dependencies:
+      '@elkdonis/booking':
+        specifier: workspace:*
+        version: link:../booking
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../commerce
@@ -3189,6 +3254,9 @@ importers:
 
   packages/commerce:
     dependencies:
+      '@elkdonis/booking':
+        specifier: workspace:*
+        version: link:../booking
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db
@@ -3958,6 +4026,9 @@ importers:
 
   packages/services:
     dependencies:
+      '@elkdonis/booking':
+        specifier: workspace:*
+        version: link:../booking
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db

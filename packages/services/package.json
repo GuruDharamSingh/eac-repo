@@ -29,6 +29,7 @@
     "check:thread-access": "npx tsx scripts/check-thread-access.mts"
   },
   "dependencies": {
+    "@elkdonis/booking": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",

@@ -43,6 +43,8 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "inner-temple",
   // ArtDirect static routes (root-level people catch-all)
   "new",
+  // Booking pages: a booker's private link and a host's list (2026-11-15).
+  "bookings",
   // The org subdomain's own pages. These are static routes under
   // /sites/[slug]/, and Next resolves static before [contentSlug] — a thread
   // that took one of these slugs would simply be unreachable.

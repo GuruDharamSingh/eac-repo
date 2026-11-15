@@ -314,6 +314,9 @@ Packages (43, in `packages/`): catalogue and conventions in
   `TURNSTILE_SECRET_KEY_PENDING` in `.env` until each app is rebuilt with the site key. `docs/reference/identity-and-tenancy.md`.
 - Shipping (2026-11-07, live on art-auction, sandbox Easyship): quotes on the order page, seller tracking or platform
   labels, migration 250 applied; flow verified with test rows (Stripe line and studio UI not). `docs/reference/commerce.md` "Shipping".
+- Booking module phase 1 (2026-11-15, live on artdirect `lC1Hood2CKiB0y83TrlnI`): `@elkdonis/booking`, migrations 265-266 applied alone (263 still pending),
+  open hours / ask-for-a-time on a person's service, free and paid (hold, order, card); `/bookings` pages on artdirect; Booking section in the
+  Offering form (other apps on their next rebuild). Real card payment and signed-in owner render not verified. `docs/reference/commerce.md` "Booking module".
 - Known failing: `check-types` in `@elkdonis/cms-bindings` (hub template fails
   `validate:template`).
 

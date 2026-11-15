@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
     // Ships source, not a bundle — without this the upload route's
     // validateUploadBuffer import fails at build.
     "@elkdonis/utils",
+    // Booking module (2026-11-15): data package and the shared Booking section.
+    "@elkdonis/booking",
+    "@elkdonis/studio-forms",
   ],
   devIndicators: false,
   allowedDevOrigins: ["localhost", "127.0.0.1"],

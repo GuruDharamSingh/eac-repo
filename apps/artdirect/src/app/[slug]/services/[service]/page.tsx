@@ -9,13 +9,18 @@ import {
   type ServiceOffering,
 } from "@elkdonis/services";
 import { BOOKING_UNAVAILABLE, bookingAvailability } from "@elkdonis/checkout/booking";
-import { ServiceBookingForm } from "@elkdonis/checkout/components";
+import { BookingPanel, ServiceBookingForm } from "@elkdonis/checkout/components";
+import { describePolicy, listOpenSlots, offerToInput, type OpenSlot } from "@elkdonis/booking";
+import { getPublicBookingOffer } from "@elkdonis/services";
+import { emptyBookingOffer } from "@elkdonis/studio-forms/booking";
+import { BookingSettings } from "@/components/booking/BookingSettings";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
 import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { isOadSteward } from "@/lib/oad";
-import { bookServiceAction } from "@/lib/booking-actions";
+import { bookOfferAction, bookServiceAction, saveBookingSettingsAction } from "@/lib/booking-actions";
 import "@elkdonis/checkout/booking.css";
+import "@elkdonis/studio-forms/forms.css";
 
 // ============================================================================
 // /<slug>/services/<service> — one of a person's own services, and the form
@@ -103,6 +108,16 @@ export default async function ServicePage({ params, searchParams }: Props) {
   const availability = open ? await bookingAvailability(identity.userId) : null;
   const unavailable = availability && availability.ok === false ? BOOKING_UNAVAILABLE[availability.reason] : null;
 
+  // Booking module (migration 265): an offer on the service replaces the
+  // propose-three-times form. Free services can be booked through it too.
+  const offer = await getPublicBookingOffer(ARTIST_SPACE_ORG_ID, service.id);
+  const offerOpen = offer != null && offer.status === "open" && (service.registrationStatus ?? "open") === "open";
+  let slots: OpenSlot[] = [];
+  if (offerOpen && offer!.mode === "open_hours") {
+    slots = (await listOpenSlots(ARTIST_SPACE_ORG_ID, offer!.id))?.slots ?? [];
+  }
+  const paidOffer = (service.price ?? 0) > 0;
+
   return (
     <>
       <ThemeStyle userId={identity.userId} precedence="user" />
@@ -135,7 +150,27 @@ export default async function ServicePage({ params, searchParams }: Props) {
             <h2 id="book-heading" className="eac-person-heading">
               Book
             </h2>
-            {booked ? (
+            {offerOpen ? (
+              <>
+                {cancelled ? <p role="status">Payment was cancelled; nothing was charged and the time was let go.</p> : null}
+                <BookingPanel
+                  mode={offer!.mode === "request_time" ? "request_time" : "open_hours"}
+                  slots={slots}
+                  timeZone={offer!.timeZone}
+                  durationMinutes={offer!.durationMinutes}
+                  questions={offer!.questions}
+                  policy={offerPolicy(offer!)}
+                  price={
+                    paidOffer
+                      ? { list: service.price!, floor: service.priceSlidingMin, note: service.slidingScaleNote, currency: service.currency }
+                      : null
+                  }
+                  defaultEmail={user?.email ?? null}
+                  action={bookOfferAction.bind(null, home, service.slug)}
+                  unavailable={paidOffer ? unavailable : null}
+                />
+              </>
+            ) : booked ? (
               <p role="status">
                 Thank you — your booking is paid.{" "}
                 {(service.bookingType ?? "one_on_one") === "one_on_one"
@@ -175,7 +210,34 @@ export default async function ServicePage({ params, searchParams }: Props) {
             )}
           </section>
         </div>
+
+        {isSelf ? (
+          <div className="eac-person-slot">
+            <section className="eac-person-section eac-person-panel" aria-labelledby="book-settings-heading">
+              <h2 id="book-settings-heading" className="eac-person-heading">
+                How people book this
+              </h2>
+              <p className="eac-booking-hint">
+                Only you see this. <a href="/bookings">Your bookings</a>
+              </p>
+              <BookingSettings
+                initial={offer ? offerToInput(offer) : emptyBookingOffer(offerZone(service))}
+                saved={offer != null}
+                save={saveBookingSettingsAction.bind(null, service.id)}
+              />
+            </section>
+          </div>
+        ) : null}
       </div>
     </>
   );
+}
+
+function offerPolicy(o: { cancelPolicyText: string | null; cancelFreeUntilMinutes: number | null; cancelRefundPercentAfter: number | null }) {
+  return describePolicy(o);
+}
+
+function offerZone(s: ServiceOffering): string {
+  const tz = (s as unknown as { timeZone?: string | null }).timeZone;
+  return tz || "America/Toronto";
 }

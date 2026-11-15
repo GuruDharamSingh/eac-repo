@@ -489,3 +489,29 @@ body {
   margin-bottom: 14px;
   border: 1px solid var(--oad-line);
 }
+
+/* Booking module (2026-11-15): owner settings and the booking pages. */
+.oad-booking-settings {
+  margin-top: 0.75rem;
+}
+.oad-booking-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.oad-booking-page {
+  padding-block: 1.5rem;
+}
+.oad-booking-page .eac-booking-choices {
+  gap: 0;
+}
+.oad-booking-page .eac-person-panel {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+}
+.oad-booking-page .eac-person-panel > * {
+  margin: 0;
+}

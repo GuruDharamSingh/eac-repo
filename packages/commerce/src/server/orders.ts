@@ -979,6 +979,11 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     void import("./tours")
       .then(({ markTourBookingPaid }) => markTourBookingPaid(input.orderId))
       .catch((err) => console.error("[commerce] markTourBookingPaid:", err));
+    // The booking module (migration 265): confirms the booking or hands it
+    // to the host. Same shape: idempotent, no-op without a bookings row.
+    void import("@elkdonis/booking")
+      .then(({ markBookingPaid }) => markBookingPaid(input.orderId))
+      .catch((err) => console.error("[commerce] markBookingPaid:", err));
   }
 
   return mapOrder(result.order);
@@ -1115,6 +1120,11 @@ export async function cancelOrder(input: {
     }
     return order;
   });
+  // A booking held by this order (migration 265) gives its time back. A
+  // no-op for an order with no bookings row.
+  void import("@elkdonis/booking")
+    .then(({ expireBookingForOrder }) => expireBookingForOrder(input.orderId))
+    .catch((err) => console.error("[commerce] expireBookingForOrder:", err));
   return mapOrder(updated);
 }
 

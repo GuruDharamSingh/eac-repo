@@ -27,6 +27,7 @@ import {
   type PurchasableThreadKind,
 } from "@elkdonis/commerce/server";
 import type { StripeCollectOptions } from "@elkdonis/payments";
+import { attachOrder, createBooking, releaseBooking } from "@elkdonis/booking";
 import { isCardPaymentAvailable, startStripeCheckout, syncStripeOrder } from "./stripe";
 
 /**
@@ -191,6 +192,87 @@ export async function startTourCheckout(
     note: input.notes ?? null,
   });
   return started;
+}
+
+/**
+ * Book a priced offer of the booking module (migration 265) by card.
+ *
+ * Order of operations (design §2.2): the time is taken first, under the
+ * host lock, as an `awaiting_payment` booking with a hold; then the order is
+ * made and linked to the booking; then the card session. A refusal at any
+ * step gives the hold back, so a failed checkout never keeps a time. The
+ * order's payment window (75 minutes) matches the hold. Throws an Error
+ * whose message is for the buyer.
+ */
+export async function startBookingCheckout(
+  input: Omit<StartThreadCheckoutInput, "quantity" | "returnPath"> & {
+    offerId: string;
+    /** open_hours: the chosen start (ISO). */
+    startsAt?: string | null;
+    /** request_time: up to three proposed starts (ISO). */
+    proposedTimes?: unknown;
+    timeZone?: string | null;
+    answers?: unknown;
+    partySize?: number;
+    /** Public base of this site (origin + basePath), stored for links in mail. */
+    siteUrl?: string | null;
+    /** Where the buyer lands once paid, given the booking's private token. */
+    returnPathFor: (token: string) => string;
+  }
+): Promise<{ orderId: string; url: string; bookingId: string; token: string }> {
+  const booking = await createBooking({
+    orgId: input.orgId,
+    offerId: input.offerId,
+    startsAt: input.startsAt ?? null,
+    proposedTimes: input.proposedTimes,
+    partySize: input.partySize,
+    booker: {
+      userId: input.customerId ?? null,
+      email: input.customerEmail,
+      name: input.customerName ?? null,
+      timeZone: input.timeZone ?? null,
+    },
+    notes: input.notes,
+    answers: input.answers,
+    paid: true,
+    siteUrl: input.siteUrl ?? input.baseUrl,
+  });
+  if (booking.ok === false) throw new Error(booking.error);
+
+  const base = input.baseUrl.replace(/\/$/, "");
+  let orderId: string | null = null;
+  try {
+    const order = await createThreadOrder({
+      orgId: input.orgId,
+      threadId: input.threadId,
+      kinds: input.kinds,
+      itemNoun: input.itemNoun ?? "booking",
+      customerEmail: input.customerEmail,
+      customerName: input.customerName ?? null,
+      customerId: input.customerId ?? null,
+      notes: input.notes ?? null,
+      amountMinor: input.amountMinor,
+      quantity: 1,
+      paymentMethod: "stripe",
+    });
+    orderId = order.id;
+    if (!(await attachOrder(booking.bookingId, order.id))) {
+      throw new Error("That time is no longer held. Choose it again.");
+    }
+    const route = input.returnRoute ?? "/api/checkout/return";
+    const returnPath = input.returnPathFor(booking.token);
+    const { url } = await startStripeCheckout({
+      orderId: order.id,
+      successUrl: `${base}${route}?order=${encodeURIComponent(order.id)}&to=${encodeURIComponent(returnPath)}`,
+      cancelUrl: `${base}${input.cancelPath}${input.cancelPath.includes("?") ? "&" : "?"}payment=cancelled`,
+      imageBase: base,
+      ...(input.collect ? { collect: input.collect } : {}),
+    });
+    return { orderId: order.id, url, bookingId: booking.bookingId, token: booking.token };
+  } catch (err) {
+    await releaseBooking(booking.bookingId, orderId ? "card session not opened" : "order not created").catch(() => {});
+    throw err;
+  }
 }
 
 /**

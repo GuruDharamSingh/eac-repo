@@ -255,6 +255,46 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
   Code: `packages/commerce/src/server/tours.ts`; probe:
   `scripts/probe-tour-booking.mts`. Brief: `docs/open/ELKTOURS_BRIEF_2026-10-18.md`.
 
+### Booking module (2026-11-15, migrations 265-266; phase 1 live on artdirect)
+
+One booking store meant to replace `service_bookings` and `tour_bookings`
+(design and decisions: `docs/open/BOOKING_MODULE_2026-11-14.md`). Phase 1 is
+one-to-one booking of a person's service on ArtDirect, from open hours or by
+asking for a time, free or paid. The old tables are untouched until phase 2.
+- Tables (265): `booking_offers` (one per thread: mode, length, zone, notice,
+  window, approval, cancellation policy, questions, status, `host_user_id`),
+  `booking_rules` (weekly hours), `booking_slots` (created on first booking,
+  unique `(offer_id, starts_at)`), `bookings`, `booking_components` (reserved).
+  266 adds `bookings.site_url`, the base used for links in mail. RLS
+  `tenant_isolation` on all five. No price is stored; durations are minutes.
+- Code: `@elkdonis/booking` (`packages/booking`; `./core` is pure and safe in
+  the browser). Org-checked saves are in `packages/services/src/booking-offers.ts`;
+  `startBookingCheckout` is in `@elkdonis/checkout/booking` (hold, then order,
+  then card session; a failure releases the hold). `confirmOrderPaid` calls
+  `markBookingPaid` and `cancelOrder` calls `expireBookingForOrder`, both after
+  commit and both no-ops without a bookings row.
+- Seats: a transaction advisory lock on the host, then the slot row
+  `FOR UPDATE`; taken = confirmed and waiting rows plus holds that have not
+  expired (75 minutes, as the card order's window). Verified 2026-11-15: two
+  parallel bookings of one time, exactly one succeeds.
+- Refunds (decision 4): a cancellation records `refund_status = 'due'` and the
+  amount from the policy (host cancel: everything); nothing calls Stripe.
+- UI: `BookingPanel` and `BookingCancel` in `@elkdonis/checkout/components`.
+  The Booking section (`BookingSection`, `@elkdonis/studio-forms/booking`) is
+  standalone on ArtDirect's service page for the owner and inside the Offering
+  form's Booking section (answer `booking_offer`, saved by
+  `upsertServiceOffering` after the thread; a refusal returns `bookingWarning`).
+  ArtDirect also has `/bookings/<token>` (booker), `/bookings/<token>/ics` and
+  `/bookings` (host). The `bookings` slug is reserved.
+- A service with no offer keeps the old flow: three proposed times and
+  `service_bookings`.
+- Verified 2026-11-15: a 28-check run against the live DB with mail sandboxed
+  (free path end to end; paid path to order creation and `markBookingPaid`;
+  request-a-time; expiry), all rows removed; `packages/booking/scripts/check-core.mts`
+  29/29; booker pages rendered through the edge. Not verified: a real card
+  payment, and the owner's settings and the panel on a live service page
+  signed in.
+
 ### Shipping (2026-11-07, migration 250; live on art-auction since the 2026-11-07 16:15 UTC rebuild)
 
 Easyship (API 2024-09) quotes couriers and, in platform mode, buys labels.

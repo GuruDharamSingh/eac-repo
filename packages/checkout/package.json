@@ -17,6 +17,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@elkdonis/booking": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/payments": "workspace:*"
   },

@@ -1335,3 +1335,5 @@ export { MEETING_KINDS, meetingComposeContext, listOrgMeetings, loadMeetingConte
 // Join links: who receives a meeting's meeting_url / Talk token (RSVP yes|maybe, hosts, org editors).
 export { mayReceiveJoinLink, joinableThreadIds, withoutJoinLink, JOIN_LINK_RSVP_STATUSES } from "./join-link";
 export { eventsForViewer, placeWithoutLink, type CalendarViewer } from "./org-calendar";
+// Booking offers, org-checked (booking module phase 1, migrations 265-266, 2026-11-15).
+export { canEditBookingOffer, saveBookingOffer, loadBookingOfferForEdit, getPublicBookingOffer, bookFreeOffering, listMyHostBookings } from "./booking-offers";
