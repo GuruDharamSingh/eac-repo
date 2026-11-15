@@ -4,35 +4,37 @@ import * as React from "react";
 import { StudioShell, type StudioShellProps } from "@elkdonis/studio";
 import { videoExtension, type VideoKindProps } from "@elkdonis/reels/editor";
 import { postExtension, type PostKindProps } from "@elkdonis/studio/post";
-import { meetingExtension, type MeetingKindProps } from "@elkdonis/studio/meeting";
+import { createExtension, type CreateKindProps } from "@elkdonis/studio/create";
+import { PieceSummaryHostContext, type PieceSummaryHost } from "@elkdonis/studio/summary";
+import type { MeetingActions } from "@elkdonis/studio-forms/meeting";
 import { recordingExtension, type RecordingKindProps } from "@elkdonis/studio/recording";
 import { wordartExtension, type WordArtFont } from "@elkdonis/studio/wordart";
 import {
   artworkActions,
   artworkKind,
-  broadsheetFormTheme,
-  gatheringActions,
-  gatheringKind,
-  gatheringOrSeriesActions,
-  seriesActions,
+  ledgerFormTheme,
+  ledgerDarkFormTheme,
+  meetingActions,
+  meetingKind,
   serviceActions,
   serviceKind,
   type FormHost,
   type FormKindId,
-} from "@elkdonis/studio/forms";
-import { loadSeriesFormAction, saveSeriesFormAction, seriesFormContextAction } from "@/lib/series-form-actions";
+} from "@elkdonis/studio-forms";
 import { artworkFormContextAction, listArtworkFormAction, loadArtworkFormAction, saveArtworkFormAction } from "@/lib/artwork-form-actions";
+import { loadMakeIntoPresetAction } from "@/lib/make-into-preset";
 import { listServiceFormAction, loadServiceFormAction, saveServiceFormAction, serviceFormContextAction } from "@/lib/service-form-actions";
-import { formExtension, richTextBodySlot } from "@elkdonis/studio/forms/focus";
+import { canvasBlocksSlot, formExtension, richTextBodySlot } from "@elkdonis/studio/forms/focus";
+import type { ThreadCardSearchHit } from "@elkdonis/studio";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import type { ChannelLinkRequest } from "@elkdonis/utils/host";
 
 const PERSONAL_ORG_ID = "oad";
 
-/** The forms' kinds → this Studio's `?kind=` (the trial tabs beside the existing ones). */
+/** The forms' kinds → this Studio's `?kind=`. */
 const STUDIO_KIND_OF: Partial<Record<FormKindId, string>> = {
   post: "",
-  gathering: "gathering",
+  meeting: "meeting",
   artwork: "artwork-form",
   service: "service-form",
 };
@@ -59,51 +61,72 @@ const WORDART_FONTS: WordArtFont[] = [
  */
 export function StudioApp({
   shell,
+  makeFrom,
   video,
   post,
   meeting,
-  gathering,
   artworkForm,
   serviceForm,
   recording,
+  create,
+  summary,
 }: {
   shell: Omit<StudioShellProps, "extensions">;
+  /** Make into (2026-11-15): the source piece key; the form kinds offer a "From ..." preset built from it. */
+  makeFrom?: string | null;
   video: VideoKindProps;
   post: PostKindProps;
-  meeting: MeetingKindProps;
-  /** The publication forms' Gathering, on trial beside Meetings (2026-11-08). Same server actions. */
-  gathering: { initialId: string | null };
+  /**
+   * The meeting form (the `meeting` kind since 2026-11-14, when the old Meetings tab was retired;
+   * docs/open/STUDIO_FORMS_SPLIT_2026-11-14.md §7).
+   */
+  meeting: { initialId: string | null; actions: MeetingActions; uploadEndpoint: string; libraryEndpoint?: string };
   /** The publication forms' Artwork and Offering, on trial (pass 2). */
   artworkForm: { initialId: string | null };
   serviceForm: { initialId: string | null };
   recording: RecordingKindProps;
+  /** Create (canvas A, 2026-11-14): New, Bring in, the Library with Make into, Products, brand kit; at ?kind=create. */
+  create?: CreateKindProps;
+  /** The piece summary in front of the forms for published pieces (canvas C, 2026-11-14). */
+  summary?: PieceSummaryHost;
 }) {
   const orgs = shell.orgs;
+  // The Writing room's Canvas upload and card search, shared with the meeting's block body.
+  const canvas = React.useMemo(
+    () => ({ upload: shell.upload ? { endpoint: shell.upload.endpoint, fields: shell.upload.fields } : undefined, search: shell.actions.searchThreads }),
+    [shell.upload, shell.actions.searchThreads]
+  );
   const extensions = React.useMemo(
     () => [
+      ...(create ? [createExtension(create)] : []),
       videoExtension(video),
       postExtension(post),
-      meetingExtension(meeting),
       formExtension({
-        id: "gathering",
-        label: "Gatherings (new)",
-        listLabel: "Gatherings",
-        schema: gatheringKind,
-        // A gathering saves through the meeting actions; "Present it as a series" through the series ones.
+        id: "meeting",
+        label: "Meetings",
+        listLabel: "Meetings",
+        schema: meetingKind,
+        presets: (orgId) => (makeFrom ? loadMakeIntoPresetAction(makeFrom, "meeting", orgId).then((p) => (p ? [p] : [])) : Promise.resolve([])),
         // No arts-collective org runs an attendee-reminder tick or the minimum-reached mail yet.
-        actions: gatheringOrSeriesActions(
-          gatheringActions(meeting.actions, { canRemind: () => false, canNotifyMin: () => false }),
-          seriesActions({ context: seriesFormContextAction, loadSeries: loadSeriesFormAction, saveSeries: saveSeriesFormAction })
-        ),
-        initialId: gathering.initialId,
-        theme: broadsheetFormTheme,
-        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+        // Series are not made here: they are their own kind, made and edited in the planner.
+        actions: meetingActions(meeting.actions, { canRemind: () => false, canNotifyMin: () => false }),
+        initialId: meeting.initialId,
+        theme: ledgerFormTheme,
+        themeDark: ledgerDarkFormTheme,
+        host: (orgId) => formHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint, canvas),
+        // The Studio column's "All pieces" (2026-11-11): the org's meetings, dated by when they meet.
+        // Series are left out: the form does not open them (adapters/meeting.ts load).
+        items: (orgId) =>
+          meeting.actions.listMeetings(orgId).then((list) =>
+            list.filter((m) => !m.isSeries).map((m) => ({ id: m.id, title: m.title, status: m.status, updatedAt: m.updatedAt, when: m.scheduledAt }))
+          ),
       }),
       formExtension({
         id: "artwork-form",
         label: "Artwork (new)",
         listLabel: "Artwork",
         schema: artworkKind,
+        presets: (orgId) => (makeFrom ? loadMakeIntoPresetAction(makeFrom, "artwork-form", orgId).then((p) => (p ? [p] : [])) : Promise.resolve([])),
         actions: artworkActions({
           context: artworkFormContextAction,
           loadArtwork: loadArtworkFormAction,
@@ -111,14 +134,18 @@ export function StudioApp({
           listArtworks: listArtworkFormAction,
         }),
         initialId: artworkForm.initialId,
-        theme: broadsheetFormTheme,
-        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+        theme: ledgerFormTheme,
+        themeDark: ledgerDarkFormTheme,
+        host: (orgId) => formHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+        // The person's own works, whichever org is acting (as the form saves them).
+        items: () => listArtworkFormAction(),
       }),
       formExtension({
         id: "service-form",
         label: "Offerings (new)",
         listLabel: "Offerings",
         schema: serviceKind,
+        presets: (orgId) => (makeFrom ? loadMakeIntoPresetAction(makeFrom, "service-form", orgId).then((p) => (p ? [p] : [])) : Promise.resolve([])),
         actions: serviceActions({
           context: serviceFormContextAction,
           loadService: loadServiceFormAction,
@@ -126,16 +153,19 @@ export function StudioApp({
           listServices: listServiceFormAction,
         }),
         initialId: serviceForm.initialId,
-        theme: broadsheetFormTheme,
-        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+        theme: ledgerFormTheme,
+        themeDark: ledgerDarkFormTheme,
+        host: (orgId) => formHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+        items: (orgId) => listServiceFormAction(orgId),
       }),
       recordingExtension(recording),
       wordartExtension({ fonts: WORDART_FONTS }),
     ],
-    [video, post, meeting, gathering, artworkForm, serviceForm, recording, orgs]
+    [video, post, meeting, artworkForm, serviceForm, recording, create, orgs, canvas, makeFrom]
   );
   const links = React.useMemo(() => ({ ...shell.links, channelHref: channelPieceHref }), [shell.links]);
-  return <StudioShell {...shell} links={links} extensions={extensions} />;
+  const studio = <StudioShell {...shell} links={links} extensions={extensions} />;
+  return summary ? <PieceSummaryHostContext.Provider value={summary}>{studio}</PieceSummaryHostContext.Provider> : studio;
 }
 
 /**
@@ -150,11 +180,13 @@ function channelPieceHref(o: ChannelLinkRequest): string | null {
 }
 
 /** This app's links and pickers for the forms: the Studio is /studio here; never guessed inside the package. */
-function gatheringHost(
+function formHost(
   orgId: string,
   orgs: Array<{ orgId: string; slug: string }>,
   uploadEndpoint: string,
-  libraryEndpoint: string | undefined
+  libraryEndpoint: string | undefined,
+  /** The Writing room's Canvas upload and card search, for a block body ("What"). */
+  canvas?: { upload?: { endpoint: string; fields?: Record<string, string> }; search?: (kind: string, q: string) => Promise<ThreadCardSearchHit[]> }
 ): Omit<FormHost, "actions"> {
   const orgSlug = orgs.find((o) => o.orgId === orgId)?.slug ?? PERSONAL_ORG_ID;
   return {
@@ -177,6 +209,14 @@ function gatheringHost(
     feeds: [],
     slots: {
       body: richTextBodySlot(),
+      // A meeting's "What" in blocks, as the Writing room's Canvas (developer's brief; added 2026-11-11 after
+      // the live Studio showed only the toolbar editor). Pictures go where Writing's do (acting org's slug added).
+      // Layouts that do not ask for blocks (artwork, offering) keep their own editor.
+      blocks: canvasBlocksSlot({
+        search: canvas?.search,
+        upload: canvas?.upload ? { ...canvas.upload, fields: { ...(canvas.upload.fields ?? {}), orgSlug } } : undefined,
+        placeholder: "What happens, who it is for, what to bring.",
+      }),
       media: ({ value, onChange, label, hint }) => (
         <MediaPicker
           value={typeof value === "string" ? value : undefined}

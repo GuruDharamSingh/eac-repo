@@ -12,15 +12,14 @@ export const STUDIO_KINDS: StudioKind[] = [
   // Posts for Facebook, Instagram and Threads (2026-10-31); an extension like Video.
   { id: 'post', label: 'Social posts', noun: 'post', ready: true, href: '/studio?kind=post' },
   // Recordings: camera, screen or phone into your files (2026-11-01); an extension like Video.
-  { id: 'recording', label: 'Recordings', noun: 'recording', ready: true, href: '/studio?kind=recording' },
+  // Not in "New ▾": the clip editor records too (developer, 2026-11-12).
+  { id: 'recording', label: 'Recordings', noun: 'recording', ready: true, href: '/studio?kind=recording', newMenu: false },
   // Word art: EAC logo cut-outs, text or an uploaded logo, filled with the gradient lab, 2D or 3D (2026-11-07).
   { id: 'wordart', label: 'Word art', noun: 'design', ready: true, href: '/studio?kind=wordart' },
   { id: 'artwork', label: 'Artwork', noun: 'work', ready: false },
-  // Meetings and events are one shape (content-fields.ts) and the live rows are all meeting;
-  // one tab, an extension like Post (2026-11-01).
+  // The publication forms' meeting form (2026-11-08 as "Gatherings (new)"); it took the `meeting`
+  // id on 2026-11-14 and the old Meetings tab was retired (docs/open/STUDIO_FORMS_SPLIT_2026-11-14.md §7).
   { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: true, href: '/studio?kind=meeting' },
-  // The publication forms' Gathering (2026-11-08), on trial beside Meetings until Justin has tried it.
-  { id: 'gathering', label: 'Gatherings (new)', noun: 'gathering', ready: true, href: '/studio?kind=gathering' },
   // The publication forms' Artwork and Offering (pass 2), on trial beside the existing tabs.
   { id: 'artwork-form', label: 'Artwork (new)', noun: 'work', ready: true, href: '/studio?kind=artwork-form' },
   { id: 'service-form', label: 'Offerings (new)', noun: 'offering', ready: true, href: '/studio?kind=service-form' },

@@ -32,6 +32,9 @@ export interface BoardSheetProps {
   /** Distance from the top of the window (under the Studio's bar). */
   top: number;
   onClose: () => void;
+  /** Other kinds to start from this piece (2026-11-12). Nothing carries over yet: Make into's carry is not built. */
+  makeInto?: Array<{ id: string; label: string }>;
+  onMakeInto?: (kindId: string) => void;
 }
 
 function weekLabel(date: string): string {
@@ -57,7 +60,7 @@ function Cell({ items, timeZone }: { items: StudioBoardItem[]; timeZone: string 
   );
 }
 
-export function BoardSheet({ piece, load, fallbackHref, top, onClose }: BoardSheetProps) {
+export function BoardSheet({ piece, load, fallbackHref, top, onClose, makeInto = [], onMakeInto }: BoardSheetProps) {
   const [state, setState] = React.useState<Load>({ status: 'loading' });
   const [attempt, setAttempt] = React.useState(0);
   const closeRef = React.useRef<HTMLButtonElement>(null);
@@ -172,6 +175,22 @@ export function BoardSheet({ piece, load, fallbackHref, top, onClose }: BoardShe
                 </div>
               )}
             </section>
+
+            {makeInto.length > 0 && onMakeInto && (
+              <section className="studio-board__sec" aria-labelledby="studio-board-make">
+                <span className="studio-board__eb" id="studio-board-make">
+                  Make into
+                </span>
+                <div className="studio-board__chips">
+                  {makeInto.map((k) => (
+                    <button key={k.id} type="button" className="studio-board__next" onClick={() => onMakeInto(k.id)}>
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="studio-board__quiet">Starts a new draft of that kind. Carrying this piece’s parts over is not built yet.</p>
+              </section>
+            )}
 
             {view.recent.length > 0 && (
               <section className="studio-board__sec" aria-labelledby="studio-board-recent">

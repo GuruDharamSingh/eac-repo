@@ -3,8 +3,8 @@ export type { StudioExtension, StudioFrameApi, StudioPieceRef } from './frame';
 export type { StudioShellProps } from './StudioShell';
 export { STUDIO_KINDS } from './kinds';
 export { STUDIO_LAYOUTS } from './types';
-export { Canvas } from './canvas';
-export type { CanvasProps, ThreadCardSearchHit } from './canvas';
+export { Canvas } from '@elkdonis/studio-forms/canvas';
+export type { CanvasProps, ThreadCardSearchHit } from '@elkdonis/studio-forms/canvas';
 export type {
   StudioActions,
   StudioBoardItem,

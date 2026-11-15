@@ -1,10 +1,14 @@
-// @elkdonis/content/server: the per-item loader (loadContentDetail,
-// listContent, access) arrives in pass 2 of
-// docs/open/CONTENT_LIBRARY_COMPONENT_2026-11-08.md. In pass 1 Channel fills
-// the model client-side from the Piece it already loads
+// @elkdonis/content/server: the server side of the content library.
+//
+// 2026-11-12: `listContent` (pass 2's list loader) and the access helpers.
+// `loadContentDetail` is not built; until then Channel fills the passport
+// client-side from the Piece it already loads
 // (apps/arts-collective/src/lib/channel/content-detail.ts).
 //
-// The entry exists now so importers can point at it; it re-exports the model
-// types only and carries no data access yet.
+// Server code only: it imports the database client.
 
-export type { ContentDetailModel, ContentRef, ContentStore, ContentType } from "../model";
+export type { ContentDetailModel, ContentListItem, ContentRef, ContentStore, ContentType } from "../model";
+export { listContent } from "./list";
+export type { ContentListQuery, ContentListResult } from "./list";
+export { mayManageOrg, PERSONAL_ORG, resolveRights, threadReadSql } from "./access";
+export type { ContentRights, ContentViewer } from "./access";

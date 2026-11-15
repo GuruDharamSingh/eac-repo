@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { RichTextEditor } from '@elkdonis/cms-ui/editor';
 import { ArticleView } from '@elkdonis/cms-ui/article';
 import { renderEssayHtml, essayWordCount, essayIsEmpty, type EssayDoc } from '@elkdonis/utils/essay';
-import { Canvas } from '../canvas';
+import { Canvas } from '@elkdonis/studio-forms/canvas';
 import { ImageEditor, savedToFile } from '../image';
 import { readMediaDrop, isMediaDrag } from '@elkdonis/cms-ui/files';
 import type { StudioPatch, StudioPiece, StudioResult, StudioUpload } from '../types';

@@ -364,6 +364,87 @@ Board right sheet (added later 2026-11-11, source only, not rebuilt):
   dev preview with a test account). `channel_deliveries` had 0 rows, so the
   lanes showed only publish events, not planned deliveries.
 
+R1 shell, slice 1 (2026-11-11, source; shipped by the form-design session's
+arts-collective rebuild requested after 16:30 EST, check that build's id):
+- One left column, two tabs: "All pieces" (a kind index, then the kind's own
+  list) and "This piece" (the open item's settings), for writing and every kind
+  that draws `StudioColumns` (video, social posts, meetings, recordings, word
+  art). Settings no longer have a right-hand column. `StudioColumnHead` and
+  `StudioFrameApi.colTab/setColTab/kindIndex/switchKind/setHasColumn`
+  (`packages/studio/src/frame.tsx`); the tab is remembered per browser
+  (`studio:coltab`). Grid areas in `studio.css` ("head main" / "col main").
+- The bar: the ⚙ settings toggle is gone; ☰ is "Left column". The kind
+  switch hides on desktop where the column shows the kinds, and stays for
+  form kinds (no column yet), phones and a hidden column.
+- Fixed: the column panels' sticky `top: 64px` left a 64px gap above a short
+  list (the aside clips, so the offset was measured from it).
+- Studio forms (Gathering, Artwork, Offering "(new)") use the Ledger theme
+  (`StudioApp.tsx`, `forms/ledger.css` imported in `app/studio/page.tsx`).
+- Verified: type checks 0 errors (`@elkdonis/studio`, `arts-collective`);
+  the real `StudioShell` with stub actions rendered in headless Chrome for
+  writing (both tabs), a `StudioColumns` kind (both tabs, wide settings), a
+  form kind, 390 px and Focus. Not verified signed in on the live site.
+- Slice 1 went live with build `e10zbHNAoPmdvGqbp5h6Q` (form-design session's
+  rebuild, restarted 16:32 EST).
+
+R1 shell, slice 2 (2026-11-11; agreed with the form-design session before
+editing `FormShell.tsx`). Deployed 16:53 EST: arts-collective build
+`hZ5zfJqrqUV7qVWYa5R6N` (previous `e10zbHNAoPmdvGqbp5h6Q` backed up at
+`~/eac-backups/next/arts-collective-20261111-1651.tgz`), 9 GiB cap for the
+build, restarted, cap back to 5 GiB; through the edge `/` 200, `/studio` and
+`/channel` 307 signed out, served chunks contain `studio-railhost`,
+`studio-formlist` and "Posting on", tenant-smoke 9/9, no errors in the log
+since the restart. The build also shipped another session's new record
+blocks in `packages/blocks` (not in `SHARED_BLOCKS`; that session confirmed
+them). Checked signed in on the live site 2026-11-11 ~17:00 EST (developer's
+Chrome, read-only: nothing typed or saved): word art and writing in the
+column with both tabs; the chip's menu (orgs, "Posting as" note); Gatherings
+for Para Theater in Ledger with the rail under "This piece" and its two
+published gatherings under "All pieces"; opening one (Published, "Save
+changes", Board shown); the Board sheet on it (no plans in three weeks, one
+suggestion, "Published in Lab work 29 Sept"); no console errors. Found and
+fixed in source (live with the next rebuild): the site's "Your next step"
+dock (`.eac-dock`, z 60) covered the sheet's third footer button; three
+messages still said "Choose the organisation under “Making as”" (now "in the
+“On …” menu at the top": `meeting-content.ts`, `series-form.ts`,
+`service-form-actions.ts`). Also seen: the gathering's "What" is the toolbar
+rich-text editor in the live Studio, because StudioApp passes only
+`richTextBodySlot` (no `blocks` slot). Fixed in source the same evening (the
+form-design session confirmed blocks are intended): `gatheringHost` also
+passes `blocks: canvasBlocksSlot(...)` with the Writing room's upload
+(`/api/upload/image`, context studio, the acting org's slug) and card search
+(`actions.searchThreads`); `arts-collective` type check 0 errors; live with
+the next rebuild, not rendered yet.
+- Form kinds (Gathering, Artwork, Offering "(new)") join the column when the
+  host passes `items` to `formExtension` (`packages/studio/src/forms/focus.tsx`):
+  "All pieces" lists the kind's items (`forms/item-list.tsx`: Drafts, then the
+  rest, newest first; New; click to open), "This piece" holds the form's rail,
+  drawn there through `FormShell`'s new `railTarget` prop (a portal in its own
+  `FormRoot`). Without `items` nothing changes (dialog, harness, other hosts).
+  App side: `listArtworkFormAction` and `listServiceFormAction` also return
+  title and status (fields added only); gatherings list through
+  `meeting.actions.listMeetings`.
+- One save control (Studio only, `FormShell.tsx`): "Save draft" is drawn only
+  where autosave does not run (no title yet, a repeating gathering) or after a
+  failed save; otherwise the saved line is the control. Published items keep
+  "Save changes". Outside the Studio the button stays.
+- "On <org> as <byline>" chip replaces the "Writing as / Making as" select
+  (`StudioShell.tsx`): its popover lists the orgs (same handler as the select,
+  so writing still starts a new piece on a switch) and, for writing, the
+  identities from "Publish as" (`setByline`).
+- Ledger dark while the Studio is dark: `StudioFrameApi.dark` (a saved choice,
+  else the system, followed live), `formExtension({ themeDark })`; StudioApp
+  passes `ledgerDarkFormTheme`.
+- Verified: type checks 0 errors (`@elkdonis/studio`, `arts-collective`); in
+  the shell harness (real `StudioShell`, real `gatheringKind` with the forms
+  harness's stub actions, `next/*` stubs from `scripts/forms-harness`) the
+  gathering's rail under "This piece", its list under "All pieces", the chip,
+  Ledger dark, and "Save draft" hidden once a titled draft is open. Not
+  verified signed in on the live site; the chip's popover was not opened in
+  the harness.
+- Not built: Focus for form kinds ("N to go" opening the column as an
+  overlay); the Aa text size control (dropped by the developer, 2026-11-11).
+
 Not built:
 - ~~The Board right sheet (canvas R1).~~ Built later the same day (above).
   Make into and Manage are not in it: Make into is not built, and there are
@@ -373,3 +454,46 @@ Not built:
 - Offerings in Channel (`THREAD_KINDS` + `PieceKind`).
 - Leaving the Studio by the Board link has no unsaved-changes guard; the same
   is true of the existing "←" hub link (no `beforeunload` in the package).
+
+## 9. Developer review of the live Studio (2026-11-12)
+
+The live Studio is hard to use: the Studio → Board → Channel → back flow is
+unclear, Make into is missing, and In · Make · Channel · Out are not
+separated. Decisions (developer, 2026-11-12):
+
+- Next: five fixes now, and the pipeline frame drawn on a canvas before the
+  code is restructured. Fixes: "On" and "As" as two buttons; no kind switch
+  in the bar (New ▾ covers it); Drafts / Published lists collapsible; a
+  search box in the top bar; Make into in the Board sheet's "Next for this
+  piece".
+- "Just me" may post every kind (writing, gatherings, offerings, artwork) to
+  the person's own ArtDirect page; today gatherings and offerings refuse
+  the personal org ("A meeting goes on an organisation’s calendar…").
+- Studio and Channel become one frame with modes: one shell, one bar and
+  column, a left nav like canvas N6 (Create · Develop · Channel · Out), the
+  piece moving between modes.
+- Create holds: upload / record, New (photo, video, record, doc, text), Make
+  into, products (service, artwork, workshop), brand kits. Develop holds the
+  forms and editing.
+- A published piece opens on an N2-style summary of the content and its
+  family (source, made-from, made-into, where it went), not on one finished
+  iteration's form. Edit opens the form.
+- The "This piece" settings that do little today (Show on, Series, Layout,
+  Search and sharing) are to be reviewed; Series for strung-along content is
+  not designed yet.
+- 2026-11-12: design canvas "Studio pipeline frame"
+  (https://claude.ai/artifact/DGHedvKtZRUp6m2hX61WUq): 0 the model (four modes,
+  shared bar, pipeline column, piece summary as the shared component), A Create,
+  B Develop (On menu with Just me), C published-piece summary, D Channel with the
+  summary as a side sheet (replacing the Board sheet), E Out with "Came back".
+  Unreviewed; four open questions on the canvas (Out as mode or tab, brand kit
+  owner, Workshop kind, /channel URLs).
+- 2026-11-12, round 2 of that canvas (version 11), after the developer's comments:
+  Channel moves onto each site (`<site>/channel`; Queue = suggested per piece,
+  Board = confirmed), Studio stays the catalogue and deep editor with a return
+  address back to the site. Plan: `docs/open/CHANNEL_ON_SITES_2026-11-12.md`.
+  In source (not deployed): New ▾ Video opens a new clip reel in the clip editor,
+  "Live" (viewers with `broadcast`) opens the Go live card, Recordings left New ▾;
+  the gathering What row is a preview with Edit/Add opening the Canvas in a dialog
+  (`packages/studio/src/forms/fields/BlocksRow.tsx`; Post keeps the inline Canvas
+  via `body.inline`).

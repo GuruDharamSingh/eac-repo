@@ -11,10 +11,14 @@
     "./registry": "./src/registry.ts",
     "./server": "./src/server/index.ts",
     "./ui": "./src/ui/index.ts",
+    "./summary": "./src/summary/index.ts",
+    "./summary.css": "./src/summary/summary.css",
     "./content.css": "./src/content.css"
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/db": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "lucide-react": "^0.544.0"
   },

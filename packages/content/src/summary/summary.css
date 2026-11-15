@@ -1,0 +1,197 @@
+/* ============================================================================
+   The piece summary (canvas C, 2026-11-14). Every colour, face and radius is a
+   --ps-* property set on .ps, falling back to the Studio's --st-* tokens and
+   then to plain values, so the same component reads in the Studio (light and
+   dark) and on a site. A site restyles it by setting --ps-* on `.ps` inside
+   its own scope, e.g. `.kch-sheet .ps { --ps-accent: #2e8a57; … }`.
+   Layout "page" (Studio, max 1000px) and "sheet" (a site's Board, one column).
+   ============================================================================ */
+
+.ps {
+  --ps-bg: var(--st-bg, #f3f1ec);
+  --ps-panel: var(--st-panel, #ffffff);
+  --ps-panel-2: var(--st-panel-2, #eae7df);
+  --ps-line: var(--st-line, #d8d3c7);
+  --ps-control-line: var(--st-control-line, #737d87);
+  --ps-ink: var(--st-ink, #1c2530);
+  --ps-muted: var(--st-muted, #55616c);
+  --ps-accent: var(--st-accent, #8a6d1f);
+  --ps-accent-ink: var(--st-accent-ink, #ffffff);
+  --ps-accent-soft: var(--st-accent-soft, #f1e7c9);
+  --ps-ok: var(--st-ok, #276a43);
+  --ps-ok-soft: color-mix(in srgb, var(--ps-ok) 14%, var(--ps-panel));
+  --ps-danger: var(--st-danger, #a63d3d);
+  --ps-danger-soft: color-mix(in srgb, var(--ps-danger) 12%, var(--ps-panel));
+  --ps-serif: var(--st-serif, Georgia, "Times New Roman", serif);
+  --ps-sans: var(--st-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+  --ps-radius: 14px;
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--ps-ink);
+  font: 14px/1.45 var(--ps-sans);
+}
+.ps-page { box-sizing: border-box; max-width: 1000px; margin: 0 auto; padding: 24px 16px 0; }
+
+.ps-eb { margin: 0; font: 600 10.5px/1.2 var(--ps-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ps-muted); }
+.ps-mut { color: var(--ps-muted); font-size: 12.5px; line-height: 1.45; }
+.ps-ic { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ps a { color: inherit; }
+
+/* ── cover and facts ────────────────────────────────────────────────────── */
+.ps-cover {
+  position: relative; display: flex; align-items: flex-end; min-height: 300px; overflow: hidden;
+  border-radius: var(--ps-radius); background: var(--ps-panel-2);
+}
+.ps-cover[data-pictures="0"] { min-height: 0; }
+.ps-cover__pics { position: absolute; inset: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.ps-cover__pics img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ps-cover__tag {
+  position: absolute; top: 14px; left: 14px; padding: 6px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ps-panel) 92%, transparent); color: var(--ps-ink); font: 500 11.5px/1 var(--ps-sans);
+}
+/* Above the card: with no pictures the cover is only the card, and Close sits in its corner. */
+.ps-cover__close { position: absolute; z-index: 2; top: 10px; right: 10px; background: var(--ps-panel); }
+.ps-card {
+  position: relative; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;
+  max-width: 620px; margin: 16px; padding: 18px 20px; border-radius: 12px;
+  background: color-mix(in srgb, var(--ps-panel) 96%, transparent);
+}
+.ps-cover[data-pictures="0"] .ps-card { max-width: none; width: 100%; margin: 0; background: var(--ps-panel); border: 1px solid var(--ps-line); border-radius: var(--ps-radius); }
+.ps-title { margin: 0; font: 600 30px/1.15 var(--ps-serif); overflow-wrap: anywhere; }
+.ps-excerpt { margin: 0; font: 15px/1.55 var(--ps-serif); color: var(--ps-ink); }
+.ps-meta { margin: 0; }
+.ps-facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;
+  margin: 0; padding-top: 8px; border-top: 1px solid var(--ps-line);
+}
+.ps-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ps-fact dd { margin: 0; font: 600 13.5px/1.35 var(--ps-sans); overflow-wrap: anywhere; }
+
+/* ── actions ────────────────────────────────────────────────────────────── */
+.ps-actions { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ps-spacer { flex: 1; }
+.ps-btn {
+  appearance: none; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 0 14px; border: 1px solid var(--ps-line); border-radius: 8px;
+  background: var(--ps-panel); color: var(--ps-ink); font: 500 13px/1 var(--ps-sans);
+  white-space: nowrap; text-decoration: none; cursor: pointer;
+}
+.ps a.ps-btn { color: var(--ps-ink); }
+.ps-btn:hover { border-color: var(--ps-control-line); }
+.ps-btn:focus-visible, .ps-menu__item:focus-visible, .ps-row a:focus-visible { outline: 2px solid var(--ps-accent); outline-offset: 2px; }
+.ps-btn--primary, .ps a.ps-btn--primary { background: var(--ps-accent); border-color: var(--ps-accent); color: var(--ps-accent-ink); }
+.ps-btn--primary:hover { filter: brightness(1.05); border-color: var(--ps-accent); }
+.ps-btn--small { min-height: 32px; padding: 0 12px; font-size: 12.5px; }
+
+.ps-menu { position: relative; }
+.ps-menu__list {
+  position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 200px; margin: 0; padding: 6px; list-style: none;
+  border: 1px solid var(--ps-line); border-radius: 10px; background: var(--ps-panel);
+  box-shadow: 0 10px 30px rgba(20, 30, 40, 0.16);
+}
+.ps-menu__item {
+  display: flex; align-items: center; min-height: 36px; padding: 0 10px; border-radius: 6px;
+  color: var(--ps-ink); font: 500 13px/1.2 var(--ps-sans); text-decoration: none;
+}
+.ps-menu__item:hover { background: var(--ps-panel-2); }
+
+/* ── where it went, next ────────────────────────────────────────────────── */
+.ps-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.ps-box {
+  box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px; border: 1px solid var(--ps-line); border-radius: 12px; background: var(--ps-panel);
+}
+.ps-list { margin: 0; padding: 0; list-style: none; }
+.ps-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 9px 0; border-top: 1px solid var(--ps-line); font-size: 13px; }
+.ps-row:first-child { border-top: 0; }
+.ps-row__main { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.ps-row__why { display: block; }
+.ps-row--next .ps-row__main { font-weight: 500; }
+/* The piece's plan (plan.md), full width above the two lists. */
+.ps-plan { grid-column: 1 / -1; }
+.ps-plan__goal { margin: 0; font: 500 14px/1.4 var(--ps-sans); color: var(--ps-ink); }
+.ps-step { flex-wrap: nowrap; align-items: flex-start; }
+.ps-step[data-done] .ps-row__main { color: var(--ps-muted); text-decoration: line-through; text-decoration-color: var(--ps-line); }
+.ps-step__mark {
+  flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; margin-top: 1px;
+  border: 1.5px solid var(--ps-control-line); border-radius: 5px; color: var(--ps-ok); font: 700 12px/1 var(--ps-sans);
+}
+.ps-step[data-done] .ps-step__mark { border-color: var(--ps-ok); background: var(--ps-ok-soft); }
+.ps-step input[type="checkbox"] { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--ps-accent); }
+.ps-plan__acts { padding-top: 4px; }
+.ps-pill {
+  padding: 3px 8px; border-radius: 999px; background: var(--ps-panel-2); color: var(--ps-muted);
+  font: 600 11px/1 var(--ps-sans);
+}
+.ps-pill[data-state="published"], .ps-pill[data-state="live"] { background: var(--ps-ok-soft); color: var(--ps-ok); }
+.ps-pill[data-state="failed"] { background: var(--ps-danger-soft); color: var(--ps-danger); }
+
+/* ── planned / out, coverage, host rows ─────────────────────────────────── */
+.ps-sub { margin: 8px 0 0; font: 600 12px/1.3 var(--ps-sans); color: var(--ps-ink); }
+.ps-sub:first-of-type { margin-top: 2px; }
+.ps-row__acts { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ps-coverage { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+/* The content library's outlet marks (ui/piece-atoms OutletMarks), coloured here so no other stylesheet is needed. */
+.ps .chn-marks { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ps .chn-oi { display: inline-flex; color: var(--ps-ok); }
+.ps .chn-oi[data-state="scheduled"], .ps .chn-oi[data-state="draft"] { color: var(--ps-accent); }
+.ps .chn-oi[data-state="failed"] { color: var(--ps-danger); }
+.ps .chn-oi[data-state="empty"], .ps .chn-oi[data-state="suggested"], .ps .chn-oi[data-state="info"] { color: var(--ps-muted); opacity: 0.55; }
+
+/* ── editing: the site's quick form in place of the facts and lists ─────── */
+.ps-edit { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ps-back { align-self: flex-start; color: var(--ps-muted); font: 500 13px/1.3 var(--ps-sans); text-decoration: none; }
+.ps a.ps-back { color: var(--ps-muted); }
+.ps-back:hover { color: var(--ps-ink); text-decoration: underline; }
+.ps[data-editing] .ps-cover__pics { height: 96px; }
+.ps[data-editing] .ps-cover { min-height: 0; }
+
+/* ── sheet and pop-up: one column, the cover a strip ────────────────────── */
+.ps:is([data-layout="sheet"], [data-layout="popup"]) { gap: 12px; padding-bottom: 16px; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) > .ps-actions,
+.ps:is([data-layout="sheet"], [data-layout="popup"]) > .ps-cards,
+.ps:is([data-layout="sheet"], [data-layout="popup"]) > .ps-edit { padding: 0 16px; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-cover { min-height: 150px; align-items: stretch; flex-direction: column; justify-content: flex-end; border-radius: 0; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-cover__pics { position: static; height: 150px; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-card { max-width: none; margin: 0; border: 0; border-radius: 0; background: var(--ps-panel); }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-cover[data-pictures="0"] { min-height: 0; background: none; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-cover[data-pictures="0"] .ps-card { padding-right: 60px; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-title { font-size: 22px; }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ps:is([data-layout="sheet"], [data-layout="popup"]) .ps-cards { grid-template-columns: minmax(0, 1fr); }
+.ps:is([data-layout="sheet"], [data-layout="popup"])[data-editing] .ps-cover__pics { height: 96px; }
+
+/* ── the manage-piece pop-up: from the right, a bottom sheet on a phone ─── */
+.ps-pop { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.ps-pop__scrim { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: rgb(20 22 26 / 0.38); cursor: default; }
+.ps-pop__panel {
+  position: relative; z-index: 1; box-sizing: border-box; width: min(460px, 100%); height: 100%;
+  overflow-y: auto; overscroll-behavior: contain; outline: none;
+  box-shadow: -14px 0 40px rgb(0 0 0 / 0.22); animation: ps-from-right 0.22s ease-out;
+}
+.ps-pop__panel > .ps { min-height: 100%; background: var(--ps-panel); }
+.ps-grab { display: none; }
+@keyframes ps-from-right { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes ps-from-below { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 639px) {
+  .ps-pop { align-items: flex-end; justify-content: stretch; }
+  .ps-pop__panel {
+    width: 100%; height: auto; max-height: 88vh; border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgb(0 0 0 / 0.24); animation-name: ps-from-below;
+  }
+  .ps-pop__panel > .ps { min-height: 0; border-radius: 16px 16px 0 0; overflow: hidden; }
+  .ps-grab { display: block; width: 40px; height: 4px; margin: 8px auto 0; border-radius: 999px; background: var(--ps-line); flex: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-pop__panel { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .ps-cover { min-height: 220px; }
+  .ps-card { margin: 10px; padding: 14px 16px; }
+  .ps-title { font-size: 24px; }
+  .ps-cards { grid-template-columns: minmax(0, 1fr); }
+}

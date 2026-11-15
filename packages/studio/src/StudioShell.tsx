@@ -5,7 +5,7 @@ import { STUDIO_KINDS } from './kinds';
 import { STUDIO_LAYOUTS } from './types';
 import { MediaBrowser } from '@elkdonis/cms-ui/files';
 import { WritingEditor, type SaveState } from './writing/WritingEditor';
-import { StudioFrameContext, type StudioExtension, type StudioFrameApi, type StudioPieceRef } from './frame';
+import { StudioColumnHead, StudioFold, StudioFrameContext, type StudioColTab, type StudioExtension, type StudioFrameApi, type StudioPieceRef } from './frame';
 import { BoardSheet } from './board';
 import type {
   StudioActions,
@@ -103,6 +103,12 @@ export interface StudioShellProps {
    */
   initialNext?: string | null;
   /**
+   * `?back=` (developer, 2026-11-12): a page on the acting org's own site, checked by the host
+   * (`checkStudioBack`); `href` already goes through the session hand-off. Shown as "Back to <label>"
+   * in the bar, after Publish, and in the forms' confirmation.
+   */
+  initialBack?: { href: string; label: string } | null;
+  /**
    * The Board sheet's loader (2026-11-11): one item's state in Channel, read on the server for the
    * signed-in person. Unset, the bar's Board is a plain link to the item's board.
    */
@@ -136,6 +142,9 @@ function blankPiece(orgId: string): StudioPiece {
 
 const BLOCKS_PREF = 'studio:blocks';
 const FOCUS_PREF = 'studio:focus';
+const COLTAB_PREF = 'studio:coltab';
+/** Kinds the Board sheet offers under "Make into" (2026-11-12): the made kinds, not tools or material. */
+const MAKE_INTO_KINDS = new Set(['writing', 'video', 'meeting', 'artwork-form', 'service-form']);
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '';
@@ -165,6 +174,7 @@ export function StudioShell({
   initialFocus = null,
   initialPreset = null,
   initialNext = null,
+  initialBack = null,
   loadBoard,
 }: StudioShellProps) {
   const [kind, setKind] = React.useState<string>(
@@ -222,11 +232,42 @@ export function StudioShell({
   const [editorKey, setEditorKey] = React.useState(0);
 
   const [drawer, setDrawer] = React.useState(true);
-  const [settings, setSettings] = React.useState(true);
+  // Settings now share the left column with the list (canvas R1, 2026-11-11); kept for the frame API.
+  const [settings] = React.useState(true);
+  // The left column's tab: the kind's list or the open item's settings, remembered per browser.
+  const [colTab, setColTabState] = React.useState<StudioColTab>('piece');
+  const [, setHasColumn] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      const t = window.localStorage.getItem(COLTAB_PREF);
+      if (t === 'list' || t === 'piece') setColTabState(t);
+    } catch {
+      // Storage blocked: keep the default.
+    }
+  }, []);
+  const setColTab = React.useCallback((t: StudioColTab) => {
+    setColTabState(t);
+    try {
+      window.localStorage.setItem(COLTAB_PREF, t);
+    } catch {
+      // Storage blocked: the choice lasts this visit.
+    }
+  }, []);
   const [sheet, setSheet] = React.useState<null | 'drawer' | 'settings'>(null);
   const [menu, setMenu] = React.useState(false);
+  // "On <org> as <byline>" (canvas R1, 2026-11-11): one chip for the acting org and, for writing, the byline.
+  const [who, setWho] = React.useState<null | 'on' | 'as'>(null);
+  // The bar's search: filters the column's "All pieces" lists (writing, the forms) by title.
+  const [query, setQuery] = React.useState('');
   // "New ▾" on an extension kind: counted, so the kind can start a new item (frame.tsx useNewRequest)
   const [newRequest, setNewRequest] = React.useState(0);
+  const pendingNew = React.useRef<{ kind: string; as: string | null } | null>(null);
+  const takeNew = React.useCallback((k: string) => {
+    const p = pendingNew.current;
+    if (!p || p.kind !== k) return null;
+    pendingNew.current = null;
+    return { as: p.as };
+  }, []);
   const [preview, setPreview] = React.useState(false);
   const [blocks, setBlocks] = React.useState(false);
   const blocksPref = React.useRef(false);
@@ -242,11 +283,16 @@ export function StudioShell({
   const [error, setError] = React.useState<string | null>(null);
   // Studio ↔ Channel (2026-11-11): the open item an extension kind reports, and the line after a publish.
   const [extPiece, setExtPiece] = React.useState<StudioPieceRef | null>(null);
-  const [notice, setNotice] = React.useState<{ text: string; href: string; label: string } | null>(null);
+  const [notice, setNotice] = React.useState<{ text: string; href: string; label: string; back?: { href: string; label: string } | null } | null>(null);
   // The Board sheet: open or not, and how far down the window it starts (under the sticky bar).
   const [boardOpen, setBoardOpen] = React.useState(false);
   const [boardTop, setBoardTop] = React.useState(0);
   const barRef = React.useRef<HTMLElement | null>(null);
+  // The side menu's head grows with its links (one per kind); the two columns under it start
+  // below its measured height (--st-side-head-h), not a fixed 88px (seen live 2026-11-12: ten
+  // links ran past the panel and showed at the left edge while the menu was closed).
+  const sideHeadRef = React.useRef<HTMLDivElement | null>(null);
+  const [sideHeadH, setSideHeadH] = React.useState<number | null>(null);
 
   const [focus, setFocus] = React.useState(true);
   React.useEffect(() => {
@@ -300,6 +346,18 @@ export function StudioShell({
       /* private mode or blocked storage: follow the system */
     }
   }, []);
+  // Whether the frame is dark now (a saved choice, else the system), for kinds with a dark theme of
+  // their own (the forms' Ledger dark, 2026-11-11).
+  const [systemDark, setSystemDark] = React.useState(false);
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = () => setSystemDark(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const frameDark = theme === 'dark' || (theme === null && systemDark);
   function toggleTheme() {
     const dark =
       theme === 'dark' ||
@@ -479,7 +537,7 @@ export function StudioShell({
     if (status === 'published') {
       const home = res.value.orgId && res.value.orgId !== PERSONAL_ORG_ID ? res.value.orgId : null;
       const href = initialNext ?? links.channelHref?.({ store: 'thread', id: res.value.id, org: home }) ?? null;
-      setNotice(href ? { text: 'Published.', href, label: initialNext ? 'Back to Channel' : 'Continue in Channel' } : null);
+      setNotice(href || initialBack ? { text: 'Published.', href: href ?? '', label: initialNext ? 'Back to Channel' : 'Continue in Channel', back: initialBack } : null);
     } else {
       setNotice(null);
     }
@@ -556,20 +614,29 @@ export function StudioShell({
     libSource === 'org' && orgId !== PERSONAL_ORG_ID && links.library?.org
       ? links.library.org.replace(':org', encodeURIComponent(org.slug))
       : links.library?.mine ?? null;
-  const inSeries = (p: StudioPieceSummary) => !seriesFilter || p.series === seriesFilter;
+  // The bar's search (2026-11-12) filters the column's lists by title.
+  const needle = query.trim().toLowerCase();
+  const inSeries = (p: StudioPieceSummary) => (!seriesFilter || p.series === seriesFilter) && (!needle || (p.title || '').toLowerCase().includes(needle));
   const drafts = pieces.filter((p) => p.status === 'draft' && inSeries(p));
   const published = pieces.filter((p) => p.status === 'published' && inSeries(p));
 
-  const frameClass = [
-    'studio-frame',
-    drawer ? '' : 'studio-frame--no-drawer',
-    settings ? '' : 'studio-frame--no-settings',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const frameClass = ['studio-frame', drawer ? '' : 'studio-frame--no-drawer'].filter(Boolean).join(' ');
+  // "All pieces" lists the kinds; the current one's list is underneath.
+  const kindIndex = React.useMemo(
+    () => [{ id: 'writing', label: 'Writing', current: kind === 'writing' }, ...extensions.map((e) => ({ id: e.id, label: e.label, current: kind === e.id }))],
+    [extensions, kind]
+  );
+  // The bar's kind switch shows on phones only (developer, 2026-11-12: New ▾ and the column's chips cover it).
 
   // Focus mode is writing's; any other kind gets the full frame.
   const layoutFocus = focus && !ext;
+  React.useLayoutEffect(() => {
+    const el = sideHeadRef.current;
+    if (!layoutFocus || !el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setSideHeadH(Math.ceil(el.getBoundingClientRect().height)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [layoutFocus]);
   // The bar's Board link: the open, saved item's board in Channel. Writing pieces are threads; an
   // extension kind reports its own item (setPiece), or nothing when Channel does not cover it.
   const pieceRef: StudioPieceRef | null = ext
@@ -620,13 +687,22 @@ export function StudioShell({
     actionsSlot,
     statusSlot,
     newRequest,
+    takeNew,
     preset: initialPreset,
     next: initialNext,
+    back: initialBack,
     setPiece: setExtPiece,
+    colTab,
+    setColTab,
+    kindIndex,
+    switchKind,
+    setHasColumn,
+    dark: frameDark,
+    query,
   };
   const kindSwitch =
     extensions.length > 0 ? (
-      <div className="studio-kindsw" role="group" aria-label="Kind">
+      <div className="studio-kindsw studio-kindsw--incol" role="group" aria-label="Kind">
         <button type="button" aria-pressed={kind === 'writing'} onClick={() => switchKind('writing')}>
           Writing
         </button>
@@ -644,6 +720,7 @@ export function StudioShell({
       data-theme={layoutFocus ? undefined : (theme ?? undefined)}
       data-typing={layoutFocus && typing ? 'true' : undefined}
       data-side={layoutFocus ? (side ?? undefined) : undefined}
+      style={layoutFocus && sideHeadH ? ({ '--st-side-head-h': `${sideHeadH}px` } as React.CSSProperties) : undefined}
     >
       {layoutFocus ? (
         <header className="studio-fbar" ref={barRef}>
@@ -657,6 +734,11 @@ export function StudioShell({
           >
             ☰
           </button>
+          {initialBack && (
+            <a className="studio-fbtn studio-back" href={initialBack.href} title={`Back to ${initialBack.label}`}>
+              ← <span className="studio-back__label">{initialBack.label}</span>
+            </a>
+          )}
           <span className="studio-fstatus" aria-live="polite">
             {piece?.status === 'published' ? 'Published' : 'Draft'}
             {' · '}
@@ -699,27 +781,75 @@ export function StudioShell({
         </header>
       ) : (
       <header className="studio-top" ref={barRef}>
-        <a className="studio-back" href={links.hubHref} title="Back to the hub">
-          ←
-        </a>
+        {initialBack ? (
+          <a className="studio-back" href={initialBack.href} title={`Back to ${initialBack.label}`}>
+            ← <span className="studio-back__label">{initialBack.label}</span>
+          </a>
+        ) : (
+          <a className="studio-back" href={links.hubHref} title="Back to the hub">
+            ←
+          </a>
+        )}
         <span className="studio-wordmark">Studio</span>
         {kindSwitch}
-        <label className="studio-orgsel">
-          <span>{ext ? 'Making as' : 'Writing as'}</span>
-          <select
-            value={orgId}
-            onChange={(e) => {
-              setOrgId(e.target.value);
-              if (!ext) newPiece();
-            }}
-          >
-            {allOrgs.map((o) => (
-              <option key={o.orgId} value={o.orgId}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="studio-menu">
+          <button type="button" className="studio-who" aria-haspopup="menu" aria-expanded={who === 'on'} onClick={() => setWho((v) => (v === 'on' ? null : 'on'))}>
+            <span className="studio-who__k">On</span>
+            <span className="studio-who__v">{org.name}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          {who === 'on' && (
+            <div className="studio-menu__list studio-who__pop" role="menu" aria-label="Posting on">
+              <div className="studio-who__h">Posting on</div>
+              {allOrgs.map((o) => (
+                <button
+                  key={o.orgId}
+                  type="button"
+                  className="studio-menu__item"
+                  aria-current={o.orgId === orgId || undefined}
+                  onClick={() => {
+                    setWho(null);
+                    if (o.orgId === orgId) return;
+                    setOrgId(o.orgId);
+                    if (!ext) newPiece();
+                  }}
+                >
+                  <b>{o.name}</b>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="studio-menu studio-who__as">
+          <button type="button" className="studio-who" aria-haspopup="menu" aria-expanded={who === 'as'} onClick={() => setWho((v) => (v === 'as' ? null : 'as'))}>
+            <span className="studio-who__k">As</span>
+            <span className="studio-who__v">{!ext && piece?.byline?.name ? piece.byline.name : viewer.displayName}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          {who === 'as' && (
+            <div className="studio-menu__list studio-who__pop" role="menu" aria-label="Posting as">
+              <div className="studio-who__h">Posting as</div>
+              {!ext && piece ? (
+                (identities.length > 0 ? identities : [{ id: viewer.userId, name: viewer.displayName, relation: 'self' as const }]).map((i) => (
+                  <button
+                    key={i.id}
+                    type="button"
+                    className="studio-menu__item"
+                    aria-current={(piece.byline?.userId ?? viewer.userId) === i.id || undefined}
+                    onClick={() => {
+                      setWho(null);
+                      void setByline(i.id === viewer.userId ? null : i.id);
+                    }}
+                  >
+                    <b>{i.name}</b>
+                  </button>
+                ))
+              ) : (
+                <p className="studio-who__note">{viewer.displayName}. A form names its hosts or maker in its own sections.</p>
+              )}
+            </div>
+          )}
+        </div>
         <div className="studio-menu">
           <button
             type="button"
@@ -733,13 +863,16 @@ export function StudioShell({
           {menu && (
             <div className="studio-menu__list" role="menu">
               {STUDIO_KINDS.map((k) => {
+                if (k.newMenu === false) return null;
                 const inShell = k.id === 'writing' || extensions.some((e) => e.id === k.id);
                 const href = inShell ? null : kindHref ? kindHref(k.id) : k.href ?? null;
                 const soon = !inShell && !href;
                 if (soon && !showSoon) return null;
+                // An extension's own entries ("Live" under Video) follow its kind (2026-11-12).
+                const extra = extensions.find((e) => e.id === k.id)?.newEntries ?? [];
                 return (
+                  <React.Fragment key={k.id}>
                   <button
-                    key={k.id}
                     type="button"
                     role="menuitem"
                     className="studio-menu__item"
@@ -749,6 +882,7 @@ export function StudioShell({
                         switchKind('writing');
                         newPiece();
                       } else if (inShell) {
+                        pendingNew.current = { kind: k.id, as: null };
                         switchKind(k.id);
                         setNewRequest((n) => n + 1);
                       } else if (href) window.location.assign(href);
@@ -757,6 +891,22 @@ export function StudioShell({
                     <b>{k.label}</b>
                     {soon && <span className="studio-kind__soon">soon</span>}
                   </button>
+                  {extra.map((n) => (
+                    <button
+                      key={`${k.id}:${n.id}`}
+                      type="button"
+                      role="menuitem"
+                      className="studio-menu__item"
+                      onClick={() => {
+                        pendingNew.current = { kind: k.id, as: n.as };
+                        switchKind(k.id);
+                        setNewRequest((c) => c + 1);
+                      }}
+                    >
+                      <b>{n.label}</b>
+                    </button>
+                  ))}
+                  </React.Fragment>
                 );
               })}
               {showSoon && (
@@ -775,6 +925,21 @@ export function StudioShell({
             </div>
           )}
         </div>
+        <label className="studio-search">
+          <span className="studio-sr">Search pieces</span>
+          <input
+            type="search"
+            placeholder="Search pieces"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (e.target.value) {
+                setColTab('list');
+                setDrawer(true);
+              }
+            }}
+          />
+        </label>
         <span className="studio-spacer" />
         {ext ? (
           <>
@@ -790,11 +955,8 @@ export function StudioShell({
             <button type="button" className="studio-btn studio-btn--mobile" onClick={() => setSheet(sheet === 'settings' ? null : 'settings')}>
               Settings
             </button>
-            <button type="button" className="studio-btn studio-btn--icon studio-btn--desktop" aria-pressed={drawer} title="List" onClick={() => setDrawer((v) => !v)}>
+            <button type="button" className="studio-btn studio-btn--icon studio-btn--desktop" aria-pressed={drawer} title="Left column" aria-label="Left column" onClick={() => setDrawer((v) => !v)}>
               ☰
-            </button>
-            <button type="button" className="studio-btn studio-btn--icon studio-btn--desktop" aria-pressed={settings} title="Settings panel" onClick={() => setSettings((v) => !v)}>
-              ⚙
             </button>
           </>
         ) : (
@@ -826,19 +988,11 @@ export function StudioShell({
           type="button"
           className="studio-btn studio-btn--icon studio-btn--desktop"
           aria-pressed={drawer}
-          title="Pieces list"
+          title="Left column"
+          aria-label="Left column"
           onClick={() => setDrawer((v) => !v)}
         >
           ☰
-        </button>
-        <button
-          type="button"
-          className="studio-btn studio-btn--icon studio-btn--desktop"
-          aria-pressed={settings}
-          title="Settings panel"
-          onClick={() => setSettings((v) => !v)}
-        >
-          ⚙
         </button>
         <button type="button" className="studio-btn" aria-pressed={preview} disabled={!piece} onClick={() => setPreview((v) => !v)}>
           {preview ? 'Editing' : 'Preview'}
@@ -874,15 +1028,40 @@ export function StudioShell({
       )}
 
       {boardShown && pieceRef && loadBoard && (
-        <BoardSheet key={boardKey} piece={pieceRef} load={loadBoard} fallbackHref={links.channelHomeHref ?? null} top={boardTop} onClose={closeBoard} />
+        <BoardSheet
+          key={boardKey}
+          piece={pieceRef}
+          load={loadBoard}
+          fallbackHref={links.channelHomeHref ?? null}
+          top={boardTop}
+          onClose={closeBoard}
+          makeInto={kindIndex.filter((k) => !k.current && MAKE_INTO_KINDS.has(k.id)).map((k) => ({ id: k.id, label: k.label.replace(/ \(new\)$/, '') }))}
+          onMakeInto={(id) => {
+            setBoardOpen(false);
+            if (id === 'writing') {
+              switchKind('writing');
+              newPiece();
+            } else {
+              switchKind(id);
+              setNewRequest((n) => n + 1);
+            }
+          }}
+        />
       )}
 
       {notice && (
         <div className="studio-notice" role="status">
           <span>{notice.text}</span>
-          <a className="studio-notice__link" href={notice.href}>
-            {notice.label} →
-          </a>
+          {notice.href && (
+            <a className="studio-notice__link" href={notice.href}>
+              {notice.label} →
+            </a>
+          )}
+          {notice.back && (
+            <a className="studio-notice__link" href={notice.back.href}>
+              Back to {notice.back.label} →
+            </a>
+          )}
           <span className="studio-spacer" />
           <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
             ✕
@@ -893,7 +1072,8 @@ export function StudioShell({
       {ext ? (
         <StudioFrameContext.Provider value={frameApi}>{ext.render()}</StudioFrameContext.Provider>
       ) : (
-      <div className={frameClass}>
+      <div className={frameClass} data-tab={colTab}>
+        <StudioColumnHead tab={colTab} onTab={setColTab} hasPiece kinds={kindIndex} onKind={switchKind} />
         <aside className={`studio-drawer ${sheet === 'drawer' ? 'is-open' : ''}`} inert={focus && side !== 'pieces' ? true : undefined}>
           <div className="studio-panel">
             {links.library && (
@@ -924,46 +1104,45 @@ export function StudioShell({
             )}
             {series.length > 0 && (
               <>
-                <div className="studio-panel__h">
-                  <span>Series</span>
-                  {seriesFilter && (
-                    <button type="button" className="studio-btn studio-btn--ghost" style={{ padding: '2px 6px' }} onClick={() => setSeriesFilter(null)}>
-                      all
-                    </button>
-                  )}
-                </div>
-                <div className="studio-list">
-                  {series.map((s) => (
-                    <button key={s.name} type="button" className="studio-row" aria-current={seriesFilter === s.name} onClick={() => setSeriesFilter(seriesFilter === s.name ? null : s.name)}>
-                      <span className="studio-row__t">{s.name}</span>
-                      <span className="studio-row__m">
-                        <span>{s.count} {s.count === 1 ? 'piece' : 'pieces'}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <StudioFold
+                  label="Series"
+                  aside={
+                    seriesFilter ? (
+                      <button type="button" className="studio-btn studio-btn--ghost" style={{ padding: '2px 6px' }} onClick={() => setSeriesFilter(null)}>
+                        all
+                      </button>
+                    ) : null
+                  }
+                >
+                  <div className="studio-list">
+                    {series.map((s) => (
+                      <button key={s.name} type="button" className="studio-row" aria-current={seriesFilter === s.name} onClick={() => setSeriesFilter(seriesFilter === s.name ? null : s.name)}>
+                        <span className="studio-row__t">{s.name}</span>
+                        <span className="studio-row__m">
+                          <span>{s.count} {s.count === 1 ? 'piece' : 'pieces'}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </StudioFold>
               </>
             )}
-            <div className="studio-panel__h">
-              <span>Drafts</span>
-              <span>{drafts.length}</span>
-            </div>
-            <div className="studio-list">
-              {drafts.length === 0 && <p className="studio-hint">Nothing in progress.</p>}
-              {drafts.map((p) => (
-                <PieceRow key={p.id} p={p} current={p.id === pieceId} onOpen={() => openPiece(p.id)} />
-              ))}
-            </div>
-            <div className="studio-panel__h">
-              <span>Published</span>
-              <span>{published.length}</span>
-            </div>
-            <div className="studio-list">
-              {published.length === 0 && <p className="studio-hint">Nothing published yet.</p>}
-              {published.map((p) => (
-                <PieceRow key={p.id} p={p} current={p.id === pieceId} onOpen={() => openPiece(p.id)} />
-              ))}
-            </div>
+            <StudioFold label="Drafts" count={drafts.length}>
+              <div className="studio-list">
+                {drafts.length === 0 && <p className="studio-hint">Nothing in progress.</p>}
+                {drafts.map((p) => (
+                  <PieceRow key={p.id} p={p} current={p.id === pieceId} onOpen={() => openPiece(p.id)} />
+                ))}
+              </div>
+            </StudioFold>
+            <StudioFold label="Published" count={published.length}>
+              <div className="studio-list">
+                {published.length === 0 && <p className="studio-hint">Nothing published yet.</p>}
+                {published.map((p) => (
+                  <PieceRow key={p.id} p={p} current={p.id === pieceId} onOpen={() => openPiece(p.id)} />
+                ))}
+              </div>
+            </StudioFold>
           </div>
         </aside>
 
@@ -1223,7 +1402,7 @@ export function StudioShell({
       </div>
       )}
       {layoutFocus && (
-        <div className="studio-side__head" inert={side ? undefined : true}>
+        <div className="studio-side__head" ref={sideHeadRef} inert={side ? undefined : true}>
           <div className="studio-side__tabs" role="tablist">
             <button type="button" role="tab" aria-selected={side === 'pieces'} onClick={() => setSide('pieces')}>
               Pieces
@@ -1250,14 +1429,15 @@ export function StudioShell({
         </div>
       )}
       {layoutFocus && side && <button type="button" className="studio-scrim studio-scrim--side" aria-label="Close menu" onClick={() => setSide(null)} />}
-      {(sheet || menu) && (
+      {(sheet || menu || who) && (
         <button
           type="button"
-          className={`studio-scrim ${menu && !sheet ? 'studio-scrim--clear' : ''}`}
+          className={`studio-scrim ${(menu || who) && !sheet ? 'studio-scrim--clear' : ''}`}
           aria-label="Close"
           onClick={() => {
             setSheet(null);
             setMenu(false);
+            setWho(null);
           }}
         />
       )}

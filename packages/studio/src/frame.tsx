@@ -21,7 +21,20 @@
 // ============================================================================
 
 import * as React from 'react';
-import { createPortal } from 'react-dom';
+import {
+  StudioFrameContext,
+  StudioTopActions,
+  StudioTopStatus,
+  useStudioFrame,
+  type StudioColTab,
+  type StudioFrameApi,
+  type StudioPieceRef,
+} from '@elkdonis/studio-forms/host-frame';
+
+// The context and the two portals live in studio-forms (the forms read them); re-exported as the
+// same objects so the shell's provider reaches FormShell.
+export { StudioFrameContext, StudioTopActions, StudioTopStatus, useStudioFrame };
+export type { StudioColTab, StudioFrameApi, StudioPieceRef };
 
 export interface StudioExtension {
   /** Matches a StudioKind id ("video"); the shell lists it in the kind switch and "New ▾". */
@@ -30,53 +43,84 @@ export interface StudioExtension {
   /** What the drawer holds, for the mobile button: "Reels". */
   listLabel?: string;
   render: () => React.ReactNode;
+  /**
+   * Extra "New ▾" entries beyond the kind's own (2026-11-12): Video offers "Live" when the viewer may
+   * go live. Choosing one opens the kind and hands it `as` through StudioFrameApi.takeNew.
+   */
+  newEntries?: Array<{ id: string; label: string; as: string }>;
 }
 
-export interface StudioFrameApi {
-  /** The acting org; `oad` is "Just me". */
-  orgId: string;
-  orgs: Array<{ orgId: string; name: string; slug: string }>;
-  viewer: { userId: string; displayName: string; slug: string | null };
-  setError: (message: string | null) => void;
-  /** Desktop column toggles and the mobile sheet, owned by the shell's bar. */
-  drawer: boolean;
-  settings: boolean;
-  sheet: null | 'drawer' | 'settings';
-  setSheet: (s: null | 'drawer' | 'settings') => void;
-  actionsSlot: HTMLElement | null;
-  statusSlot: HTMLElement | null;
-  /**
-   * Goes up each time the top bar's "New ▾" asks this kind for a new item (2026-11-07). Kinds react
-   * with useNewRequest; before it, New on the kind you were already in did nothing.
-   */
-  newRequest: number;
-  /** `?preset=` from the hand-off (2026-11-08): the kind applies it once, on a new item. Null when none. */
-  preset?: string | null;
-  /**
-   * `?next=` (2026-11-11): where the person came from in Channel, already checked by the host to be
-   * a Channel path. After Publish, "Back to Channel" goes here instead of the piece's board.
-   */
-  next?: string | null;
-  /**
-   * The kind reports the saved item that is open (null when none, or when Channel does not cover it),
-   * so the shell's bar can link to its board in Channel (2026-11-11).
-   */
-  setPiece?: (ref: StudioPieceRef | null) => void;
+/** A list section in the column that folds (Drafts, Published, Series; developer, 2026-11-12). */
+export function StudioFold({
+  label,
+  count,
+  aside,
+  defaultOpen = true,
+  children,
+}: {
+  label: string;
+  count?: number;
+  /** A control beside the title ("all" on a filtered series). */
+  aside?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = React.useState(defaultOpen);
+  return (
+    <>
+      <div className="studio-panel__h studio-fold__h">
+        <button type="button" className="studio-fold" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          <span className="studio-fold__caret" aria-hidden="true">
+            {open ? '▾' : '▸'}
+          </span>
+          <span>{label}</span>
+        </button>
+        {aside}
+        {count != null && <span>{count}</span>}
+      </div>
+      {open && children}
+    </>
+  );
 }
 
-/** An open, saved item as Channel keys it. `orgId` is the item's own org; null for a personal piece. */
-export interface StudioPieceRef {
-  store: 'thread' | 'artwork';
-  id: string;
-  orgId: string | null;
-}
-
-export const StudioFrameContext = React.createContext<StudioFrameApi | null>(null);
-
-export function useStudioFrame(): StudioFrameApi {
-  const api = React.useContext(StudioFrameContext);
-  if (!api) throw new Error('useStudioFrame: render inside StudioShell as a registered extension');
-  return api;
+/** The left column's head: the two tabs, and under "All pieces" the kinds. */
+export function StudioColumnHead({
+  tab,
+  onTab,
+  hasPiece,
+  kinds,
+  onKind,
+}: {
+  tab: StudioColTab;
+  onTab?: (tab: StudioColTab) => void;
+  /** False when the kind has no settings: only "All pieces" is offered. */
+  hasPiece: boolean;
+  kinds?: Array<{ id: string; label: string; current: boolean }>;
+  onKind?: (id: string) => void;
+}) {
+  return (
+    <div className="studio-colhead">
+      <div className="studio-coltabs" role="tablist" aria-label="Left column">
+        <button type="button" role="tab" aria-selected={tab === 'list'} onClick={() => onTab?.('list')}>
+          All pieces
+        </button>
+        {hasPiece && (
+          <button type="button" role="tab" aria-selected={tab === 'piece'} onClick={() => onTab?.('piece')}>
+            This piece
+          </button>
+        )}
+      </div>
+      {tab === 'list' && kinds && kinds.length > 1 && (
+        <nav className="studio-kindidx" aria-label="Kinds">
+          {kinds.map((k) => (
+            <button key={k.id} type="button" aria-current={k.current || undefined} onClick={() => !k.current && onKind?.(k.id)}>
+              {k.label}
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
 }
 
 /** Run `start` when "New ▾" asks this kind for a new item (not on mount: a kind opened fresh starts new anyway). */
@@ -93,7 +137,11 @@ export function useNewRequest(start: () => void) {
   }, [newRequest]);
 }
 
-/** The three columns, with the shell's collapse and sheet behaviour. */
+/**
+ * The kind's layout: one left column (its list under "All pieces", its settings under "This piece")
+ * and the editor, with the shell's collapse and sheet behaviour. Until 2026-11-11 the settings had
+ * a column of their own on the right.
+ */
 export function StudioColumns({
   drawer,
   main,
@@ -107,16 +155,25 @@ export function StudioColumns({
   wideSettings?: boolean;
 }) {
   const f = useStudioFrame();
+  const setHasColumn = f.setHasColumn;
+  React.useEffect(() => {
+    setHasColumn?.(true);
+    return () => setHasColumn?.(false);
+  }, [setHasColumn]);
+  // One left column: the list and the settings share it behind two tabs (canvas R1).
+  const hasPiece = settings != null && settings !== false;
+  const tab: StudioColTab = hasPiece ? f.colTab ?? 'piece' : 'list';
   const cls = [
     'studio-frame',
     f.drawer ? '' : 'studio-frame--no-drawer',
-    f.settings && settings ? '' : 'studio-frame--no-settings',
+    hasPiece ? '' : 'studio-frame--no-settings',
     wideSettings ? 'studio-frame--wide-settings' : '',
   ]
     .filter(Boolean)
     .join(' ');
   return (
-    <div className={cls}>
+    <div className={cls} data-tab={tab}>
+      <StudioColumnHead tab={tab} onTab={f.setColTab} hasPiece={hasPiece} kinds={f.kindIndex} onKind={f.switchKind} />
       <aside className={`studio-drawer ${f.sheet === 'drawer' ? 'is-open' : ''}`}>
         <div className="studio-panel">{drawer}</div>
       </aside>
@@ -126,16 +183,4 @@ export function StudioColumns({
       </aside>
     </div>
   );
-}
-
-/** Buttons for the shell's top bar (right side, before the theme toggle). */
-export function StudioTopActions({ children }: { children: React.ReactNode }) {
-  const { actionsSlot } = useStudioFrame();
-  return actionsSlot ? createPortal(children, actionsSlot) : null;
-}
-
-/** Text for the shell's status area ("Saved", "Rendering 40%"). */
-export function StudioTopStatus({ children }: { children: React.ReactNode }) {
-  const { statusSlot } = useStudioFrame();
-  return statusSlot ? createPortal(children, statusSlot) : null;
 }
