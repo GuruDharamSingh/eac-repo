@@ -725,7 +725,7 @@ export async function createSeriesFromForm(viewerId: string, orgId: string, inpu
   if (!(await mayMakeSeries(viewerId, orgId))) {
     return refuse(
       orgId === PERSONAL_ORG_ID
-        ? 'A series goes on an organisation’s calendar. Choose the organisation under “Making as”.'
+        ? 'A series goes on an organisation’s calendar. Choose the organisation in the “On …” menu at the top.'
         : 'Only an owner or guide of this organisation can make a series.'
     );
   }

@@ -446,6 +446,9 @@ export function SeriesPlannerSurface({
           onCreateTalk={() => post({ createTalkRoom: true }, "Could not make the Talk room.")}
         />
       )}
+      {editable && data?.settings?.recurrencePattern === "CUSTOM" && (
+        <AddDateForm zone={data.timeZone ?? "UTC"} onAdd={(addDate) => post({ addDate }, "Could not add the date.")} />
+      )}
       {data && weeks.length > 0 && (
         <h3 className="eac-series__sessions-label">
           Sessions
@@ -482,6 +485,7 @@ export function SeriesPlannerSurface({
                 post({ occurrenceAt: w.at, cancel }, cancel ? "Could not cancel the week." : "Could not restore the week.")
               }
               onMove={(moveTo) => post({ occurrenceAt: w.at, moveTo }, "Could not move the week.")}
+              chosenDates={data?.settings?.recurrencePattern === "CUSTOM"}
               seriesZone={data?.timeZone ?? "UTC"}
             />
           );
@@ -1217,8 +1221,10 @@ type ScheduleFields = {
   lastDate: string;
   durationMinutes: string;
   alsoZones: string[];
-  /** "1"–"4", or "monthly". */
+  /** "1"–"4", "monthly", or "dates" (a series on chosen dates; create mode only). */
   intervalWeeks: string;
+  /** Chosen dates as local "YYYY-MM-DDTHH:MM" in `timeZone` (create mode, `intervalWeeks` "dates"). */
+  dates: string[];
 };
 
 /** The schedule's repeat, as the save endpoints read it. */
@@ -1236,6 +1242,7 @@ function scheduleFields(s: SeriesPlannerSchedule, recurrencePattern?: string | n
     durationMinutes: String(s.durationMinutes ?? 60),
     alsoZones: s.alsoZones ?? [],
     intervalWeeks: recurrencePattern === "MONTHLY" ? "monthly" : String(s.intervalWeeks ?? 1),
+    dates: [],
   };
 }
 
@@ -1289,6 +1296,7 @@ function SeriesSettingsForm({
     durationMinutes: "60",
     alsoZones: ["America/Los_Angeles", "America/New_York", "Europe/Paris"],
     intervalWeeks: "1",
+    dates: [""],
   }));
   const [showPreview, setShowPreview] = usePreviewToggle();
   // Keyed by value, so a reload after saving a week does not wipe edits here.
@@ -1340,9 +1348,17 @@ function SeriesSettingsForm({
   async function createIt() {
     if (!create) return;
     setSaving(true);
+    const onDates = sched.intervalWeeks === "dates";
     await create.onCreate({
       settings: settingsPayload(),
-      schedule: {
+      schedule: onDates
+        ? {
+            timeZone: sched.timeZone,
+            dates: sched.dates.map((d) => d.trim()).filter(Boolean),
+            durationMinutes: Number.parseInt(sched.durationMinutes, 10) || 60,
+            alsoZones: sched.alsoZones,
+          }
+        : {
         weekday: Number(sched.weekday),
         time: sched.time,
         timeZone: sched.timeZone,
@@ -1360,7 +1376,10 @@ function SeriesSettingsForm({
   const cover = fields.cover ? (JSON.parse(fields.cover) as SeriesPlannerCover) : null;
   const savedCover = saved.cover ? (JSON.parse(saved.cover) as SeriesPlannerCover) : null;
   const joinSummary = saved.joinMode === "talk" ? (settings.talkUrl ? "Joining by Talk room" : "Talk room not made yet") : saved.joinUrl ? "Join link set" : saved.meetingId ? "Meeting ID set" : "No join link yet";
-  const when = settings.schedule
+  const chosen = settings.recurrencePattern === "CUSTOM";
+  const when = chosen
+    ? "On chosen dates"
+    : settings.schedule
     ? `${settings.recurrencePattern === "MONTHLY" ? `Monthly, ${WEEKDAYS[settings.schedule.weekday]}` : `${WEEKDAYS[settings.schedule.weekday]}s`} ${settings.schedule.time} · ${ZONE_CHOICES.find((z) => z.id === settings.schedule!.timeZone)?.label ?? settings.schedule.timeZone}`
     : null;
 
@@ -1618,7 +1637,11 @@ function SeriesSettingsForm({
               <button
                 type="button"
                 className="eac-face-tool eac-rota__save"
-                disabled={saving || fields.title.trim().length < 2 || !sched.firstDate || !sched.time}
+                disabled={
+                  saving ||
+                  fields.title.trim().length < 2 ||
+                  (sched.intervalWeeks === "dates" ? !sched.dates.some((d) => d.trim()) : !sched.firstDate || !sched.time)
+                }
                 onClick={() => void createIt()}
               >
                 {saving ? "Creating…" : "Create the series"}
@@ -1633,7 +1656,7 @@ function SeriesSettingsForm({
                 </button>
               </div>
 
-              {settings.schedule && <ScheduleForm recurrencePattern={settings.recurrencePattern} schedule={settings.schedule} weeks={weeks} onSchedule={onSchedule} />}
+              {settings.schedule && !chosen && <ScheduleForm recurrencePattern={settings.recurrencePattern} schedule={settings.schedule} weeks={weeks} onSchedule={onSchedule} />}
             </>
           )}
         </div>
@@ -1675,6 +1698,7 @@ function ScheduleForm({
   }, [saved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dirty = JSON.stringify(fields) !== JSON.stringify(saved);
+  const onDates = Boolean(controlled) && fields.intervalWeeks === "dates";
   const set = (k: keyof ScheduleFields) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setMoves(null);
     setFields((f) => ({ ...f, [k]: e.target.value }));
@@ -1740,20 +1764,25 @@ function ScheduleForm({
             <option value="3">Every 3 weeks</option>
             <option value="4">Every 4 weeks</option>
             <option value="monthly">Monthly (same weekday)</option>
+            {controlled && <option value="dates">On chosen dates</option>}
           </select>
         </label>
-        <label className="eac-series__field">
-          <span>Day</span>
-          <select className="eac-input" value={fields.weekday} onChange={set("weekday")}>
-            {WEEKDAYS.map((d, i) => (
-              <option key={d} value={String(i)}>{d}</option>
-            ))}
-          </select>
-        </label>
-        <label className="eac-series__field">
-          <span>Time</span>
-          <input className="eac-input" type="time" value={fields.time} onChange={set("time")} required />
-        </label>
+        {!onDates && (
+          <label className="eac-series__field">
+            <span>Day</span>
+            <select className="eac-input" value={fields.weekday} onChange={set("weekday")}>
+              {WEEKDAYS.map((d, i) => (
+                <option key={d} value={String(i)}>{d}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        {!onDates && (
+          <label className="eac-series__field">
+            <span>Time</span>
+            <input className="eac-input" type="time" value={fields.time} onChange={set("time")} required />
+          </label>
+        )}
         <label className="eac-series__field">
           <span>Time zone</span>
           <select className="eac-input" value={fields.timeZone} onChange={set("timeZone")}>
@@ -1767,16 +1796,24 @@ function ScheduleForm({
           <input className="eac-input" type="number" min={15} max={600} step={5} value={fields.durationMinutes} onChange={set("durationMinutes")} />
         </label>
       </div>
-      <div className="eac-series__pair">
-        <label className="eac-series__field">
-          <span>First session on or after</span>
-          <input className="eac-input" type="date" value={fields.firstDate} onChange={set("firstDate")} required />
-        </label>
-        <label className="eac-series__field">
-          <span>Last date (optional)</span>
-          <input className="eac-input" type="date" value={fields.lastDate} onChange={set("lastDate")} />
-        </label>
-      </div>
+      {onDates ? (
+        <ChosenDatesList
+          zone={fields.timeZone}
+          dates={fields.dates}
+          onChange={(dates) => setFields((f) => ({ ...f, dates }))}
+        />
+      ) : (
+        <div className="eac-series__pair">
+          <label className="eac-series__field">
+            <span>First session on or after</span>
+            <input className="eac-input" type="date" value={fields.firstDate} onChange={set("firstDate")} required />
+          </label>
+          <label className="eac-series__field">
+            <span>Last date (optional)</span>
+            <input className="eac-input" type="date" value={fields.lastDate} onChange={set("lastDate")} />
+          </label>
+        </div>
+      )}
       <div className="eac-series__field">
         <span>Show times in</span>
         <div className="eac-series__checks">
@@ -1835,6 +1872,74 @@ function ScheduleForm({
   );
 }
 
+/**
+ * An ordered list of date-and-time rows for a series on chosen dates (create
+ * mode). Values are local "YYYY-MM-DDTHH:MM" in the series' zone; the list is
+ * sent as typed and the server sorts it, so rows can be filled in any order.
+ */
+function ChosenDatesList({ zone, dates, onChange }: { zone: string; dates: string[]; onChange: (dates: string[]) => void }) {
+  const rows = dates.length > 0 ? dates : [""];
+  return (
+    <div className="eac-series__field">
+      <span>Dates ({zone.replace(/_/g, " ")})</span>
+      <ol className="eac-series__dates">
+        {rows.map((d, i) => (
+          <li key={i} className="eac-series__dates-row">
+            <input
+              className="eac-input"
+              type="datetime-local"
+              aria-label={`Date ${i + 1}`}
+              value={d}
+              onChange={(e) => onChange(rows.map((x, j) => (j === i ? e.target.value : x)))}
+            />
+            <button
+              type="button"
+              className="eac-face-tool"
+              disabled={rows.length === 1 && !d}
+              onClick={() => onChange(rows.length === 1 ? [""] : rows.filter((_, j) => j !== i))}
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="eac-rota__record-actions">
+        <button type="button" className="eac-face-tool" disabled={rows.length >= 60} onClick={() => onChange([...rows, ""])}>
+          Add a date
+        </button>
+      </div>
+      <p className="eac-series__hint">Each date is one session. Sessions are listed in date order; you can add, move or remove dates later in the planner.</p>
+    </div>
+  );
+}
+
+/** A series on chosen dates: add one more date. Organisers only. */
+function AddDateForm({ zone, onAdd }: { zone: string; onAdd: (local: string) => Promise<boolean> }) {
+  const [value, setValue] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  return (
+    <section className="eac-series__adddate" aria-label="Add a date">
+      <label className="eac-series__field">
+        <span>Add a date ({zone.replace(/_/g, " ")})</span>
+        <input className="eac-input" type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} />
+      </label>
+      <button
+        type="button"
+        className="eac-face-tool eac-rota__save"
+        disabled={busy || !value}
+        onClick={async () => {
+          setBusy(true);
+          const ok = await onAdd(value);
+          setBusy(false);
+          if (ok) setValue("");
+        }}
+      >
+        {busy ? "Adding…" : "Add a date"}
+      </button>
+    </section>
+  );
+}
+
 type WeekFields = {
   title?: string | null;
   subtitle?: string | null;
@@ -1861,6 +1966,7 @@ function WeekForm({
   onPublish,
   onCancel,
   onMove,
+  chosenDates = false,
   seriesZone = "UTC",
 }: {
   week: SeriesPlannerWeek;
@@ -1880,6 +1986,8 @@ function WeekForm({
   onCancel?: (cancel: boolean) => Promise<boolean>;
   /** Organisers: move the week to a local "YYYY-MM-DDTHH:MM" in the series' zone. */
   onMove?: (moveTo: string) => Promise<boolean>;
+  /** A series on chosen dates: cancelling reads as removing the date. */
+  chosenDates?: boolean;
   /** The zone the move input is read in: the series' own (the server reads it there too). */
   seriesZone?: string;
 }) {
@@ -2123,7 +2231,7 @@ function WeekForm({
                 <div className="eac-rota__record-actions">
                   {onCancel && (
                     <button type="button" className="eac-face-tool" disabled={busy} onClick={() => void act(() => onCancel(!cancelled))}>
-                      {cancelled ? "Restore" : "Cancel this week"}
+                      {cancelled ? "Restore" : chosenDates ? "Remove this date" : "Cancel this week"}
                     </button>
                   )}
                   {onMove && !moving && (
@@ -2316,6 +2424,7 @@ function CoverThumb({ cover }: { cover: SeriesPlannerCover | null }) {
 /** "Weekly · Mondays", from the schedule. */
 function autoRhythm(settings: SeriesPlannerSettings): string {
   const p = settings.recurrencePattern;
+  if (p === "CUSTOM") return "On chosen dates";
   const n = settings.schedule?.intervalWeeks ?? 1;
   const r = p === "MONTHLY" ? "Monthly" : p === "DAILY" ? "Daily" : n > 1 ? `Every ${n} weeks` : "Weekly";
   return settings.schedule ? `${r} · ${WEEKDAYS[settings.schedule.weekday]}s` : r;

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { db } from "@elkdonis/db";
 import { listOrgFeeds } from "@elkdonis/services";
+import { MeetingFormPage } from "@/components/manage/meeting-form-page";
 import { ContentForm } from "@/components/manage/content-form";
 import type { ContentFormDefaults } from "@/lib/cms/form-defaults";
 import { getThreadById, getThreadMaterials } from "@/lib/data";
@@ -54,6 +55,19 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
   ]);
 
   if (!thread) notFound();
+
+  // Meetings, events and posts edit in the shared forms (@elkdonis/site-forms); every other kind
+  // (service, …) keeps the old form until its own shared form lands (2026-11-14).
+  if (thread.kind === "meeting" || thread.kind === "event" || thread.kind === "post") {
+    return (
+      <>
+        <h2 className="sr-only">Edit {thread.kind}</h2>
+        <div className="mt-6 max-w-3xl">
+          <MeetingFormPage kind={thread.kind} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} threadId={thread.id} />
+        </div>
+      </>
+    );
+  }
 
   const materials = await getThreadMaterials(thread.id);
 

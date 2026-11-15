@@ -124,20 +124,25 @@ export function dayMonthLong(at: string | Date, zone: string): string {
 
 const ORDINALS = ["First", "Second", "Third", "Fourth", "Fifth"];
 
+/** The rhythm of a series whose sessions are hand-picked dates (`recurrence_pattern` CUSTOM). */
+export const CHOSEN_DATES = "On chosen dates";
+
 type RhythmSeries = { recurrencePattern: string | null; schedule?: { intervalWeeks?: number | null } | null };
 
-/** "Weekly", "Every 2 weeks", "Monthly", "Daily", or "Series" with no recurrence. */
+/** "Weekly", "Every 2 weeks", "Monthly", "Daily", "On chosen dates" (CUSTOM), or "Series" with no recurrence. */
 export function rhythmLabel(series: RhythmSeries): string {
   const every = series.schedule?.intervalWeeks ?? 1;
   if (series.recurrencePattern === "WEEKLY") return every > 1 ? `Every ${every} weeks` : "Weekly";
   if (series.recurrencePattern === "MONTHLY") return "Monthly";
   if (series.recurrencePattern === "DAILY") return "Daily";
+  if (series.recurrencePattern === "CUSTOM") return CHOSEN_DATES;
   return "Series";
 }
 
 /** "Thursdays", "Every 2 weeks, Thursdays", or "First Saturday of the month". */
 export function scheduleLine(series: RhythmSeries, at: string | Date, zone: string): string {
   const every = series.schedule?.intervalWeeks ?? 1;
+  if (series.recurrencePattern === "CUSTOM") return CHOSEN_DATES;
   if (series.recurrencePattern === "MONTHLY") {
     const d = typeof at === "string" ? new Date(at) : at;
     const day = Number(d.toLocaleDateString("en-US", { timeZone: zone, day: "numeric" }));

@@ -1,6 +1,7 @@
 import { storageToAudience } from "@elkdonis/services/thread-audience";
 import { notFound } from "next/navigation";
 import { listOrgFeeds } from "@elkdonis/services";
+import { SiteFormPageHost } from "@/components/manage/site-form-page";
 import { ContentForm } from "@/components/manage/content-form";
 import type { ContentFormDefaults } from "@/lib/cms/form-defaults";
 import { getThreadById, getThreadMaterials } from "@/lib/data";
@@ -44,6 +45,20 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
   ]);
 
   if (!thread) notFound();
+
+  // Meetings, events, posts and workshops edit in the shared form (@elkdonis/site-forms); every other kind keeps the
+  // old form. innergathering has no series planner (no series-site mounting), so a series is not routed
+  // anywhere new here (2026-11-14).
+  if (thread.kind === "meeting" || thread.kind === "event" || thread.kind === "post" || thread.kind === "workshop") {
+    return (
+      <>
+        <h2 className="sr-only">Edit</h2>
+        <div className="mt-6 max-w-3xl">
+          <SiteFormPageHost kind={thread.kind} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} threadId={thread.id} />
+        </div>
+      </>
+    );
+  }
 
   const materials = await getThreadMaterials(thread.id);
 

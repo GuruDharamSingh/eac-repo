@@ -106,16 +106,13 @@ function pushFor(
   /** What was typed before the kind was chosen — a title from a compose bar. */
   prefill?: Record<string, unknown>
 ) {
-  if (option.writes.table === "threads") {
+  // A host that registered `compose:<id>` draws its own form for the kind (the shared site forms,
+  // @elkdonis/site-forms), even for a threads kind the connectors could also save.
+  if (hasCustom) {
+    push({ type: "custom", key: `compose:${option.id}`, title: option.title, kind: asSurfaceKind(option.id), ...(prefill ? { props: { prefill } } : {}) });
+  } else if (option.writes.table === "threads") {
     if (option.surface === "writing") push({ type: "write", kind: "post", ...(prefill ? { prefill } : {}) });
     else push({ type: "compose", kind: option.writes.kind, tier: "full", ...(prefill ? { prefill } : {}) });
-  } else if (hasCustom) {
-    push({
-      type: "custom",
-      key: `compose:${option.id}`,
-      title: option.title,
-      kind: asSurfaceKind(option.id),
-    });
   }
 }
 

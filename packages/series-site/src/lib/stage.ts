@@ -45,7 +45,7 @@ export function seriesStageSlide(
   const label = options.label ?? comingLabel(week);
   const d = dateParts(week.at, zone);
   return {
-    kind: `${rhythmLabel(s)} series`,
+    kind: s.recurrencePattern === "CUSTOM" ? "Series on chosen dates" : `${rhythmLabel(s)} series`,
     eyebrow,
     title: head,
     titleEm: em,

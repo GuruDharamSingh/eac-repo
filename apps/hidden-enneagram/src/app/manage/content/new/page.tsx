@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listOrgFeeds } from "@elkdonis/services";
-import { ContentComposerBody } from "@/components/manage/content-composer-body";
+import { SiteFormPageHost } from "@/components/manage/site-form-page";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
 
@@ -24,7 +24,6 @@ export default async function NewContentPage({
   const kind = kindParam === "service" || feed === "services" ? "service" : "post";
   const feeds = await listOrgFeeds(siteConfig.orgId, { includePrivate: true });
   const options = feeds.map((f) => ({ slug: f.slug, name: f.name }));
-  const initialFeed = feed && feeds.some((f) => f.slug === feed) ? feed : undefined;
 
   return (
     <div>
@@ -42,12 +41,8 @@ export default async function NewContentPage({
         )}
       </p>
       <div className="mt-6 max-w-2xl">
-        <ContentComposerBody
-          key={kind}
-          kind={kind}
-          feeds={options}
-          initialAnswers={initialFeed ? { feed_slug: initialFeed } : undefined}
-        />
+        {/* The shared form (@elkdonis/site-forms), 2026-11-14. `?feed=` is not carried over: pick the page in "Goes on". */}
+        <SiteFormPageHost key={kind} kind={kind} feeds={options} />
       </div>
     </div>
   );

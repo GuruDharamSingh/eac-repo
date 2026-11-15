@@ -360,6 +360,7 @@ function seriesEyebrow(series: Parameters<typeof rhythmLabel>[0]): string {
   if (series.recurrencePattern === "WEEKLY" && (series.schedule?.intervalWeeks ?? 1) > 1) return `Series · every ${series.schedule!.intervalWeeks} weeks`;
   if (series.recurrencePattern === "WEEKLY") return "Weekly series";
   if (series.recurrencePattern === "MONTHLY") return "Monthly series";
+  if (series.recurrencePattern === "CUSTOM") return "Series on chosen dates";
   return "Series";
 }
 

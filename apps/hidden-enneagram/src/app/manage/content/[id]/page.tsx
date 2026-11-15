@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { getServiceOfferingById, listOrgFeeds, serviceAnswersFromOffering } from "@elkdonis/services";
-import { ContentComposerBody } from "@/components/manage/content-composer-body";
+import { listOrgFeeds } from "@elkdonis/services";
+import { SiteFormPageHost } from "@/components/manage/site-form-page";
 import { getThreadById } from "@/lib/data";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
@@ -28,36 +28,14 @@ export default async function EditContentPage({
   ]);
   if (!thread) notFound();
 
+  // Posts and services edit in the shared form (@elkdonis/site-forms), 2026-11-14.
   const kind = thread.kind === "service" ? "service" : "post";
-  const service = kind === "service" ? await getServiceOfferingById(siteConfig.orgId, thread.id) : null;
-
-  const answers: Record<string, unknown> = {
-    title: thread.title,
-    excerpt: thread.excerpt ?? "",
-    body: thread.description ?? "",
-    cover_image_url: service?.coverImageUrl ?? thread.coverImageUrl ?? "",
-    feed_slug: thread.feedSlug ?? undefined,
-    visibility: thread.visibility === "ORGANIZATION" ? "ORGANIZATION" : "PUBLIC",
-    ...(service
-      ? {
-          price: service.price ?? undefined,
-          currency: service.currency,
-          format: service.format ?? "online",
-          ...serviceAnswersFromOffering(service),
-        }
-      : {}),
-  };
 
   return (
     <div>
       <h2 className="font-serif text-2xl">{thread.title}</h2>
       <div className="mt-6 max-w-2xl">
-        <ContentComposerBody
-          kind={kind}
-          feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
-          initialAnswers={answers}
-          threadId={thread.id}
-        />
+        <SiteFormPageHost kind={kind} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} threadId={thread.id} />
       </div>
     </div>
   );

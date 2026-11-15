@@ -11,6 +11,8 @@ import { CloudSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { EmailPopup } from "./email/EmailPopup";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
+import { siteFormConnectors } from "@elkdonis/site-forms";
+import { innergatheringSiteForms } from "@/lib/forms/site";
 import { saveContentAction } from "@/lib/cms/actions";
 import { saveWorkshopAction } from "@/lib/cms/workshop-actions";
 import { toWorkshopInput } from "@/lib/cms/workshop-adapter";
@@ -83,6 +85,9 @@ export function HubSurfaces({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
+  // The shared meeting, event and post forms in the compose popup (@elkdonis/site-forms).
+  const formSite = React.useMemo(() => innergatheringSiteForms(feeds), [feeds]);
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () =>
@@ -269,6 +274,7 @@ export function HubSurfaces({
         },
 
         custom: {
+          ...siteFormConnectors(formSite, ["meeting", "event", { id: "article", kind: "post" }, { id: "workshop", kind: "workshop" }]),
           // The email suite, in the popup. The SAME component the full page
           // at /hub/email renders — one email UI, opened two ways, which is
           // the point of consolidating the four app-local attempts.
@@ -326,7 +332,7 @@ export function HubSurfaces({
 
         onMutated: () => router.refresh(),
       }),
-    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
+    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router, formSite]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

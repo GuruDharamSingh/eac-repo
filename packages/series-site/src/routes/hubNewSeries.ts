@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@elkdonis/db";
-import {
-  SERIES_KIND,
-  SeriesError,
-  createThread,
-  ensureOrgCalendar,
-  getOrgCalendarUri,
-  pushThreadToCalendar,
-  saveSeriesSchedule,
-  saveSeriesSettings,
-  validTimeZone,
-} from "@elkdonis/services";
-import { wallClockToInstant } from "@elkdonis/cms-ui/compose";
+import { createSiteSeries } from "@elkdonis/services";
 import type { SeriesSite } from "../config";
 import { apiMember } from "../config";
 
@@ -37,6 +25,9 @@ export function hubNewSeriesRoutes(site: SeriesSite) {
  * POST { title, lede?, firstDate: "YYYY-MM-DD", time: "HH:MM", timeZone,
  *        weekday?: 0-6 (default: the first date's), intervalWeeks?: 1-4, monthly?: boolean,
  *        lastDate?: "YYYY-MM-DD", alsoZones?: string[], durationMinutes? }
+ *   or, for a series on chosen dates (2026-11-14, `recurrence_pattern` CUSTOM):
+ *      { title, lede?, timeZone, dates: ["YYYY-MM-DDTHH:MM", ...] (1-60, in the zone),
+ *        alsoZones?, durationMinutes? }  (no firstDate/time/weekday/lastDate)
  *   → { ok, id, slug, href, warnings }
  */
 
@@ -51,97 +42,29 @@ async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
-  if (title.length < 2) return NextResponse.json({ error: "Give the series a name." }, { status: 400 });
-  const lede = typeof body.lede === "string" ? body.lede.trim().slice(0, 1000) || null : null;
-  const zone = validTimeZone(typeof body.timeZone === "string" ? body.timeZone : null);
-  if (!zone) return NextResponse.json({ error: "Pick a time zone from the list." }, { status: 400 });
-  const firstDate = typeof body.firstDate === "string" ? body.firstDate : "";
-  const time = typeof body.time === "string" ? body.time : "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) return NextResponse.json({ error: "Pick the date of the first session." }, { status: 400 });
-  if (!/^\d{1,2}:\d{2}$/.test(time)) return NextResponse.json({ error: "Pick the time it starts." }, { status: 400 });
-  const duration = Math.round(Number(body.durationMinutes ?? 60));
-  if (!Number.isFinite(duration) || duration < 15 || duration > 600) {
-    return NextResponse.json({ error: "A session lasts between 15 minutes and 10 hours." }, { status: 400 });
-  }
-
-  const hhmm = time.padStart(5, "0");
-  const [y, m, d] = firstDate.split("-").map(Number);
-  const dateWeekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  const asked = body.weekday === undefined || body.weekday === null ? dateWeekday : Number(body.weekday);
-  if (!Number.isInteger(asked) || asked < 0 || asked > 6) return NextResponse.json({ error: "Pick a day of the week." }, { status: 400 });
-  const weekday = asked;
-  // The first session is the first `weekday` on or after the date given, as
-  // saveSeriesSchedule anchors it.
-  const shifted = new Date(Date.UTC(y, m - 1, d + ((weekday - dateWeekday + 7) % 7))).toISOString().slice(0, 10);
-  const first = wallClockToInstant(`${shifted}T${hhmm}`, zone);
-  if (!first) return NextResponse.json({ error: "That date and time are not valid." }, { status: 400 });
-  const intervalWeeks = Math.max(1, Math.min(4, Math.round(Number(body.intervalWeeks ?? 1)) || 1));
-  const lastDate = typeof body.lastDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.lastDate) ? body.lastDate : null;
-  if (lastDate && lastDate < shifted) return NextResponse.json({ error: "The last date is before the first session." }, { status: 400 });
-  const alsoZones = Array.isArray(body.alsoZones)
-    ? Array.from(new Set((body.alsoZones as unknown[]).map((z) => validTimeZone(typeof z === "string" ? z : null)).filter((z): z is string => Boolean(z)))).slice(0, 6)
-    : site.alsoZones;
-
-  try {
-    const thread = await createThread({
-      kind: SERIES_KIND,
-      orgId: site.orgId,
-      authorId: viewer.userId,
-      title,
-      excerpt: lede ?? undefined,
-      status: "published",
-      visibility: "PUBLIC",
-      section: null,
-      scheduledAt: first.toISOString(),
-      durationMinutes: duration,
-      format: "online",
-      isRsvpEnabled: true,
-      metadata: {
-        timeZone: zone,
-        series: { lede, alsoZones, reminderDays: 2, listed: false, landing: false },
-        joinDetails: { url: null, meetingId: null, passcode: null, other: null },
-      },
-    });
-    await db`
-      UPDATE threads SET recurrence_pattern = ${body.monthly === true ? "MONTHLY" : "WEEKLY"}
-      WHERE id = ${thread.id} AND org_id = ${site.orgId}
-    `;
-
-    const warnings: string[] = [];
-    try {
-      await saveSeriesSchedule({
-        orgId: site.orgId,
-        threadId: thread.id,
-        schedule: { weekday, time: hhmm, timeZone: zone, firstDate, lastDate, durationMinutes: duration, alsoZones, intervalWeeks },
-      });
-    } catch (err) {
-      console.error("[series] new series: saveSeriesSchedule:", err);
-      warnings.push(
-        err instanceof SeriesError
-          ? `Its schedule was not confirmed: ${err.message} Check it in the planner.`
-          : "Its schedule was not confirmed. Check it in the planner."
-      );
-    }
-    try {
-      await saveSeriesSettings({ orgId: site.orgId, threadId: thread.id, lede, listed: false, landing: false, reminderDays: 2 });
-    } catch (err) {
-      console.error("[series] new series: saveSeriesSettings:", err);
-      warnings.push("Its description was not saved. Set it in the planner.");
-    }
-    // Best effort, as Compose does: the org calendar carries the series.
-    try {
-      if (!(await getOrgCalendarUri(site.orgId))) await ensureOrgCalendar(site.orgId);
-      await pushThreadToCalendar(site.orgId, thread.id);
-    } catch (err) {
-      console.error("[series] new series: calendar mirror:", err);
-    }
-
-    return NextResponse.json({ ok: true, id: thread.id, slug: thread.slug, href: `/hub/series/${thread.id}`, warnings });
-  } catch (err) {
-    console.error("[series] new series:", err);
-    return NextResponse.json({ error: "Could not start the series." }, { status: 500 });
-  }
+  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+  const result = await createSiteSeries(
+    viewer.userId,
+    site.orgId,
+    {
+      title: str(body.title) ?? "",
+      lede: str(body.lede) ?? null,
+      timeZone: str(body.timeZone) ?? "",
+      durationMinutes: Number(body.durationMinutes ?? 60),
+      firstDate: str(body.firstDate),
+      time: str(body.time),
+      weekday: body.weekday === undefined || body.weekday === null ? null : Number(body.weekday),
+      intervalWeeks: Number(body.intervalWeeks ?? 1),
+      monthly: body.monthly === true,
+      lastDate: str(body.lastDate) ?? null,
+      dates: Array.isArray(body.dates) ? (body.dates as unknown[]).map((d) => (typeof d === "string" ? d : "")) : undefined,
+      alsoZones: Array.isArray(body.alsoZones) ? (body.alsoZones as unknown[]).map((z) => (typeof z === "string" ? z : "")) : null,
+    },
+    site.alsoZones
+  );
+  if (result.ok === false) return NextResponse.json({ error: result.error }, { status: result.status });
+  const { id, slug, warnings } = result.value;
+  return NextResponse.json({ ok: true, id, slug, href: `/hub/series/${id}`, warnings });
 }
 
   return { POST };

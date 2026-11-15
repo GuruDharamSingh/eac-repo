@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import {
   SeriesError,
+  addSeriesSession,
   assignSeriesRole,
   cancelSeriesSession,
   clearSeriesRole,
@@ -47,6 +48,8 @@ export function hubSeriesRoutes(site: SeriesSite) {
  *   - organisers cancel or restore a week (`cancel: true|false`) and move it
  *     (`moveTo`: "YYYY-MM-DDTHH:MM" in the series' zone, or an ISO instant).
  *     Nobody is emailed about either (2026-10-10, migration 203).
+ *   - organisers add a date to a series on chosen dates (`addDate`, same format;
+ *     `recurrence_pattern` CUSTOM, 2026-11-14); removing one is `cancel`.
  * Week fields (2026-10-13, migration 205): `subtitle`, `bodyHtml` (rich
  * write-up; the service sanitises it and derives `summary`), `coverFrame`
  * ({fx, fy, zoom}). Series settings add `cover` (picture, video or
@@ -173,6 +176,8 @@ async function POST(request: NextRequest) {
     publish?: boolean;
     cancel?: boolean;
     moveTo?: string;
+    /** A series on chosen dates: add this date ("YYYY-MM-DDTHH:MM" in the series' zone, or an ISO instant). */
+    addDate?: string;
     createTalkRoom?: boolean;
     schedule?: Partial<SeriesScheduleInput>;
     dryRun?: boolean;
@@ -199,6 +204,17 @@ async function POST(request: NextRequest) {
   const threadId = body.threadId;
   const organiserOnly = (what: string) =>
     NextResponse.json({ error: `Only an organiser can ${what}.` }, { status: 403 });
+
+  // A series on chosen dates: add one date. Removing is `cancel`, changing a time is `moveTo`.
+  if (typeof body.addDate === "string") {
+    if (!viewer.canEdit) return organiserOnly("add a date");
+    try {
+      const week = await addSeriesSession({ orgId: site.orgId, threadId, startsAt: body.addDate, actorUserId: viewer.userId });
+      return NextResponse.json({ ok: true, at: week.startsAt, number: week.number });
+    } catch (e) {
+      return fail(e);
+    }
+  }
 
   // A Talk room for the series, made on demand.
   if (body.createTalkRoom) {

@@ -21,6 +21,11 @@ form that writes kind, slug, section or `metadata` unmakes it: on 2026-11-03 the
 series settings and Zoom details. A site mounting these pages must refuse a series in its content save (`saveContentAction` in
 `apps/sunjay/src/lib/cms/actions.ts`) and pass `seriesEditHref` to its surface connectors unless it has the series compose form.
 
+A series can meet on chosen dates instead of a rule (2026-11-14): `recurrence_pattern = 'CUSTOM'`, every week a `series_sessions` row with
+`slot_at` NULL. Create one from "+ New series" with "On chosen dates" (`hubNewSeries` `dates`), add a date with `hubSeries` `addDate`
+(`addSeriesSession` in `@elkdonis/services`), remove one with `cancel`, change one with `moveTo`. `saveSeriesSchedule` refuses CUSTOM.
+The org calendar shows such a series once, at its earliest date.
+
 ## Theme
 
 The pages draw inside `.ifs` on the `--ifs-*` tokens at the top of `site.css`. A site overrides the tokens on its own class

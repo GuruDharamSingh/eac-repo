@@ -13,6 +13,8 @@ import {
 import { createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
+import { siteFormConnectors } from "@elkdonis/site-forms";
+import { elktoursSiteForms } from "@/lib/forms/site";
 import { saveContentAction } from "@/lib/cms/actions";
 import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
@@ -69,6 +71,9 @@ export function HubSurfaces({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
+  // The shared meeting, event and post forms in the compose popup (@elkdonis/site-forms).
+  const formSite = React.useMemo(() => elktoursSiteForms(feeds), [feeds]);
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () => ({
@@ -187,6 +192,7 @@ export function HubSurfaces({
         onMutated: () => router.refresh(),
       }),
       custom: {
+        ...siteFormConnectors(formSite, ["meeting", "event", "post"]),
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
         // elktours popups (spec 2026-11-02 §3): local tabs, cms-ui untouched.
         tour: ({ descriptor }) => <TourPopup descriptor={descriptor} />,
@@ -203,7 +209,7 @@ export function HubSurfaces({
         ),
       },
     }),
-    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
+    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router, formSite]
   );
 
   return (

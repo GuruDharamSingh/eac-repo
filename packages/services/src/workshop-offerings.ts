@@ -102,6 +102,8 @@ export interface WorkshopOffering {
   body: string | null;
   status: 'draft' | 'published' | 'archived' | 'scheduled';
   visibility: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+  /** `threads.min_role`; with INVITE_ONLY, 'member' is the thread-audience 'members' choice. */
+  minRole: 'viewer' | 'member' | 'guide' | 'owner' | null;
   section: string | null;
   format: WorkshopFormat | null;
   price: number | null;
@@ -211,6 +213,11 @@ export interface WorkshopOfferingInput {
   status: 'draft' | 'published';
   visibility?: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
   /**
+   * `threads.min_role`. Left out: a stored value is kept (a new workshop has none). Written as null when
+   * `visibility` is not INVITE_ONLY, as thread-audience.ts audienceToStorage pairs them.
+   */
+  minRole?: 'viewer' | 'member' | 'guide' | 'owner' | null;
+  /**
    * org_feeds slug this workshop appears under. Defaults to 'workshops';
    * pass null for an app that addresses workshops by their own route rather
    * than by feed (arts-collective's /sites/<org>/workshop/<slug>).
@@ -247,7 +254,7 @@ export interface WorkshopOfferingInput {
 type Row = Record<string, unknown>;
 
 const COLUMNS = db`
-  t.id, t.org_id, t.slug, t.title, t.body, t.excerpt, t.status, t.visibility, t.section,
+  t.id, t.org_id, t.slug, t.title, t.body, t.excerpt, t.status, t.visibility, t.min_role, t.section,
   t.price, t.currency, t.format, t.author_id, t.published_at, t.updated_at,
   t.scheduled_at, t.duration_minutes, t.location,
   t.attendee_limit, t.rsvp_deadline, t.min_attendees, t.reminder_minutes_before,
@@ -321,6 +328,7 @@ function mapOffering(row: Row, sessions: WorkshopSession[] = []): WorkshopOfferi
     body: (row.body as string | null) ?? null,
     status: row.status as WorkshopOffering['status'],
     visibility: row.visibility as WorkshopOffering['visibility'],
+    minRole: (row.min_role as WorkshopOffering['minRole']) ?? null,
     section: (row.section as string | null) ?? null,
     format: (row.format as WorkshopFormat | null) ?? null,
     // price_member is inner-gathering's canonical read; fall back to threads.price.
@@ -531,6 +539,9 @@ export async function upsertWorkshopOffering(
   // price_member is inner-gathering's canonical read; when the caller does not
   // distinguish a member rate, it mirrors the headline price.
   const priceMember = input.priceMember ?? price;
+  // undefined keeps the stored min_role (update) or leaves it NULL (insert).
+  const writeMinRole = input.minRole !== undefined || (input.visibility !== undefined && input.visibility !== 'INVITE_ONLY');
+  const minRole = input.visibility && input.visibility !== 'INVITE_ONLY' ? null : (input.minRole ?? null);
 
   await db.begin(async (tx) => {
     if (threadId) {
@@ -549,6 +560,7 @@ export async function upsertWorkshopOffering(
           excerpt         = ${input.excerpt ?? input.descriptionShort ?? null},
           status          = ${input.status},
           visibility      = ${input.visibility ?? 'PUBLIC'},
+          min_role        = CASE WHEN ${writeMinRole}::boolean THEN ${minRole}::varchar ELSE min_role END,
           price           = ${price},
           currency        = ${input.currency ?? 'CAD'},
           format          = ${input.format ?? null},
@@ -571,7 +583,7 @@ export async function upsertWorkshopOffering(
       await tx`
         INSERT INTO threads (
           id, org_id, author_id, kind, section, title, slug, body, excerpt,
-          status, visibility, price, currency, format,
+          status, visibility, min_role, price, currency, format,
           scheduled_at, duration_minutes, location, meeting_url,
           attendee_limit, rsvp_deadline, min_attendees, reminder_minutes_before,
           is_rsvp_enabled, share_to_network, nextcloud_doc_url, published_at
@@ -579,7 +591,7 @@ export async function upsertWorkshopOffering(
           ${id}, ${orgId}, ${authorId}, 'workshop', ${section},
           ${input.title}, ${slug}, ${input.body || null},
           ${input.excerpt ?? input.descriptionShort ?? null},
-          ${input.status}, ${input.visibility ?? 'PUBLIC'},
+          ${input.status}, ${input.visibility ?? 'PUBLIC'}, ${minRole},
           ${price}, ${input.currency ?? 'CAD'}, ${input.format ?? null},
           ${input.scheduledAt ? new Date(input.scheduledAt) : null},
           ${input.durationMinutes ?? null}, ${input.location || null},
@@ -926,3 +938,5 @@ export async function deleteWorkshopMaterial(
   if (!filename || filename.includes('/') || filename.includes('..')) return false;
   return deleteOrgFile(orgId, `${workshopMaterialsFolder(threadId)}/${filename}`);
 }
+// The answers ⇄ workshop conversion lives in ./workshop-answers (client-safe, no db import).
+export { workshopInputFromAnswers, workshopAnswersFromOffering } from './workshop-answers';

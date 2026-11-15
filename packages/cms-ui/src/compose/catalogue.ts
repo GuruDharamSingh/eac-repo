@@ -35,7 +35,8 @@ export type ComposeKindId =
  * only the group's `primary` option; the form above shows the switch.
  */
 export interface ComposeOptionGroup {
-  id: "gathering";
+  /** `gathering` until 2026-11-14 (renamed with the Studio meeting form; docs/open/STUDIO_FORMS_SPLIT_2026-11-14.md). */
+  id: "meeting";
   /** The option's name on the switch. */
   label: string;
   /** The option the picker shows for the whole group. */
@@ -44,7 +45,7 @@ export interface ComposeOptionGroup {
 
 /** What the switch for a group says: a short question and one or two neutral lines. */
 export const COMPOSE_GROUPS: Record<ComposeOptionGroup["id"], { prompt: string; help: string }> = {
-  gathering: {
+  meeting: {
     prompt: "Recurring series?",
     help:
       "A series is a set of sessions on a regular day and time, with one page and one join link. " +
@@ -213,7 +214,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     icon: "◎",
     mode: "dialog",
     writes: { table: "threads", kind: "meeting" },
-    group: { id: "gathering", label: "One meeting", primary: true },
+    group: { id: "meeting", label: "One meeting", primary: true },
     available: (ctx) =>
       ctx.canPublishContent !== false && ctx.canPublishDated !== false && Boolean(ctx.hasMeetings),
   },
@@ -224,7 +225,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     icon: "◎",
     mode: "dialog",
     writes: { table: "threads", kind: "series" },
-    group: { id: "gathering", label: "Series" },
+    group: { id: "meeting", label: "Series" },
     // Dated and org-wide, like a meeting; and only where the host has the
     // series pages and planner to send it to.
     available: (ctx) =>

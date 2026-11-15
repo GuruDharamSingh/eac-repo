@@ -1,5 +1,6 @@
 import { db } from '@elkdonis/db';
-import { sanitizePostBody } from '@elkdonis/utils';
+import { sanitizePostBody, sanitizeRichText } from '@elkdonis/utils';
+import { renderEssayHtml, type EssayDoc } from '@elkdonis/utils/essay';
 import { createThread } from './posts';
 import { canModerateOrg, statusForNewThread } from './moderation';
 import { listOrgFeeds, getOrgFeed } from './org-feeds';
@@ -7,6 +8,7 @@ import { assignMeetingRole, clearMeetingRole, getMeetingRota, listRotaCandidates
 import { createCollaborativeDocument, createTalkRoom, syncTalkRoomAudience, talkRoomPolicy } from './nextcloud';
 import { ensureOrgCalendar, getOrgCalendarUri, pushThreadToCalendar, removeThreadFromCalendar } from './org-calendar';
 import { removeThreadAs } from './thread-admin';
+import { audienceToStorage, isAudience, type Audience, type ThreadRole } from './thread-audience';
 import { validTimeZone } from './meeting-series';
 import { SERIES_KIND } from './thread-kinds';
 
@@ -36,11 +38,43 @@ export type MeetingKind = 'meeting' | 'event';
 export const MEETING_KINDS: MeetingKind[] = ['meeting', 'event'];
 
 const PERSONAL_ORG_ID = 'oad';
+const VISIBILITIES: Array<NonNullable<MeetingInput['visibility']>> = ['PUBLIC', 'ORGANIZATION', 'INVITE_ONLY'];
+const ROLES: ThreadRole[] = ['viewer', 'member', 'guide', 'owner'];
 
+/**
+ * The audience columns to write. `visibility: null` and `minRole: undefined` keep the stored
+ * value. PUBLIC and ORGANIZATION never carry a minimum role (audienceToStorage), so setting
+ * either clears it.
+ */
+function readAccess(input: MeetingInput): { visibility: NonNullable<MeetingInput['visibility']> | null; minRole: ThreadRole | null | undefined } {
+  if (input.audience !== undefined) return audienceToStorage(input.audience);
+  const visibility = input.visibility ?? null;
+  return { visibility, minRole: visibility && visibility !== 'INVITE_ONLY' ? null : input.minRole };
+}
+
+/**
+ * A field left out (`undefined`) keeps the stored value; `null` clears it (2026-11-14, for
+ * `body`, `bodyDoc`, `visibility`, `minRole` and `audience`). Quick forms and Channel sheets send
+ * only the fields they show, so leaving a field out must never erase it. The other columns are
+ * still written as sent: a caller that edits a stored meeting loads it first and sends it back
+ * whole, as the Studio forms do (useFormState keeps every answer of the loaded record).
+ */
 export interface MeetingInput {
   kind: MeetingKind;
   title: string;
+  /**
+   * HTML. A body sent without `bodyDoc` also clears `threads.body_doc`: the stored document
+   * would otherwise contradict the newer HTML wherever the document is opened. Both left out
+   * keep the body, the document and `body_format` as they are.
+   */
   body?: string | null;
+  /**
+   * The description as an essay Canvas document (the Studio forms, 2026-11-11). Set, `body` is
+   * rendered from it (renderEssayHtml, then sanitizeRichText, as writing.ts updateWritingPost does)
+   * and it is kept in threads.body_doc; null clears the document (the body is kept unless `body`
+   * is sent too).
+   */
+  bodyDoc?: EssayDoc | null;
   excerpt?: string | null;
   coverImageUrl?: string | null;
   /** The zone the form showed its times in. */
@@ -63,7 +97,17 @@ export interface MeetingInput {
   notifyOnMinAttendees?: boolean;
   /** `org_feeds.slug`. */
   section?: string | null;
+  /**
+   * Who may read it. Left out: kept (a new meeting starts PUBLIC, createThread's default; a
+   * host whose org is private by default must send it). `audience` (thread-audience.ts), when
+   * sent, decides both `visibility` and `minRole` and wins over them. `visibility` other than
+   * INVITE_ONLY clears `min_role`, as audienceToStorage pairs them; INVITE_ONLY with no
+   * `minRole` keeps the stored one.
+   */
   visibility?: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+  /** `threads.min_role` (migration 188). Left out: kept; null: cleared. */
+  minRole?: ThreadRole | null;
+  audience?: Audience;
   shareToNetwork?: boolean;
   createTalkRoom?: boolean;
   createDocument?: boolean;
@@ -76,7 +120,19 @@ export interface MeetingInput {
    * undefined = not asked (the stored value is kept); null = no reminder.
    */
   reminderMinutesBefore?: number | null;
+  /**
+   * `threads.metadata` keys a form owns (2026-11-14), merged into what is stored: a key left out is
+   * kept, a null removes it. Only MEETING_FORM_METADATA keys are written; anything else is ignored,
+   * so a form can never touch the series, the meeting light or the join details.
+   */
+  metadata?: Record<string, unknown>;
 }
+
+/**
+ * The metadata keys the meeting form may write. `showCycleBadge`: innergathering's "Confirmed / Not yet
+ * confirmed" badge on the meeting page; stored only as false (absent means shown).
+ */
+export const MEETING_FORM_METADATA = ['showCycleBadge'] as const;
 
 export interface MeetingSummary {
   id: string;
@@ -154,7 +210,7 @@ export async function meetingComposeContext(viewerId: string, orgId: string): Pr
     reason: canEdit
       ? null
       : personal
-        ? 'A meeting goes on an organisation’s calendar. Choose the organisation under “Making as”.'
+        ? 'A meeting goes on an organisation’s calendar. Choose the organisation in the “On …” menu at the top.'
         : 'Only an owner or guide of this organisation can put a meeting on its calendar.',
     feeds: feeds.map((f) => ({ slug: f.slug, name: f.name })),
     hostCandidates: candidates.map((c) => ({ userId: c.userId, displayName: c.displayName || c.email || 'Member' })),
@@ -172,9 +228,11 @@ type Row = {
   slug: string;
   title: string;
   body: string | null;
+  body_doc: unknown;
   excerpt: string | null;
   status: string;
   visibility: string;
+  min_role: string | null;
   share_to_network: boolean;
   section: string | null;
   scheduled_at: Date | null;
@@ -282,6 +340,7 @@ export async function loadMeetingContent(viewerId: string, id: string): Promise<
       kind: (row.kind === 'event' ? 'event' : 'meeting') as MeetingKind,
       title: row.title,
       body: row.body,
+      bodyDoc: row.body_doc && typeof row.body_doc === 'object' ? (row.body_doc as EssayDoc) : null,
       excerpt: row.excerpt,
       coverImageUrl: typeof meta.coverImageUrl === 'string' ? meta.coverImageUrl : null,
       timeZone: typeof meta.timeZone === 'string' ? meta.timeZone : null,
@@ -301,12 +360,14 @@ export async function loadMeetingContent(viewerId: string, id: string): Promise<
       notifyOnMinAttendees: row.notify_on_min_attendees,
       section: row.section,
       visibility: row.visibility as MeetingInput['visibility'],
+      minRole: (row.min_role as ThreadRole | null) ?? null,
       shareToNetwork: row.share_to_network,
       createTalkRoom: Boolean(row.nextcloud_talk_token),
       createDocument: Boolean(row.document_url),
       hostUserId,
       coHostUserId,
       reminderMinutesBefore: row.reminder_minutes_before ?? null,
+      metadata: Object.fromEntries(MEETING_FORM_METADATA.filter((k) => k in meta).map((k) => [k, meta[k]])),
     },
   };
 }
@@ -332,6 +393,9 @@ async function validate(orgId: string, input: MeetingInput): Promise<string | nu
   if (input.timeZone && !validTimeZone(input.timeZone)) return 'Pick a time zone from the list.';
   const r = input.reminderMinutesBefore;
   if (r != null && (!Number.isInteger(r) || r < 5 || r > 14 * 24 * 60)) return 'A reminder goes out between 5 minutes and two weeks before.';
+  if (input.visibility !== undefined && !VISIBILITIES.includes(input.visibility)) return 'Pick who can see it.';
+  if (input.minRole != null && !ROLES.includes(input.minRole)) return 'Pick who can see it.';
+  if (input.audience !== undefined && !isAudience(input.audience)) return 'Pick who can see it.';
   if (input.section) {
     const feed = await getOrgFeed(orgId, input.section).catch(() => null);
     if (!feed) return 'That page does not exist on this site.';
@@ -344,21 +408,40 @@ async function validate(orgId: string, input: MeetingInput): Promise<string | nu
  * keep state there (the meeting light, series details).
  */
 async function writeColumns(threadId: string, orgId: string, input: MeetingInput, status: string): Promise<void> {
-  const body = input.body?.trim() ? sanitizePostBody(input.body.trim()) : null;
+  const doc = input.bodyDoc && typeof input.bodyDoc === 'object' ? input.bodyDoc : null;
+  // The body columns: a document wins; a body alone replaces the HTML and drops the document;
+  // `bodyDoc: null` alone drops the document and keeps the HTML; neither keeps all three.
+  const setBody = doc !== null || input.body !== undefined;
+  const setDoc = doc !== null || input.body !== undefined || input.bodyDoc === null;
+  const body = doc ? sanitizeRichText(renderEssayHtml(doc)) || null : input.body?.trim() ? sanitizePostBody(input.body.trim()) : null;
+  const access = readAccess(input);
   const zone = validTimeZone(input.timeZone ?? null);
   const meta: Record<string, string> = {};
   if (input.coverImageUrl) meta.coverImageUrl = input.coverImageUrl;
   if (zone) meta.timeZone = zone;
   const rsvp = input.isRsvpEnabled ?? true;
   const pattern = input.recurrencePattern || null;
+  // The form's own metadata keys: set the given ones, drop the ones sent as null.
+  const formMeta: Record<string, unknown> = {};
+  const dropMeta: string[] = [];
+  for (const k of MEETING_FORM_METADATA) {
+    if (!input.metadata || !(k in input.metadata) || input.metadata[k] === undefined) continue;
+    if (input.metadata[k] === null) dropMeta.push(k);
+    else formMeta[k] = input.metadata[k];
+  }
   await db`
     UPDATE threads SET
       kind              = ${input.kind},
       title             = ${input.title.trim().slice(0, 200)},
-      body              = ${body},
+      body              = CASE WHEN ${setBody}::boolean THEN ${body}::text ELSE body END,
+      body_doc          = CASE WHEN ${setDoc}::boolean THEN ${doc ? db.json(doc as never) : null}::jsonb ELSE body_doc END,
+      body_format       = CASE WHEN ${doc !== null}::boolean THEN 'doc'
+                               WHEN ${setDoc}::boolean AND body_format = 'doc' THEN 'html'
+                               ELSE body_format END,
       excerpt           = ${input.excerpt?.trim() || null},
       status            = ${status},
-      visibility        = ${input.visibility ?? 'PUBLIC'},
+      visibility        = COALESCE(${access.visibility}::varchar, visibility),
+      min_role          = CASE WHEN ${access.minRole !== undefined}::boolean THEN ${access.minRole ?? null}::varchar ELSE min_role END,
       share_to_network  = ${Boolean(input.shareToNetwork)},
       section           = ${input.section || null},
       is_meeting        = TRUE,
@@ -380,7 +463,7 @@ async function writeColumns(threadId: string, orgId: string, input: MeetingInput
       reminder_minutes_before = CASE WHEN ${input.reminderMinutesBefore !== undefined}::boolean
                                      THEN ${input.reminderMinutesBefore ?? null}::int
                                      ELSE reminder_minutes_before END,
-      metadata          = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl' - 'timeZone') || ${db.json(meta)},
+      metadata          = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl' - 'timeZone' - ${dropMeta}::text[]) || ${db.json(meta)} || ${db.json(formMeta as never)},
       published_at      = CASE WHEN ${status} = 'published' AND published_at IS NULL THEN NOW() ELSE published_at END,
       updated_at        = NOW()
     WHERE id = ${threadId} AND org_id = ${orgId}
@@ -515,7 +598,8 @@ export async function saveMeetingContent(
         authorId: viewerId,
         title,
         status: 'draft',
-        visibility: input.visibility ?? 'PUBLIC',
+        // writeColumns sets the audience right after; this only satisfies the NOT NULL column.
+        visibility: readAccess(input).visibility ?? 'PUBLIC',
         scheduledAt: input.scheduledAt,
       });
       id = created.id;

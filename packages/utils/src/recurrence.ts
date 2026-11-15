@@ -153,7 +153,9 @@ export function expandOccurrences<T extends Occurring>(
     if (Number.isNaN(start.getTime())) continue;
 
     const pattern = item.recurrencePattern;
-    if (!pattern || pattern === "NONE") {
+    // CUSTOM is a series on chosen dates: its weeks are rows, so the thread
+    // itself is one dated entry (its earliest date), not a weekly rule.
+    if (!pattern || pattern === "NONE" || pattern.toUpperCase() === "CUSTOM") {
       if (start >= from && start < to) out.push({ item, at: start });
       continue;
     }

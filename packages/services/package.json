@@ -22,7 +22,8 @@
     "./video-render": "./src/video-render.ts",
     "./businesses": "./src/businesses.ts",
     "./featured-people": "./src/featured-people.ts",
-    "./series-form": "./src/series-form.ts"
+    "./series-form": "./src/series-form.ts",
+    "./workshop-answers": "./src/workshop-answers.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

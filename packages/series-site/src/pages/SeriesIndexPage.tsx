@@ -221,7 +221,7 @@ function SeriesCard({ entry, site }: { entry: SeriesPageEntry; site: SeriesSite 
       <div className="isx-card__body">
         <p className="isx-card__rhythm">
           <i aria-hidden="true" />
-          {entry.rhythm ?? (firstComing ? (s.recurrencePattern === "MONTHLY" ? scheduleLine(s, firstComing, zone) : `${rhythmLabel(s)} · ${weekdayPlural(firstComing, zone)}`) : rhythmLabel(s))}
+          {entry.rhythm ?? (firstComing ? (s.recurrencePattern === "MONTHLY" || s.recurrencePattern === "CUSTOM" ? scheduleLine(s, firstComing, zone) : `${rhythmLabel(s)} · ${weekdayPlural(firstComing, zone)}`) : rhythmLabel(s))}
           {entry.featured ? " · Featured" : ""}
         </p>
         <h2 className="isx-card__t">

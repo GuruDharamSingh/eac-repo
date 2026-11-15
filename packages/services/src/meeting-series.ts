@@ -202,10 +202,23 @@ function clockParts(clock: SeriesClock) {
 }
 
 /**
+ * `recurrence_pattern` of a series that meets on hand-picked dates
+ * (2026-11-14). It has no rule: every week is a `series_sessions` row with a
+ * NULL `slot_at`, and `threads.scheduled_at` is the earliest non-cancelled one.
+ */
+export const SERIES_CUSTOM_PATTERN = 'CUSTOM';
+
+/** Whether the clock belongs to a series on chosen dates (no rule slots). */
+export function isCustomSeriesClock(clock: SeriesClock): boolean {
+  return (clock.recurrencePattern ?? '').toUpperCase() === SERIES_CUSTOM_PATTERN;
+}
+
+/**
  * The next `count` occurrences at or after `from`. Like `occurrencesOf`
  * (meeting-rota.ts), an occurrence at or after `recurrenceUntil` is not one.
  */
 export function seriesOccurrencesFrom(clock: SeriesClock, from: Date, count = 8): Date[] {
+  if (isCustomSeriesClock(clock)) return [];
   const c = clockParts(clock);
   if (!c) return [];
   const limit = Math.max(1, Math.min(count, 104));
@@ -222,6 +235,7 @@ export function seriesOccurrencesFrom(clock: SeriesClock, from: Date, count = 8)
 
 /** Up to `count` occurrences strictly before `before`, oldest first. */
 export function seriesOccurrencesBefore(clock: SeriesClock, before: Date, count = 1): Date[] {
+  if (isCustomSeriesClock(clock)) return [];
   const c = clockParts(clock);
   if (!c || count <= 0) return [];
   if (!c.pattern) return c.anchor < before.getTime() ? [new Date(c.anchor)] : [];
@@ -238,6 +252,7 @@ export function seriesOccurrencesBefore(clock: SeriesClock, before: Date, count 
 
 /** 1-based position of `at` in the series. */
 export function seriesOccurrenceNumber(clock: SeriesClock, at: Date | string): number {
+  if (isCustomSeriesClock(clock)) return 1;
   const c = clockParts(clock);
   if (!c || !c.pattern) return 1;
   if (c.monthly) return Math.max(1, c.indexNear(new Date(at).getTime()) + 1);
@@ -255,6 +270,7 @@ export function isSeriesOccurrence(clock: SeriesClock, at: Date | string): boole
 
 /** The `ordinal`-th occurrence (1-based), or null past `recurrenceUntil` or for a bad ordinal. */
 function seriesOccurrenceByOrdinal(clock: SeriesClock, ordinal: number): Date | null {
+  if (isCustomSeriesClock(clock)) return null;
   const c = clockParts(clock);
   if (!c || !Number.isInteger(ordinal) || ordinal < 1) return null;
   if (!c.pattern) return ordinal === 1 ? new Date(c.anchor) : null;
@@ -781,7 +797,8 @@ function weekEntries(row: SeriesRow, rows: SessionRow[], from: Date, count: numb
     number: r.number,
     row: r,
     cancelled: r.status === 'cancelled',
-    onSchedule: r.slot_at ? isSeriesOccurrence(clock, r.slot_at) : false,
+    // A series on chosen dates has no rule: its rows (NULL slot_at) are the schedule.
+    onSchedule: isCustomSeriesClock(clock) || (r.slot_at ? isSeriesOccurrence(clock, r.slot_at) : false),
   }));
   for (const d of [...past, ...upcoming]) {
     const t = d.getTime();
@@ -1667,6 +1684,7 @@ export async function cancelSeriesSession(input: {
       WHERE id = ${session.id} AND org_id = ${input.orgId}
     `;
   });
+  await syncCustomSeriesAnchor(input.orgId, input.threadId);
   return { ...session, status: 'cancelled' };
 }
 
@@ -1706,6 +1724,7 @@ export async function restoreSeriesSession(input: {
     }
     throw e;
   }
+  await syncCustomSeriesAnchor(input.orgId, input.threadId);
   const ref = await sessionRef(input.orgId, id);
   if (!ref) throw new SeriesError('Series not found', 404);
   return ref;
@@ -1769,9 +1788,143 @@ export async function moveSeriesSession(input: {
       { from: session.startsAt, to, sessionThreadId: session.id },
     ]);
   });
+  await syncCustomSeriesAnchor(input.orgId, series.id);
   const ref = await sessionRef(input.orgId, session.id);
   if (!ref) throw new SeriesError('Series not found', 404);
   return ref;
+}
+
+// ─── Hand-picked dates ───────────────────────────────────────────────────────
+
+/**
+ * For a series on chosen dates (`recurrence_pattern = 'CUSTOM'`), set
+ * `threads.scheduled_at` to the earliest non-cancelled session's `starts_at`.
+ * Nothing changes for a rule series, or when no such session remains (the
+ * last anchor stays, so the series keeps a date to sort by).
+ */
+async function syncCustomSeriesAnchor(orgId: string, seriesId: string, q: typeof db = db): Promise<void> {
+  await q`
+    UPDATE threads SET
+      scheduled_at = (
+        SELECT MIN(ss.starts_at) FROM series_sessions ss
+        JOIN threads t ON t.id = ss.session_thread_id AND t.org_id = ss.org_id AND t.status <> 'archived'
+        WHERE ss.series_id = ${seriesId} AND ss.org_id = ${orgId} AND ss.status <> 'cancelled'
+      ),
+      updated_at = NOW()
+    WHERE id = ${seriesId} AND org_id = ${orgId} AND recurrence_pattern = ${SERIES_CUSTOM_PATTERN}
+      AND EXISTS (
+        SELECT 1 FROM series_sessions ss
+        JOIN threads t ON t.id = ss.session_thread_id AND t.org_id = ss.org_id AND t.status <> 'archived'
+        WHERE ss.series_id = ${seriesId} AND ss.org_id = ${orgId} AND ss.status <> 'cancelled'
+      )
+  `;
+}
+
+/**
+ * Add one date to a series on chosen dates: the week's `series_session`
+ * thread, its `series_sessions` row (`slot_at` NULL, number = highest number
+ * + 1, so numbers stay stable and lists order by `starts_at`) and its
+ * `meeting_occurrence_notes` key, as `ensureSeriesSession` makes a rule week.
+ * Then `threads.scheduled_at` follows the earliest date.
+ *
+ * `startsAt` is an ISO instant, or a local "YYYY-MM-DDTHH:MM" read in the
+ * series' own zone. Refused for a series that has a rule, for a time already
+ * held by a non-cancelled session, and for a time that has notes or hosts
+ * left by a cancelled week (restore that week instead). To remove a date,
+ * call `cancelSeriesSession`; to change its time, `moveSeriesSession`. The
+ * caller authorises (organisers only).
+ */
+export async function addSeriesSession(input: {
+  orgId: string;
+  threadId: string;
+  startsAt: string | Date;
+  actorUserId: string;
+}): Promise<SeriesSessionRef> {
+  const series = await loadSeries(input.orgId, { threadId: input.threadId });
+  if (!series) throw new SeriesError('Series not found', 404);
+  if (series.recurrence_pattern !== SERIES_CUSTOM_PATTERN) {
+    throw new SeriesError('Dates are added only to a series that meets on chosen dates.');
+  }
+  const zone = validTimeZone(clockOf(series).timeZone);
+  const target =
+    typeof input.startsAt === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(input.startsAt.trim())
+      ? seriesLocalToInstant(input.startsAt, zone)
+      : new Date(input.startsAt);
+  if (!target || Number.isNaN(target.getTime())) throw new SeriesError('Pick the date and time.');
+  const at = target.toISOString();
+  const t = target.getTime();
+
+  const rows = await loadSessionRows(input.orgId, series.id);
+  if (rows.some((r) => r.status !== 'cancelled' && msOf(r.starts_at) === t)) {
+    throw new SeriesError('Another session of the series is at that time.');
+  }
+  const [busy] = await db<Array<{ n: number }>>`
+    SELECT 1 AS n FROM meeting_occurrence_notes WHERE thread_id = ${series.id} AND occurrence_at = ${at}::timestamptz
+    UNION ALL
+    SELECT 1 FROM meeting_hosts WHERE thread_id = ${series.id} AND occurrence_at = ${at}::timestamptz
+    LIMIT 1
+  `;
+  if (busy) throw new SeriesError('A cancelled session of the series was at that time. Restore it instead.');
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Every row counts, archived weeks too: (series_id, number) is unique over all of them.
+    const [top] = await db<Array<{ n: number | null }>>`
+      SELECT MAX(number) AS n FROM series_sessions WHERE series_id = ${series.id} AND org_id = ${input.orgId}
+    `;
+    const number = (top?.n ?? 0) + 1;
+    // Rows left by removed (archived) week threads may hold this time or number.
+    await db`
+      DELETE FROM series_sessions ss USING threads t
+      WHERE ss.series_id = ${series.id} AND ss.org_id = ${input.orgId}
+        AND (ss.starts_at = ${at}::timestamptz OR ss.number = ${number})
+        AND t.id = ss.session_thread_id AND t.status = 'archived'
+    `;
+    let topicId: string;
+    try {
+      const topic = await createThread({
+        kind: SERIES_SESSION_KIND,
+        orgId: input.orgId,
+        authorId: input.actorUserId,
+        title: sessionTitle(series.title, null, number),
+        slug: `${series.slug}-session-${number}`,
+        status: 'published',
+        visibility: 'PUBLIC',
+        scheduledAt: at,
+        durationMinutes: series.duration_minutes,
+        isRsvpEnabled: true,
+        attendeeLimit: series.attendee_limit,
+        metadata: { seriesSession: { seriesId: series.id, occurrenceAt: at, number } },
+      });
+      topicId = topic.id;
+      if (series.visibility !== 'PUBLIC' || series.min_role) {
+        await db`UPDATE threads SET visibility = ${series.visibility}, min_role = ${series.min_role} WHERE id = ${topic.id} AND org_id = ${input.orgId}`;
+      }
+    } catch (e) {
+      if ((e as { code?: string }).code === '23505' && attempt < 2) continue;
+      throw e;
+    }
+    const inserted = await db<Array<{ session_thread_id: string }>>`
+      INSERT INTO series_sessions (session_thread_id, series_id, org_id, number, slot_at, starts_at, status)
+      VALUES (${topicId}, ${series.id}, ${input.orgId}, ${number}, NULL, ${at}::timestamptz, 'scheduled')
+      ON CONFLICT DO NOTHING
+      RETURNING session_thread_id
+    `;
+    if (inserted.length === 0) {
+      // Another caller took the number or the time; drop our thread and retry.
+      await db`UPDATE threads SET status = 'archived', updated_at = NOW() WHERE id = ${topicId} AND org_id = ${input.orgId}`;
+      continue;
+    }
+    await db`
+      INSERT INTO meeting_occurrence_notes (thread_id, occurrence_at, topic_thread_id)
+      VALUES (${series.id}, ${at}::timestamptz, ${topicId})
+      ON CONFLICT (thread_id, occurrence_at) DO UPDATE SET topic_thread_id = EXCLUDED.topic_thread_id, updated_at = NOW()
+    `;
+    await syncCustomSeriesAnchor(input.orgId, series.id);
+    const ref = await sessionRef(input.orgId, topicId);
+    if (!ref) throw new SeriesError('This date could not be added. Try again.');
+    return ref;
+  }
+  throw new SeriesError('This date could not be added. Try again.');
 }
 
 /** One week changing its key: from one instant to another. */
@@ -2045,6 +2198,9 @@ export async function saveSeriesSchedule(input: {
 }): Promise<SeriesScheduleResult> {
   const row = await loadSeries(input.orgId, { threadId: input.threadId });
   if (!row) throw new SeriesError('Series not found', 404);
+  if (row.recurrence_pattern === SERIES_CUSTOM_PATTERN) {
+    throw new SeriesError('This series meets on chosen dates, so it has no weekly or monthly schedule. Add, move or remove dates instead.');
+  }
   const s = input.schedule;
 
   const zone = validTimeZone(s.timeZone);

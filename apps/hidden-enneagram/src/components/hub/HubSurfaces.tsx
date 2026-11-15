@@ -10,6 +10,8 @@ import {
 } from "@elkdonis/cms-ui/surface";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
+import { siteFormConnectors } from "@elkdonis/site-forms";
+import { heSiteForms } from "@/lib/forms/site";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
@@ -52,6 +54,9 @@ export function HubSurfaces({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
+  // The shared Offering and post forms in the compose popup (@elkdonis/site-forms). The catalogue calls the post "article".
+  const formSite = React.useMemo(() => heSiteForms(feeds), [feeds]);
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () => ({
@@ -174,12 +179,13 @@ export function HubSurfaces({
       // Round 3: a type of the enneagram as a popup (opened from /enneagram by
       // components/exposition/type-links.tsx; its twin is the #type-N row).
       custom: {
+        ...siteFormConnectors(formSite, ["service", { id: "article", kind: "post" }, "post"]),
         "enneagram-type": ({ descriptor }) => <TypeSurface descriptor={descriptor} />,
         // Round 4: the Publish chooser and the Studio (/publish) in a popup (components/publish).
         ...publishSurfaces(feeds),
       },
     }),
-    [signedIn, canEdit, userId, displayName, feeds, router]
+    [signedIn, canEdit, userId, displayName, feeds, router, formSite]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;
