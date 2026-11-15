@@ -140,10 +140,12 @@ export {
   setSeriesMemberById, searchSeriesPeople, seriesStore, addSeriesLot, getSeriesOverview,
   listWeekBoards, saveWeek, addWeekItem, removeWeekItem, approveWeekItem, setWeekFeatured,
   searchRepostable, submitOwnPiece, listSeriesActivity,
+  canEnterSeries, listEnterableSeries, enterSeries,
 } from "./series";
 export type {
   SeriesInput, SeriesPerson, AddSeriesLotInput, SeriesOverview,
   WeekBoard, WeekItem, WeekItemThread, AddWeekItemInput,
+  EnterableSeries, EnterSeriesInput,
 } from "./series";
 // The auction clock: scheduling, opening, settling, releasing on time.
 export { tickAuctionClock, applySeriesSchedule, openScheduledLots } from "./auction-clock";

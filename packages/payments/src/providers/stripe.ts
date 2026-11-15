@@ -374,11 +374,15 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
     cancelUrl: string;
     metadata?: Record<string, string>;
   }): Promise<StripeCheckoutSession> {
+    // Stripe refuses `phone_number_collection` in setup mode ("payment and
+    // subscription mode" only, 2026-11-12), so the bidder's phone is asked on
+    // the marketplace page instead (`startBidderRegistration`). Card only:
+    // the saved method is charged off-session against unpaid wins.
     const session = await client.checkout.sessions.create({
       mode: "setup",
+      payment_method_types: ["card"],
       customer_creation: "always",
       customer_email: input.customerEmail,
-      phone_number_collection: { enabled: true },
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
       metadata: input.metadata ?? {},

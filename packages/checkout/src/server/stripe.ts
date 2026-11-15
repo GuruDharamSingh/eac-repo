@@ -620,18 +620,24 @@ export async function refundStripeOrder(input: {
 // ─── Bidder registration (card on file, ORG_STORE_BRIEF R6) ──────────────────
 
 /**
- * Send a would-be bidder to a hosted Stripe page that saves a card and asks
- * for a phone number. Nothing is charged. The return page calls
- * `completeBidderRegistration`.
+ * Send a would-be bidder to a hosted Stripe page that saves a card. Nothing
+ * is charged. The phone is asked on the marketplace page (Stripe does not
+ * collect one in setup mode) and written here, before the hop; the row counts
+ * as a registration only once `completeBidderRegistration` adds the card.
  */
 export async function startBidderRegistration(input: {
   userId: string;
   email: string;
+  phone?: string | null;
   orgId?: string;
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string; sessionId: string }> {
   const stripe = requireStripe();
+  if (input.phone) {
+    const { registerBidder } = await import("@elkdonis/commerce/server");
+    await registerBidder({ userId: input.userId, orgId: input.orgId ?? "market", phone: input.phone });
+  }
   const session = await stripe.createSetupSession({
     customerEmail: input.email,
     successUrl: input.successUrl,

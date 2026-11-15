@@ -151,25 +151,190 @@ export async function setWeekFocus(seriesId: string, actorUserId: string, weekNo
   `;
 }
 
-/** A lot joins the series and takes the next number (or the given one). The series' clock then applies. */
-export async function addLotToSeries(seriesId: string, actorUserId: string, lotId: string, lotNumber?: number | null): Promise<void> {
-  if (!(await canEditSeries(actorUserId, seriesId))) throw new Error("You cannot edit this series.");
-  await db.begin(async (tx) => {
+/**
+ * Put an open lot in a series under the next number (or the given one), then
+ * apply the series' clock. No permission check: callers check first. The
+ * series row is locked so two entries at once do not take the same number.
+ * `metadata` is merged into the lot's metadata in the same transaction.
+ */
+async function attachLot(seriesId: string, lotId: string, lotNumber?: number | null, metadata?: Record<string, unknown>): Promise<number> {
+  const n = await db.begin(async (tx) => {
+    await tx`SELECT 1 FROM auction_series WHERE id = ${seriesId} FOR UPDATE`;
     const [mx] = (await tx`SELECT COALESCE(MAX(lot_number), 0) AS n FROM auction_lot WHERE series_id = ${seriesId}`) as unknown as Row[];
-    const n = lotNumber ?? Number(mx?.n ?? 0) + 1;
+    const next = lotNumber ?? Number(mx?.n ?? 0) + 1;
     const rows = (await tx`
-      UPDATE auction_lot SET series_id = ${seriesId}, lot_number = ${n}
+      UPDATE auction_lot SET series_id = ${seriesId}, lot_number = ${next}
+        ${metadata ? tx`, metadata = COALESCE(metadata, '{}'::jsonb) || ${jsonb(metadata)}` : tx``}
       WHERE id = ${lotId} AND status IN ('scheduled', 'live')
       RETURNING id
     `) as unknown as Row[];
     if (!rows[0]) throw new Error("Only an open lot can join a series.");
+    return next;
   });
   await applySeriesSchedule(seriesId);
+  return n;
 }
 
+/** Feature a piece in a week of the series (the week's lead slot), if that slot exists. */
+async function featureInWeek(seriesId: string, artworkId: string, weekNo: number, weekCount: number): Promise<void> {
+  const week = Math.min(weekCount, Math.max(1, Math.round(weekNo)));
+  await db`
+    INSERT INTO auction_series_slot_artwork (slot_id, artwork_id, org_id, position)
+    SELECT sl.id, ${artworkId}, sl.org_id,
+           (SELECT COUNT(*) FROM auction_series_slot_artwork x WHERE x.slot_id = sl.id)
+    FROM auction_series_slot sl
+    WHERE sl.series_id = ${seriesId} AND sl.stage = 'week' AND sl.week_no = ${week} AND sl.position = 0
+    ON CONFLICT DO NOTHING
+  `;
+}
+
+/** A lot joins the series and takes the next number (or the given one). The series' clock then applies. */
+export async function addLotToSeries(seriesId: string, actorUserId: string, lotId: string, lotNumber?: number | null): Promise<void> {
+  if (!(await canEditSeries(actorUserId, seriesId))) throw new Error("You cannot edit this series.");
+  await attachLot(seriesId, lotId, lotNumber);
+}
+
+/**
+ * The desk takes a lot out of the series. A lot an artist entered themselves
+ * (`metadata.enteredSeries`, see enterSeries) is withdrawn, since its clock was
+ * the series' and it was never meant to run alone; one with bids stays. Any
+ * other lot (the desk's own, or an artist's auction the desk added) is only
+ * detached, as before. The piece stays listed in its store either way.
+ */
 export async function removeLotFromSeries(seriesId: string, actorUserId: string, lotId: string): Promise<void> {
   if (!(await canEditSeries(actorUserId, seriesId))) throw new Error("You cannot edit this series.");
-  await db`UPDATE auction_lot SET series_id = NULL, lot_number = NULL WHERE id = ${lotId} AND series_id = ${seriesId}`;
+  await db.begin(async (tx) => {
+    const [lot] = (await tx`
+      SELECT status, bid_count, metadata->>'enteredSeries' AS entered_series
+      FROM auction_lot WHERE id = ${lotId} AND series_id = ${seriesId}
+      FOR UPDATE
+    `) as unknown as Row[];
+    if (!lot) return;
+    const open = lot.status === "scheduled" || lot.status === "live";
+    if (open && lot.entered_series === seriesId) {
+      if (Number(lot.bid_count ?? 0) > 0) throw new Error("This piece has bids, so it cannot be taken out of the series.");
+      await tx`UPDATE auction_lot SET status = 'cancelled', series_id = NULL, lot_number = NULL WHERE id = ${lotId}`;
+      return;
+    }
+    await tx`UPDATE auction_lot SET series_id = NULL, lot_number = NULL WHERE id = ${lotId} AND series_id = ${seriesId}`;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Entries (developer, 2026-11-12; docs/open/IFAC_STUDIO_STORES_AND_KIT_2026-11-12.md §4):
+// a person puts one of their published pieces straight into a series and the
+// desk removes what does not belong. Who may enter: owners, guides and members
+// of the series' presenting org, its host org, or an invited org that
+// accepted. When: the series is published and its live close is ahead.
+// The piece stays in whichever store it is listed in (the person's own, or an
+// org store they hold a seat on); createLot checks that seat.
+// ----------------------------------------------------------------------------
+
+const ENTRY_ROLES = ["owner", "guide", "member"];
+
+/** The series a person may enter right now; `seriesId` narrows it to one. */
+function enterableSeriesQuery(userId: string, opts: { seriesId?: string; marketplaceOrgId?: string }) {
+  return db`
+    SELECT s.id, s.slug, s.title, s.org_id, s.presenter_org_id, s.silent_opens_at, s.live_at, s.week_count
+    FROM auction_series s
+    WHERE s.status = 'published' AND s.live_at IS NOT NULL AND s.live_at > NOW()
+      ${opts.seriesId ? db`AND s.id = ${opts.seriesId}` : db``}
+      ${opts.marketplaceOrgId ? db`AND s.org_id = ${opts.marketplaceOrgId}` : db``}
+      AND EXISTS (
+        SELECT 1 FROM user_organizations uo
+        WHERE uo.user_id = ${userId} AND uo.role = ANY(${ENTRY_ROLES})
+          AND (uo.org_id = s.presenter_org_id
+               OR uo.org_id = s.host_org_id
+               OR uo.org_id IN (SELECT so.org_id FROM auction_series_org so
+                                WHERE so.series_id = s.id AND so.status = 'accepted'))
+      )
+    ORDER BY s.live_at ASC
+  `;
+}
+
+export async function canEnterSeries(userId: string, seriesId: string): Promise<boolean> {
+  const rows = (await enterableSeriesQuery(userId, { seriesId })) as unknown as Row[];
+  return rows.length > 0;
+}
+
+export interface EnterableSeries {
+  id: string;
+  slug: string;
+  title: string;
+  /** The marketplace the series runs in; an entered piece must be listed there. */
+  orgId: string;
+  presenterOrgId: string | null;
+  silentOpensAt: string | null;
+  liveAt: string;
+  weekCount: number;
+}
+
+/** Series open to this person's entries, soonest close first (for a form's "Auction" destination). */
+export async function listEnterableSeries(userId: string, marketplaceOrgId = "market"): Promise<EnterableSeries[]> {
+  const rows = (await enterableSeriesQuery(userId, { marketplaceOrgId })) as unknown as Row[];
+  const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+  return rows.map((r) => ({
+    id: r.id as string,
+    slug: r.slug as string,
+    title: r.title as string,
+    orgId: r.org_id as string,
+    presenterOrgId: (r.presenter_org_id as string | null) ?? null,
+    silentOpensAt: iso(r.silent_opens_at),
+    liveAt: iso(r.live_at)!,
+    weekCount: Number(r.week_count),
+  }));
+}
+
+export interface EnterSeriesInput {
+  seriesId: string;
+  actorUserId: string;
+  /** A published piece in a store the actor owns or holds a seat on, in the series' marketplace. */
+  artworkId: string;
+  startingBidMinor: number;
+  reserveMinor?: number | null;
+  buyNowMinor?: number | null;
+  /** Feature the piece in this week of the series. */
+  weekNo?: number | null;
+}
+
+/**
+ * Enter a piece into a series: a lot on the series' clock (opens at silent
+ * bidding, closes at the live close, staggered by its number), marked
+ * `metadata.enteredSeries` so the desk's removal withdraws it. The artist may
+ * also withdraw it while it has no bids (cancelLot).
+ */
+export async function enterSeries(input: EnterSeriesInput): Promise<{ lotId: string; lotNumber: number }> {
+  const [ser] = (await enterableSeriesQuery(input.actorUserId, { seriesId: input.seriesId })) as unknown as Row[];
+  if (!ser) throw new Error("This auction is not open to entries from you.");
+  const [art] = (await db`SELECT org_id FROM artwork WHERE id = ${input.artworkId}`) as unknown as Row[];
+  if (!art) throw new Error("Artwork not found.");
+  if (art.org_id !== ser.org_id) throw new Error("The piece must be listed in the auction's marketplace.");
+
+  const now = Date.now();
+  const opens = ser.silent_opens_at ? new Date(ser.silent_opens_at as string) : new Date(now);
+  // createLot checks the actor's seat on the piece's store, that the piece is
+  // published, and that it has no other open lot.
+  const lot = await createLot({
+    artworkId: input.artworkId,
+    actorUserId: input.actorUserId,
+    startAt: opens.getTime() > now ? opens : new Date(now),
+    endAt: new Date(ser.live_at as string),
+    startingBidMinor: input.startingBidMinor,
+    reserveMinor: input.reserveMinor ?? null,
+    buyNowMinor: input.buyNowMinor ?? null,
+    incrementMode: "ladder",
+  });
+
+  let lotNumber: number;
+  try {
+    lotNumber = await attachLot(input.seriesId, lot.id, null, { enteredSeries: input.seriesId, enteredBy: input.actorUserId });
+  } catch (err) {
+    // Do not leave a lot running alone on the series' close time.
+    await db`UPDATE auction_lot SET status = 'cancelled' WHERE id = ${lot.id} AND series_id IS NULL AND bid_count = 0`;
+    throw err;
+  }
+  if (input.weekNo) await featureInWeek(input.seriesId, input.artworkId, input.weekNo, Number(ser.week_count));
+  return { lotId: lot.id, lotNumber };
 }
 
 /** Renumber the series' lots in the given order (ids). */
@@ -426,17 +591,7 @@ export async function addSeriesLot(input: AddSeriesLotInput): Promise<{ artworkI
   });
   await addLotToSeries(input.seriesId, input.actorUserId, lot.id, input.lotNumber ?? null);
 
-  if (input.weekNo) {
-    const week = Math.min(Number(ser.week_count), Math.max(1, Math.round(input.weekNo)));
-    await db`
-      INSERT INTO auction_series_slot_artwork (slot_id, artwork_id, org_id, position)
-      SELECT sl.id, ${artworkId}, sl.org_id,
-             (SELECT COUNT(*) FROM auction_series_slot_artwork x WHERE x.slot_id = sl.id)
-      FROM auction_series_slot sl
-      WHERE sl.series_id = ${input.seriesId} AND sl.stage = 'week' AND sl.week_no = ${week} AND sl.position = 0
-      ON CONFLICT DO NOTHING
-    `;
-  }
+  if (input.weekNo) await featureInWeek(input.seriesId, artworkId, input.weekNo, Number(ser.week_count));
   return { artworkId, lotId: lot.id };
 }
 

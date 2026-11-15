@@ -31,8 +31,8 @@ export interface BidWidgetProps {
   onBuyNow?: (lotId: string) => Promise<{ ok: boolean; reason?: string }>;
   /** Registration (phone + card on file) is required and this viewer has none. */
   needsRegistration?: boolean;
-  /** Starts the registration flow (redirects). */
-  onRegister?: () => Promise<void>;
+  /** Starts the registration flow with the bidder's phone (redirects to the card page, or returns an error). */
+  onRegister?: (phone: string) => Promise<{ error?: string } | void>;
   /** The viewer's standing maximum, when they lead. */
   yourMaxMinor?: number | null;
   /** The viewer leads this lot. */
@@ -90,6 +90,7 @@ export function BidWidget({
     ladder,
   });
   const [buying, setBuying] = React.useState(false);
+  const [phone, setPhone] = React.useState("");
   const canBuyNow = Boolean(onBuyNow && lot.buyNowMinor && optimistic.bidCount === 0);
 
   const [amountInput, setAmountInput] = React.useState<string>(
@@ -203,23 +204,47 @@ export function BidWidget({
             Bidding needs a phone number and a card on file. The card is not charged; it is held
             against unpaid wins.
           </p>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={async () => {
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
               if (!onRegister) return;
+              setErr(null);
               setPending(true);
               try {
-                await onRegister();
+                const r = await onRegister(phone);
+                if (r && r.error) {
+                  setErr(r.error);
+                  setPending(false);
+                }
               } catch (e: unknown) {
                 setErr(e instanceof Error ? e.message : "Could not start registration.");
                 setPending(false);
               }
             }}
-            className="inline-flex h-12 items-center justify-center rounded-md bg-[hsl(var(--primary))] px-6 text-base font-medium text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 disabled:opacity-50"
           >
-            {pending ? "Opening…" : "Register to bid"}
-          </button>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Phone
+              </span>
+              <input
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="h-11 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+                required
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={pending}
+              className="inline-flex h-12 items-center justify-center rounded-md bg-[hsl(var(--primary))] px-6 text-base font-medium text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 disabled:opacity-50"
+            >
+              {pending ? "Opening…" : "Register to bid"}
+            </button>
+          </form>
           {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
         </div>
       ) : (

@@ -46,15 +46,27 @@ export async function addArtworkToCart(
     artworkId: string;
     artworkVariantId: string;
   }
-): Promise<{ cartToken: string; redirectTo: string }> {
+): Promise<{ cartToken: string; redirectTo: string; error?: string }> {
   const userId = await currentUserId();
-  const cartToken = await withCartToken(
-    async (token) => {
-      await addToCart({ cartToken: token, artworkVariantId: input.artworkVariantId, viaStoreId });
-      return token;
-    },
-    { userId }
-  );
+  let cartToken: string;
+  try {
+    cartToken = await withCartToken(
+      async (token) => {
+        await addToCart({ cartToken: token, artworkVariantId: input.artworkVariantId, viaStoreId });
+        return token;
+      },
+      { userId }
+    );
+  } catch (err) {
+    // addToCart refuses with buyer-facing messages (another seller's basket,
+    // at auction, sold, priced on request). A thrown server-action error
+    // reaches the browser as Next's generic production message, so return it.
+    console.error("[addArtworkToCart]", err);
+    const dbError = err instanceof Error && err.name === "PostgresError";
+    const message =
+      err instanceof Error && !dbError ? err.message : "Could not add this to the basket.";
+    return { cartToken: "", redirectTo: "", error: message };
+  }
   await trackServerEvent(
     "add_to_cart",
     { artworkId: input.artworkId, variantId: input.artworkVariantId, viaStore: viaStoreId },
@@ -216,20 +228,39 @@ export async function buyNowAction(lotId: string): Promise<{ ok: boolean; reason
   redirect(`/orders/${r.orderId}`);
 }
 
-/** Start bidder registration: a hosted Stripe page that saves a card and a phone. */
-export async function registerToBidAction(lotId: string): Promise<void> {
+/**
+ * Start bidder registration: the phone from the lot page, then a hosted Stripe
+ * page that saves a card. Returns an error instead of throwing: a thrown
+ * server-action error shows only Next's generic production message.
+ */
+export async function registerToBidAction(
+  lotId: string,
+  phoneInput: string
+): Promise<{ error?: string }> {
   const userId = await currentUserId();
   if (!userId) redirect(`/login?next=/lots/${lotId}`);
   const session = await getServerSession();
   const email = session.user?.email;
   if (!email) redirect(`/login?next=/lots/${lotId}`);
+  const phone = (phoneInput ?? "").trim();
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15 || !/^[+()\d\s.-]+$/.test(phone)) {
+    return { error: "Enter a phone number we can reach you on." };
+  }
   const { startBidderRegistration } = await import("@elkdonis/checkout/stripe");
   const base = siteConfig.url.replace(/\/$/, "");
-  const { url } = await startBidderRegistration({
-    userId,
-    email,
-    successUrl: `${base}/api/bidders/return?session_id={CHECKOUT_SESSION_ID}&lot=${lotId}`,
-    cancelUrl: `${base}/lots/${lotId}?registration=cancelled`,
-  });
+  let url: string;
+  try {
+    ({ url } = await startBidderRegistration({
+      userId,
+      email,
+      phone,
+      successUrl: `${base}/api/bidders/return?session_id={CHECKOUT_SESSION_ID}&lot=${lotId}`,
+      cancelUrl: `${base}/lots/${lotId}?registration=cancelled`,
+    }));
+  } catch (err) {
+    console.error("[registerToBidAction]", err);
+    return { error: "Card registration could not be opened. Try again in a moment." };
+  }
   redirect(url);
 }

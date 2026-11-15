@@ -12,7 +12,7 @@ export interface BuyNowButtonProps {
   onAdd: (input: {
     artworkId: string;
     artworkVariantId: string;
-  }) => Promise<{ cartToken: string; redirectTo?: string }>;
+  }) => Promise<{ cartToken: string; redirectTo?: string; error?: string }>;
   /** Default: 'window.location.assign(result.redirectTo ?? "/checkout")' */
   onSuccess?: (result: { cartToken: string; redirectTo?: string }) => void;
   className?: string;
@@ -54,6 +54,11 @@ export function BuyNowButton({
     setPending(true);
     try {
       const result = await onAdd({ artworkId: artwork.id, artworkVariantId: variant.id });
+      if (result.error) {
+        setErr(result.error);
+        setPending(false);
+        return;
+      }
       if (onSuccess) onSuccess(result);
       else if (typeof window !== "undefined") {
         window.location.assign(result.redirectTo ?? "/checkout");
