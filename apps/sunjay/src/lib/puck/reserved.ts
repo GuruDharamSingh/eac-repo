@@ -15,13 +15,15 @@ import { LANDING_SLUG } from "./landing";
  * Documents that are templates for generated pages, not pages of their own.
  *
  * `event-detail` draws the detail page of every event that has one;
- * `journal-piece` draws every piece under /journal/<piece>. They are edited at
+ * `journal-piece` draws every piece under /journal/<piece>; `post-detail`
+ * (2026-11-14) every post at /<feed>/<slug> once it is published (until then the
+ * route draws the post as before: app/[feed]/[slug]). They are edited at
  * /studio/<slug> like any page, but are never served at /<slug>: the public
  * `/[feed]` fallthrough refuses them, and they cannot be chosen as a page name.
  * `landing` is `/` once it has been saved as a tree: drawn only with the page's
  * live pieces, and edited only from `/` (the studio routes redirect there).
  */
-export const TEMPLATE_SLUGS: ReadonlySet<string> = new Set(["event-detail", "journal-piece", LANDING_SLUG]);
+export const TEMPLATE_SLUGS: ReadonlySet<string> = new Set(["event-detail", "journal-piece", "post-detail", LANDING_SLUG]);
 
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   ...TEMPLATE_SLUGS,

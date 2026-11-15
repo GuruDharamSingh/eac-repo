@@ -18,7 +18,7 @@ import {
 } from "@/lib/cms/schema";
 import { siteConfig } from "@/config/site";
 import { deriveExcerpt } from "@elkdonis/utils";
-import { ensureUniqueThreadSlug } from "@elkdonis/services";
+import { ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
 
 /**
  * Server actions for /manage.
@@ -163,18 +163,20 @@ export async function saveContentAction(
   }
 }
 
+/**
+ * Remove a post or service: the shared remove (services' removeThreadAs), which archives the thread
+ * instead of deleting the row (2026-11-14; this used to be a hard DELETE). The org is checked first:
+ * removeThreadAs takes the thread id alone.
+ */
 export async function deleteContentAction(threadId: string): Promise<ActionResult> {
-  await requireOrgEditor();
+  const editor = await requireOrgEditor();
 
   try {
-    // Services cascade to workshop_pages; deleteServiceOffering is kind-scoped
-    // so fall through to the generic delete for posts.
-    const [row] = await db<{ section: string | null; kind: string }[]>`
-      DELETE FROM threads WHERE id = ${threadId} AND org_id = ${ORG}
-      RETURNING section, kind
-    `;
-    if (!row) return { ok: false, error: "Not found" };
-    revalidateFeed(row.section ?? "");
+    const [owned] = await db<{ id: string }[]>`SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG}`;
+    if (!owned) return { ok: false, error: "Not found" };
+    const res = await removeThreadAs(editor.userId, threadId, { editor: true });
+    if (res.ok === false) return { ok: false, error: res.error };
+    revalidateFeed(res.section ?? "");
     return { ok: true };
   } catch (err) {
     console.error("[hidden-enneagram] deleteContentAction:", err);

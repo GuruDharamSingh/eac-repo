@@ -1,23 +1,27 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { Data } from "@puckeditor/core";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { templateDocument } from "@elkdonis/blocks";
+import type { PuckDoc } from "@elkdonis/direct-edit/block";
 import { requireOrgEditor } from "@/lib/auth";
-import { loadPage, HOME_SLUG } from "@/lib/puck/store";
+import { HOME_SLUG, loadPage } from "@/lib/puck/store";
 import { LANDING_SLUG } from "@/lib/puck/landing";
 import { slugProblem } from "@/lib/puck/actions";
-import { allTemplates, startingTemplate } from "@/lib/puck/templates";
+import { startingTemplate } from "@/lib/puck/templates";
 import { loadHomeSeed } from "@/lib/puck/home-seed";
-import { PageEditor } from "@/components/studio/page-editor";
+import { CanvasEditor } from "@/components/studio/CanvasEditor";
 import { siteConfig } from "@/config/site";
+import { recordQuery, studioRecord } from "./record";
 
 /**
- * Edit one page: `/studio/home` is the landing page, `/studio/visiting` the
- * page that answers at `/visiting`.
+ * Edit one page in the canvas (2026-11-14, canvas first, as hidden-enneagram on
+ * 2026-11-11): `/studio/visiting` is the page published at `/visiting`,
+ * `/studio/event-detail` the template every gathering's detail page is drawn
+ * from. One block's settings open in Puck over the canvas ("Settings…"); Puck's
+ * editor on the whole page is at /studio/<slug>/blocks. The old address
+ * /studio/<slug>/canvas comes here.
  *
- * Gated twice on purpose: here, so someone without the role never loads the
- * editor at all, and again in savePageAction, because a client component is not
+ * Gated here, and again in the save action, because a client component is not
  * an authorisation boundary.
  */
 export const dynamic = "force-dynamic";
@@ -28,16 +32,17 @@ export default async function StudioPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ template?: string }>;
+  searchParams: Promise<{ template?: string; thread?: string; piece?: string }>;
 }) {
-  const { slug } = await params;
-  const { template: start } = await searchParams;
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const { template } = query;
+  // A template opened on one record ("Edit this page's layout" on a gathering, post or piece): drawn with THAT record.
+  const record = studioRecord(slug, query);
   if (!isValidSlug(slug)) notFound();
-  // The home page's tree is edited on `/`, where its live pieces are.
-  if (slug === LANDING_SLUG) redirect("/");
-  await requireOrgEditor(`/studio/${slug}`);
+  // `/` is a coded page since 2026-11-02 and is edited in place there ("Edit page").
+  if (slug === HOME_SLUG || slug === LANDING_SLUG) redirect("/");
+  await requireOrgEditor(`/studio/${slug}${recordQuery(record, { template })}`);
 
-  // A name the site already uses (a section, /hub, /about) cannot hold a page.
   const problem = await slugProblem(slug, { allowTemplate: true });
   if (problem) {
     return (
@@ -51,24 +56,13 @@ export default async function StudioPage({
     );
   }
 
-  const seed = await loadHomeSeed();
-  const templates = allTemplates(seed);
-
   const stored = await loadPage(slug);
-  // A page that does not exist yet opens as a starting document rather than a
-  // 404: the home page as it is today, anything else a plain page. Nothing is
-  // saved until Publish, and the home page keeps rendering the hard-coded
-  // landing until then.
+  // A page with no row opens as its starting document (the New page form's choice), saved only on Save.
   const initial = stored
-    ? (stored.data as Data)
-    : (templateDocument(startingTemplate(slug, start, seed), slug === HOME_SLUG ? "Home" : "") as unknown as Data);
+    ? (stored.data as PuckDoc)
+    : (templateDocument(startingTemplate(slug, template, await loadHomeSeed()), "") as unknown as PuckDoc);
+  // Puck's editor opens the same starting document while nothing is saved.
+  const blocks = `/studio/${slug}/blocks${recordQuery(record, { template: !stored ? template : undefined })}`;
 
-  return (
-    <PageEditor
-      slug={slug}
-      orgId={siteConfig.orgId}
-      initial={initial}
-      templates={templates}
-    />
-  );
+  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={initial} blockEditorHref={blocks} record={record} />;
 }

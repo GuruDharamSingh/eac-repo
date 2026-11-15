@@ -51,7 +51,7 @@ export function Detail({ data, host, nav }: HubCardProps<SiteBuilderDetailData, 
           <div className="hc-sub">{sub}</div>
         </div>
         <div className="hc-actions">
-          <BtnLink href={host.liveHref('')} target="_blank" rel="noopener noreferrer">View site ↗</BtnLink>
+          {host.liveHref('') ? <BtnLink href={host.liveHref('')!} target="_blank" rel="noopener noreferrer">View site ↗</BtnLink> : null}
           {data.can.createPages ? <Btn variant="primary" icon="plus" onClick={() => setNewOpen(true)}>New page</Btn> : null}
         </div>
       </div>

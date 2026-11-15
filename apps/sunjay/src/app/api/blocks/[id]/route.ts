@@ -30,7 +30,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     service: url.searchParams.get("service") ?? undefined,
     piece: url.searchParams.get("piece") ?? undefined,
     series: url.searchParams.get("series") ?? undefined,
+    which: url.searchParams.get("which") ?? undefined,
+    person: url.searchParams.get("person") ?? undefined,
     membersOnly: url.searchParams.get("membersOnly") === "0" ? false : undefined,
-  });
+  }, atRecord(url.searchParams));
   return NextResponse.json(data);
+}
+
+/**
+ * The record a template is being edited with (2026-11-14, config.client.ts `atRecord`): handed to the loaders as the
+ * page context the published routes pass (`threadId`, `piece`, `service`), so the editor draws that record's page.
+ * Shapes only here; each loader applies its own visibility (data-event.ts: a draft only for its editors;
+ * data-writing.ts: only pieces shown on this site; data-service.ts: only this site's services).
+ */
+const REF = /^[A-Za-z0-9_-]{1,120}$/;
+function atRecord(q: URLSearchParams): Record<string, unknown> {
+  const ctx: Record<string, unknown> = {};
+  const thread = q.get("atThread"), piece = q.get("atPiece"), service = q.get("atService");
+  if (thread && REF.test(thread)) ctx.threadId = thread;
+  if (piece && REF.test(piece)) ctx.piece = piece;
+  if (service && REF.test(service)) ctx.service = service;
+  return ctx;
 }

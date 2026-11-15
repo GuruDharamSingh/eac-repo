@@ -6,7 +6,7 @@ import { sanitizeRichValues } from "@elkdonis/blocks";
 import { resolverKeysFor } from "../config";
 import { closeItemFocus } from "../drag/item-focus";
 import { blockWrapper } from "./find";
-import { canvasDocument, endSpell, recordStep, selectPart } from "./store";
+import { canvasDocument, endSpell, partSelection, recordStep, selectPart } from "./store";
 import type { BlockPopupHandle, PartsPluginOptions } from "./types";
 
 // ============================================================================
@@ -75,6 +75,7 @@ export function openBlockPopupFor(getPuck: GetPuck, options: PartsPluginOptions,
   const wrapper = doc ? blockWrapper(doc, id) : null;
   if (!item || !own(options.contract, item.type) || !wrapper) return false;
   endSpell();
+  const before = partSelection();
   selectPart(null);
   closeItemFocus();
   const resolved: Record<string, Record<string, unknown>> = {};
@@ -106,6 +107,7 @@ export function openBlockPopupFor(getPuck: GetPuck, options: PartsPluginOptions,
       },
       closed() {
         current = null;
+        if (options.handBack && before && getPuck().getItemById(before.id)) selectPart(before);
       },
     });
   } catch (e) {

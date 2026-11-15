@@ -19,7 +19,8 @@ const TEMPLATES = [
 
 /**
  * The site's designed pages. The home page and any page an editor adds are
- * documents in the page editor (`/studio/<name>`); everything else on the site
+ * documents in the page editor (`/studio/<name>`, the canvas; Puck on the whole
+ * page at `/studio/<name>/blocks`); everything else on the site
  * stays where it was — content in Content, sections in Pages, the wording of
  * the footer in Site copy, people in People.
  */
@@ -59,9 +60,14 @@ export default async function BuilderPage() {
                       {new Date(p.updatedAt).toLocaleDateString("en-CA")}
                     </span>
                   </div>
-                  <Link href={`/studio/${p.slug}`} className="text-sm underline underline-offset-4">
-                    Edit
-                  </Link>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <Link href={`/studio/${p.slug}`} className="text-sm underline underline-offset-4">
+                      Edit
+                    </Link>
+                    <Link href={`/studio/${p.slug}/blocks`} className="text-xs text-muted-foreground underline-offset-4 hover:underline">
+                      Blocks
+                    </Link>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -86,9 +92,14 @@ export default async function BuilderPage() {
                       : "Not published — the plain layout is used"}
                   </p>
                 </div>
-                <Link href={`/studio/${t.slug}`} className="text-sm underline underline-offset-4">
-                  {stored.has(t.slug) ? "Edit" : "Start from the example"}
-                </Link>
+                <span className="flex shrink-0 items-center gap-3">
+                  <Link href={`/studio/${t.slug}`} className="text-sm underline underline-offset-4">
+                    {stored.has(t.slug) ? "Edit" : "Start from the example"}
+                  </Link>
+                  <Link href={`/studio/${t.slug}/blocks`} className="text-xs text-muted-foreground underline-offset-4 hover:underline">
+                    Blocks
+                  </Link>
+                </span>
               </li>
             ))}
           </ul>

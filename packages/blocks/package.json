@@ -18,7 +18,7 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "test": "tsx scripts/smoke.mts && tsx scripts/record.mts"
+    "test": "tsx scripts/smoke.mts && tsx scripts/record.mts && tsx scripts/record-parts.mts"
   },
   "peerDependencies": {
     "react": "^19",

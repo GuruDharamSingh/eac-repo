@@ -1,0 +1,10 @@
+import { studioRecord, recordQuery } from "/app/apps/sunjay/src/app/studio/[slug]/record.ts";
+let pass = 0, fail = 0; const ok = (n: string, c: boolean, x = "") => { c ? pass++ : fail++; console.log(`${c ? "pass" : "  FAIL"} ${n} ${x}`); };
+ok("template + thread id", JSON.stringify(studioRecord("event-detail", { thread: "ngBSCazEyfa2wrmEaiu7y" })) === "{\"threadId\":\"ngBSCazEyfa2wrmEaiu7y\"}");
+ok("template + piece slug", JSON.stringify(studioRecord("journal-piece", { piece: "first-piece" })) === "{\"piece\":\"first-piece\"}");
+ok("not a template: dropped", JSON.stringify(studioRecord("visiting", { thread: "ngBSCazEyfa2wrmEaiu7y" })) === "{}");
+ok("bad thread value dropped", JSON.stringify(studioRecord("event-detail", { thread: "x\"><script>" })) === "{}");
+ok("bad piece value dropped", JSON.stringify(studioRecord("journal-piece", { piece: "../etc" })) === "{}");
+ok("query keeps template and record", recordQuery({ threadId: "abc123" }, { template: "services" }) === "?thread=abc123&template=services", recordQuery({ threadId: "abc123" }, { template: "services" }));
+ok("empty query is empty", recordQuery({}) === "");
+console.log(`record ${pass}/${pass + fail}`);

@@ -47,6 +47,11 @@ export interface TreePageOptions {
    * its resolver draws with them where the block sits (by node id, like `resolved`; never saved). Absent: as before.
    */
   editSettings?(node: PuckNode): Promise<{ props: Record<string, unknown>; resolved?: Record<string, unknown> | null } | null>;
+  /**
+   * Inception (2026-11-14, tree-editor `inception`): `editSettings` also inside the block popup and from a part's menu,
+   * each layer over the last (canvas/stack.ts), the selection handed back on close. Absent: as before.
+   */
+  inception?: boolean;
   /** The host's sanitiser for rich text typed in place (tree-editor `cleanRich`). */
   cleanRich?(html: string): string;
   /**
@@ -56,6 +61,8 @@ export interface TreePageOptions {
   records?: RecordSources;
   /** Shared by the popup's mount and the page's. Hosts leave it out. */
   boundCache?: Map<string, Record<string, unknown> | null>;
+  /** What a block drew with each set of its settings (editSettings), shared by the popup's mount and the page's, so a setting changed inside the popup draws its rows on the page too. Hosts leave it out. */
+  settingsCache?: Map<string, Map<string, Record<string, unknown> | null>>;
 }
 
 type Described = { label?: string; defaultProps?: Record<string, unknown>; fields?: Record<string, { type?: string; allow?: readonly string[] }>; permissions?: { insert?: boolean } };
@@ -103,7 +110,8 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
       const names = bound.get(n.type);
       const have = o.resolved?.[n.props.id];
       if (!names || !have) return;
-      for (const name of names) { const v = n.props[name]; if (typeof v === "string" && v) cache.set(cacheKey(n.type, name, v), have); }
+      // An empty value is cached too: for some kinds "" draws a row (a service: the visitor's ?service=, else the newest).
+      for (const name of names) { const v = n.props[name]; if (typeof v === "string") cache.set(cacheKey(n.type, name, v), have); }
     });
   }
   const syncBound = (doc: PuckDoc) => {
@@ -115,7 +123,7 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
       let drawn: Record<string, unknown> | null = null;
       for (const name of names) {
         const v = n.props[name];
-        const got = typeof v === "string" && v ? cache.get(cacheKey(n.type, name, v)) : null;
+        const got = typeof v === "string" ? cache.get(cacheKey(n.type, name, v)) : null;
         if (got) drawn = { ...(drawn ?? {}), ...got };
       }
       if (drawn) resolved[id] = drawn;
@@ -128,7 +136,7 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
     remember: (type, prop, value, drawn) => { cache.set(cacheKey(type, prop, value), drawn); },
   } : undefined;
   // What a block drew with each set of settings it has had in this session, so undo and redo draw the right rows (editSettings).
-  const settingsRows = new Map<string, Map<string, Record<string, unknown> | null>>();
+  const settingsRows = o.settingsCache ?? new Map<string, Map<string, Record<string, unknown> | null>>();
   const settingsKey = (p: Record<string, unknown>) => JSON.stringify(Object.keys(p).filter((k) => k !== "id" && k !== "morph").sort().map((k) => [k, p[k]]));
   const syncSettings = (doc: PuckDoc) => {
     if (!settingsRows.size) return;
@@ -139,7 +147,7 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
       else delete resolved[n.props.id];
     });
   };
-  const editSettings: TreeEditorOptions["editSettings"] = o.editSettings && !o.nested
+  const editSettings: TreeEditorOptions["editSettings"] = o.editSettings && (!o.nested || o.inception)
     ? async (node) => {
       const id = node.props.id;
       const was = settingsRows.get(id) ?? new Map<string, Record<string, unknown> | null>();
@@ -173,9 +181,9 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
   const drawsSample = (n: PuckNode) => sampleKeysOf(o.contract, n.type).length > 0 && !resolved[n.props.id];
   // The popup is this same mount on a working copy of one block. Only with a contract, and never inside itself.
   const mountNested: Parameters<typeof mountTreeEditor>[0]["mountNested"] = o.contract && !o.nested
-    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: undefined })
+    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: o.inception ? o.editSettings : undefined, settingsCache: o.inception ? settingsRows : undefined })
     : undefined;
-  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, designTools: o.designTools });
+  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, designTools: o.designTools, inception: o.inception });
   return {
     ...editor,
     dispose() {

@@ -1,4 +1,5 @@
 import { defineBlock, editItem, RichText, type PropsOf } from "@elkdonis/blocks";
+import { NOTICE_PARTS } from "./detail-parts";
 
 // ============================================================================
 // Small blocks, used on every template: a callout and numbered steps.
@@ -136,6 +137,7 @@ export const notice = defineBlock(
     description: "A boxed note with an edge colour: a recording notice, a reminder, a change of plan.",
     memberSafe: true,
     styling: "tailwind",
+    parts: NOTICE_PARTS,
     props: noticeProps,
   },
   Notice,

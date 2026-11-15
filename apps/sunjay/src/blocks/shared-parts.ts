@@ -32,3 +32,17 @@ export const FORUM_PARTS: Parts = {
   title: { label: "Title", sel: '.eac-face-title' },
   blurb: { label: "Summary", sel: '.eac-face-blurb' },
 };
+
+/**
+ * Which gathering "Next gathering" shows (2026-11-14): pt-standing and the home page's home-standing. Chosen with
+ * "From what?" (`binds: "gathering"`, components/landing/person-records.ts). Values: lib/puck/data-standing.ts
+ * `whichOf` — "standing" (also missing: every block stored before this), "next", "thread:<id>".
+ */
+export const WHICH_GATHERING_PROP = {
+  name: "which",
+  kind: "string",
+  binds: "gathering",
+  label: "Which gathering",
+  description: "The standing meeting (as before), the next upcoming gathering, or one particular gathering. Every choice follows the calendar.",
+  default: "standing",
+} as const;

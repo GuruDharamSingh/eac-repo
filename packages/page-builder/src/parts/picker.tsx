@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { createUsePuck, useGetPuck } from "@puckeditor/core";
 import { closeItemFocus } from "../drag/item-focus";
 import { drawnParts, nextPart, partAround, partsIn, partsOf, ROOT_PART } from "./find";
-import { endSpell, selectPart, setCanvasDocument, useHoveredPart, usePartSelection, partSelection } from "./store";
+import { canvasDocument, endSpell, selectPart, setCanvasDocument, useHoveredPart, usePartSelection, partSelection } from "./store";
 import type { PartsContract } from "./types";
 
 // ============================================================================
@@ -44,8 +44,10 @@ export function PartPicker({ doc, contract, rootLabel, open, children }: { doc?:
   const [, redraw] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
+    // An editor opened over another (a Puck sheet over Studio) gives the one under it its canvas back on closing.
+    const before = canvasDocument();
     setCanvasDocument(doc ?? null);
-    return () => setCanvasDocument(null);
+    return () => setCanvasDocument(before === doc ? null : before);
   }, [doc]);
 
   // Clicks and Escape.

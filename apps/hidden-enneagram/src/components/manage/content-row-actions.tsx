@@ -50,14 +50,14 @@ export function ContentRowActions({
   }
 
   function remove() {
-    if (!confirm("Delete this permanently?")) return;
+    if (!confirm("Remove this? It is archived, not deleted.")) return;
     startTransition(async () => {
       const res = await deleteContentAction(threadId);
       if (res.ok) {
-        toast.success("Deleted.");
+        toast.success("Removed.");
         router.refresh();
       } else {
-        toast.error(res.error ?? "Could not delete.");
+        toast.error(res.error ?? "Could not remove it.");
       }
     });
   }
@@ -83,7 +83,7 @@ export function ContentRowActions({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={remove} variant="destructive">
-          Delete
+          Remove
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

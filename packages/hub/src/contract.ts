@@ -97,7 +97,11 @@ export interface HubCardHost extends HostLinks {
   /** /hub/<card>?tab=&row=&<query> on this host (basePath included). */
   hubHref(card: string, tab?: string, row?: string, query?: Record<string, string>): string;
   /** The live site page for a path ('' = home), basePath included. */
-  liveHref(path: string): string;
+  /**
+   * The page's public address. Null (2026-11-14) for a page that has none of its own, such as a template that
+   * draws generated pages (an event or a post layout): its View button is then hidden.
+   */
+  liveHref(path: string): string | null;
   /** The Puck editor for a page path (sunjay /studio/<slug>). Null when the host has no editor. */
   puckEditHref?(path: string): string | null;
   /** The theme editor, optionally opened on one page's exception (ifac AppearanceCard). */

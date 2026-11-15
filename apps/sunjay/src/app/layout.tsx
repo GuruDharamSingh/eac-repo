@@ -11,6 +11,10 @@ import { siteConfig } from "@/config/site";
 import { getSiteSections } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
+import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
+import { loadSiteStyle } from "@/lib/site-style";
+import { SITE_STYLE } from "@/lib/site-style-schema";
+import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
 
 export const metadata: Metadata = {
   title: {
@@ -33,10 +37,15 @@ export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Nav is built from org_feeds, so adding a section to the site is a database
   // row rather than a code change.
-  const [viewer, sections] = await Promise.all([
+  const [viewer, sections, siteStyle] = await Promise.all([
     getViewer().catch(() => null),
     getSiteSections(),
+    // Site style (round 2, 2026-11-14): nothing stored means no sheet at all, so visitors see no change until a save.
+    loadSiteStyle().catch(() => null),
   ]);
+  // `data-site-style` lets the editor switch this sheet off while it previews a draft.
+  const styleCss = siteStyleCss(siteStyle, SITE_STYLE);
+  const styleFonts = siteStyleFontsHref(siteStyle, SITE_STYLE);
   const canEdit = Boolean(viewer?.canEdit);
   const [feeds, profile] = await Promise.all([
     // Editors compose into private feeds too; visitors only see public ones.
@@ -59,6 +68,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         than left in the tree to be wondered about later.
       */}
       <body suppressHydrationWarning className="flex min-h-screen flex-col">
+        {/* As elktours: absent (no tag at all) until a style is saved. */}
+        {styleFonts ? <link rel="stylesheet" href={styleFonts} /> : null}
+        {styleCss ? <style data-site-style="" dangerouslySetInnerHTML={{ __html: styleCss }} /> : null}
         {/* One surface system for the whole site: a listing card on a feed
             page, a hub tile and a calendar day all open into the same dialog.
 
@@ -84,6 +96,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <SiteFooter content={sections.footer} />
           <Toaster position="top-right" />
+          {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
         </HubSurfaces>
         <AnalyticsBeacon />
       </body>

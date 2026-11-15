@@ -18,7 +18,8 @@ import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/lib/series-site";
 import { BannerEditor } from "@/components/site/banner-editor";
 import { EditPageButton } from "@/components/landing/EditPageButton";
-import { LiveRoot } from "@/blocks/home-blocks";
+import { LiveRoot, nodePartKey } from "@/blocks/home-blocks";
+import { pickStanding, whichOf } from "@/lib/puck/data-standing";
 import { landingPublishedConfig } from "@/lib/puck/config.landing";
 import { LANDING_SLUG } from "@/lib/puck/landing";
 import { loadPage } from "@/lib/puck/store";
@@ -85,7 +86,13 @@ export default async function HomePage() {
 
   // Once the page has been saved as a tree, the tree is the page.
   if (tree) {
-    const metadata = { orgId: siteConfig.orgId, slug: LANDING_SLUG, parts };
+    // A Next gathering that shows something other than the standing meeting (2026-11-14, `which`): drawn per node.
+    const chosen = standingNodes(tree.data);
+    const own = await Promise.all(chosen.map(async ({ id, which }) => {
+      const row = await pickStanding(which, viewer).catch(() => null);
+      return [nodePartKey("home-standing", id), <StandingMeetingFace key={id} standing={standingForViewer(row, Boolean(viewer))} canEdit={canEdit} timeZone={siteConfig.timeZone} />] as const;
+    }));
+    const metadata = { orgId: siteConfig.orgId, slug: LANDING_SLUG, parts: { ...parts, ...Object.fromEntries(own) } };
     const filled = await resolveAllData(tree.data as Data, landingPublishedConfig, metadata);
     return (
       <SiteShell>
@@ -147,6 +154,22 @@ export default async function HomePage() {
       {canEdit && <EditPageButton tree={null} />}
     </SiteShell>
   );
+}
+
+/** The home-standing nodes of a stored tree whose `which` is not the standing meeting (data-standing.ts `whichOf`). */
+function standingNodes(data: unknown): Array<{ id: string; which: string }> {
+  const out: Array<{ id: string; which: string }> = [];
+  const walk = (list: unknown) => {
+    if (!Array.isArray(list)) return;
+    for (const n of list as Array<{ type?: unknown; props?: Record<string, unknown> }>) {
+      if (!n || typeof n !== "object" || !n.props) continue;
+      const id = n.props.id;
+      if (n.type === "home-standing" && typeof id === "string" && whichOf(n.props.which) !== "standing") out.push({ id, which: whichOf(n.props.which) });
+      for (const v of Object.values(n.props)) walk(v);
+    }
+  };
+  walk((data as { content?: unknown } | null)?.content);
+  return out.slice(0, 8);
 }
 
 /** The opening lines of the about copy: its third paragraph on is for the About page. */

@@ -231,7 +231,13 @@ export function startInlineText(el: HTMLElement, o: InlineOptions): InlineSessio
       const text = sanitizeRich(domToRich(el), richOpts);
       if (cancel || text === sanitizeRich(o.initial, richOpts)) o.onCancel(); else o.onCommit(text);
     } else {
+      // innerText applies CSS text-transform: a part styled uppercase would commit its words in capitals (2026-11-14,
+      // found by system32-fc). Read with the transform off; innerText still turns <br> into a space.
+      const was = el.style.getPropertyValue("text-transform"), wasPriority = el.style.getPropertyPriority("text-transform");
+      el.style.setProperty("text-transform", "none", "important");
       const text = el.innerText.replace(/\s+/g, " ").trim();
+      if (was) el.style.setProperty("text-transform", was, wasPriority);
+      else el.style.removeProperty("text-transform");
       if (cancel || text === o.initial) o.onCancel(); else o.onCommit(text);
     }
   }

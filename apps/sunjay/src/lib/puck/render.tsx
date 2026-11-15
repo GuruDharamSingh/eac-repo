@@ -39,6 +39,19 @@ export async function puckPageMetadata(slug: string): Promise<Metadata | null> {
 }
 
 /**
+ * Where "Edit this page" goes (2026-11-14): the canvas on this document; for a template, on THIS page's record
+ * (`?thread=` / `?piece=`, read by app/studio/[slug]/record.ts), so the editor draws what the visitor is looking at.
+ */
+function editHref(slug: string, opts: { template?: boolean; metadata?: Record<string, unknown> }): string {
+  const q = new URLSearchParams();
+  const m = opts.metadata ?? {};
+  if (opts.template && typeof m.threadId === "string") q.set("thread", m.threadId);
+  if (opts.template && typeof m.piece === "string") q.set("piece", m.piece);
+  const s = q.toString();
+  return `/studio/${slug}${s ? `?${s}` : ""}`;
+}
+
+/**
  * The page as a node, or null when none is stored (or the row is not renderable).
  *
  * `template` marks a call from a route that draws a generated page (an event,
@@ -68,10 +81,11 @@ export async function renderPuckPage(
       <Render config={serverPuckConfig} data={resolved as Data} />
       {viewer?.canEdit ? (
         <a
-          href={`/studio/${slug}/canvas`}
+          href={editHref(slug, opts)}
+          title={opts.template ? "One layout draws every page of this kind: a change here changes all of them." : undefined}
           className="fixed bottom-4 right-4 z-50 border border-[hsl(var(--primary))]/60 bg-card px-4 py-2 text-sm font-medium text-[hsl(var(--primary))] shadow-lg hover:bg-[hsl(var(--primary))]/15"
         >
-          Edit this page
+          {opts.template ? "Edit this page's layout" : "Edit this page"}
         </a>
       ) : null}
     </>

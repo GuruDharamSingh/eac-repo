@@ -8,6 +8,8 @@ import { HOME_BLOCKS } from "@/blocks/home-blocks";
 import { choosePicture } from "@/components/studio/page-picture-chooser";
 import { landingCanvasConfig } from "@/lib/puck/config.landing";
 import { restoreLandingAction, saveLandingAction } from "@/lib/puck/actions";
+// "From what?" on the home page too (round 2, 2026-11-14): Next gathering's `which` (system32-fc), Featured person, Opens.
+import { records } from "./person-records";
 
 const FIRST_SAVE = "Saving makes this page public right away. From then on its words no longer follow /manage/pages, and later changes to the page's code do not reach it. \"Restore the original page\" goes back to the code.";
 
@@ -33,6 +35,7 @@ export async function openLandingEditor({ tree }: { tree: PuckDoc | null }) {
     config: landingCanvasConfig as never,
     contract: contractOf(HOME_BLOCKS) as never,
     choosePicture,
+    records,
     saveNotice: tree ? undefined : FIRST_SAVE,
     onSave: (d) => saveLandingAction(d),
     onDone: () => window.location.reload(),

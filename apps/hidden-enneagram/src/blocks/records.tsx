@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { defineBlock, RichText, type PropsOf } from "@elkdonis/blocks";
 import { editingOf, type PuckEditing } from "@elkdonis/blocks/record";
 import { PersonPage, PersonThreadList, type PersonListItem } from "@elkdonis/cms-ui/profile";
+import { SitePortfolioEditor } from "@elkdonis/cms-ui/gallery";
+import { siteConfig } from "@/config/site";
 import { ContactForm } from "@/components/contact/contact-form";
 
 // ============================================================================
@@ -178,6 +180,8 @@ export interface PersonPageView {
   avatarUrl: string | null;
   socialLinks: { label: string | null; url: string }[];
   portfolio: { url: string; title: string | null }[];
+  /** The person's users.slug, for their chooser of this site's portfolio. */
+  personSlug?: string | null;
   /** Section keys in display order. */
   order: string[];
   /** Null when the section is switched off. */
@@ -247,6 +251,18 @@ function PersonWholePage(p: PersonProps) {
       back={backLabel ? { href: str(p.backHref).trim() || "/about", label: backLabel } : null}
       sidebarExtra={statement ? <RichText className="eac-person-bio" body={p.statement} /> : null}
       portfolio={page.portfolio}
+      // The person (or an admin) chooses what this site shows, from their own
+      // files (org_profiles.portfolio, migration 264). Not in the Puck canvas:
+      // there the page is drawn inert. Routes: app/api/center/portfolio.
+      featured={
+        page.canEdit && page.personSlug && !drawn ? (
+          <SitePortfolioEditor
+            items={page.portfolio.map((w, i) => ({ id: `${i}-${w.url}`, url: w.url, title: w.title ?? "" }))}
+            person={page.personSlug}
+            siteName={siteConfig.orgName}
+          />
+        ) : undefined
+      }
       emptyFeatured={null}
       order={page.order}
       slots={slots}

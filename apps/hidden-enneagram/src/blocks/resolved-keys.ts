@@ -14,4 +14,9 @@ export const RESOLVED_KEYS: Record<string, readonly string[]> = {
   "he-service": ["service", "booking", "routeSlug", "routeQuery"],
   // Round 6: the article template's record and route keys (injected at render, never stored).
   "he-post": ["post", "routeFeed", "routeSlug"],
+  // 2026-11-11: the shared record blocks (RECORD_RESOLVED_KEYS in @elkdonis/blocks, spelled out so this file stays import-free).
+  "record-header": ["rec", "routeRecord"],
+  "record-body": ["rec", "routeRecord"],
+  "record-facts": ["rec", "routeRecord"],
+  checkout: ["rec", "pay", "recordRef", "routeRecord", "routeQuery"],
 };

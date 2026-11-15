@@ -49,3 +49,31 @@ export const SAMPLE_JOURNAL: WireJournalItem[] = [
   { id: "j2", slug: "second-piece", title: "A second piece", lede: "Another standfirst.", coverImageUrl: null, publishedAt: "2026-09-12T12:00:00.000Z", readingMinutes: 2, authorName: "The author", series: "Notes from the lab", href: "/journal/second-piece" },
   { id: "j3", slug: "third-piece", title: "A third piece", lede: null, coverImageUrl: null, publishedAt: "2026-09-02T12:00:00.000Z", readingMinutes: 6, authorName: "A guest", series: null, href: "/journal/third-piece" },
 ];
+
+// ── a post (2026-11-14, the post-detail template) ───────────────────────────
+// A forum or section post (`threads.kind = 'post'`), as /<feed>/<slug> draws it. Not a Studio piece: those are
+// `kind = 'writing'` and live under /journal (WirePost above).
+
+export interface WirePostThread {
+  id: string;
+  title: string;
+  excerpt: string | null;
+  bodyHtml: string;
+  authorName: string | null;
+  publishedAt: string | null;
+  coverImageUrl: string | null;
+  feedSlug: string | null;
+  feedName: string | null;
+}
+
+export const SAMPLE_POST_THREAD: WirePostThread = {
+  id: "sample-post-thread",
+  title: "A post from one of the site's sections",
+  excerpt: "Its summary appears here, under the title.",
+  bodyHtml: "<p>The body of a post, as its author wrote it in the section. Every post on the site is drawn with this layout.</p>",
+  authorName: "The author",
+  publishedAt: "2026-10-19T12:00:00.000Z",
+  coverImageUrl: null,
+  feedSlug: "materials",
+  feedName: "Materials",
+};

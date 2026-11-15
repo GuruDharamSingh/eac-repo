@@ -1,5 +1,6 @@
 import { SHARED_BLOCKS, type Block } from "@elkdonis/blocks";
 import { SITE_BLOCKS } from "@/blocks";
+import { RECORD_SITE_BLOCKS } from "@/blocks/record-site";
 
 /**
  * The blocks this site offers: its own four first, then a curated part of the
@@ -38,4 +39,6 @@ const SHARED_IDS = new Set([
   "thread-feed",
 ]);
 
-export const CATALOGUE: Block<never>[] = [...SITE_BLOCKS, ...SHARED_BLOCKS.filter((b) => SHARED_IDS.has(b.def.id))];
+// 2026-11-11: the shared record blocks (record-header, record-facts, record-body, checkout) follow the
+// site's own; lib/record-parts.ts is their resolver.
+export const CATALOGUE: Block<never>[] = [...SITE_BLOCKS, ...RECORD_SITE_BLOCKS, ...SHARED_BLOCKS.filter((b) => SHARED_IDS.has(b.def.id))];

@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement, Fragment } from "react";
-import type { Config } from "@puckeditor/core";
+import { AutoField, type Config } from "@puckeditor/core";
 import type { PropDef } from "@elkdonis/blocks";
 import type { Block } from "@elkdonis/blocks";
 import { buildPuckConfig, type PuckConfigOptions } from "./config";
@@ -27,6 +27,32 @@ export interface EditorConfigOptions extends PuckConfigOptions {
   media: MediaSources;
 }
 
+/**
+ * What a row's rich text may hold (2026-11-14, generalised from sunjay's Numbered steps fix by system32-fc): the
+ * top-level set (what `sanitizePageText` keeps) with row-sized headings. Code, rules and alignment are off.
+ */
+const ROW_RICH_TEXT = { code: false, codeBlock: false, horizontalRule: false, textAlign: false, heading: { levels: [3, 4] } };
+
+/**
+ * A rich-text COLUMN of a rows prop as Puck's own formatted-text field, instead of a textarea showing the stored HTML
+ * (`<p>…</p>`). A custom field, not `type: "richtext"` in `arrayFields`: Puck's canvas swaps a richtext field's value
+ * for its own element, which a block reading the row's HTML could not draw. The stored value stays the same HTML
+ * string, and saving still goes through the host's sanitiser.
+ */
+function rowRichText(prop: PropDef) {
+  return function RowRichText(props: Record<string, unknown>) {
+    // No `id` or `name`: AutoField keeps the value in a store keyed by its own id, and the rich-text field reads it
+    // back by name (default: that id). The outer field's name ("steps[0].text") is not a key of that store, so
+    // passing it drew an empty editor (sunjay harness/event-detail/drive-steps.cjs).
+    return createElement(AutoField as never, {
+      field: { type: "richtext", label: prop.label, options: ROW_RICH_TEXT },
+      value: typeof props.value === "string" ? props.value : "",
+      onChange: props.onChange,
+      readOnly: props.readOnly,
+    });
+  };
+}
+
 /** A field that draws nothing: for a prop this site cannot fill (an unclaimed Opens). */
 function NoField(): React.ReactElement {
   return createElement(Fragment);
@@ -38,6 +64,8 @@ export function buildEditorConfig({ media, ...options }: EditorConfigOptions): C
     // Text blocks are typed on the page, formatted. Editor only — see the
     // note on `richText` in ./config.
     richText: options.richText ?? true,
+    // A row's rich-text column gets the same formatted field (a host's own `fields.richtext` wins).
+    rowFields: { richtext: rowRichText, ...options.rowFields },
     // The generic "Style" control, at the foot of every block's fields.
     styleField:
       options.styleField ??

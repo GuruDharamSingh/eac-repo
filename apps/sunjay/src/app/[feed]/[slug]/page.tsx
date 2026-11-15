@@ -34,6 +34,7 @@ import { CycleBadge } from "@elkdonis/blocks";
 import { EventPageToggle } from "@/components/event-page-toggle";
 import { renderPuckPage } from "@/lib/puck/render";
 import { readDetailPage } from "@/lib/puck/event-flag";
+import { LayoutDoor } from "@/components/studio/layout-door";
 
 interface ThreadPageProps {
   params: Promise<{ feed: string; slug: string }>;
@@ -84,6 +85,24 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   // and a "Together" card it has no use for, and none of the reading
   // treatment it does. The kind decides which surface, not the route.
   if (thread.kind === "post") {
+    // Round 2 (2026-11-14): a post is drawn from the `post-detail` template once one is published, as every piece
+    // under /journal is from `journal-piece`; until then, and if it fails to draw, the article below is unchanged.
+    // The template's blocks find this post through `metadata.threadId`, the key the event route already passes.
+    const designed = await renderPuckPage("post-detail", { template: true, metadata: { threadId: thread.id } });
+    if (designed) {
+      return (
+        <>
+          {designed}
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-end gap-3 px-5 pb-10">
+            {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            {(viewer?.canEdit || (viewer && viewer.userId === thread.authorId)) && (
+              <RemoveThreadButton threadId={thread.id} title={thread.title} backHref={`/${feed.slug}`} />
+            )}
+            <ShareButton title={thread.title} />
+          </div>
+        </>
+      );
+    }
     return (
       <div
         className="mx-auto max-w-3xl px-5 py-10"
@@ -109,6 +128,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         >
           <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
             {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            {viewer?.canEdit && <LayoutDoor template="post-detail" thread={thread.id} published={false} />}
             {(viewer?.canEdit || (viewer && viewer.userId === thread.authorId)) && (
               <RemoveThreadButton threadId={thread.id} title={thread.title} backHref={`/${feed.slug}`} />
             )}

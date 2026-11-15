@@ -1,6 +1,7 @@
 import { defineBlock, type PropsOf } from "@elkdonis/blocks";
 import { OfferingCardView } from "./offering-card.client";
 import { SAMPLE_EVENT, type WireEvent } from "./event-sample";
+import { OFFERING_CARD_PARTS } from "./detail-parts";
 
 // ============================================================================
 // The offering card: the "Current Offerings" lead card (cover, when, how to
@@ -44,6 +45,7 @@ export const offeringCard = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: OFFERING_CARD_PARTS,
     props: offeringCardProps,
   },
   OfferingCardView as unknown as React.ComponentType<

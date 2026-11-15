@@ -183,16 +183,18 @@ function PopRow({ page: p, host, live, open, onToggle, idPrefix, canEdit }: {
         ) : (
           <span style={{ width: 100 }} />
         )}
-        <BtnLink
-          href={view}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          aria-label={`View ${p.title} on the site`}
-          style={{ paddingInline: 6 }}
-        >
-          View ↗
-        </BtnLink>
+        {view ? (
+          <BtnLink
+            href={view}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`View ${p.title} on the site`}
+            style={{ paddingInline: 6 }}
+          >
+            View ↗
+          </BtnLink>
+        ) : null}
       </div>
       {isTemplate && open ? (
         <div className="hc-row-panel" style={{ padding: '12px 20px 16px 112px' }}>

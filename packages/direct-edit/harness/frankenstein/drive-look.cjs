@@ -79,7 +79,12 @@ const ok = (name, cond, extra = "") => { cond ? pass++ : fail++; console.log(`${
   ok("Width field shows its whole value in Puck's column", wf.sw !== undefined && wf.sw <= wf.cw + 1, JSON.stringify(wf));
 
   // Tweaks on a block that declares tokens.
-  const tokType = await p.evaluate(() => Object.entries(globalThis.__contract).find(([, c]) => c?.tokens?.length && c.parts)?.[0]);
+  // A block ON THE SEED that declares tokens and parts (2026-11-14: the first such entry in the contract may not be on the page).
+  const tokType = await p.evaluate(() => {
+    const types = new Set(); const walk = (l) => l.forEach((n) => { types.add(n.type); Object.values(n.props).forEach((v) => Array.isArray(v) && v[0]?.type && walk(v)); });
+    walk(globalThis.__getPuck().appState.data.content);
+    return Object.entries(globalThis.__contract).find(([t, c]) => types.has(t) && c?.tokens?.length && c.parts)?.[0];
+  });
   const tokNode = await p.evaluate((t) => { const out = []; const walk = (l) => l.forEach((n) => { if (n.type === t) out.push(n.props.id); Object.values(n.props).forEach((v) => Array.isArray(v) && v[0]?.type && walk(v)); }); walk(globalThis.__getPuck().appState.data.content); return out[0]; }, tokType);
   if (tokNode) {
     // Selected through Puck's API: the block sits below the fold of the zoomed canvas.

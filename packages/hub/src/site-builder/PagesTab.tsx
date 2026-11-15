@@ -428,7 +428,7 @@ function Expanded({ page: p, pages, data, host, live, onTheme, tpl, setTpl, idPr
         {isEditor && can.savedTemplates && can.editPages ? (
           <Btn variant="ghost" icon="bookmark" iconSize={15} onClick={() => setTpl({ id: p.id, name: p.title })}>Save as template</Btn>
         ) : null}
-        <BtnLink href={host.liveHref(p.path)} target="_blank" rel="noopener noreferrer">View page ↗</BtnLink>
+        {host.liveHref(p.path) ? <BtnLink href={host.liveHref(p.path)!} target="_blank" rel="noopener noreferrer">View page ↗</BtnLink> : null}
         {isEditor && href ? <Btn variant="secondary" onClick={() => go(host, href)}>Open editor</Btn> : null}
         {saveOn ? (
           <Btn variant="primary" disabled={!dirty || live.saving === p.id} onClick={() => void live.save(p)}>Save</Btn>

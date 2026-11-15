@@ -287,7 +287,9 @@ export function Popup({ icon, title, titleSize = 24, width, top = 104, onClose, 
   return (
     <>
       <div className="hc-scrim" style={{ top: 52 }} onClick={onClose} aria-hidden="true" />
-      <Frame elev="lg" className="hc-popup" role="dialog" aria-label={title} style={{ width, top }}>
+      {/* Fixed to the window (2026-11-14): a card low on a long hub page opened its pop-up at the top of the DOCUMENT,
+          off-screen. Taller than the window, it scrolls inside. */}
+      <Frame elev="lg" className="hc-popup" role="dialog" aria-label={title} style={{ width, top, maxHeight: `calc(100dvh - ${top + 16}px)` }}>
         <div className="hc-popup-head">
           <span style={{ display: 'flex', color: 'var(--hc-accent)' }}><Icon name={icon} size={20} /></span>
           <span className="hc-title" style={{ fontSize: titleSize, marginRight: meta ? 0 : undefined }}>{title}</span>

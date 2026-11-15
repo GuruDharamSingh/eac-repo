@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadForumTopics, loadPerson, loadPersonPage, loadPostBlock, loadServiceBlock } from "@/lib/record-blocks";
+import { loadRecordParts } from "@/lib/record-parts";
 
 /**
  * The editor's view of the round 3 record blocks (he-service, he-forum,
@@ -28,6 +29,9 @@ export async function GET(request: Request) {
       const { post } = await loadPostBlock({ postFeed: q.get("feed") ?? "", postSlug: q.get("slug") ?? "" }, { visitor: true });
       return NextResponse.json({ post });
     }
+    // 2026-11-11: the shared record blocks' sample (no booking state: a signed-out visitor's view).
+    case "record":
+      return NextResponse.json({ parts: await loadRecordParts({ record: q.get("ref") ?? "" }, { pay: q.get("pay") === "1", visitor: true }) });
     default:
       return NextResponse.json({ error: "Unknown block." }, { status: 400 });
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { createElement, type ReactNode } from "react";
+import { AutoField } from "@puckeditor/core";
 import type { Block, PropDef } from "@elkdonis/blocks";
 import { BOX_BLOCKS, BOX_ROOT } from "@elkdonis/direct-edit/puck/blocks";
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
@@ -14,7 +15,7 @@ import { PersonPickerField } from "@/components/studio/person-picker";
 import { opensDrawAction, personWhoAction } from "@/lib/featured-person-actions";
 import { SAMPLE_EVENT } from "@/blocks/event-sample";
 import { SAMPLE_BOOKING, SAMPLE_SERVICES } from "@/blocks/service-sample";
-import { SAMPLE_JOURNAL, SAMPLE_POST } from "@/blocks/writing-sample";
+import { SAMPLE_JOURNAL, SAMPLE_POST, SAMPLE_POST_THREAD } from "@/blocks/writing-sample";
 
 // ============================================================================
 // The catalogue as the EDITOR sees it.
@@ -42,16 +43,33 @@ async function getJson(url: string): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * The record a template is being edited WITH (2026-11-14): `/studio/<template>?thread=<id>` or `?piece=<slug>`, which
+ * the studio page passes in as `metadata.threadId` / `metadata.piece` (and a page's `?service=` as `metadata.service`),
+ * the same keys the published routes pass (app/[feed]/[slug], app/journal/[piece], app/[feed]). Forwarded as `at*`
+ * query keys, never mixed with the block's own `piece` / `service` choice, so the editor draws what that record's page
+ * draws. Without them a template draws the next gathering or the newest piece, as before.
+ */
+const atRecord = (q: URLSearchParams, metadata: Record<string, unknown> | undefined) => {
+  if (!metadata) return;
+  if (typeof metadata.threadId === "string" && metadata.threadId) q.set("atThread", metadata.threadId);
+  if (typeof metadata.piece === "string" && metadata.piece) q.set("atPiece", metadata.piece);
+  if (typeof metadata.service === "string" && metadata.service) q.set("atService", metadata.service);
+};
+
 const viaApi =
   (id: string) =>
-  async (props: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  async (props: Record<string, unknown>, metadata?: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const q = new URLSearchParams();
+    atRecord(q, metadata);
     if (typeof props.limit === "number") q.set("limit", String(props.limit));
     if (typeof props.source === "string") q.set("source", props.source);
     if (typeof props.feed === "string") q.set("feed", props.feed);
     if (typeof props.service === "string" && props.service) q.set("service", props.service);
     if (typeof props.piece === "string" && props.piece) q.set("piece", props.piece);
     if (typeof props.series === "string" && props.series) q.set("series", props.series);
+    if (typeof props.which === "string" && props.which) q.set("which", props.which);
+    if (typeof props.person === "string" && props.person) q.set("person", props.person);
     if (props.membersOnly === false) q.set("membersOnly", "0");
     return getJson(`/api/blocks/${id}?${q}`);
   };
@@ -64,8 +82,8 @@ const viaApi =
  */
 const orSample =
   (id: string, sample: (body: Record<string, unknown>) => Record<string, unknown>, empty: (b: Record<string, unknown>) => boolean) =>
-  async (props: Record<string, unknown>): Promise<Record<string, unknown>> => {
-    const body = await viaApi(id)(props);
+  async (props: Record<string, unknown>, metadata?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    const body = await viaApi(id)(props, metadata);
     return empty(body) ? { ...body, ...sample(body) } : body;
   };
 
@@ -98,6 +116,8 @@ const clientResolvers: BlockResolvers = {
   "pt-booking": orSample("pt-booking", () => ({ booking: SAMPLE_BOOKING }), (b) => !(b.booking as { service?: unknown } | undefined)?.service),
   "pt-journal": orSample("pt-journal", () => ({ items: SAMPLE_JOURNAL }), (b) => !Array.isArray(b.items) || b.items.length === 0),
   "pt-article": orSample("pt-article", () => ({ post: SAMPLE_POST }), (b) => !b.post),
+  // The post page template (2026-11-14): the post in `?thread=`, else an example.
+  "pt-post": orSample("pt-post", () => ({ post: SAMPLE_POST_THREAD }), (b) => !b.post),
   "pt-series-nav": orSample(
     "pt-series-nav",
     () => ({ items: SAMPLE_JOURNAL.slice(0, 2), series: "Notes from the lab", current: "first-piece" }),
@@ -143,9 +163,16 @@ const canvasResolvers: BlockResolvers = {
       "pt-journal",
       "pt-article",
       "pt-series-nav",
+      "pt-post",
     ].map((id) => [id, viaApi(id)])
   ),
 };
+
+/**
+ * What a row's rich text may hold: the same set as page-builder's top-level rich text (what `sanitizePageText` keeps),
+ * with step-sized headings. Code, rules and alignment are off.
+ */
+const ROW_RICH_TEXT = { code: false, codeBlock: false, horizontalRule: false, textAlign: false, heading: { levels: [3, 4] } };
 
 /** The canvas editor draws with the published shape: the editor shape's chrome needs Puck's own context. */
 export const canvasConfig = buildPuckConfig({ resolvers: canvasResolvers, blocks, root: BOX_ROOT, morph: MorphMark });
@@ -159,6 +186,22 @@ export const puckConfig = buildEditorConfig({
   morph: MorphMark,
   root: { props: [], wrap: CanvasFonts },
   fields: {
+    // A rich-text COLUMN of a rows prop (Numbered steps' "Words under it", 2026-11-14). A top-level rich-text prop
+    // already gets Puck's formatted-text field from buildEditorConfig; a row's column fell back to a textarea that
+    // showed the stored HTML (`<p>…</p>`). This hands the column Puck's own rich-text field, so the stored value
+    // stays the same HTML and existing rows open as they are. Saving still goes through the host's sanitiser.
+    richtext: (prop: PropDef) =>
+      function RowRichText(props: Record<string, unknown>) {
+        // No `id` or `name`: the public AutoField keeps the value in a store of its own, keyed by its own id, and
+        // Puck's rich-text field reads it back by name (default: that id). The outer field's name ("steps[0].text")
+        // is not a key of that store, so passing it drew an empty editor (harness/event-detail/drive-steps.cjs).
+        return createElement(AutoField as never, {
+          field: { type: "richtext", label: prop.label, options: ROW_RICH_TEXT },
+          value: typeof props.value === "string" ? props.value : "",
+          onChange: props.onChange,
+          readOnly: props.readOnly,
+        });
+      },
     // A string that BINDS to a service gets a picker; every other string keeps
     // Puck's own box (null = leave it alone).
     string: (prop: PropDef) =>
@@ -166,8 +209,8 @@ export const puckConfig = buildEditorConfig({
         ? function ServiceProp(props: Record<string, unknown>) {
             return createElement(ServicePickerField, props as never);
           }
-        : // A person, an Opens or a Card's record gets "From what?" (2026-11-07).
-          prop.binds === "person" || prop.binds === "opens" || prop.binds === "record"
+        : // A person, an Opens or a Card's record gets "From what?" (2026-11-07); a piece of writing too (2026-11-14).
+          prop.binds === "person" || prop.binds === "opens" || prop.binds === "record" || prop.binds === "piece" || prop.binds === "gathering" || prop.binds === "guide"
           ? function ReferenceProp(props: Record<string, unknown>) {
               return createElement(PersonPickerField, { ...(props as object), binds: prop.binds } as never);
             }

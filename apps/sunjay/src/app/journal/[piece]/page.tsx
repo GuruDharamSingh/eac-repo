@@ -6,6 +6,8 @@ import { Article } from "@/blocks/writing-blocks";
 import { loadPiece } from "@/lib/puck/data-writing";
 import { renderPuckPage } from "@/lib/puck/render";
 import { siteConfig } from "@/config/site";
+import { getViewer } from "@/lib/auth";
+import { LayoutDoor } from "@/components/studio/layout-door";
 
 /**
  * One piece written in the writing room (@elkdonis/studio), shown on this site.
@@ -59,9 +61,16 @@ export default async function JournalPiecePage({ params }: Props) {
 
   const { post } = (await loadPiece({}, { piece })) ;
   if (!post) notFound();
+  const viewer = await getViewer().catch(() => null);
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
       <Article post={post} reading="journal" showBack showCover />
+      {/* Round 2 (2026-11-14): editors can start the layout every piece is drawn in, on this piece. */}
+      {viewer?.canEdit ? (
+        <div className="mt-8 flex justify-end">
+          <LayoutDoor template="journal-piece" piece={piece} published={false} />
+        </div>
+      ) : null}
     </div>
   );
 }

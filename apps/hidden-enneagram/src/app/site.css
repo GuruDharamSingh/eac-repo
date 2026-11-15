@@ -651,6 +651,56 @@ html[data-he-look="aeon"] .he-passage-body blockquote { padding: 0.2em 0 0.2em 1
 .he-svc-paid { margin: 0; font-family: var(--he-font-display); font-size: 1.5rem; color: var(--he-ink); }
 .he-svc-alert { margin: 0; color: hsl(var(--destructive)); }
 
+/* The same page from the shared record blocks (2026-11-11): record-header, record-facts,
+   record-body and checkout inside box.he-svc (lib/default-pages.ts DEFAULT_SERVICE_PAGE).
+   Same inks on the same grounds as the he-svc-* rules above, so no pair is new. */
+.he-svc .blk-rcd-head { margin: clamp(24px, 4vw, 40px) 0 28px; gap: 0; }
+/* The eyebrow as components/aeon/aeon.css draws .he-eyebrow (it loads after this file and is what the page showed). */
+.he-svc .blk-rcd-kicker { margin: 0 0 1.1em; font-family: var(--he-font-mono); font-size: 0.68rem; font-weight: 400; letter-spacing: 0.32em; color: var(--he-aurum); text-shadow: 0 0 18px var(--he-aurum-glow); }
+.he-svc .blk-rcd-title { font-family: var(--he-font-display); font-size: clamp(36px, 6vw, 60px); line-height: 1.06; color: var(--he-ink); }
+.he-svc .blk-rcd-sub { margin: 0.6em auto 0; max-width: 36rem; font-size: 1.15rem; line-height: 1.6; color: var(--he-ink-dim); }
+.he-svc .blk-rcd-cover { margin-top: 28px; border-radius: var(--radius); }
+.he-svc .he-orb-band { padding-block: 8px 40px; }
+.he-svc .blk-rcd-facts { margin: 0 0 32px; border-color: var(--he-hairline); }
+.he-svc .blk-rcd-fact { padding: 14px 22px; }
+.he-svc .blk-rcd-fact + .blk-rcd-fact { border-left-color: var(--he-hairline); }
+.he-svc .blk-rcd-facts dt { font-family: var(--he-font-mono); font-size: 0.7rem; letter-spacing: 0.2em; color: var(--he-ink-faint); }
+.he-svc .blk-rcd-facts dd { margin: 4px 0 0; color: var(--he-ink); }
+.he-svc .blk-rcd-body { max-width: var(--he-reading); font-size: 1.125rem; line-height: 1.78; color: var(--he-ink-dim); }
+.he-svc .blk-rcd-body h2, .he-svc .blk-rcd-body h3 { font-family: var(--he-font-display); color: var(--he-ink); }
+.he-svc .blk-pay {
+  max-width: 460px;
+  margin: clamp(32px, 5vw, 48px) auto 0;
+  padding: 28px 26px;
+  border: 1px solid var(--he-line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--he-card) 80%, transparent);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--he-aurum) 7%, transparent);
+}
+.he-svc .blk-pay-form { gap: 14px; }
+.he-svc .blk-pay-price { font-family: var(--he-font-display); font-size: 2.2rem; color: var(--he-ink); }
+.he-svc .blk-pay-amount { gap: 6px; color: var(--he-ink-dim); }
+.he-svc .blk-pay-amount input { font-size: 1.1rem; }
+.he-svc .blk-pay-button {
+  min-width: 220px;
+  padding: 12px 22px;
+  font-family: var(--he-font-mono);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border: 1px solid var(--he-aurum);
+  border-radius: 999px;
+  background: var(--he-aurum);
+  color: var(--he-night);
+  box-shadow: 0 0 26px var(--he-aurum-glow);
+}
+.he-svc .blk-pay-button:hover { filter: brightness(1.07); }
+.he-svc .blk-pay-small { font-size: 0.85rem; color: var(--he-ink-faint); }
+.he-svc .blk-pay-note { margin: 0.6em 0 0; font-size: 1rem; color: var(--he-ink-dim); }
+.he-svc .blk-pay-paid { font-family: var(--he-font-display); font-size: 1.5rem; color: var(--he-ink); }
+.he-svc .blk-pay-alert { font-weight: 400; color: hsl(var(--destructive)); }
+
 /* "When would suit you?" (after payment) */
 .he-when { display: grid; gap: 14px; margin-top: 18px; text-align: left; }
 .he-when-title { margin: 0; text-align: center; font-size: 1.6rem; color: var(--he-ink); }

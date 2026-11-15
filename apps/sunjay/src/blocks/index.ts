@@ -3,7 +3,7 @@ import { band, banner, heading, link } from "./layout-blocks";
 import { eventAbout, eventHeader, eventMaterials, eventRsvp, talkRoom } from "./event-blocks";
 import { offeringCard } from "./offering-card";
 import { booking, serviceDetail, servicesList } from "./service-blocks";
-import { article, journal, seriesNav } from "./writing-blocks";
+import { article, journal, post, seriesNav } from "./writing-blocks";
 import { notice, steps } from "./small-blocks";
 import { calendar, forum, gallery, member, profile, standing, threads, writing } from "./data-blocks";
 
@@ -56,6 +56,8 @@ export const SITE_BLOCKS = [
   journal,
   article,
   seriesNav,
+  // The post page template (2026-11-14)
+  post,
   // Small blocks used across the templates
   steps,
   notice,

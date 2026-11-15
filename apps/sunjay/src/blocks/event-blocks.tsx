@@ -7,6 +7,14 @@ import {
   TalkRoomView,
 } from "./event.client";
 import { SAMPLE_EVENT, type WireEvent } from "./event-sample";
+import { editingOf, type PuckEditing } from "@elkdonis/blocks/record";
+import {
+  EVENT_ABOUT_PARTS,
+  EVENT_HEADER_PARTS,
+  EVENT_MATERIALS_PARTS,
+  EVENT_RSVP_PARTS,
+  TALK_ROOM_PARTS,
+} from "./detail-parts";
 
 // ============================================================================
 // The event detail blocks.
@@ -15,6 +23,9 @@ import { SAMPLE_EVENT, type WireEvent } from "./event-sample";
 // All read one `event`, filled by a resolver (lib/puck/data-event.ts), so the
 // same template draws every gathering that has a detail page. With `event`
 // absent in the editor, the client resolver supplies SAMPLE_EVENT.
+//
+// Parts (2026-11-14, detail-parts.ts): selectors over today's markup, so a page
+// can restyle each piece and type its own headings in place.
 //
 // All `interactive`: they use hooks or call server actions. Declarations stay
 // here, server-safe; the components are in event.client.tsx.
@@ -41,6 +52,7 @@ export const eventHeader = defineBlock(
     id: "pt-event-header",
     label: "Event header",
     description: "Title, kind, next date and time, length, place and host, and the cover picture of the gathering this page is about.",
+    parts: EVENT_HEADER_PARTS,
     props: headerProps,
   },
   EventHeaderView as unknown as React.ComponentType<PropsOf<typeof headerProps> & Ev>,
@@ -55,6 +67,7 @@ export const eventAbout = defineBlock(
     id: "pt-event-about",
     label: "Event description",
     description: "The gathering's written description, as its author composed it.",
+    parts: EVENT_ABOUT_PARTS,
     props: aboutProps,
   },
   EventAboutView as unknown as React.ComponentType<PropsOf<typeof aboutProps> & Ev>,
@@ -91,17 +104,32 @@ const roomProps = [
   },
 ] as const;
 
+/**
+ * Closed while being edited (2026-11-14, HE's "inert on edit" manners, round 2 item 5): "Open the room when the page
+ * loads" mounts the live call frame (camera, microphone, autoplay allowed) with no click, so in an editor it would load
+ * the call inside the canvas. Not `interactive` for that reason: this server-safe wrapper reads the editor's `puck`
+ * context itself (editingOf) and hands the client view only plain values. Join, full screen and new tab still work on
+ * the published page as before; the editor captures clicks anyway.
+ */
+function TalkRoomBlock({ puck, ...rest }: PropsOf<typeof roomProps> & Ev & { puck?: PuckEditing }) {
+  const { drawn } = editingOf(puck);
+  return <TalkRoomView {...rest} startOpen={drawn ? false : rest.startOpen} />;
+}
+
 export const talkRoom = defineBlock(
   {
     ...base,
+    // Reads the editor context itself (TalkRoomBlock), so the adapter must hand it over.
+    interactive: false,
     id: "pt-talk-room",
     category: "actions",
     label: "Talk room",
     description:
       "The gathering's Nextcloud Talk room in the page, with join, full screen and a new-tab link. Editors can create the room from here.",
+    parts: TALK_ROOM_PARTS,
     props: roomProps,
   },
-  TalkRoomView as unknown as React.ComponentType<PropsOf<typeof roomProps> & Ev>,
+  TalkRoomBlock as unknown as React.ComponentType<PropsOf<typeof roomProps> & Ev>,
   () => ({ heading: "The room", membersOnly: true, startOpen: false, height: 520, event: SAMPLE_EVENT })
 );
 
@@ -116,6 +144,7 @@ export const eventRsvp = defineBlock(
     category: "actions",
     label: "RSVP",
     description: "“Are you coming?” for members and guests, with the count and, for the group, the names.",
+    parts: EVENT_RSVP_PARTS,
     props: rsvpProps,
   },
   EventRsvpView as unknown as React.ComponentType<PropsOf<typeof rsvpProps> & Ev>,
@@ -130,6 +159,7 @@ export const eventMaterials = defineBlock(
     id: "pt-event-materials",
     label: "Event materials",
     description: "Files attached to the gathering, as download links. Hidden when there are none.",
+    parts: EVENT_MATERIALS_PARTS,
     props: materialsProps,
   },
   EventMaterialsView as unknown as React.ComponentType<PropsOf<typeof materialsProps> & Ev>,

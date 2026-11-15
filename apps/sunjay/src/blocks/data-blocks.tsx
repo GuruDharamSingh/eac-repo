@@ -10,7 +10,8 @@ import {
   StandingView,
   ThreadsView,
 } from "./views.client";
-import { FORUM_PARTS, STANDING_PARTS } from "./shared-parts";
+import { FORUM_PARTS, STANDING_PARTS, WHICH_GATHERING_PROP } from "./shared-parts";
+import { editingOf, type PuckEditing } from "@elkdonis/blocks/record";
 
 // ============================================================================
 // Para Theater's data blocks: what the landing page draws from the database.
@@ -28,6 +29,7 @@ import { FORUM_PARTS, STANDING_PARTS } from "./shared-parts";
 // ── next gathering ──────────────────────────────────────────────────────────
 
 const standingProps = [
+  WHICH_GATHERING_PROP,
   {
     name: "tall",
     kind: "boolean",
@@ -52,7 +54,7 @@ export const standing = defineBlock(
     props: standingProps,
   },
   StandingView as unknown as React.ComponentType<PropsOf<typeof standingProps>>,
-  () => ({ tall: true })
+  () => ({ which: "standing", tall: true })
 );
 
 // ── calendar ────────────────────────────────────────────────────────────────
@@ -83,13 +85,23 @@ export const calendar = defineBlock(
 
 const profileProps = [
   {
+    // Whose profile (2026-11-14, lib/puck/data-profile.ts): empty is the site's guide, found from the organisation's
+    // owners; or a person chosen with "From what?" (`binds: "guide"`, as Featured person's references).
+    name: "person",
+    kind: "string",
+    binds: "guide",
+    label: "Whose profile",
+    description: "Empty: the site's guide (an owner of this organisation). Or anyone with a public profile here, or whoever a gathering names, like its host.",
+    default: "",
+  },
+  {
     name: "showLinks",
     kind: "boolean",
-    label: "Show his links",
-    description: "From his network profile, with the collective's link last.",
+    label: "Show their links",
+    description: "From their network profile, with the collective's link last.",
     default: true,
   },
-  { name: "linkLabel", kind: "string", label: "Link to his page says", default: "Read more" },
+  { name: "linkLabel", kind: "string", label: "Link to their page says", default: "Read more" },
   {
     name: "emptyNote",
     kind: "string",
@@ -387,6 +399,18 @@ const galleryProps = [
   },
 ] as const;
 
+/**
+ * Still while being edited (2026-11-14, HE's "inert on edit" manners, round 2 item 5): the gallery's own clock
+ * (GalleryFace's interval) is the one thing on this block that acts without a click, and in an editor it would change
+ * the picture under a selection every few seconds. Not `interactive` for that reason: this server-safe wrapper reads
+ * the editor's `puck` context itself (editingOf: Puck's canvas, the direct-edit canvas and its popup) and hands the
+ * client view only plain values, which is what `interactive` did for it before.
+ */
+function GalleryBlock({ puck, ...rest }: PropsOf<typeof galleryProps> & { images?: unknown; puck?: PuckEditing }) {
+  const { drawn } = editingOf(puck);
+  return <GalleryView {...(rest as React.ComponentProps<typeof GalleryView>)} autoAdvanceSeconds={drawn ? 0 : rest.autoAdvanceSeconds} />;
+}
+
 export const gallery = defineBlock(
   {
     id: "pt-gallery",
@@ -394,7 +418,6 @@ export const gallery = defineBlock(
     label: "Gallery",
     description: "The site's pictures, as the gallery card. Hidden while there are none.",
     memberSafe: true,
-    interactive: true,
     dataDriven: true,
     styling: "tailwind",
     // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
@@ -409,6 +432,6 @@ export const gallery = defineBlock(
     },
     props: galleryProps,
   },
-  GalleryView as unknown as React.ComponentType<PropsOf<typeof galleryProps>>,
+  GalleryBlock as unknown as React.ComponentType<PropsOf<typeof galleryProps>>,
   () => ({ heading: "Gallery", limit: 12, autoAdvanceSeconds: 0 })
 );

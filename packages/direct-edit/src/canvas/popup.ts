@@ -12,6 +12,7 @@
 
 import { backgroundOf } from "./box-panel";
 import { Listeners } from "./interact";
+import { isTopLayer, stackLayer } from "./stack";
 
 export interface PopupHost {
   /** Where the page is drawn. */
@@ -44,7 +45,11 @@ export interface PopupOptions {
   onClosed(): void;
 }
 
-export interface PopupHandle { close(): void }
+export interface PopupHandle {
+  close(): void;
+  /** The frame's root (2026-11-14): a layer in canvas/stack.ts. */
+  root?: HTMLElement;
+}
 
 const SIDE_PAD = 20;
 
@@ -57,6 +62,8 @@ export function openBlockPopup(o: PopupOptions): PopupHandle {
   root.setAttribute("aria-label", `Editing ${o.name}`);
   root.innerHTML = `<div class="de-popup-dim" data-de-ui></div><div class="de-popup-frame" tabindex="-1"><div class="de-popup-main"><div class="de-popup-fit"><div class="de-popup-stage"></div></div></div><div class="de-popup-sheet"></div><div class="de-popup-ask" data-de-ui role="alertdialog" aria-label="Changes not used" hidden><p>Your changes to this block are not on the page yet.</p><div><button type="button" data-ask="use" class="primary">Use on this page</button><button type="button" data-ask="discard">Discard them</button><button type="button" data-ask="keep">Keep editing</button></div></div></div>`;
   document.body.append(root);
+  // Over another layer (Puck's one-block settings, another popup), this one is lifted above it. Alone: as before.
+  const unstack = stackLayer(root);
   const frame = root.querySelector<HTMLElement>(".de-popup-frame")!;
   const main = root.querySelector<HTMLElement>(".de-popup-main")!;
   const fitBox = root.querySelector<HTMLElement>(".de-popup-fit")!;
@@ -94,6 +101,7 @@ export function openBlockPopup(o: PopupOptions): PopupHandle {
     watch.disconnect();
     L.dispose();
     ed?.dispose();
+    unstack();
     root.remove();
     o.onClosed();
     if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
@@ -107,6 +115,8 @@ export function openBlockPopup(o: PopupOptions): PopupHandle {
   // Registered before the mount, so these run before its own keys: Esc here goes up a level, then closes.
   L.on(document, "keydown", (ev: KeyboardEvent) => {
     if (ev.key !== "Escape") return;
+    // A layer opened over this one keeps its own Esc.
+    if (!isTopLayer(root)) return;
     const t = ev.target as Element;
     const stop = () => { ev.preventDefault(); ev.stopImmediatePropagation(); };
     if (!ask.hidden) { stop(); ask.hidden = true; frame.focus({ preventScroll: true }); return; }
@@ -141,5 +151,5 @@ export function openBlockPopup(o: PopupOptions): PopupHandle {
   ed.fit();
   frame.focus({ preventScroll: true });
 
-  return { close: finish };
+  return { close: finish, root };
 }

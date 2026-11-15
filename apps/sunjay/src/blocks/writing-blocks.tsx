@@ -1,7 +1,8 @@
 import { defineBlock, type PropsOf } from "@elkdonis/blocks";
 import { ArticleView } from "@elkdonis/cms-ui/article";
 import { WritingShelf, type ShelfItem } from "@elkdonis/cms-ui/writing";
-import { SAMPLE_JOURNAL, SAMPLE_POST, type WireJournalItem, type WirePost } from "./writing-sample";
+import { SAMPLE_JOURNAL, SAMPLE_POST, SAMPLE_POST_THREAD, type WireJournalItem, type WirePost, type WirePostThread } from "./writing-sample";
+import { ARTICLE_PARTS, JOURNAL_PARTS, POST_PARTS, SERIES_NAV_PARTS } from "./detail-parts";
 
 // ============================================================================
 // The writing blocks: Studio pieces on a Puck page.
@@ -68,6 +69,7 @@ export const journal = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: JOURNAL_PARTS,
     props: journalProps,
   },
   Journal,
@@ -80,8 +82,10 @@ const articleProps = [
   {
     name: "piece",
     kind: "string",
+    // Chosen with "From what?" (2026-11-14, components/landing/person-records.ts): the piece's slug, as before.
+    binds: "piece",
     label: "Piece",
-    description: "The piece's address. Empty draws the piece being visited (/journal/…), else the newest.",
+    description: "Which piece to show. Empty draws the piece being visited (/journal/…), else the newest.",
     default: "",
   },
   {
@@ -141,6 +145,7 @@ export const article = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: ARTICLE_PARTS,
     props: articleProps,
   },
   Article,
@@ -190,8 +195,64 @@ export const seriesNav = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: SERIES_NAV_PARTS,
     props: seriesProps,
   },
   SeriesNav,
   () => ({ heading: "In this series", series: "Notes from the lab", current: "first-piece", items: SAMPLE_JOURNAL.slice(0, 2) })
+);
+
+// ── post (2026-11-14) ───────────────────────────────────────────────────────
+// The post-detail template's block: the post being visited, drawn as app/[feed]/[slug] draws a post when no template is
+// published (the section link, then ArticleView). It reads only the route's record (lib/puck/data-post.ts): a post page
+// is about its own post, so there is nothing to choose. Its words are the post's; the block's own are none.
+
+const postProps = [
+  { name: "showBack", kind: "boolean", label: "“← section” link above", default: true },
+  { name: "showCover", kind: "boolean", label: "Cover picture", default: true },
+] as const;
+
+export function Post({
+  post,
+  showBack = true,
+  showCover = true,
+}: PropsOf<typeof postProps> & { post?: WirePostThread | null }) {
+  if (!post) return <p className="card-natural p-6 text-sm text-muted-foreground">No post to show here.</p>;
+  const section = post.feedSlug ? { name: post.feedName ?? post.feedSlug, href: `/${post.feedSlug}` } : undefined;
+  return (
+    <div>
+      {showBack && section ? (
+        <a href={section.href} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          ← {section.name}
+        </a>
+      ) : null}
+      <ArticleView
+        title={post.title}
+        lede={post.excerpt}
+        bodyHtml={post.bodyHtml}
+        threadId={post.id}
+        authorName={post.authorName}
+        publishedAt={post.publishedAt}
+        kindLabel="Writing"
+        org={section}
+        coverImageUrl={showCover ? post.coverImageUrl : null}
+      />
+    </div>
+  );
+}
+
+export const post = defineBlock(
+  {
+    id: "pt-post",
+    category: "content",
+    label: "Post (this page's)",
+    description: "The post this page is about, in the reading layer: for the post page template (post-detail).",
+    memberSafe: true,
+    dataDriven: true,
+    styling: "tailwind",
+    parts: POST_PARTS,
+    props: postProps,
+  },
+  Post,
+  () => ({ showBack: true, showCover: true, post: SAMPLE_POST_THREAD })
 );

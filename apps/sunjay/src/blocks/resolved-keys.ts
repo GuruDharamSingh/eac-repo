@@ -31,6 +31,7 @@ export const RESOLVED_KEYS: Record<string, readonly string[]> = {
   "pt-journal": ["items"],
   "pt-article": ["post"],
   "pt-series-nav": ["items", "series", "current"],
+  "pt-post": ["post"],
   // Shared blocks this site resolves (2026-11-07).
   "featured-person": ["who", "opened"],
   "link-button": ["opened"],

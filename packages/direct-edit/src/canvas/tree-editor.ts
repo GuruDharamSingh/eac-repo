@@ -41,6 +41,7 @@ import { MiniBar, type MiniBarContext, type MiniBarStyle } from "./minibar";
 import { startNodeDrag } from "./nodedrag";
 import { partAbove, partEls, partKind, partOwners, partsInside } from "./parts";
 import { openBlockPopup, type PopupHandle } from "./popup";
+import { quietFocus } from "./quiet-focus";
 import { mountRecordChooser, type Binding } from "./records";
 
 /** This mount is the popup's: a working copy of one block, its chrome in the frame (popup.ts). */
@@ -82,6 +83,18 @@ export interface TreeEditorOptions {
    * `blockEditorHref` link and joins the right-click menu. Absent: as before.
    */
   editSettings?(node: PuckNode): Promise<Record<string, unknown> | null>;
+  /**
+   * Inception (2026-11-14): "Settings…" also in the popup (a nested mount) and in a part's right-click menu. The
+   * host's editor opens over whichever layer asked (canvas/stack.ts), and on closing the selection comes back where it
+   * was, a part included. Needs `editSettings`. Absent: as before.
+   */
+  inception?: boolean;
+  /**
+   * Tab stays in the editor (2026-11-14, item 5a): the page's own links, buttons, fields and embeds get
+   * tabindex="-1" while it is edited and their own value back on dispose (canvas/quiet-focus.ts). Clicks still reach
+   * the editor; part picking is unchanged (unlike `inert`). On unless this is `false`.
+   */
+  quietTab?: boolean;
   /**
    * Figma basics (2026-11-11): Shift+click adds boxes to the selection (align in parent, same width or height, spread,
    * group, delete for all of them), top and left resize handles, and snapping to the neighbours' and the parent's edges
@@ -499,14 +512,16 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   let settingsOpen = false;
   async function editSettingsFor(ref: string | null) {
     const id = parsePartRef(ref)?.id ?? ref, f = found(id);
-    if (!id || !f || own(f.node) || f.node.type === PART_TYPE || !o.editSettings || o.nested || settingsOpen || popup) return;
+    if (!id || !f || own(f.node) || f.node.type === PART_TYPE || !o.editSettings || (o.nested && !o.inception) || settingsOpen || popup) return;
+    // What was selected, a part included, comes back when the host's editor closes (inception).
+    const back = o.inception && selId && (selId === id || parsePartRef(selId)?.id === id) ? selId : id;
     settingsOpen = true;
     pause(true);
     let next: Record<string, unknown> | null = null;
     try { next = await o.editSettings(clone(f.node)); } catch (err) { console.error("[canvas] settings:", err); }
     settingsOpen = false;
     pause(false);
-    if (!next) { selId = id; redraw(true); return; }
+    if (!next) { selId = back; redraw(true); return; }
     const props = next;
     structural(() => {
       const g = found(id);
@@ -514,9 +529,9 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       // A look set on the page stays with the block if the host's editor did not hand it back.
       const keep = g.node.props.morph !== undefined && !("morph" in props) ? { morph: g.node.props.morph } : {};
       g.node.props = { ...props, ...keep, id };
-      return id;
+      return back;
     });
-    ct.select(elOf(id));
+    ct.select(elOf(selId));
   }
 
   function setTool(next: "select" | "hand") {
@@ -909,7 +924,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       const changed = declared.filter((name) => Object.keys(partLookOf(node.props, name)).length > 0).length;
       const lost = node.props.morph ? `<p class="de-note" data-f="detach-looks">Its looks on this page do not come with it.</p>` : "";
       const count = declared.length ? `<p class="de-note" data-f="parts-changed">${changed} of ${declared.length} parts changed on this page.</p>` : "";
-      const actions = o.nested ? count : `${count}${refusal ? `<p class="de-note" data-f="detach-why">${esc(refusal)}</p>` : lost}<p>${detach} ${wrapped}${open}</p>`;
+      const actions = o.nested ? `${count}${o.inception && o.editSettings ? `<p>${open.trim()}</p>` : ""}` : `${count}${refusal ? `<p class="de-note" data-f="detach-why">${esc(refusal)}</p>` : lost}<p>${detach} ${wrapped}${open}</p>`;
       if (def) {
         const { id: _id, ...stored } = node.props;
         const bound = boundProps(node);
@@ -1574,7 +1589,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     ];
     return [
       ...(canOpenLarge(ref) ? [{ id: "open-large", label: "Open this block large", hint: "Double-click" }] : []),
-      ...(o.editSettings && !o.nested && !isOwn && !onPart && f.node.type !== PART_TYPE ? [{ id: "settings", label: "Settings…" }] : []),
+      ...(o.editSettings && (o.inception || (!o.nested && !onPart)) && !isOwn && f.node.type !== PART_TYPE ? [{ id: "settings", label: "Settings…" }] : []),
       { id: "parent", label: "Select parent", hint: "Esc", disabled: !source.parent(el), sep: canOpenLarge(ref) },
       { id: "add", label: "Add", kids: addKids, sep: true },
       { id: "group", label: "Group in a row", hint: "Ctrl+G", disabled: onPart },
@@ -1723,6 +1738,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   }, true);
 
   o.draw(doc);
+  // The page's own controls out of the Tab order while editing; re-applied as nodes redraw (quiet-focus.ts).
+  const quiet = o.quietTab === false ? null : quietFocus(scope);
   panel.render(context());
   shell.drawTop();
 
@@ -1743,6 +1760,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     refresh() { ct.refresh(); renderBar(); },
     save() { void o.onSave(cleanBoxDoc(doc)); },
     dispose() {
+      // First: every page element's own tabindex back before anything else unmounts.
+      quiet?.dispose();
       popup?.close();
       inline?.finish(true);
       bar.destroy();

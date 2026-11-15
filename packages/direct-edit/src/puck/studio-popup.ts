@@ -4,8 +4,9 @@ import type { EditorContract } from "../block/contract";
 import type { PuckDoc, PuckNode } from "../block/puck-tree";
 import { openBlockPopup, type PopupHandle } from "../canvas/popup";
 import type { TreeConfig } from "./TreeCanvas";
-import { mountTreePage } from "./mount";
+import { mountTreePage, type TreePageOptions } from "./mount";
 import type { RecordSources } from "../canvas/records";
+import { isTopLayer } from "../canvas/stack";
 
 // ============================================================================
 // The block popup opened from Puck Studio (2026-11-06, EDIT_LOOK_POPUP_BRIEF).
@@ -50,6 +51,11 @@ export interface StudioPopupHost {
   contract: EditorContract;
   /** "From what?" for props declared `binds` (2026-11-06): the same chooser the canvas uses. Absent: such a prop is a text field. */
   records?: RecordSources;
+  /**
+   * Inception (2026-11-14): "Settings…" on the block inside the popup opens it in the host's Puck settings over the
+   * popup (mount.ts `editSettings`), and hands back into the popup. Absent: the popup offers no settings, as before.
+   */
+  editSettings?: TreePageOptions["editSettings"];
 }
 
 /** Keys Puck binds on Studio's document (undo, redo, interactive mode): kept from it while the popup is open. Delete and Backspace Puck already refuses under a dialog. */
@@ -60,6 +66,8 @@ export function openStudioPopup(host: StudioPopupHost, ctx: StudioPopupContext):
   const working: PuckDoc = { root: { props: JSON.parse(JSON.stringify(ctx.root ?? {})) }, content: [JSON.parse(JSON.stringify(ctx.node)) as PuckNode] };
   // Puck listens on Studio's document, after the popup's own capture listeners: stopping these at the body keeps Puck's undo out of the popup's.
   const keep = (ev: KeyboardEvent) => {
+    // Only while this popup is the top layer: a Puck sheet opened over it keeps its own undo.
+    if (handle?.root && !isTopLayer(handle.root)) return;
     if ((ev.ctrlKey || ev.metaKey) && PUCK_KEYS.has(ev.key.toLowerCase())) ev.stopPropagation();
   };
   document.body.addEventListener("keydown", keep);
@@ -80,6 +88,7 @@ export function openStudioPopup(host: StudioPopupHost, ctx: StudioPopupContext):
         pageName: ctx.label,
         developer: ctx.developer,
         cleanRich: ctx.cleanRich,
+        ...(host.editSettings ? { editSettings: host.editSettings, inception: true } : {}),
         nested: { chrome: h.chrome, layers: h.layers, blockId: id, fitWidth: h.fitWidth, applyZoom: h.applyZoom, onClose: h.close },
         async onSave(saved) {
           const node = saved.content?.[0];

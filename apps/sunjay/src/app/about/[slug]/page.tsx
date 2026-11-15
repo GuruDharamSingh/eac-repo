@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { getServerSession } from "@elkdonis/auth-server";
 import { getPersonPage, personThreadHref, type PersonThread } from "@elkdonis/services";
 import { PersonPage, PersonThreadList } from "@elkdonis/cms-ui/profile";
+import { SitePortfolioEditor } from "@elkdonis/cms-ui/gallery";
 import { StoreShowcase } from "@elkdonis/commerce/components";
 import { getStoreShowcaseForUser } from "@elkdonis/commerce/queries";
 import { getGuideBySlug } from "@/lib/data";
@@ -133,6 +134,18 @@ export default async function GuidePage({ params }: GuidePageProps) {
       }}
       back={{ href: "/about", label: "← About" }}
       portfolio={page.portfolio.map((p) => ({ url: p.url, title: p.title }))}
+      // The person (or an admin) chooses what this site shows, from their
+      // own files (org_profiles.portfolio, migration 264); visitors keep
+      // the read-only list. Routes: app/api/center/portfolio.
+      featured={
+        page.canEdit && profile.slug ? (
+          <SitePortfolioEditor
+            items={page.portfolio.map((p, i) => ({ ...p, id: p.id ?? `${i}-${p.url}`, title: p.title ?? "" }))}
+            person={profile.slug}
+            siteName={siteConfig.orgName}
+          />
+        ) : undefined
+      }
       emptyFeatured={null}
       order={page.sections.map((s) => s.key)}
       slots={slots}

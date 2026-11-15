@@ -64,6 +64,18 @@ const clientResolvers: BlockResolvers = {
   }),
 };
 
+// 2026-11-11: the shared record blocks, drawn in the editor as a signed-out visitor sees them.
+const recordParts = (props: Record<string, unknown>, pay: boolean) =>
+  getJson<{ rec: unknown; pay: unknown; recordRef: unknown }>(
+    `/api/blocks/he-records?block=record&ref=${encodeURIComponent(String(props.record ?? ""))}${pay ? "&pay=1" : ""}`,
+    "parts",
+    { rec: null, pay: null, recordRef: null },
+  );
+clientResolvers["record-header"] = async (props) => ({ rec: (await recordParts(props, false)).rec });
+clientResolvers["record-body"] = async (props) => ({ rec: (await recordParts(props, false)).rec });
+clientResolvers["record-facts"] = async (props) => ({ rec: (await recordParts(props, false)).rec });
+clientResolvers.checkout = async (props) => ({ ...(await recordParts(props, true)) });
+
 /**
  * The canvas is an iframe whose <html> lacks the font-variable classes the
  * root layout sets on the page; its root carries them.

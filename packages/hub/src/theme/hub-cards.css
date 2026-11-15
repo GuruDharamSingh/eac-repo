@@ -209,8 +209,10 @@ textarea.hc-input { resize: vertical; min-height: 0; }
 /* — pop-up, scrim, dialog, toast — */
 .hc-scrim { position: fixed; inset: 0; background: var(--hc-scrim); z-index: 40; }
 .hc-popup {
-  position: absolute; top: 104px; left: 28px; z-index: 41; background: var(--hc-bg);
+  /* Fixed, as the scrim is (2026-11-14): absolute put it at the top of the document, off-screen for a card lower down. */
+  position: fixed; top: 104px; left: 28px; z-index: 41; background: var(--hc-bg);
   display: flex; flex-direction: column; max-width: calc(100vw - 32px);
+  overflow: auto; overscroll-behavior: contain;
 }
 .hc-popup-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px 20px; }
 .hc-popup-head .hc-title { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 24px; margin-right: auto; }

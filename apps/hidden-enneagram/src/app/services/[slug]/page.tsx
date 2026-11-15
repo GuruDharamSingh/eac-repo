@@ -22,6 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 type Node = { type?: string; props?: Record<string, unknown> };
 
+/** The shared record blocks (RECORD_BLOCK_IDS in @elkdonis/blocks): they take the address as a reference. */
+const RECORD_TYPES = new Set(["record-header", "record-body", "record-facts", "checkout"]);
+
 /** Hand the address to every he-service block, slots included (the resolver reads it; never stored). */
 function withRoute(nodes: unknown, slug: string, query: Record<string, string | undefined>): unknown {
   if (!Array.isArray(nodes)) return nodes;
@@ -30,6 +33,7 @@ function withRoute(nodes: unknown, slug: string, query: Record<string, string | 
     const props: Record<string, unknown> = { ...n.props };
     for (const [k, v] of Object.entries(props)) if (Array.isArray(v)) props[k] = withRoute(v, slug, query);
     if (n.type === "he-service") Object.assign(props, { routeSlug: slug, routeQuery: query });
+    if (n.type && RECORD_TYPES.has(n.type)) Object.assign(props, { routeRecord: `service:${slug}`, routeQuery: query });
     return { ...n, props };
   });
 }

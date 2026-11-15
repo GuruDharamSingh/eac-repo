@@ -11,6 +11,9 @@ import { blankTemplate, homeTemplate, type HomeSeed } from "./home-template";
 //   services       a services page: the list, one service in full, and booking.
 //   journal        a writing index: the Studio listing cards.
 //   journal-piece  the layout every piece under /journal/<piece> is drawn in.
+//   post-detail    the layout every post at /<feed>/<slug> is drawn in, once it
+//                  is published (2026-11-14); until then the route draws the
+//                  post as it always has.
 //
 // Like the home template these are data only: block types and settings, the
 // same shape the editor saves, with example words that are meant to be
@@ -140,6 +143,18 @@ export const JOURNAL_PIECE_TEMPLATE: PageTemplate = {
   ],
 };
 
+export const POST_DETAIL_TEMPLATE: PageTemplate = {
+  id: "post-detail",
+  name: "Post page",
+  description:
+    "The layout of every post in the site's sections (/<section>/<post>): the post in the reading layer, as posts are drawn now. Add blocks around it; edits here change every post once published.",
+  swatch,
+  cards: "Post",
+  content: [
+    band("plain", "regular", "narrow", false, [{ type: "pt-post", props: { showBack: true, showCover: true } }]),
+  ],
+};
+
 /** Which start-from choices the "New page" form offers (slug of the query value). */
 export const NEW_PAGE_STARTS = [
   { value: "plain", label: "Plain page" },
@@ -154,6 +169,7 @@ export function allTemplates(seed: HomeSeed): PageTemplate[] {
     SERVICES_TEMPLATE,
     JOURNAL_TEMPLATE,
     JOURNAL_PIECE_TEMPLATE,
+    POST_DETAIL_TEMPLATE,
     blankTemplate(seed.orgName),
   ];
 }
@@ -163,6 +179,7 @@ export function startingTemplate(slug: string, start: string | undefined, seed: 
   if (slug === "home") return homeTemplate(seed);
   if (slug === "event-detail") return EVENT_DETAIL_TEMPLATE;
   if (slug === "journal-piece") return JOURNAL_PIECE_TEMPLATE;
+  if (slug === "post-detail") return POST_DETAIL_TEMPLATE;
   if (start === "services") return SERVICES_TEMPLATE;
   if (start === "journal") return JOURNAL_TEMPLATE;
   return blankTemplate(seed.orgName);

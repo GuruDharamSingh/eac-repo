@@ -266,6 +266,13 @@ export interface PuckConfigOptions {
   fields?: Partial<Record<PropKind, FieldRender>>;
 
   /**
+   * Controls for a rows prop's COLUMNS only, used where `fields` has none for that kind (2026-11-14). The editor
+   * config passes a rich-text control here, so a row's rich text is not a textarea of raw HTML; a top-level prop is
+   * never touched by this. Browser-side configs only, as `fields`.
+   */
+  rowFields?: Partial<Record<PropKind, FieldRender>>;
+
+  /**
    * Offer `richtext` props as Puck's formatted-text field, typed on the page.
    *
    * Editor configs only. Left off, a richtext prop is a plain textarea — and
@@ -354,6 +361,7 @@ export function buildPuckConfig({
   resolvers = {},
   blocks = SHARED_BLOCKS,
   fields: fieldRenders = {},
+  rowFields = {},
   decorate,
   root: siteRoot,
   blockStyle,
@@ -414,7 +422,8 @@ export function buildPuckConfig({
           arrayFields: Record<string, unknown>;
         };
         for (const column of prop.fields ?? []) {
-          const control = fieldRenders[column.kind]?.(column);
+          // The host's own control for the kind wins; else the editor's column default (`rowFields`).
+          const control = (fieldRenders[column.kind] ?? rowFields[column.kind])?.(column);
           if (control) field.arrayFields[column.name] = { type: "custom", render: control };
         }
         continue;

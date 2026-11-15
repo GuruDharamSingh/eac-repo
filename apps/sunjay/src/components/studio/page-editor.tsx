@@ -31,6 +31,8 @@ const PARTS = partsPlugin({
   look: { partLookOf, setPartLook, partSafeDecls },
   panel: mountLookPanel,
   developer: false,
+  // The part selected before the popup comes back when it closes (2026-11-14).
+  handBack: true,
   popup: (ctx) => openStudioPopup({ config: canvasConfig, contract: canvasContract, records }, ctx),
 });
 
@@ -44,11 +46,14 @@ export function PageEditor({
   orgId,
   initial,
   templates,
+  metadata,
 }: {
   slug: string;
   orgId: string;
   initial: Data;
   templates: PageTemplate[];
+  /** A template opened on one record (`threadId`, `piece`; app/studio/[slug]/record.ts). */
+  metadata?: Record<string, unknown>;
 }) {
   const plugins = useMemo(() => [templatesPlugin(templates), PARTS], [templates]);
   return (
@@ -57,6 +62,7 @@ export function PageEditor({
       initial={initial}
       config={puckConfig}
       orgId={orgId}
+      metadata={metadata}
       onPublish={savePageAction}
       plugins={plugins}
       title={slug === "home" ? "Home page" : slug === "event-detail" ? "Event detail template" : slug === "journal-piece" ? "Writing piece template" : `/${slug}`}

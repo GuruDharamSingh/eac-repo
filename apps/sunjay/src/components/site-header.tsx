@@ -26,11 +26,14 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
   const [open, setOpen] = useState(false);
   const account = signedIn ? { href: "/account", label: "Account" } : { href: "/login", label: "Sign in" };
 
+  // Site style (round 2, 2026-11-14): the header's parts are named for the owner's style editor (lib/site-style-schema.ts).
+  const here = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const links = NAV_LINKS.map((link) => (
     <Link
       key={link.href}
       href={link.href}
-      aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? "page" : undefined}
+      data-part={here(link.href) ? "active" : "links"}
+      aria-current={here(link.href) ? "page" : undefined}
       onClick={() => setOpen(false)}
     >
       {link.label}
@@ -38,16 +41,17 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
   ));
   const tools = (
     <>
-      {signedIn && <Link href={homeHref} onClick={() => setOpen(false)}>{homeLabel}</Link>}
-      {canEdit && <Link href="/manage" onClick={() => setOpen(false)}>Manage</Link>}
-      <Link className="pts-header__cta" href={account.href} onClick={() => setOpen(false)}>{account.label}</Link>
+      {signedIn && <Link href={homeHref} data-part="tools" onClick={() => setOpen(false)}>{homeLabel}</Link>}
+      {canEdit && <Link href="/manage" data-part="tools" onClick={() => setOpen(false)}>Manage</Link>}
+      {canEdit && <Link href="/channel" data-part="tools" onClick={() => setOpen(false)}>Channel</Link>}
+      <Link className="pts-header__cta" data-part="account" href={account.href} onClick={() => setOpen(false)}>{account.label}</Link>
     </>
   );
 
   return (
-    <header className="pts-header">
+    <header className="pts-header" data-chrome="header">
       <div className="pts-header__row">
-        <Link href="/" className="pts-header__brand" onClick={() => setOpen(false)}>
+        <Link href="/" className="pts-header__brand" data-part="brand" onClick={() => setOpen(false)}>
           {siteConfig.orgName}
         </Link>
         <nav className="pts-header__nav" aria-label="Site">{links}</nav>
@@ -63,7 +67,7 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
         </button>
       </div>
       {open && (
-        <nav className="pts-header__sheet" aria-label="Site, menu">
+        <nav className="pts-header__sheet" data-part="menu" aria-label="Site, menu">
           {links}
           {tools}
         </nav>

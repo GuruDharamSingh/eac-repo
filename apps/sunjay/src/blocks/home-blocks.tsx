@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from "react";
 import type { Block, BlockDef } from "@elkdonis/blocks";
-import { FORUM_PARTS, STANDING_PARTS } from "./shared-parts";
+import { FORUM_PARTS, STANDING_PARTS, WHICH_GATHERING_PROP } from "./shared-parts";
 
 // ============================================================================
 // The home page's live pieces as sealed blocks (2026-11-05). `app/page.tsx` draws what is in them, with current data
@@ -23,15 +23,23 @@ export function LiveRoot({ id, html, children }: { id: Id; html?: string; childr
   return html === undefined ? createElement("div", attrs, children) : createElement("div", { ...attrs, dangerouslySetInnerHTML: { __html: html } });
 }
 
+/**
+ * The key a node's own drawing is handed over under, when it differs from the piece's default (2026-11-14): a
+ * home-standing whose `which` is not the standing meeting is drawn by `app/page.tsx` as `home-standing#<node id>`.
+ */
+export const nodePartKey = (id: Id, nodeId: string) => `${id}#${nodeId}`;
+
 function piece(id: Id) {
-  return function LivePiece({ puck }: { puck?: { metadata?: { parts?: Record<string, ReactNode> } } }): ReactNode {
-    const v = puck?.metadata?.parts?.[id];
+  return function LivePiece({ id: nodeId, puck }: { id?: string; puck?: { metadata?: { parts?: Record<string, ReactNode> } } }): ReactNode {
+    const parts = puck?.metadata?.parts;
+    const own = nodeId && parts ? parts[nodePartKey(id, nodeId)] : undefined;
+    const v = own ?? parts?.[id];
     return typeof v === "string" ? createElement(LiveRoot, { id, html: v }) : createElement(LiveRoot, { id }, v ?? null);
   };
 }
 
-const def = (id: Id, label: string, description: string, parts: NonNullable<BlockDef["parts"]>) =>
-  ({ id, category: "listings", label, description, memberSafe: true, interactive: false, dataDriven: true, styling: "tailwind", props: [], parts }) as unknown as BlockDef;
+const def = (id: Id, label: string, description: string, parts: NonNullable<BlockDef["parts"]>, props: readonly unknown[] = []) =>
+  ({ id, category: "listings", label, description, memberSafe: true, interactive: false, dataDriven: true, styling: "tailwind", props, parts }) as unknown as BlockDef;
 
 const withoutProps = (parts: NonNullable<BlockDef["parts"]>, ...names: string[]) => Object.fromEntries(Object.entries(parts).filter(([n]) => !names.includes(n)));
 
@@ -56,7 +64,7 @@ export const HOME_BLOCKS = [
     Component: piece("home-stage"),
   },
   {
-    def: def("home-standing", "Next gathering", "The standing meeting: when it is next and how to join. Fills itself.", STANDING_PARTS),
+    def: def("home-standing", "Next gathering", "The standing meeting, or the gathering chosen: when it is next and how to join. Fills itself.", STANDING_PARTS, [WHICH_GATHERING_PROP]),
     Component: piece("home-standing"),
   },
   {

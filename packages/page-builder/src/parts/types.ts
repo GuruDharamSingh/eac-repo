@@ -153,4 +153,9 @@ export interface PartsPluginOptions {
    * typing). Absent: neither is offered.
    */
   popup?: BlockPopupOpen;
+  /**
+   * Hand the selection back (2026-11-14, inception): the part selected when the popup opened is selected again when
+   * it closes, if its block is still there. Default false: as before, nothing is selected after the popup.
+   */
+  handBack?: boolean;
 }

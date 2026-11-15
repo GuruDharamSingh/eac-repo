@@ -375,28 +375,34 @@ export const DEFAULT_ABOUT_PAGE = {
   ],
 };
 
-/** /services/<slug>: one template for every service (the service itself comes from /manage). */
+/**
+ * /services/<slug>: one template for every service (the service itself comes from /manage).
+ *
+ * 2026-11-11: laid out as a box of small pieces instead of the one `he-service`
+ * block: a back link (words), then the shared record blocks (record-header,
+ * record-facts, record-body, checkout; @elkdonis/blocks, resolver
+ * lib/record-parts.ts), which draw the service in the address. The orb is the
+ * ornament he-service drew for a service with no banner; a page that gives its
+ * services banners removes it in the studio. `he-service` stays registered: a
+ * stored `puck:service` document that uses it keeps drawing.
+ */
 export const DEFAULT_SERVICE_PAGE = {
   root: { props: { title: "Service" } },
   content: [
     {
-      type: "he-service",
+      type: "box",
       props: {
-        id: "he-service-main",
-        serviceSlug: "",
-        backLabel: "← Readings",
-        backHref: "/readings",
-        eyebrowOne: "A reading",
-        eyebrowOther: "An offering",
-        bookLabel: "Book and pay",
-        amountLabel: "What you will pay",
-        payNote: "You pay on Stripe’s secure page, then suggest times that suit you.",
-        paidLine: "Thank you — your booking is paid.",
-        whenIntro: "",
-        sentLine: "Your times have been sent. You will hear back by email with one confirmed, or others offered.",
-        emailLine: "The email we sent you has a link to suggest times and follow the booking.",
-        cancelledLine: "Payment was cancelled; nothing was charged.",
-        closedLine: "Not open for booking at the moment.",
+        id: "service-page",
+        tag: "article",
+        cls: "he-svc",
+        items: [
+          { type: "words", props: { id: "service-back", tag: "span", cls: "he-svc-back", html: "← Readings", href: "/readings" } },
+          { type: "record-header", props: { id: "service-header", record: "", showKicker: true, showSubtitle: true, showMeta: false, showCover: true, align: "center" } },
+          { type: "he-orb", props: { id: "service-orb", size: "small" } },
+          { type: "record-facts", props: { id: "service-facts", record: "", layout: "row" } },
+          { type: "record-body", props: { id: "service-body", record: "", width: "reading" } },
+          { type: "checkout", props: { id: "service-checkout", record: "", buttonLabel: "Book and pay", blkStyle: { anchor: "book" } } },
+        ],
       },
     },
   ],

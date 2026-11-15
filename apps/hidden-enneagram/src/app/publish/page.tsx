@@ -4,11 +4,13 @@ import { getProfile } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { listPublishPieces } from "@/lib/studio/writing-actions";
-import { listPublishServices, loadPublishService } from "@/lib/studio/service-actions";
 import { PublishApp } from "@/components/publish/publish-app";
 // Route-scoped, as on arts-collective's /studio (its page imports these, not globals.css).
 import "@elkdonis/cms-ui/article.css";
 import "@elkdonis/studio/studio.css";
+import "@elkdonis/studio-forms/canvas.css";
+import "@elkdonis/studio-forms/forms.css";
+import "@elkdonis/studio-forms/ledger.css";
 import "./publish.css";
 
 // ============================================================================
@@ -48,12 +50,7 @@ export default async function PublishPage({ searchParams }: Props) {
   const orgId = siteConfig.orgId;
   const isService = kind === "service";
   const safeId = id && ID.test(id) ? id : null;
-  const [profile, pieces, services, initialService] = await Promise.all([
-    getProfile(viewer.userId).catch(() => null),
-    listPublishPieces(orgId),
-    listPublishServices(),
-    isService && safeId ? loadPublishService(safeId) : Promise.resolve(null),
-  ]);
+  const [profile, pieces] = await Promise.all([getProfile(viewer.userId).catch(() => null), listPublishPieces(orgId)]);
 
   return (
     <div className="he-publish">
@@ -63,8 +60,7 @@ export default async function PublishPage({ searchParams }: Props) {
         orgId={orgId}
         orgName={siteConfig.orgName}
         feed={feed ?? null}
-        services={services}
-        initialService={initialService}
+        initialServiceId={isService ? safeId : null}
         shell={{
           viewer: {
             userId: viewer.userId,

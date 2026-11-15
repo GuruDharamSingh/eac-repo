@@ -82,3 +82,28 @@ export {
 export { PersonStore, personStore, type PersonStoreProps } from "./person-store";
 export { OfferingSpotlight, offeringSpotlight, type OfferingSpotlightProps } from "./offering-spotlight";
 export { FeaturedPerson, featuredPerson, type FeaturedPersonProps, type FeaturedWho } from "./featured-person";
+
+// Record parts (2026-11-11): one record of any kind, in small pieces. `checkout`
+// and `rsvp` are made per host (they act through the host's own action).
+export {
+  RecordHeader,
+  RecordBody,
+  RecordFacts,
+  recordHeader,
+  recordBody,
+  recordFacts,
+  checkoutBlock,
+  rsvpBlock,
+  RECORD_RESOLVED_KEYS,
+  RECORD_BLOCK_IDS,
+  type RecordView,
+  type CheckoutView,
+  type RsvpView,
+  type CheckoutHost,
+  type RsvpHost,
+  type RecordHeaderProps,
+  type RecordBodyProps,
+  type RecordFactsProps,
+  type CheckoutProps,
+  type RsvpProps,
+} from "./record-parts";

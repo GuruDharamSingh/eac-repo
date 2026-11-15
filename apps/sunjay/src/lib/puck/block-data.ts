@@ -1,13 +1,10 @@
 import {
   getProfile,
-  getProfileBySlug,
-  getStandingMeeting,
   listOrgEventsInRange,
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import {
   eventForViewer,
-  getGuideBySlug,
   getThreadsByAuthor,
   getThreadsForFeed,
   listMyRsvps,
@@ -18,6 +15,9 @@ import { listGalleryImages, listWritingShelf } from "@/lib/landing";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { loadEvent } from "./data-event";
+import { pickStanding } from "./data-standing";
+import { loadProfileFor, siteGuide } from "./data-profile";
+import { loadPost } from "./data-post";
 import { loadBooking, loadService, loadServices } from "./data-service";
 import { loadJournal, loadPiece, loadSeries } from "./data-writing";
 
@@ -42,39 +42,6 @@ type Props = Record<string, unknown>;
 
 const num = (v: unknown, fallback: number, min = 1, max = 50) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(Math.trunc(v), min), max) : fallback;
-
-const hostOf = (url: string) => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-};
-
-/** The guide and the links row beside them, as the landing page built them. */
-async function loadProfile() {
-  const guide = await getGuideBySlug(siteConfig.guideSlug).catch(() => null);
-  if (!guide) return { guide: null, links: [] };
-
-  // The network profile is the source for the links row: someone who wrote
-  // their links on ArtDirect or any other EAC surface arrives here complete.
-  const person = await getProfileBySlug(guide.slug).catch(() => null);
-  const collectiveHost = hostOf(siteConfig.collectiveUrl);
-
-  const links = [
-    ...(person?.socialLinks ?? [])
-      .filter((l) => l.url && (!collectiveHost || hostOf(l.url) !== collectiveHost))
-      .map((l) => ({
-        // A row entered as a bare URL has no label; the host says where the
-        // link goes without inventing a name.
-        label: l.label?.trim() || hostOf(l.url) || l.url,
-        url: l.url,
-      })),
-    // Elkdonis is not one of his profiles, so it is marked `emphasis`.
-    { label: "Elkdonis Arts", url: siteConfig.collectiveUrl, emphasis: true },
-  ];
-  return { guide, links };
-}
 
 async function loadMember() {
   const viewer = await getViewer().catch(() => null);
@@ -125,6 +92,8 @@ export const BLOCK_DATA_IDS = [
   "pt-journal",
   "pt-article",
   "pt-series-nav",
+  // The post page template (data-post.ts, 2026-11-14).
+  "pt-post",
 ] as const;
 
 /**
@@ -150,7 +119,8 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
   switch (id) {
     case "pt-standing": {
       const [standing, viewer] = await Promise.all([
-        (async () => getStandingMeeting(siteConfig.orgId, await getViewer().catch(() => null)))().catch((err) => {
+        // `which` (2026-11-14, data-standing.ts): the standing meeting unless the block chose otherwise.
+        (async () => pickStanding(props.which, await getViewer().catch(() => null)))().catch((err) => {
           console.error("[sunjay] pt-standing:", err);
           return null;
         }),
@@ -167,11 +137,12 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
       return { events: events.map((e) => eventForViewer(e, Boolean(viewer))) };
     }
     case "pt-profile":
-      return loadProfile();
+      // `person` (2026-11-14, data-profile.ts): a reference, or the site's guide.
+      return loadProfileFor(props.person);
     case "pt-threads": {
       const limit = num(props.limit, 4);
       if (props.source === "author") {
-        const guide = await getGuideBySlug(siteConfig.guideSlug).catch(() => null);
+        const guide = await siteGuide().catch(() => null);
         return { threads: guide ? await getThreadsByAuthor(guide.userId, limit).catch(() => []) : [] };
       }
       const feed = typeof props.feed === "string" && props.feed ? props.feed : "materials";
@@ -202,6 +173,8 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
       return loadJournal(props);
     case "pt-article":
       return loadPiece(props, ctx);
+    case "pt-post":
+      return loadPost(ctx);
     case "pt-series-nav":
       return loadSeries(props, ctx);
     default:

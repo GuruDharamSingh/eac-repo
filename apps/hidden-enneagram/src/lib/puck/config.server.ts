@@ -14,6 +14,7 @@ import { loadCourse } from "@/lib/course";
 import { figurePlacement } from "@/blocks/enneagram-block";
 import { loadShelf } from "@/lib/shelf";
 import { loadForumTopics, loadPerson, loadPersonPage, loadPostBlock, loadServiceBlock } from "@/lib/record-blocks";
+import { loadRecordParts } from "@/lib/record-parts";
 
 // ============================================================================
 // The catalogue as a PUBLISHED page sees it: same blocks, resolvers that read
@@ -45,6 +46,11 @@ const serverResolvers: BlockResolvers = {
   "he-service": async (props) => loadServiceBlock(props),
   // Round 6: the /<feed>/<slug> template (routeFeed + routeSlug injected by the route).
   "he-post": async (props) => loadPostBlock(props),
+  // 2026-11-11: the shared record blocks. Only checkout reads where the booking stands.
+  "record-header": async (props) => ({ rec: (await loadRecordParts(props)).rec }),
+  "record-body": async (props) => ({ rec: (await loadRecordParts(props)).rec }),
+  "record-facts": async (props) => ({ rec: (await loadRecordParts(props)).rec }),
+  checkout: async (props) => ({ ...(await loadRecordParts(props, { pay: true })) }),
 };
 
 export const serverPuckConfig = buildPuckConfig({

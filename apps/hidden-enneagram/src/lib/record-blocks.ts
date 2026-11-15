@@ -34,7 +34,8 @@ const BOOKING: Record<string, string> = { one_on_one: "One-on-one", group: "Grou
 const FORMAT: Record<string, string> = { in_person: "In person", online: "Online", hybrid: "Hybrid" };
 const SLUG = /^[a-z0-9][a-z0-9-]{0,99}$/;
 
-async function serviceView(slug: string | null): Promise<(ServiceView & { id: string; authorId: string | null }) | null> {
+/** Exported for lib/record-parts.ts (the shared record blocks read the same view). */
+export async function serviceView(slug: string | null): Promise<(ServiceView & { id: string; authorId: string | null }) | null> {
   const svc = slug && SLUG.test(slug)
     ? await getServiceOffering(siteConfig.orgId, slug)
     : (await listServiceOfferings(siteConfig.orgId))[0] ?? null;
@@ -254,6 +255,8 @@ export async function loadPersonPage(slug: unknown, { visitor = false }: { visit
       avatarUrl: profile.avatarUrl ?? null,
       socialLinks: (profile.socialLinks ?? []).map((l) => ({ label: l.label ?? null, url: l.url })),
       portfolio: page.portfolio.map((p) => ({ url: p.url, title: p.title ?? null })),
+      // For the person's own chooser of this site's portfolio (SitePortfolioEditor).
+      personSlug: profile.slug ?? null,
       order: page.sections.map((s) => s.key),
       posts: page.show.posts
         ? page.posts.map((t) => {

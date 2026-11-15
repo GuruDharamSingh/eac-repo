@@ -1,0 +1,11 @@
+import { shareableLink } from "/app/packages/studio-forms/src/forms/shell/share-link.ts";
+let pass = 0, fail = 0; const ok = (n: string, got: string, want: string) => { const c = got === want; c ? pass++ : fail++; console.log(`${c ? "pass" : "  FAIL"} ${n}${c ? "" : `  got ${got}`}`); };
+const B = "https://arts-collective.com";
+ok("artwork hand-off → the market page", shareableLink("/api/auth/handoff?to=https%3A%2F%2Fmarket.arts-collective.com&next=%2Fartworks%2F6da8f4eb-feee-44db-be82-1c8d00e1f0d8%3Ffrom%3Darts-collective", B), "https://market.arts-collective.com/artworks/6da8f4eb-feee-44db-be82-1c8d00e1f0d8?from=arts-collective");
+ok("hand-off without next → to itself", shareableLink("/api/auth/handoff?to=https%3A%2F%2Fifacgroup.com%2Fshowcase", B), "https://ifacgroup.com/showcase");
+ok("absolute link unchanged", shareableLink("https://sunjay.arts-collective.com/offering1", B), "https://sunjay.arts-collective.com/offering1");
+ok("relative path made absolute", shareableLink("/jg/writing/a-piece", "https://directory.arts-collective.com"), "https://directory.arts-collective.com/jg/writing/a-piece");
+ok("next with // ignored (no open redirect)", shareableLink("/api/auth/handoff?to=https%3A%2F%2Fmarket.arts-collective.com&next=%2F%2Fevil.example", B), "https://market.arts-collective.com/");
+ok("javascript: to ignored", shareableLink("/api/auth/handoff?to=javascript%3Aalert(1)&next=%2Fx", B), "https://arts-collective.com/api/auth/handoff?to=javascript%3Aalert(1)&next=%2Fx");
+ok("relative with no base (server render) left as is", shareableLink("/x"), "/x");
+console.log(`share ${pass}/${pass + fail}`);

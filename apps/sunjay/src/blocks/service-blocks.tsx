@@ -1,6 +1,7 @@
 import { defineBlock, RichText, type PropsOf } from "@elkdonis/blocks";
 import { BookingView } from "./booking.client";
 import { SAMPLE_BOOKING, SAMPLE_SERVICES, type WireBooking, type WireService } from "./service-sample";
+import { BOOKING_PARTS, SERVICE_PARTS, SERVICES_PARTS } from "./detail-parts";
 
 // ============================================================================
 // The services blocks.
@@ -133,6 +134,7 @@ export const servicesList = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: SERVICES_PARTS,
     props: listProps,
   },
   ServicesList,
@@ -196,6 +198,7 @@ export const serviceDetail = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: SERVICE_PARTS,
     props: serviceProps,
   },
   ServiceDetail,
@@ -235,6 +238,7 @@ export const booking = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    parts: BOOKING_PARTS,
     props: bookingProps,
   },
   BookingView as unknown as React.ComponentType<PropsOf<typeof bookingProps> & { booking?: WireBooking | null }>,
