@@ -589,7 +589,7 @@ async function proposeAs(party: Party, where: Where, times: unknown, message: un
       SET status = ${party === "booker" ? "awaiting_seller" : "awaiting_booker"},
           proposed_by = ${party}, proposed_times = ${parsed.times.map((d) => d.toISOString())}::timestamptz[],
           last_message = ${note}, last_message_by = ${note ? party : null},
-          scheduled_at = NULL, slot_id = NULL, confirmed_at = NULL, updated_at = now()
+          scheduled_at = NULL, slot_id = NULL, confirmed_at = NULL, reminder_sent_at = NULL, updated_at = now()
       WHERE id = ${b.id as string}
     `;
     return { ok: true as const, id: b.id as string };
@@ -669,6 +669,56 @@ export async function bookerCancelBooking(token: string, reason?: unknown): Prom
   const r = await cancelAs("booker", { kind: "token", token }, reason);
   if (r.ok) void announceCancelled(r.id, "booker");
   return r;
+}
+
+// ── reminders (migration 267) ─────────────────────────────────────────────
+
+/**
+ * Send the reminders due now: confirmed bookings that start within their
+ * offer's reminder window and are still ahead. A booking agreed inside its
+ * window gets none (its confirmation was just sent). Each booking is claimed
+ * (`reminder_sent_at`) before any mail, so overlapping ticks or two apps
+ * running this send once. Returns how many were sent. Org-agnostic: links
+ * use each booking's own `site_url`.
+ */
+export async function sendDueBookingReminders(opts: { now?: Date; limit?: number } = {}): Promise<number> {
+  const now = opts.now ?? new Date();
+  const limit = Math.min(opts.limit ?? 50, 200);
+  const due = (await db`
+    SELECT b.id FROM bookings b
+    JOIN booking_offers o ON o.id = b.offer_id
+    WHERE b.status = 'confirmed' AND b.reminder_sent_at IS NULL
+      AND o.reminder_minutes_before IS NOT NULL
+      AND b.scheduled_at > ${now}
+      AND b.scheduled_at <= ${now}::timestamptz + make_interval(mins => o.reminder_minutes_before)
+      AND COALESCE(b.confirmed_at, b.created_at) < b.scheduled_at - make_interval(mins => o.reminder_minutes_before)
+    ORDER BY b.scheduled_at
+    LIMIT ${limit}
+  `) as unknown as Row[];
+  let sent = 0;
+  for (const r of due) {
+    const claimed = await db`
+      UPDATE bookings SET reminder_sent_at = now()
+      WHERE id = ${r.id as string} AND reminder_sent_at IS NULL AND status = 'confirmed'
+      RETURNING id
+    `;
+    if (claimed.length === 0) continue;
+    const b = await loadById(r.id as string).catch(() => null);
+    if (!b || !b.scheduledAt) continue;
+    const bookerZone = b.bookerTimeZone ?? b.timeZone;
+    await notify(b.bookerEmail, `Reminder: ${b.threadTitle}, ${when(b.scheduledAt, bookerZone)}`, [
+      `A reminder: your booking of <strong>${esc(b.threadTitle)}</strong> with ${esc(b.hostName ?? "your host")} is on <strong>${esc(when(b.scheduledAt, bookerZone))}</strong>.`,
+      b.cancelPolicyText ? `Cancellation: ${esc(b.cancelPolicyText)}` : "",
+      button(bookerUrl(b.siteUrl, b.token), "See or cancel your booking"),
+    ], b.orgId, b.hostEmail, "reminder");
+    await notify(b.hostEmail, `Reminder: ${b.bookerName ?? b.bookerEmail}, ${when(b.scheduledAt, b.timeZone)}`, [
+      `${esc(b.bookerName ?? b.bookerEmail)} (${esc(b.bookerEmail)}) is booked for <strong>${esc(b.threadTitle)}</strong> on <strong>${esc(when(b.scheduledAt, b.timeZone))}</strong>.`,
+      b.notes ? `Their note: “${esc(b.notes)}”` : "",
+      button(hostUrl(b.siteUrl), "Your bookings"),
+    ], b.orgId, b.bookerEmail, "reminder");
+    sent++;
+  }
+  return sent;
 }
 
 // ── mail ──────────────────────────────────────────────────────────────────

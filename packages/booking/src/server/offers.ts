@@ -58,6 +58,7 @@ export function mapOffer(row: Row, rules: Row[]): BookingOffer {
     waitlist: Boolean(row.waitlist),
     questions: Array.isArray(row.questions) ? (row.questions as IntakeQuestion[]) : [],
     status: (row.status as BookingOffer["status"]) ?? "open",
+    reminderMinutesBefore: row.reminder_minutes_before === undefined ? 1440 : num(row.reminder_minutes_before),
     hours,
     validFrom,
   };
@@ -106,6 +107,7 @@ export function offerToInput(o: BookingOffer): BookingOfferInput {
     cancelPolicyText: o.cancelPolicyText,
     questions: o.questions,
     status: o.status,
+    reminderMinutesBefore: o.reminderMinutesBefore,
   };
 }
 
@@ -138,12 +140,13 @@ export async function saveOffer(input: {
         org_id, thread_id, host_user_id, mode, duration_minutes, slot_step_minutes, buffer_minutes,
         time_zone, capacity_per_slot, min_party, max_party, lead_time_minutes, max_ahead_days,
         approval, cancel_free_until_minutes, cancel_refund_percent_after, cancel_policy_text,
-        questions, status
+        questions, status, reminder_minutes_before
       ) VALUES (
         ${input.orgId}, ${input.threadId}, ${host}, ${v.mode}, ${v.durationMinutes}, ${v.slotStepMinutes ?? null},
         ${v.bufferMinutes ?? 0}, ${v.timeZone}, ${capacity}, 1, 1, ${v.leadTimeMinutes ?? 720}, ${v.maxAheadDays ?? 60},
         ${v.approval ?? "instant"}, ${v.cancelFreeUntilMinutes ?? null}, ${v.cancelRefundPercentAfter ?? null},
-        ${v.cancelPolicyText ?? null}, ${tx.json((v.questions ?? []) as unknown as Parameters<typeof tx.json>[0])}, ${v.status ?? "open"}
+        ${v.cancelPolicyText ?? null}, ${tx.json((v.questions ?? []) as unknown as Parameters<typeof tx.json>[0])}, ${v.status ?? "open"},
+        ${v.reminderMinutesBefore === undefined ? 1440 : v.reminderMinutesBefore}
       )
       ON CONFLICT (thread_id) DO UPDATE SET
         host_user_id = COALESCE(EXCLUDED.host_user_id, booking_offers.host_user_id),
@@ -161,6 +164,7 @@ export async function saveOffer(input: {
         cancel_policy_text = EXCLUDED.cancel_policy_text,
         questions = EXCLUDED.questions,
         status = EXCLUDED.status,
+        reminder_minutes_before = EXCLUDED.reminder_minutes_before,
         updated_at = now()
       WHERE booking_offers.org_id = ${input.orgId}
       RETURNING *

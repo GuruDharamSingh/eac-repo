@@ -158,6 +158,35 @@ claimed does not release. Agreements console: arts-collective
 `auction_lot_one_open_per_variant` (scheduled/live only), so a passed piece can
 be relisted.
 
+Series entries (2026-11-12; in the art-auction build since 18:35 EST, no app calls them yet): `enterSeries`,
+`canEnterSeries`, `listEnterableSeries` in `server/series.ts`. Owners, guides
+and members of a series' presenting org, host org or an accepted
+`auction_series_org` may put a published piece from a store they own or hold a
+seat on straight into a published series before its `live_at`; the lot runs on
+the series' clock and carries `metadata.enteredSeries`. `removeLotFromSeries`
+withdraws such a lot (`cancelled`; refused when it has bids) and only detaches
+any other lot, as before. Seats on an org store stay per person, set by the
+org's owners and guides (developer, 2026-11-12). Verified by
+`scripts/probe-series-entry.mts`, 21/21 on 2026-11-12 (live DB, rolled back).
+
+Bidder registration (card on file; `startBidderRegistration` /
+`completeBidderRegistration` in `packages/checkout/src/server/stripe.ts`, return
+hop `apps/art-auction/src/app/api/bidders/return/route.ts`). Stripe refuses
+`phone_number_collection` in a setup-mode Checkout Session ("payment and
+subscription mode" only; every registration failed this way until the 2026-11-12
+fix, V in the art-auction log). Since then the lot page asks the phone, writes it to
+`bidder_registration` before the hop, and the setup session is card only
+(`payment_method_types: ["card"]`). A row counts as registered only with
+`stripe_payment_method_id` (`isRegisteredBidder`, `placeBid`). Live on
+art-auction since the 2026-11-12 18:35 EST rebuild (`hVoo8IFRlaS-kOJbXK8ck`;
+backup `~/eac-backups/next/art-auction-20261112-1833.tgz`). Verified: build exit 0,
+edge 200 on `/`, `/lots`, `/cart` and a lot page, the return hop redirects to
+`https://market.arts-collective.com/…`, and the built chunks carry the card-only
+setup call and the phone field. Not verified: the Stripe setup session itself and
+the signed-in form (no test-mode key exists; the first real registration is the test). Server actions that refuse a buyer
+return `{ error }` instead of throwing (`addArtworkToCart`, `registerToBidAction`):
+a thrown action error reaches the browser as Next's generic production message.
+
 Order status (CHECK on `commerce_order`): `draft · pending_payment ·
 awaiting_etransfer · payment_received · paid · fulfilled · completed ·
 cancelled · refunded`. `confirmOrderPaid` only moves an order from
@@ -225,8 +254,9 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
 - Paid service orders grant nothing in `confirmOrderPaid` (no RSVP for
   services). ~~The author arranges the time by email.~~ 2026-09-27: one-to-one
   services are scheduled, see below; group and self-paced ones are not.
-- Scheduling (migration 174, `service_bookings`; written 2026-09-27, **not yet
-  applied**): the booking form asks for up to three start times
+- Scheduling (migration 174, `service_bookings`; written 2026-09-27, ~~not yet
+  applied~~ applied 2026-09-28 per `app_schema_migrations`, 0 rows on 2026-11-14;
+  claude, 2026-11-14; booking module design: `docs/open/BOOKING_MODULE_2026-11-14.md`): the booking form asks for up to three start times
   (`ProposeTimes`, ISO instants plus the buyer's zone);
   `startServiceCheckout` validates them (`parseProposedTimes`: 1–3, at least
   an hour ahead, within a year), creates the card order, then the
@@ -255,7 +285,7 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
   Code: `packages/commerce/src/server/tours.ts`; probe:
   `scripts/probe-tour-booking.mts`. Brief: `docs/open/ELKTOURS_BRIEF_2026-10-18.md`.
 
-### Booking module (2026-11-15, migrations 265-266; phase 1 live on artdirect)
+### Booking module (2026-11-15, migrations 265-267; phase 1 live on artdirect)
 
 One booking store meant to replace `service_bookings` and `tour_bookings`
 (design and decisions: `docs/open/BOOKING_MODULE_2026-11-14.md`). Phase 1 is
@@ -288,6 +318,18 @@ asking for a time, free or paid. The old tables are untouched until phase 2.
   `/bookings` (host). The `bookings` slug is reserved.
 - A service with no offer keeps the old flow: three proposed times and
   `service_bookings`.
+- Reminders (267): `booking_offers.reminder_minutes_before` (default 1440,
+  NULL off; a Reminder row in the section) and `bookings.reminder_sent_at`
+  as the claim. `sendDueBookingReminders` mails booker and host for confirmed
+  bookings inside the window, skipping bookings agreed inside it; a new time
+  proposal clears the claim. Run by artdirect's `src/instrumentation.ts`
+  every 5 minutes (with `expireLapsedHolds`); `DISABLE_REMINDER_SCHEDULER=1`
+  turns it off. Verified 2026-11-15 on the live DB, 6/6, mail sandboxed.
+- Mail from artdirect: until 2026-11-15 its compose block had no
+  `SENDGRID_API_KEY`, so every send there (booking mail, and the order mail
+  `confirmOrderPaid` sends on its return hop) threw and was only logged. The
+  key, `EMAIL_FROM` and `EMAIL_AUTHENTICATED_DOMAINS` were added and the
+  container recreated (build `_buxs_AeSDh-Iu3YuBtxv`).
 - Verified 2026-11-15: a 28-check run against the live DB with mail sandboxed
   (free path end to end; paid path to order creation and `markBookingPaid`;
   request-a-time; expiry), all rows removed; `packages/booking/scripts/check-core.mts`
@@ -466,6 +508,8 @@ is not the hyphenated app's `INNER_GATHERING_URL`.
   Run with the command in its header, which overrides `STRIPE_*` with dummies
   so no Stripe call is made. Also `probe-paid-workshop.mts`,
   `probe-settlement.mts`, `seed-listing.ts`, `seed-org-front.ts`.
+- `packages/commerce/scripts/probe-series-entry.mts` — series entries and the
+  desk's removal, inside one rolled-back transaction on the live database (command in its header).
 - `packages/payments/scripts/probe-connect.mts` calls the real Stripe API and
   refuses anything but a test key (`:54`), so it cannot run on the live key.
 

@@ -877,6 +877,12 @@ services:
       # startThreadCheckout, 2026-09-27). Orders are confirmed by art-auction's
       # webhook and this app's /api/checkout/return hop; no webhook here.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      # SendGrid (2026-11-15): booking mail (confirmations, requests,
+      # cancellations, reminders) and the order mail confirmOrderPaid sends on
+      # this app's return hop. Without it every send here threw and was logged.
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       # Metis news desk — every box on /classifieds/news is one of the day's
       # stories (2026-10-28). The token opens /v1/news/headlines and nothing
       # else in Metis. Without them that page has no news.

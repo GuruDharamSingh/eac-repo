@@ -27,6 +27,7 @@ export const DEFAULT_OFFER_INPUT: BookingOfferInput = {
   cancelPolicyText: null,
   questions: [],
   status: "open",
+  reminderMinutesBefore: 1440,
 };
 
 export const MAX_HOURS_RANGES = 28;
@@ -119,6 +120,9 @@ export function validateOfferInput(raw: unknown): ValidateResult {
 
   const status = r.status === "paused" || r.status === "closed" ? r.status : "open";
 
+  const reminder = r.reminderMinutesBefore === null ? null : int(r.reminderMinutesBefore) ?? 1440;
+  if (reminder != null && (reminder < 1 || reminder > 20160)) return { ok: false, error: "The reminder must be under two weeks before." };
+
   return {
     ok: true,
     value: {
@@ -139,6 +143,7 @@ export function validateOfferInput(raw: unknown): ValidateResult {
       cancelPolicyText: text(r.cancelPolicyText, 2000),
       questions,
       status,
+      reminderMinutesBefore: reminder,
     },
   };
 }

@@ -81,6 +81,8 @@ export interface BookingOffer {
   waitlist: boolean;
   questions: IntakeQuestion[];
   status: OfferStatus;
+  /** Reminder to both sides this long before the start; null = none (migration 267). */
+  reminderMinutesBefore: number | null;
   /** Open hours, sorted by weekday then start. */
   hours: HoursRange[];
   /** First day open hours apply ("YYYY-MM-DD"), or null. */
@@ -108,6 +110,8 @@ export interface BookingOfferInput {
   cancelPolicyText?: string | null;
   questions?: IntakeQuestion[];
   status?: OfferStatus;
+  /** null = no reminder; omitted = one day before. */
+  reminderMinutesBefore?: number | null;
 }
 
 /** A bookable time computed from open hours. */

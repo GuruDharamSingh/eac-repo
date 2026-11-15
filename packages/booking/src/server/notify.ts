@@ -51,7 +51,8 @@ export async function notify(
   subject: string,
   paragraphs: string[],
   orgId: string,
-  replyTo?: string | null
+  replyTo?: string | null,
+  kind: "order" | "reminder" = "order"
 ): Promise<void> {
   if (!to) return;
   try {
@@ -60,7 +61,7 @@ export async function notify(
       .filter(Boolean)
       .map((p) => (p.startsWith("<ul>") ? p : `<p>${p}</p>`))
       .join("")}</div>`;
-    await sendEmail({ to, subject, html, orgId, kind: "order", ...(replyTo ? { replyTo } : {}) });
+    await sendEmail({ to, subject, html, orgId, kind, ...(replyTo ? { replyTo } : {}) });
   } catch (err) {
     console.error(`[booking] email "${subject}" failed:`, err);
   }

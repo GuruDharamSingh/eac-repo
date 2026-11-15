@@ -68,6 +68,9 @@ eq("overlap", validateOfferInput({ ...good, hours: [{ weekday: 1, from: "10:00",
 eq("range shorter than length", validateOfferInput({ ...good, hours: [{ weekday: 1, from: "10:00", to: "10:30" }] }).ok, false);
 eq("bad zone", validateOfferInput({ ...good, timeZone: "Mars/Base" }).ok, false);
 eq("set_dates refused in phase 1", validateOfferInput({ ...good, mode: "set_dates" }).ok, false);
+eq("reminder defaults to a day", (validateOfferInput(good) as { value: { reminderMinutesBefore: number } }).value.reminderMinutesBefore, 1440);
+eq("reminder off", (validateOfferInput({ ...good, reminderMinutesBefore: null }) as { value: { reminderMinutesBefore: null } }).value.reminderMinutesBefore, null);
+eq("reminder too far", validateOfferInput({ ...good, reminderMinutesBefore: 30000 }).ok, false);
 
 // Refund policy
 const pol = { cancelFreeUntilMinutes: 1440, cancelRefundPercentAfter: 50 };
