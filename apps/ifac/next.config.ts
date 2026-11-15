@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@elkdonis/services",
     "@elkdonis/series-site",
+    "@elkdonis/site-forms",
+    "@elkdonis/studio-forms",
     "@elkdonis/pipeline",
     "@elkdonis/primitives",
     "@elkdonis/chat",

@@ -55,7 +55,7 @@ export default async function EditPiecePage({ params }: { params: Promise<{ id: 
           depthCm: piece.depthCm != null ? Number(piece.depthCm) : null,
           weightKg: piece.weightKg != null ? Number(piece.weightKg) : null,
           price: v && v.priceMinor > 0 ? v.priceMinor / 100 : null,
-          currency: v?.currency === "USD" ? "USD" : "CAD",
+          currency: v?.currency === "USD" || v?.currency === "EUR" || v?.currency === "GBP" ? v.currency : "CAD",
           inventoryQty: v?.inventoryQty && v.inventoryQty > 0 ? v.inventoryQty : 1,
           images: [...(piece.media ?? [])]
             .filter((m) => m.role !== "video")

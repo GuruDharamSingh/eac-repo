@@ -127,6 +127,8 @@ export function presentAction({ id, status, orgId, links, params }: PresentInput
     case 'channel-suggestion-dismiss':
     case 'channel-slot-fill':
     case 'channel-plan-step':
+    case 'channel-plan':
+    case 'channel-delivery-save':
       return { kind: 'none', hint: 'This acts on one piece, slot or step; Channel offers it beside them.' };
     // The Akhand Path's day steps: the day page on elkdonis-arts.org, which the check names.
     case 'paath-read':

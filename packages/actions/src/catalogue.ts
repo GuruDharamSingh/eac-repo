@@ -86,7 +86,7 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   d('channel-org-channel', 'The organisation has a channel', 'A Page or account set as the organisation’s own channel, so posts can go out under its name.', 'org', 'channel'),
   d('channel-first-post', 'A first post sent', 'One post sent from Channel or the Studio to Instagram, Facebook or Threads.', 'person', 'channel'),
   {
-    ...d('channel-next', 'What is next in the channel', 'The top next moves on a channel’s board: open slots, placed suggestions, gaps, drafts, plan steps and to-dos.', 'channel', 'channel'),
+    ...d('channel-next', 'What is next in the channel', 'The top next moves on a channel’s board: open slots, placed suggestions, gaps, drafts, plan steps and to-dos. With a piece (pieceKey), only that piece’s moves.', 'channel', 'channel'),
     performs: 'Reads only. Done when nothing is waiting; otherwise the status lists the moves, each with the entry that performs it.',
   },
   {
@@ -104,6 +104,14 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   {
     ...d('channel-plan-step', 'Add or tick a plan step', 'Append a step to a piece’s plan.md, or tick or untick one.', 'channel', 'channel', true, false),
     performs: 'Appends a step to plan.md, or ticks or unticks the step at an index whose text matches what the caller read (a step added since is refused, not mis-ticked). Recorded in the plan’s event log with the actor kind.',
+  },
+  {
+    ...d('channel-delivery-save', 'Plan a post', 'Save a draft post for a piece on one outlet, with its text and when. It stays a plan.', 'channel', 'channel', true, false),
+    performs: 'Gives the piece’s open draft on that outlet the new text and time, or writes a new draft delivery and a step tagged “from the board” in the piece’s plan.md; a dismissed gap on that outlet is reopened as the draft. A post already scheduled is refused (scheduling and sending stay on arts-collective’s Channel). Nothing is scheduled or sent.',
+  },
+  {
+    ...d('channel-plan', 'Plan it', 'Start a plan for one piece and propose its first steps from Channel’s cadence and gap rules.', 'channel', 'channel', true, false),
+    performs: 'Creates the piece’s plan.md if it has none, then adds the steps the Queue’s suggestion rules give for that piece (a post to a connected outlet it is missing from, a video, a piece of writing, a line in the letter), tagged “from the board” and dated where a slot or date placed them. Steps already in the plan are not repeated. Nothing is scheduled, drafted as a delivery or sent. Asking twice adds nothing the second time.',
   },
   // Hub card entries (2026-11-08), kept in ./hub.ts.
   ...HUB_ACTIONS,

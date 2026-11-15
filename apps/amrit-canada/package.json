@@ -29,6 +29,8 @@
     "@elkdonis/pipeline": "workspace:*",
     "@elkdonis/primitives": "workspace:*",
     "@elkdonis/services": "workspace:*",
+    "@elkdonis/site-forms": "workspace:*",
+    "@elkdonis/studio-forms": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@excalidraw/excalidraw": "^0.18.0",

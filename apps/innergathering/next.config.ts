@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/blocks",
     "@elkdonis/page-builder",
     "@elkdonis/pipeline",
+    "@elkdonis/site-forms",
+    "@elkdonis/studio-forms",
     "@elkdonis/chat",
     "@elkdonis/db",
     "@elkdonis/direct-edit",

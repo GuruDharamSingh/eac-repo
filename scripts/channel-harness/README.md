@@ -7,7 +7,7 @@ change before a rebuild. It cannot catch server-only problems (a constant
 imported from a `"use client"` file into a server page 500'd `/channel/outlets`
 on 2026-11-07); use a dev preview for those (`docs/reference/testing.md`).
 
-Pages (`?` the `__PAGE__` value): home, matrix, queue, month, board, newpost,
+Pages (`?` the `__PAGE__` value): home, matrix, queue (the week), queue-pieces (By piece, also at 390), month, board, newpost,
 newpost-pick, newpost-confirm, newpost-posted, piece, plan, library, lightbox,
 quick, adjust, outlets, outlets-live, routines, katie (an org with nothing
 connected), empty, dark, home-phone.

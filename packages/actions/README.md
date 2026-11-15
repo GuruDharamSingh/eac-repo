@@ -79,7 +79,7 @@ an entry by id. Design and phases: `docs/open/LMS_ACTION_LAYER_BRIEF_2026-11-06.
 - Channel entries (scope `channel`, 2026-11-07; `docs/open/CHANNEL_REGISTRY_AND_BOARD_2026-11-07.md`):
   `channel-next` (status only; `status.next` lists the moves, read through the host's
   `sources.channelNext`), `channel-suggestion-accept`, `channel-suggestion-dismiss` (host pages
-  only), `channel-slot-fill`, `channel-plan-step`. Plans only: draft deliveries, plan steps, a
+  only), `channel-slot-fill`, `channel-plan-step`, `channel-plan` ("Plan it", 2026-11-12: starts a piece's plan and adds the steps the Queue's rules propose, read through `sources.channelPlanProposals`; `channel-next` takes an optional `pieceKey`). Plans only: draft deliveries, plan steps, a
   dismissed gap. The org is a claim settled by `resolveChannelOrg` (owners and guides, never
   `oad`, no fallback); a refused claim is refused (`orgClaim` without `orgId`). Authorization
   is `src/server/channel.ts` (the rules of arts-collective `lib/channel/actions.ts`). Channel

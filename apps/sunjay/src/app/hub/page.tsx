@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import "@elkdonis/hub/hub-cards.css";
 import "@elkdonis/hub/industry.css";
+import "@elkdonis/channel/site.css";
+import "@elkdonis/channel/hub.css";
+import "@elkdonis/content/content.css";
+import "@elkdonis/content/summary.css";
 import { siteBuilderServer } from "@elkdonis/hub/server/site-builder";
 import { hubSite, getHubCardViewer } from "@/lib/hub-site";
 import { SiteBuilderCardMount } from "@/components/hub/hub-card-host";
@@ -40,6 +44,8 @@ import { getForumSnapshot } from "@/lib/forum";
 import { getAllThreadsForOrg } from "@/lib/data";
 import { hubSeriesCards } from "@/lib/public-site";
 import { EmailFace } from "@/components/hub/EmailFace";
+import { ChannelFace } from "@/components/hub/ChannelFace";
+import { loadHubChannel } from "@/lib/hub-channel";
 // Lifted into the shared package when IFAC wanted the same canvas.
 import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
 
@@ -131,6 +137,14 @@ export default async function HubPage() {
       })
     : null;
 
+  // Owners and guides get the Channel card (2026-11-15). A Channel outage costs the tile, not the hub.
+  const channelData = viewer.canEdit
+    ? await loadHubChannel({ userId: viewer.userId, email: viewer.email }).catch((err) => {
+        console.error("[hub] channel card:", err);
+        return null;
+      })
+    : null;
+
   const [chatMessages, chatIdentity] = chatRoom
     ? await Promise.all([
         listOrgChatMessages(siteConfig.orgId, viewer.userId, { limit: 20 }),
@@ -205,6 +219,8 @@ export default async function HubPage() {
         </div>
         <SurfaceCardGrid className="hub-band-grid">
           {viewer.canEdit && <ComposeFace />}
+
+          {channelData && <ChannelFace data={channelData} />}
 
           {/* The face IS the form: type it, press Enter. Opening the tile
               goes to the ideas feed, where they are discussed. */}

@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
     // matching `@source` in globals.css is what makes Tailwind scan it.
     "@elkdonis/cms-ui",
     "@elkdonis/forum-ui",
+    "@elkdonis/site-forms",
+    "@elkdonis/studio-forms",
     // Puck page builder (studio routes) and the block library it draws from, as danamccool does.
     "@elkdonis/page-builder",
     "@elkdonis/direct-edit",

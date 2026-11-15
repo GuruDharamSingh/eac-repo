@@ -15,7 +15,7 @@
 
 /** What a Studio link is asked for. A superset of @elkdonis/content's StudioHrefRequest. */
 export interface StudioLinkRequest {
-  /** The shared kind ("post", "gathering", "meeting", "artwork", …); the host maps it to its own `?kind=`. */
+  /** The shared kind ("post", "meeting", "artwork", …); the host maps it to its own `?kind=`. */
   kind: string;
   /** The Studio's own `?kind=`, when the caller already knows it (content's CREATE_KINDS). */
   studioKind?: string | null;
@@ -28,6 +28,13 @@ export interface StudioLinkRequest {
   delivery?: string;
   /** Where to come back to afterwards. */
   next?: string;
+  /**
+   * A page on the requesting site to return to after Save or Publish (absolute URL; the Studio
+   * checks it against the acting org's own hosts, `checkStudioBack`), and its link text.
+   * (developer, 2026-11-12)
+   */
+  back?: string;
+  backLabel?: string;
 }
 
 /** An item a link can point at. */

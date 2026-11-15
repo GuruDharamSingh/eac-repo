@@ -255,8 +255,10 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         const orgId = await actionOrgId(id, actor.userId, q.get('org'));
         const subjectId = subjectOf(q.get('subject'));
         // The step's choices (e.g. org-publish ?kind=event); actionParams in the check drops anything undeclared.
-        const params = Object.fromEntries([...q.entries()].filter(([k]) => k !== 'org' && k !== 'subject'));
-        const status = await actionStatus(id, { userId: actor.userId, orgId, subjectId, links: opts.links, params, sources: opts.sources });
+        const params = Object.fromEntries([...q.entries()].filter(([k]) => k !== 'org' && k !== 'subject' && k !== 'pieceKey'));
+        // `channel-next` only: one piece's moves (2026-11-12); status.ts validates it.
+        const pieceKey = id === 'channel-next' ? (q.get('pieceKey') ?? '').slice(0, 90) || null : null;
+        const status = await actionStatus(id, { userId: actor.userId, orgId, subjectId, links: opts.links, params, pieceKey, sources: opts.sources });
         return json({ id, org: orgId, subject: subjectId, status });
       }),
 
@@ -286,7 +288,7 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         const orgClaim = typeof raw.org === 'string' ? raw.org.slice(0, 64) : null;
         const orgId = await actionOrgId(id, actor.userId, orgClaim);
         const subjectId = subjectOf(raw.subject);
-        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, orgClaim, subjectId, via: 'http' }, raw.input);
+        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, orgClaim, subjectId, via: 'http', sources: opts.sources }, raw.input);
         return json(result, resultStatus(result));
       }),
     },

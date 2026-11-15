@@ -1,7 +1,7 @@
 import { actionRoutes } from "@elkdonis/actions/server";
 import { publicOriginFrom } from "@elkdonis/checkout/booking";
 import { getCurrentUser } from "@/lib/session";
-import { channelNextSource } from "@/lib/channel/next-source";
+import { channelNextSource, channelPlanProposalsSource } from "@/lib/channel/next-source";
 import { ACTION_LINKS } from "./links";
 
 /**
@@ -20,5 +20,5 @@ export const actionHttp = actionRoutes({
   // Not request.nextUrl.origin, which reports 0.0.0.0:<port> here (CLAUDE.md).
   publicOrigin: (req) => publicOriginFrom(req.headers, process.env.NEXT_PUBLIC_APP_URL),
   // channel-next reads the board through the /channel loader (lib/channel/next-source.ts).
-  sources: { channelNext: channelNextSource },
+  sources: { channelNext: channelNextSource, channelPlanProposals: channelPlanProposalsSource },
 });

@@ -1,0 +1,59 @@
+/* The Channel hub card (2026-11-15): plain and flat, in the surface style. Thin lines, no shadows, no gradients.
+   Colours come from the surface tokens (--sf-*, set on a face and in a surface), falling back to the site's shadcn
+   tokens that site.css uses, then to plain values. */
+.chp {
+  --chp-line: var(--sf-line, hsl(var(--border, 0 0% 82%)));
+  --chp-ink: var(--sf-fg, hsl(var(--foreground, 0 0% 12%)));
+  --chp-mut: var(--sf-muted, hsl(var(--muted-foreground, 0 0% 40%)));
+  --chp-bg: var(--sf-bg, hsl(var(--card, 0 0% 100%)));
+  --chp-soft: var(--sf-bg-soft, hsl(var(--muted, 0 0% 94%)));
+  --chp-accent: var(--sf-kind, hsl(var(--primary, 200 60% 35%)));
+  --chp-alert: #b3392e;
+  color: var(--chp-ink);
+}
+.chp-fine { margin: 0; font-size: 0.8rem; color: var(--chp-mut); }
+.chp-eb { margin: 0 0 0.4rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chp-mut); font-weight: 600; }
+
+/* Face */
+.chp-face { display: grid; gap: 0.45rem; }
+.chp-mini { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.7rem; }
+.chp-mini th, .chp-mini td { padding: 0.12rem 0; border-top: 1px solid var(--chp-line); text-align: center; font-weight: 400; }
+.chp-mini thead th { border-top: 0; color: var(--chp-mut); font-size: 0.62rem; }
+.chp-mini th:first-child { width: 36%; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.4rem; }
+.chp-dot { display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%; border: 1px solid var(--chp-line); vertical-align: middle; }
+.chp-dot[data-state="out"] { background: var(--chp-accent); border-color: var(--chp-accent); }
+.chp-dot[data-state="scheduled"] { background: color-mix(in srgb, var(--chp-accent) 45%, transparent); border-color: var(--chp-accent); }
+.chp-dot[data-state="planned"] { border: 1.5px dashed var(--chp-accent); }
+.chp-dot[data-state="draft"] { border-color: var(--chp-mut); background: var(--chp-soft); }
+.chp-dot[data-state="failed"] { background: var(--chp-alert); border-color: var(--chp-alert); }
+.chp-line { margin: 0; font-size: 0.82rem; color: var(--chp-mut); }
+.chp-line[data-alert] { color: var(--chp-ink); }
+
+/* Pop-up */
+.chp-panel { display: grid; gap: 0.75rem; padding: 0.9rem 1rem 0.8rem; background: var(--chp-bg); }
+.chp-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.chp-org { margin: 0; font-size: 0.9rem; color: var(--chp-mut); }
+.chp-mini thead th .chn-oi { display: inline-flex; color: var(--chp-mut); }
+.chp-seg { display: inline-flex; border: 1px solid var(--chp-line); }
+.chp-seg button { padding: 0.3rem 0.8rem; border: 0; background: transparent; color: var(--chp-mut); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.chp-seg button + button { border-left: 1px solid var(--chp-line); }
+.chp-seg button[aria-pressed="true"] { background: var(--chp-soft); color: var(--chp-ink); font-weight: 600; }
+.chp-cols { display: grid; gap: 0.9rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 60rem) { .chp-cols { grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr); } }
+.chp-chart { min-width: 0; overflow-x: auto; border: 1px solid var(--chp-line); }
+.chp-side { min-width: 0; }
+.chp-list { max-height: 28rem; overflow-y: auto; border: 1px solid var(--chp-line); }
+.chp-foot { display: flex; justify-content: flex-end; padding-top: 0.5rem; border-top: 1px solid var(--chp-line); }
+.chp-link { padding: 0; border: 0; background: none; font: inherit; font-size: 0.85rem; color: var(--chp-accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.chp-piece { display: grid; gap: 0.6rem; max-height: 34rem; overflow-y: auto; }
+.chp-piece-bar { display: flex; justify-content: space-between; gap: 1rem; }
+
+/* The shared grid and summary, flattened inside the pop-up. */
+.chp .kch { width: auto; margin: 0; padding: 0; }
+.chp .kch-board-wrap, .chp .kch-grid { border-radius: 0; box-shadow: none; }
+.chp .kch-grid thead th { background: var(--chp-soft); }
+.chp .ps, .chp .ps * { box-shadow: none; }
+.chp .ps { --ps-radius: 0; }
+.chp .kch-dialog { box-shadow: none; border: 1px solid var(--chp-line); }
+/* Phone: the pieces first; the board is only useful sideways. */
+@media (max-width: 40rem) { .chp-panel { padding: 0.7rem; } .chp-list { max-height: 22rem; } .chp-side { order: -1; } }

@@ -1,0 +1,44 @@
+{
+  "name": "@elkdonis/channel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Channel: the model types, the loader (loadChannelModel), the next-moves derivation, and ./site, Channel on an org's own site (ChannelSitePage, Queue/Board/Out); shared by arts-collective and the org sites (docs/open/CHANNEL_ON_SITES_2026-11-12.md).",
+  "type": "module",
+  "main": "./src/model.ts",
+  "types": "./src/model.ts",
+  "exports": {
+    "./model": "./src/model.ts",
+    "./load": "./src/load.ts",
+    "./next": "./src/next.ts",
+    "./quick-spec": "./src/quick-spec.ts",
+    "./labels": "./src/labels.ts",
+    "./site": "./src/site/index.ts",
+    "./site/view": "./src/site/view.ts",
+    "./site.css": "./src/site/site.css",
+    "./site/board": "./src/site/board.ts",
+    "./hub": "./src/hub/index.ts",
+    "./hub/server": "./src/hub/server.ts",
+    "./hub.css": "./src/hub/hub.css"
+  },
+  "dependencies": {
+    "@elkdonis/actions": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/content": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "next": "^16",
+    "react": "^19"
+  }
+}

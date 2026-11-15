@@ -89,7 +89,8 @@ export interface PieceInput {
 }
 
 const KINDS: ArtworkKind[] = ["original", "limited_edition", "open_edition"];
-const CURRENCIES: Currency[] = ["CAD", "USD"];
+// Every currency commerce prices in (types/index.ts Currency); widened from CAD/USD 2026-11-12.
+const CURRENCIES: Currency[] = ["CAD", "USD", "EUR", "GBP"];
 
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const num = (v: unknown, min: number, max: number): number | null =>

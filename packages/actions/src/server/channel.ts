@@ -28,9 +28,12 @@ import {
   ChannelNotReady,
   ChannelPlanConflict,
   addChannelPlanStep,
+  ensureChannelPlan,
+  listChannelPlans,
   channelRoutineOwnedBy,
   createChannelDelivery,
   findOpenChannelDelivery,
+  updateChannelDelivery,
   listChannelDeliveries,
   listChannelRoutines,
   routineSlots,
@@ -40,7 +43,9 @@ import {
   type ChannelOwner,
   type ChannelSubject,
 } from '@elkdonis/services/channel';
+import { parsePlan } from '@elkdonis/services/channel-plan-md';
 import type { ActionResult } from '../types';
+import type { ActionSources } from './status';
 import type { ChannelOutletId } from '../channel';
 
 /** The wall clock routines are read in: the loader's (apps/arts-collective/src/lib/channel/load.ts). */
@@ -129,6 +134,8 @@ export interface ChannelCallContext {
   /** The org channel, settled by actionOrgId (resolveChannelOrg); null = the person's own channel. */
   orgId?: string | null;
   via?: string;
+  /** Host readers; `channel-plan` asks `channelPlanProposals` for the steps. */
+  sources?: ActionSources;
 }
 
 /** Actor kind 'user' from the host's own pages, 'agent' from any other door (CHANNEL brief, owner direction). */
@@ -197,6 +204,55 @@ export function acceptSuggestion(ctx: ChannelCallContext, input: SuggestionInput
     );
     const plan = await addChannelPlanStep(owner, subject, { text, fromBoard: true, on: at ? at.slice(0, 10) : null }, actor);
     return { ok: true, data: { deliveryId: d.id, planId: plan.id, status: 'draft', scheduledAt: at } };
+  });
+}
+
+export interface DeliverySaveInput {
+  pieceKey: string;
+  outlet: ChannelOutletId;
+  identityId?: string | null;
+  /** What goes out: the first line is the title. */
+  text: string;
+  at?: string | null;
+  routineId?: string | null;
+}
+
+/**
+ * Plan a post (2026-11-15; a site Channel's grid cell): the piece's open draft on that outlet gets the new
+ * text and time, else a new draft delivery and a board step in plan.md. A post already scheduled is not
+ * changed here (scheduling and sending stay on arts-collective's Channel). Plans only.
+ */
+export function saveDeliveryDraft(ctx: ChannelCallContext, input: DeliverySaveInput): Promise<ActionResult> {
+  return guarded(async () => {
+    const got = await target(ctx, input.pieceKey, input.identityId, 'deliver');
+    if (got.ok === false) return got.r;
+    const { a, owner, subject } = got.t;
+    const identityId = channelIdentityOf(a, owner);
+    const at = isoOrNull(input.at);
+    const text = input.text.trim().slice(0, 2200);
+    const title = (text.split('\n')[0] ?? '').slice(0, 200);
+    const open = await findOpenChannelDelivery(owner, subject, input.outlet, identityId);
+    if (open && open.status === 'scheduled') return forbidden('That post is already scheduled; change it in Channel on arts-collective.com.');
+    if (open && open.status === 'draft') {
+      const d = await updateChannelDelivery(owner, open.id, { scheduledAt: at, payload: { title, text } });
+      if (!d) return { ok: false, error: 'That draft is gone.', code: 'failed' };
+      return { ok: true, data: { deliveryId: open.id, status: 'draft', scheduledAt: at, updated: true } };
+    }
+    // A dismissed gap on this outlet is reopened as the draft (the person chose to plan it after all).
+    const actor = channelActor(ctx);
+    if (open && open.status === 'dismissed') {
+      const d = await updateChannelDelivery(owner, open.id, { status: 'draft', scheduledAt: at, payload: { title, text } });
+      if (!d) return { ok: false, error: 'That draft is gone.', code: 'failed' };
+      await addChannelPlanStep(owner, subject, { text: title, fromBoard: true, on: at ? at.slice(0, 10) : null }, actor);
+      return { ok: true, data: { deliveryId: open.id, status: 'draft', scheduledAt: at } };
+    }
+    const d = await createChannelDelivery(
+      owner,
+      { subject, outlet: input.outlet, status: 'draft', identityId, scheduledAt: at, routineId: await channelOwnRoutine(owner, input.routineId), payload: { title, text } },
+      actor,
+    );
+    await addChannelPlanStep(owner, subject, { text: title, fromBoard: true, on: at ? at.slice(0, 10) : null }, actor);
+    return { ok: true, data: { deliveryId: d.id, status: 'draft', scheduledAt: at } };
   });
 }
 
@@ -312,5 +368,54 @@ export function planStep(ctx: ChannelCallContext, input: PlanStepInput): Promise
     }
     const plan = await setChannelPlanStep(owner, subject, input.index!, input.op === 'check', actor, input.text);
     return { ok: true, data: { planId: plan.id, op: input.op, index: input.index } };
+  });
+}
+
+export interface PlanPieceInput {
+  pieceKey: string;
+  /** Whose plan, as for `planStep`: default the scope org, else the person. */
+  identityId?: string | null;
+}
+
+/**
+ * "Plan it" (2026-11-12, developer): start the piece's plan.md if it has none, then
+ * add the steps the Queue's suggestion rules propose for it (the host's loader, through
+ * `sources.channelPlanProposals`: no second copy of the rules lives here). Each step is
+ * tagged from the board and dated where the rules placed it, as `acceptSuggestion` writes
+ * its step, but no delivery is created: nothing is drafted, scheduled or sent. A step whose
+ * text is already in the plan is skipped, so asking again adds nothing. Authorization is
+ * `target(..., 'plan')`: the piece is the person's or an org's they run, and the channel's
+ * owner is one they may act for.
+ */
+export function planPiece(ctx: ChannelCallContext, input: PlanPieceInput): Promise<ActionResult> {
+  return guarded(async () => {
+    const got = await target(ctx, input.pieceKey, input.identityId, 'plan');
+    if (got.ok === false) return got.r;
+    const { owner, subject } = got.t;
+    const actor = channelActor(ctx);
+    const pieceKey = `${subject.kind}:${subject.id}`;
+    const existed = (await listChannelPlans([owner])).some((p) => p.subject.kind === subject.kind && p.subject.id === subject.id);
+    let plan = await ensureChannelPlan(owner, subject, actor);
+    const read = ctx.sources?.channelPlanProposals;
+    const proposals = read ? await read({ userId: ctx.userId, orgId: ctx.orgId ?? null, pieceKey }) : null;
+    const have = new Set(parsePlan(plan.bodyMd).steps.map((s) => s.text.trim().toLowerCase()));
+    const added: string[] = [];
+    for (const p of proposals ?? []) {
+      const text = p.text.trim().slice(0, 300);
+      if (!text || have.has(text.toLowerCase())) continue;
+      plan = await addChannelPlanStep(owner, subject, { text, fromBoard: true, on: p.at ? p.at.slice(0, 10) : null }, actor);
+      have.add(text.toLowerCase());
+      added.push(text);
+    }
+    return {
+      ok: true,
+      data: {
+        planId: plan.id,
+        created: !existed,
+        added,
+        proposals: proposals === null ? null : proposals.length,
+        note: proposals === null ? 'This host cannot propose steps; the plan is started and empty.' : proposals.length === 0 ? 'The Queue’s rules propose nothing for this piece yet (they look at published pieces).' : undefined,
+      },
+    };
   });
 }

@@ -75,6 +75,7 @@ export function SiteHeader({ signedIn, canEdit, email, cartCount = 0 }: SiteHead
               </summary>
               <div className="ktp-acct__panel">
                 {canEdit ? <Link href="/manage">Manage</Link> : null}
+                {canEdit ? <Link href="/channel">Channel</Link> : null}
                 {canEdit ? <Link href="/studio">Edit the site</Link> : null}
                 <Link href="/account">Account</Link>
                 <SignOutButton className="ktp-acct__out" />
@@ -95,6 +96,11 @@ export function SiteHeader({ signedIn, canEdit, email, cartCount = 0 }: SiteHead
           {canEdit ? (
             <Link href="/manage" onClick={close}>
               Manage
+            </Link>
+          ) : null}
+          {canEdit ? (
+            <Link href="/channel" onClick={close}>
+              Channel
             </Link>
           ) : null}
           {signedIn ? (

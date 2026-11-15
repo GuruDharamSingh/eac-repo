@@ -83,5 +83,19 @@ export const DEFAULT_HOME = {
         emptyText: "New pieces are coming out of the kiln. Check back soon.",
       },
     },
+    {
+      // Posts, gatherings and offerings published to her org, linking to the network; draws nothing
+      // while there are none (blocks/studio-feed.tsx). Added 2026-11-14.
+      type: "ktp-studio-feed",
+      props: {
+        id: "ktp-studio-feed-home",
+        heading: "From the studio",
+        intro: "",
+        layout: "list",
+        limit: 6,
+        showCovers: true,
+        timeZone: "America/Toronto",
+      },
+    },
   ],
 };

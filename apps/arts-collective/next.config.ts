@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/dock",
     // The content detail, lifted from the Channel piece view (2026-11-08, pass 1).
     "@elkdonis/content",
+    // Channel server side, shared with the org sites (2026-11-12).
+    "@elkdonis/channel",
     // The platform MCP endpoint, /api/mcp (2026-11-08; docs/open/mcp-foundations).
     "@elkdonis/mcp",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
@@ -38,6 +40,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/sky-ui",
     "@elkdonis/tokens",
     "@elkdonis/studio",
+    "@elkdonis/studio-forms",
     // Classifieds editor: the direct-editing panel and the shared font library (2026-11-01).
     "@elkdonis/direct-edit",
     "@elkdonis/fonts",

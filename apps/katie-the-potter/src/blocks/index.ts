@@ -22,11 +22,14 @@ import { artworkGrid } from "./artwork-grid";
 import { pieceBlock } from "./piece-block";
 import { pieceRow } from "./piece-row";
 import { pieceDetails } from "./piece-details";
+import { studioFeed } from "./studio-feed";
 
-export { quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails };
+export { quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed };
 
 //   ktp-piece           ONE piece as a smart card: layout by placement
 //                       (metadata.placement) and by width (container queries)
 //   ktp-piece-row       a slot of ktp-piece, arranged by hand
 //   ktp-piece-details   facts, description, previous/next (the detail template)
-export const SITE_BLOCKS = [quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails] as unknown as Block<never>[];
+//   ktp-studio-feed     the org's public posts, gatherings, offerings, linking out
+//                       to the network (studio-feed.tsx); hidden when empty
+export const SITE_BLOCKS = [quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed] as unknown as Block<never>[];

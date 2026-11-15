@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   // carried: same duplicate-copy problem, different package. The only thing
   // imported from @elkdonis/ui now is BaroqueSignup, which is Mantine-free.
   transpilePackages: [
+    // Channel on the site (/channel; @elkdonis/channel/site, docs/open/CHANNEL_ON_SITES_2026-11-12.md).
+    "@elkdonis/channel",
+    "@elkdonis/content",
     "@elkdonis/direct-edit",
     "@elkdonis/pipeline",
     "@elkdonis/chat",
@@ -24,6 +27,9 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-client",
     "@elkdonis/services",
     "@elkdonis/series-site",
+    // The shared forms in the compose popup (docs/open/STUDIO_FORMS_SPLIT_2026-11-14.md).
+    "@elkdonis/site-forms",
+    "@elkdonis/studio-forms",
     // Service booking on the services page template (checkout → commerce + payments).
     "@elkdonis/checkout",
     "@elkdonis/commerce",

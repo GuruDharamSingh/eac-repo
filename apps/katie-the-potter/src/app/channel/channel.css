@@ -1,0 +1,9 @@
+/* Channel on this site: the shared sheet is @elkdonis/channel/site's site.css (imported by the
+   page component, on this site's shadcn tokens). Here only this site's fonts and link ink.
+   `html .kch` outranks the package's `.kch` defaults whatever order the two sheets load in. */
+html .kch {
+  --kch-font-display: var(--font-fraunces), Georgia, serif;
+  --kch-font-body: var(--font-karla), system-ui, sans-serif;
+  --kch-link: #8f3f28;
+  --kch-dot: hsl(var(--secondary));
+}

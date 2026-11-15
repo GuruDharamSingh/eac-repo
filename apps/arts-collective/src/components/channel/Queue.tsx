@@ -3,18 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronLeft, ChevronRight, PenLine, Plus, Zap } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardList, PenLine, Plus, Zap } from "lucide-react";
 import { useSurface } from "@elkdonis/cms-ui/surface";
-import { fmtTime, type DayItem, type DayView, type Outlet, type TrayItem } from "@/lib/channel/model";
-import { addTodoAction, setTodoDoneAction } from "@/lib/channel/actions";
-import { CHANNEL_BASE, useChannel } from "./context";
+import { MATRIX_COLUMNS, fmtDay, fmtTime, queueByPiece, type DayItem, type DayView, type Outlet, type QueuePiece, type TrayItem } from "@/lib/channel/model";
+import { acceptSuggestionsAction, addTodoAction, setTodoDoneAction } from "@/lib/channel/actions";
+import { CHANNEL_BASE, suggestionInput, useChannel } from "./context";
 import { OutletIcon } from "./icons";
-import { RoutineLine, RoutinesStrip } from "./bits";
+import { KindLine, RoutineLine, RoutinesStrip, StateMark, Thumb } from "./bits";
 import { specFromSuggestion, type QuickSpec } from "./quick-spec";
 import { outletLabel } from "./labels";
 
-/** Queue (2a): what is planned this week, what the routines ask for, and what is still open. */
-export function Queue({ view }: { view: "week" | "month"; editRoutines?: boolean }) {
+/**
+ * Queue (2a): what Channel suggests, one card per piece (developer, 2026-11-12: "queue is
+ * suggestive, per artwork"), with the week and month as secondary views. What is confirmed
+ * lives on the Board (the coverage matrix and each piece's board).
+ */
+export function Queue({ view }: { view: "pieces" | "week" | "month"; editRoutines?: boolean }) {
   const { model, href } = useChannel();
   const w = model.week;
   return (
@@ -22,26 +26,35 @@ export function Queue({ view }: { view: "week" | "month"; editRoutines?: boolean
       <header className="chn-head">
         <div>
           <h1>Queue</h1>
-          <p>What's planned, what your routines ask for, and what's still open. Scheduled items are plans: Channel does not send them yet.</p>
+          <p>
+            {view === "pieces"
+              ? "What Channel suggests for each piece. Plan it puts a piece's suggestions on the Board as drafts; nothing is sent from here."
+              : "What's planned, what your routines ask for, and what's still open. Scheduled items are plans: Channel does not send them yet."}
+          </p>
         </div>
         <div className="chn-actions">
+          {view !== "pieces" && (
           <nav className="chn-range" aria-label="Dates">
-            <Link href={href(`${CHANNEL_BASE}/queue`, { week: w.prev, view: view === "month" ? "month" : null })} aria-label="Earlier">
+            <Link href={href(`${CHANNEL_BASE}/queue`, { week: w.prev, view })} aria-label="Earlier">
               <ChevronLeft size={16} />
             </Link>
             <span>{w.label}</span>
-            <Link href={href(`${CHANNEL_BASE}/queue`, { week: w.next, view: view === "month" ? "month" : null })} aria-label="Later">
+            <Link href={href(`${CHANNEL_BASE}/queue`, { week: w.next, view })} aria-label="Later">
               <ChevronRight size={16} />
             </Link>
           </nav>
+          )}
           <div className="chn-seg" role="group" aria-label="View">
-            <Link href={href(`${CHANNEL_BASE}/queue`)} aria-current={view === "week" ? "page" : undefined}>
+            <Link href={href(`${CHANNEL_BASE}/queue`)} aria-current={view === "pieces" ? "page" : undefined}>
+              By piece
+            </Link>
+            <Link href={href(`${CHANNEL_BASE}/queue`, { view: "week" })} aria-current={view === "week" ? "page" : undefined}>
               Week
             </Link>
             <Link href={href(`${CHANNEL_BASE}/queue`, { view: "month" })} aria-current={view === "month" ? "page" : undefined}>
               Month
             </Link>
-            <Link href={href(CHANNEL_BASE, { view: "matrix" })}>Matrix</Link>
+            <Link href={href(CHANNEL_BASE, { view: "matrix" })}>Board</Link>
           </div>
           <Link className="chn-btn is-primary" href={href(`${CHANNEL_BASE}/new`)}>
             <PenLine size={15} aria-hidden /> New post
@@ -51,7 +64,9 @@ export function Queue({ view }: { view: "week" | "month"; editRoutines?: boolean
 
       <RoutinesStrip routines={model.routines} />
 
-      {view === "month" ? (
+      {view === "pieces" ? (
+        <ByPiece />
+      ) : view === "month" ? (
         <div className="chn-month">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
             <span key={d} className="chn-month-h">
@@ -76,8 +91,101 @@ export function Queue({ view }: { view: "week" | "month"; editRoutines?: boolean
         </ol>
       )}
 
-      <Tray items={model.tray} />
+      <Tray items={view === "pieces" ? model.tray.filter((t) => t.type !== "gap") : model.tray} />
     </div>
+  );
+}
+
+/** The Queue by piece: each piece with its suggestions, its accepted drafts and Plan it. */
+function ByPiece() {
+  const { model } = useChannel();
+  const rows = React.useMemo(() => queueByPiece(model.pieces), [model.pieces]);
+  if (rows.length === 0)
+    return <p className="chn-empty-line">Nothing to suggest right now. New pieces and open routine slots bring suggestions here.</p>;
+  return (
+    <ol className="chn-qpieces">
+      {rows.slice(0, 40).map((r) => (
+        <QueueCard key={r.piece.key} row={r} />
+      ))}
+    </ol>
+  );
+}
+
+function QueueCard({ row }: { row: QueuePiece }) {
+  const { model, openPiece, openQuick, openAdjust, scopeOrg } = useChannel();
+  const surface = useSurface();
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [planned, setPlanned] = React.useState<number | null>(null);
+  const p = row.piece;
+  const confirmed = MATRIX_COLUMNS.filter((c) => p.row[c].state !== "empty");
+
+  async function planIt() {
+    setBusy(true);
+    setError(null);
+    const r = await acceptSuggestionsAction(row.suggestions.map((s) => suggestionInput(s, scopeOrg)));
+    setBusy(false);
+    if (r.ok === false) return setError(r.error);
+    setPlanned(r.accepted);
+    surface.connectors.onMutated?.();
+  }
+
+  return (
+    <li className="chn-qpiece" id={`piece-${p.key}`}>
+      <header className="chn-qpiece-head">
+        <button type="button" className="chn-matrix-piece" onClick={(e) => openPiece(p.key, e.currentTarget)}>
+          <Thumb piece={p} size={48} />
+          <span>
+            <strong>{p.title}</strong>
+            <KindLine piece={p} />
+          </span>
+        </button>
+        <span className="chn-qpiece-out" aria-label="On the Board">
+          {confirmed.map((c) => (
+            <span key={c} className="chn-cell" data-state={p.row[c].state} title={`${c}: ${p.row[c].state}`}>
+              <OutletIcon outlet={c} size={13} /> <StateMark state={p.row[c].state} size={11} />
+            </span>
+          ))}
+        </span>
+      </header>
+      {row.suggestions.length > 0 && (
+        <ul className="chn-qpiece-list">
+          {row.suggestions.map((s) => (
+            <li key={s.id} className="chn-sugline">
+              <small>
+                {s.at ? `${fmtDay(s.at, model.timeZone)} · ` : ""}
+                {s.reason}
+              </small>
+              <span className="chn-qpiece-acts">
+                <button type="button" className="chn-next" onClick={(e) => openQuick(specFromSuggestion(s, p, null), e.currentTarget)}>
+                  <OutletIcon outlet={s.outlet} size={13} /> {s.text}
+                </button>
+                <button type="button" className="chn-linkbtn" onClick={(e) => openAdjust(s, e.currentTarget)}>
+                  Adjust
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {row.drafts.length > 0 && (
+        <p className="chn-qpiece-drafts">
+          <StateMark state="draft" size={12} /> {row.drafts.length === 1 ? "1 draft" : `${row.drafts.length} drafts`} on the Board:{" "}
+          {row.drafts
+            .slice(0, 3)
+            .map((d) => `${outletLabel(d.outlet)}${d.at ? ` ${fmtDay(d.at, model.timeZone)}` : ""}`)
+            .join(", ")}
+        </p>
+      )}
+      <footer className="chn-qpiece-foot">
+        {error ? <small className="is-alert">{error}</small> : planned !== null ? <small>{planned === 1 ? "1 step" : `${planned} steps`} added to the Board.</small> : null}
+        {row.suggestions.length > 0 && (
+          <button type="button" className="chn-btn is-primary is-small" disabled={busy || !model.ready} onClick={planIt}>
+            <ClipboardList size={14} aria-hidden /> Plan it
+          </button>
+        )}
+      </footer>
+    </li>
   );
 }
 

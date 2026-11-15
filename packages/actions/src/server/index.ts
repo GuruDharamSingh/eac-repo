@@ -4,6 +4,7 @@ export { actionStatus, actionStatuses, type StatusContext, type ActionSources } 
 export { performAction, actionInputSchema, RUNNABLE_IDS, type ActorContext } from './run';
 export { resolveActionOrg, resolveChannelOrg, actionOrgId, type ActionOrgOptions } from './org';
 export { performHubAction, type HubDoorActor } from './hub-door';
+export { performSiteChannelAction, SITE_CHANNEL_ACTIONS, type SiteChannelActor } from './site-channel-door';
 export type { SiteBuilderAdapter, SiteSlotTarget } from './site-adapter';
 export { actionJsonSchema } from './schema';
 export { actionRoutes, type ActionRoutesOptions, type ActionRouteActor, type ActionCatalogueRow, type ActionRateLimit } from './routes';

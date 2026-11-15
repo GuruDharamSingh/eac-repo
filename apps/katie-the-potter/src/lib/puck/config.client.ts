@@ -12,6 +12,7 @@ import { boundIds } from "@/blocks/binding-ids";
 import { samplePieces, type Piece } from "@/blocks/artwork-data";
 import { layoutFromPlacement } from "@/blocks/piece-layout";
 import { navFor } from "@/blocks/piece-details";
+import { studioFeed } from "@/blocks/studio-feed";
 import { ArtworkPickerField } from "@/components/studio/artwork-picker";
 
 // ============================================================================
@@ -98,6 +99,12 @@ const clientResolvers: BlockResolvers = {
   "thread-feed": async (props) => ({
     items: await getJson(`/api/blocks/thread-feed?limit=${typeof props.limit === "number" ? props.limit : 10}`, "items", []),
   }),
+  // The published block hides itself when empty; the canvas shows sample rows instead, so it can be
+  // placed. The published page's own resolver (config.server.ts) replaces `items` on every render.
+  "ktp-studio-feed": async (props) => {
+    const items = await getJson<unknown[]>(`/api/blocks/thread-feed?limit=${typeof props.limit === "number" ? props.limit : 6}`, "items", []);
+    return { items: items.length ? items : (studioFeed.sample?.() as { items?: unknown[] } | undefined)?.items ?? [] };
+  },
 };
 
 /** The site look the canvas draws with (set by PageEditor from the stored Site style). */

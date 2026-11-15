@@ -14,6 +14,8 @@ import { SERIES_NEW_ENDPOINT, SERIES_PEOPLE_ENDPOINT, SERIES_STATS_ENDPOINT } fr
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
+import { siteFormConnectors } from "@elkdonis/site-forms";
+import { sunjaySiteForms } from "@/lib/forms/site";
 import {
   disconnectPayoutsAction,
   loadProfilePageAction,
@@ -23,6 +25,7 @@ import {
 import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
+import { ChannelSurface } from "./ChannelSurface";
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
 import dynamic from "next/dynamic";
@@ -75,6 +78,9 @@ export function HubSurfaces({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
+  // The shared meeting form in the compose popup (@elkdonis/site-forms; `compose:meeting` below).
+  const formSite = React.useMemo(() => sunjaySiteForms(feeds), [feeds]);
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () => ({
@@ -162,6 +168,8 @@ export function HubSurfaces({
           canManageOrg: canEdit,
           hasWorkshops: false,
           hasMeetings: true,
+          // The series form (compose:series) makes it and opens its planner.
+          hasSeries: true,
           canCreateDocument: true,
           canCreateTalkRoom: true,
           canShareToNetwork: false,
@@ -205,9 +213,10 @@ export function HubSurfaces({
 
         onMutated: () => router.refresh(),
       }),
-      // This site has no series form: a series is edited in the planner.
+      // The series form creates only: a series is edited in the planner.
       seriesEditHref: (threadId) => `/hub/series/${threadId}#settings`,
       custom: {
+        ...siteFormConnectors(formSite, ["meeting", "event", "series", { id: "article", kind: "post" }]),
         // The weeks of a series, as a popup; the hub's card opens the same planner as a page.
         "meeting-series": ({ descriptor }) => (
           <SeriesPlannerSurface
@@ -220,6 +229,8 @@ export function HubSurfaces({
           />
         ),
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
+        // The Channel card (2026-11-15): reads /api/hub/channel; writes through the Channel door.
+        channel: () => <ChannelSurface />,
         // Opened by a block's "Opens" (2026-11-07): a person, perhaps with one onward page.
         person: ({ descriptor }) => <PersonPopup descriptor={descriptor} />,
         whiteboard: () => (
@@ -229,7 +240,7 @@ export function HubSurfaces({
         ),
       },
     }),
-    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
+    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router, formSite]
   );
 
   return (

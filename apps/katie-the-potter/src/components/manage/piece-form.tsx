@@ -34,7 +34,7 @@ export interface PieceFormInitial {
   weightKg?: number | null;
   /** Major units. */
   price: number | null;
-  currency: "CAD" | "USD";
+  currency: "CAD" | "USD" | "EUR" | "GBP";
   inventoryQty: number;
   images: UploadedImage[];
   status: string;
@@ -170,9 +170,11 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
           </label>
           <label className="ktp-m-field">
             <span>Currency</span>
-            <select className="ktp-input" value={currency} onChange={(e) => setCurrency(e.target.value as "CAD" | "USD")} disabled={disabled}>
+            <select className="ktp-input" value={currency} onChange={(e) => setCurrency(e.target.value as PieceFormInitial["currency"])} disabled={disabled}>
               <option value="CAD">CAD</option>
               <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
             </select>
           </label>
         </div>

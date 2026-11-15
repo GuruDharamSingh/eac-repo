@@ -5,6 +5,7 @@ import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder/con
 // Server-safe: draws a block's stored look (`morph`); with none set the markup is unchanged.
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
 import { currentOrgId } from "@/lib/site-org";
+import { siteConfig } from "@/config/site";
 import { CATALOGUE } from "@/lib/puck/catalogue";
 import { boundIds, loadPieceDetail, loadPieces, loadPiecesByIds, type PieceDetail } from "@/lib/artworks";
 import { samplePieces, type Piece } from "@/blocks/artwork-data";
@@ -29,6 +30,12 @@ import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
 // ============================================================================
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+// An org item's own page: arts-collective serves every public thread at `<org>.<network host>/<slug>`
+// (apps/arts-collective/src/lib/org-url.ts networkItemUrl). NEXT_PUBLIC_NETWORK_HOST is build-baked, as in /channel.
+const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
+const networkItemUrl = (slug: string) =>
+  `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${siteConfig.orgSlug}.${NETWORK_HOST}/${encodeURIComponent(slug)}`;
 
 /** The piece a single-piece block shows: its binding, else the route's piece. */
 async function pieceFor(props: Record<string, unknown>, metadata: Record<string, unknown>): Promise<Piece | null> {
@@ -77,10 +84,20 @@ const serverResolvers: BlockResolvers = {
     const item = detail?.piece ?? (await pieceFor(props, metadata));
     return { item, nav: detail ? navFor(detail.prev, detail.next, base, back) : null, sampled: false };
   },
+  // Her org's public items, linking out: this app has no thread pages (studio-feed.tsx).
+  "ktp-studio-feed": async (props) => ({
+    items: await loadThreadFeed(currentOrgId(), {
+      limit: typeof props.limit === "number" ? props.limit : 6,
+      upcomingOnly: true,
+      href: (r) => networkItemUrl(r.slug),
+    }),
+  }),
   "thread-feed": async (props) => ({
     items: await loadThreadFeed(currentOrgId(), {
       limit: typeof props.limit === "number" ? props.limit : 10,
       upcomingOnly: true,
+      // `/<feed>/<slug>` is not a route here; the item's network page is.
+      href: (r) => networkItemUrl(r.slug),
     }),
   }),
 };

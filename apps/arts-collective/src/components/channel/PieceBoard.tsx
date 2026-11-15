@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useSurface } from "@elkdonis/cms-ui/surface";
 import {
   BOARD_LANES,
@@ -13,14 +13,12 @@ import {
   type ItemState,
   type Outlet,
   type Piece,
-  type Suggestion,
   type TimelineEntry,
 } from "@/lib/channel/model";
 import { acceptSuggestionsAction, dismissSuggestionAction } from "@/lib/channel/actions";
 import { CHANNEL_BASE, suggestionInput, useChannel } from "./context";
 import { OutletIcon } from "./icons";
 import { StateMark, Thumb } from "./bits";
-import { specFromSuggestion } from "./quick-spec";
 
 const LANE_LABEL: Record<BoardLane, string> = {
   dates: "Dates",
@@ -44,11 +42,12 @@ const WEEK = 7 * 86_400_000;
 
 /**
  * The piece board (2b): one piece's outlets against seven weeks, from the
- * week before this one. History, planned drafts, its own dates and the
- * suggestions placed in routine slots, on one grid with a Today line.
+ * week before this one. History, planned drafts and its own dates on one grid
+ * with a Today line: confirmed items only (2026-11-12). The suggestions placed in
+ * these weeks are counted in the footer, with Plan it and a link to the Queue.
  */
 export function PieceBoard({ piece }: { piece: Piece }) {
-  const { model, href, scopeOrg, openQuick } = useChannel();
+  const { model, href, scopeOrg } = useChannel();
   const routines = model.routines;
   const surface = useSurface();
   const [busy, setBusy] = React.useState(false);
@@ -67,12 +66,13 @@ export function PieceBoard({ piece }: { piece: Piece }) {
   };
   const todayPct = Math.max(0, Math.min(100, ((now - start) / (end - start)) * 100));
 
-  type Chip = { id: string; lane: BoardLane; col: number; kind: ItemState | "suggestion" | "event"; text: string; earlier: boolean; s?: Suggestion; e?: TimelineEntry };
+  type Chip = { id: string; lane: BoardLane; col: number; kind: ItemState | "event"; text: string; earlier: boolean; e?: TimelineEntry };
   const chips: Chip[] = [];
   for (const e of piece.timeline) chips.push({ id: e.id, lane: laneOf(e.outlet), col: col(e.at), kind: e.state, text: `${fmtDay(e.at, model.timeZone)} · ${e.label}`, earlier: new Date(e.at).getTime() < start, e });
   if (piece.eventAt) chips.push({ id: "event", lane: "dates", col: col(piece.eventAt), kind: "event", text: `${piece.title} · ${fmtDay(piece.eventAt, model.timeZone)}`, earlier: false });
   const placed = hidden ? [] : piece.suggestions.filter((s) => s.at && new Date(s.at).getTime() >= start && new Date(s.at).getTime() < end);
-  for (const s of placed) chips.push({ id: s.id, lane: laneOf(s.outlet), col: col(s.at!), kind: "suggestion", text: s.text, earlier: false, s });
+  // The board shows confirmed items only (developer, 2026-11-12); the piece's suggestions wait in the
+  // Queue, and Plan it below accepts the ones placed in these seven weeks.
 
   const routinesUsed = new Set(placed.map((s) => s.routineId).filter(Boolean));
   const routineNames = routines.filter((r) => routinesUsed.has(r.id)).map((r) => r.name);
@@ -154,18 +154,12 @@ export function PieceBoard({ piece }: { piece: Piece }) {
                 <div key={c} className="chn-board-cell">
                   {chips
                     .filter((x) => x.lane === lane && x.col === c)
-                    .map((x) =>
-                      x.s ? (
-                        <button key={x.id} type="button" className="chn-bchip" data-kind="suggestion" title={x.s.reason} onClick={(e) => openQuick(specFromSuggestion(x.s!, piece, null), e.currentTarget)}>
-                          <Plus size={11} aria-hidden /> {x.text}
-                        </button>
-                      ) : (
-                        <span key={x.id} className="chn-bchip" data-kind={x.kind} title={x.earlier ? "Earlier than this board" : undefined}>
-                          {x.kind !== "event" && <StateMark state={x.kind as ItemState} size={11} />} {x.earlier ? "← " : ""}
-                          {x.text}
-                        </span>
-                      )
-                    )}
+                    .map((x) => (
+                      <span key={x.id} className="chn-bchip" data-kind={x.kind} title={x.earlier ? "Earlier than this board" : undefined}>
+                        {x.kind !== "event" && <StateMark state={x.kind as ItemState} size={11} />} {x.earlier ? "← " : ""}
+                        {x.text}
+                      </span>
+                    ))}
                 </div>
               ))}
             </div>
@@ -179,8 +173,9 @@ export function PieceBoard({ piece }: { piece: Piece }) {
       <footer className="chn-board-foot">
         <p>
           {placed.length === 0
-            ? "No suggestions placed on this board."
-            : `${placed.length} ${placed.length === 1 ? "suggestion" : "suggestions"}, placed ${routineNames.length ? `in your ${routineNames.join(", ")} slots` : "by date"}${piece.eventAt ? ` and around ${fmtDay(piece.eventAt, model.timeZone)}` : ""}.`}
+            ? "Nothing suggested for these weeks."
+            : `${placed.length} ${placed.length === 1 ? "suggestion waits" : "suggestions wait"} in the Queue for these weeks, placed ${routineNames.length ? `in your ${routineNames.join(", ")} slots` : "by date"}${piece.eventAt ? ` and around ${fmtDay(piece.eventAt, model.timeZone)}` : ""}.`}{" "}
+          {piece.suggestions.length > 0 && <Link href={href(`${CHANNEL_BASE}/queue`)}>See them in the Queue</Link>}
           {error && <small className="is-alert"> {error}</small>}
         </p>
         {placed.length > 0 && (
@@ -189,7 +184,7 @@ export function PieceBoard({ piece }: { piece: Piece }) {
               Dismiss
             </button>
             <button type="button" className="chn-btn is-primary" disabled={busy || !model.ready} onClick={addAll}>
-              Add {placed.length} to the queue
+              Plan it
             </button>
           </div>
         )}

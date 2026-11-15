@@ -274,8 +274,8 @@ const model: ChannelModel =
       : base;
 
 const body =
-  page === "queue" || page === "month" ? (
-    <Queue view={page === "month" ? "month" : "week"} editRoutines={false} />
+  page === "queue" || page === "month" || page === "queue-pieces" ? (
+    <Queue view={page === "month" ? "month" : page === "queue-pieces" ? "pieces" : "week"} editRoutines={false} />
   ) : page === "board" ? (
     <PieceBoard piece={salt} />
   ) : page === "newpost" || page === "newpost-pick" || page === "newpost-confirm" || page === "newpost-posted" ? (
@@ -297,7 +297,7 @@ const body =
 
 createRoot(document.getElementById("root")!).render(
   <div className="chn">
-    <ChannelFrame model={model} outletTab={page === "outlets" ? "instagram" : page === "outlets-live" ? "live" : null} active={page === "routines" ? "routines" : page === "outlets" || page === "outlets-live" ? "outlets" : page === "queue" || page === "month" ? "queue" : page === "newpost" || page === "newpost-pick" || page === "newpost-confirm" || page === "newpost-posted" ? "new" : page === "board" ? "piece" : page === "matrix" ? "matrix" : "home"}>
+    <ChannelFrame model={model} outletTab={page === "outlets" ? "instagram" : page === "outlets-live" ? "live" : null} active={page === "routines" ? "routines" : page === "outlets" || page === "outlets-live" ? "outlets" : page === "queue" || page === "month" || page === "queue-pieces" ? "queue" : page === "newpost" || page === "newpost-pick" || page === "newpost-confirm" || page === "newpost-posted" ? "new" : page === "board" ? "piece" : page === "matrix" ? "matrix" : "home"}>
       {body}
     </ChannelFrame>
   </div>

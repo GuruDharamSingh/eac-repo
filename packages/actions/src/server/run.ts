@@ -24,7 +24,8 @@ import { db } from '@elkdonis/db';
 import type { ActionResult } from '../types';
 import { actionMeta } from '../catalogue';
 import { CHANNEL_OUTLET_IDS } from '../channel';
-import { acceptSuggestion, dismissSuggestion, fillSlot, planStep } from './channel';
+import { acceptSuggestion, dismissSuggestion, fillSlot, planPiece, planStep, saveDeliveryDraft } from './channel';
+import type { ActionSources } from './status';
 import { HUB_RUNNERS } from './hub-runners';
 import type { SiteBuilderAdapter } from './site-adapter';
 
@@ -48,8 +49,16 @@ export interface ActorContext {
    * entries are refused (Channel is central). Absent = no site binding (as before).
    */
   siteOrgId?: string | null;
+  /**
+   * Set only by the site Channel door (performSiteChannelAction, 2026-11-14): with `siteOrgId`,
+   * a `channel` entry may run when its settled org is the site's. Without it a site-bound
+   * door still refuses every `channel` entry.
+   */
+  siteChannel?: boolean;
   /** The host's page adapter, passed by performHubAction for the Site Builder entries. */
   siteAdapter?: SiteBuilderAdapter;
+  /** Host readers a runner may need (`channel-plan`: the Queue's suggestion rules live in the host's loader). */
+  sources?: ActionSources;
   /** A `thread` entry's subject: the post's id, as the caller names it. performAction loads and checks it. */
   subjectId?: string | null;
   /** Set by performAction for a `thread` entry: the post, read from the database. Never from the caller. */
@@ -381,6 +390,27 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
     run: (ctx, input) => planStep(ctx, input),
   }),
 
+  // "Plan it" (2026-11-12): the piece's plan and the steps the Queue's rules propose for it. Plans only.
+  'channel-plan': runner({
+    input: z.object({ pieceKey: CH_PIECE, identityId: CH_IDENTITY }),
+    failure: 'Could not plan it. Try again.',
+    run: (ctx, input) => planPiece(ctx, input),
+  }),
+
+  // "Plan a post" (2026-11-15): a site Channel's grid cell. A draft only; scheduling stays on arts-collective.
+  'channel-delivery-save': runner({
+    input: z.object({
+      pieceKey: CH_PIECE,
+      outlet: z.enum(CHANNEL_OUTLET_IDS),
+      identityId: CH_IDENTITY,
+      text: z.string().trim().max(2200).refine((v) => v.length > 0, 'Say what the post is.'),
+      at: z.string().trim().max(40).nullable().optional(),
+      routineId: z.string().trim().max(21).nullable().optional(),
+    }),
+    failure: 'Could not plan the post. Try again.',
+    run: (ctx, input) => saveDeliveryDraft(ctx, input),
+  }),
+
   // Hub card entries (2026-11-08): ./hub-runners.ts, all appOnly.
   ...HUB_RUNNERS,
 };
@@ -414,9 +444,12 @@ async function perform(id: string, given: ActorContext, raw: unknown): Promise<{
   if (meta?.appOnly && (!hostDoor(given) || !given.siteOrgId)) {
     return { ctx, input: raw, result: { ok: false, error: 'This is done from the site’s own pages.', code: 'forbidden' } };
   }
-  // A site-bound door (siteOrgId): org entries act on the site's org only; no channel entries.
+  // A site-bound door (siteOrgId): org entries act on the site's org only; channel entries only
+  // through the site Channel door, and only on the site's org (site-channel-door.ts, 2026-11-14).
   if (given.siteOrgId) {
-    if (meta?.scope === 'channel') return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'forbidden' } };
+    if (meta?.scope === 'channel' && !(given.siteChannel === true && !!given.orgId && given.orgId === given.siteOrgId)) {
+      return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'forbidden' } };
+    }
     if (meta?.scope === 'org' && ctx.orgId !== given.siteOrgId) {
       return { ctx, input: raw, result: { ok: false, error: 'That organisation isn’t this site’s.', code: 'forbidden' } };
     }

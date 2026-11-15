@@ -222,6 +222,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -624,6 +630,9 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/channel':
+        specifier: workspace:*
+        version: link:../../packages/channel
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -699,6 +708,9 @@ importers:
       '@elkdonis/studio':
         specifier: workspace:*
         version: link:../../packages/studio
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/three':
         specifier: workspace:*
         version: link:../../packages/three
@@ -1329,6 +1341,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1668,9 +1686,15 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
       '@elkdonis/studio':
         specifier: workspace:*
         version: link:../../packages/studio
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1834,6 +1858,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -2118,6 +2148,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -2242,6 +2278,9 @@ importers:
 
   apps/katie-the-potter:
     dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../../packages/actions
       '@elkdonis/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -2254,6 +2293,9 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/channel':
+        specifier: workspace:*
+        version: link:../../packages/channel
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -2263,6 +2305,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -2278,6 +2323,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/studio':
+        specifier: workspace:*
+        version: link:../../packages/studio
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/studio-ui':
         specifier: workspace:*
         version: link:../../packages/studio-ui
@@ -2566,6 +2617,9 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/channel':
+        specifier: workspace:*
+        version: link:../../packages/channel
       '@elkdonis/chat':
         specifier: workspace:*
         version: link:../../packages/chat
@@ -2578,6 +2632,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -2611,6 +2668,12 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@elkdonis/site-forms':
+        specifier: workspace:*
+        version: link:../../packages/site-forms
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../../packages/studio-forms
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -3306,6 +3369,12 @@ importers:
       '@elkdonis/cms-ui':
         specifier: workspace:*
         version: link:../cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../commerce
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../services
@@ -4112,6 +4181,34 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  packages/site-forms:
+    dependencies:
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../cms-ui
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../studio-forms
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   packages/sky-ui:
     dependencies:
       '@elkdonis/astro':
@@ -4151,9 +4248,15 @@ importers:
       '@elkdonis/cms-ui':
         specifier: workspace:*
         version: link:../cms-ui
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../content
       '@elkdonis/gradients':
         specifier: workspace:*
         version: link:../gradients
+      '@elkdonis/studio-forms':
+        specifier: workspace:*
+        version: link:../studio-forms
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../utils
@@ -4227,6 +4330,67 @@ importers:
       '@types/three':
         specifier: ^0.184.0
         version: 0.184.1
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
+  packages/studio-forms:
+    dependencies:
+      '@elkdonis/booking':
+        specifier: workspace:*
+        version: link:../booking
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../cms-ui
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@tiptap/core':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/pm@2.26.4)
+      '@tiptap/extension-drag-handle':
+        specifier: ^2.26.0
+        version: 2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/extension-collaboration@2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.3)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)))(@tiptap/extension-node-range@2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.3)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))
+      '@tiptap/extension-drag-handle-react':
+        specifier: ^2.26.0
+        version: 2.27.3(@tiptap/extension-drag-handle@2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/extension-collaboration@2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.3)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)))(@tiptap/extension-node-range@2.27.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.3)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)))(@tiptap/pm@2.26.4)(@tiptap/react@2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/extension-highlight':
+        specifier: ^2.8.0
+        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
+      '@tiptap/extension-link':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-placeholder':
+        specifier: ^2.8.0
+        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-underline':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
+      '@tiptap/pm':
+        specifier: ^2.8.0
+        version: 2.26.4
+      '@tiptap/react':
+        specifier: ^2.8.0
+        version: 2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/starter-kit':
+        specifier: ^2.8.0
+        version: 2.26.4
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@elkdonis/gradients':
+        specifier: workspace:*
+        version: link:../gradients
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       typescript:
         specifier: ^5
         version: 5.9.2
@@ -18255,7 +18419,7 @@ snapshots:
     dependencies:
       crelt: 1.0.6
       prosemirror-commands: 1.7.1
-      prosemirror-history: 1.4.1
+      prosemirror-history: 1.5.0
       prosemirror-state: 1.4.4
 
   prosemirror-model@1.25.11:

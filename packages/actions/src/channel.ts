@@ -56,5 +56,22 @@ export interface ChannelNextMove extends ActionNextItem {
   open: null | { kind: 'sheet' | 'piece' | 'plan' | 'studio' | 'live' | 'queue'; label: string };
 }
 
+/**
+ * One step `channel-plan` proposes for a piece (2026-11-12): what the Channel
+ * loader's suggestion rules (apps/arts-collective/src/lib/channel/load.ts, "routines,
+ * slots and suggestions") would put on the Queue for that piece. `at` is the placement
+ * in time those rules found (an open routine slot, or three days before the piece's
+ * date), when there is one.
+ */
+export interface ChannelPlanProposal {
+  outlet: string;
+  text: string;
+  reason: string;
+  at: string | null;
+}
+
 /** The channel entries the dock may perform (it never offers dismiss: that hides a gap for good). */
 export const CHANNEL_DOCK_ACTIONS: readonly string[] = ['channel-suggestion-accept', 'channel-slot-fill', 'channel-plan-step'];
+// `channel-plan` ("Plan it", 2026-11-12) is not in this list: the dock performs only the entry a next
+// move names in `run`, and it acts on a piece the person chose rather than on a move; Channel's piece
+// pages and Studio offer it through the host's runAction.

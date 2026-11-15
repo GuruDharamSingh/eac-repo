@@ -224,3 +224,25 @@ export async function getOrgHomeBySlug(orgSlug: string): Promise<OrgHome | null>
     return null;
   }
 }
+
+/**
+ * Every host an org's own site answers on (2026-11-12): its verified custom domains plus
+ * `<slug>.<networkHost>`. Read-only. Used to check a Studio `back` link, which may return only to the
+ * acting org's own domains (developer, 2026-11-12). `networkHost` is the configured network host
+ * with its port, as the caller knows it (`arts-collective.com`, or `localhost:3007` in dev).
+ */
+export async function listOrgHosts(orgId: string, networkHost: string): Promise<string[]> {
+  try {
+    const [org] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${orgId} LIMIT 1`;
+    if (!org) return [];
+    const rows = await db<Array<{ domain: string }>>`
+      SELECT domain FROM org_domains WHERE org_id = ${orgId} AND verified_at IS NOT NULL
+    `;
+    const hosts = rows.map((r) => r.domain.toLowerCase());
+    if (networkHost) hosts.push(`${org.slug}.${networkHost}`.toLowerCase());
+    return hosts;
+  } catch (err) {
+    console.error(`[org-domains] listOrgHosts(${orgId}):`, err);
+    return [];
+  }
+}

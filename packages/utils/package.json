@@ -12,7 +12,8 @@
     "./html-to-text": "./src/html-to-text.ts",
     "./sanitize-email": "./src/sanitize-email.ts",
     "./essay": "./src/essay.ts",
-    "./host": "./src/host.ts"
+    "./host": "./src/host.ts",
+    "./studio-back": "./src/studio-back.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

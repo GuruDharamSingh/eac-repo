@@ -1,0 +1,11 @@
+/* Channel on this site: the shared sheet is @elkdonis/channel/site's site.css (on this site's
+   shadcn tokens). Here only this site's fonts. `html .kch` outranks the package's defaults
+   whatever order the two sheets load in. Link ink stays the package's mix of --primary (lifted
+   bronze) and --foreground. */
+html .kch {
+  --kch-font-display: var(--font-fraunces), Georgia, serif;
+  --kch-font-body: var(--font-spectral), Georgia, serif;
+  /* a dark site: the summary's "out" ink and the kind dots lifted off the slate */
+  --kch-ok-ink: hsl(150 35% 72%);
+  --kch-dot: hsl(var(--primary));
+}

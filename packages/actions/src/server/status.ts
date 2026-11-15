@@ -10,7 +10,8 @@
 import { db } from '@elkdonis/db';
 import { OFF_FEED_KINDS, ARTIST_SPACE_ORG_ID, hasGainedSpace, canManageOrgPeople } from '@elkdonis/services';
 import type { ActionLinks, ActionStatus } from '../types';
-import type { ChannelNextMove } from '../channel';
+import type { ChannelNextMove, ChannelPlanProposal } from '../channel';
+import { parseChannelPieceKey } from './channel';
 import { actionParams } from '../catalogue';
 import { getPaathDayStatus, type PaathDayStatus } from '@elkdonis/services/paath-day';
 
@@ -25,7 +26,14 @@ export interface ActionSources {
    * `channelNextSource` in src/lib/channel/next-source.ts, over the /channel loader).
    * `orgId` null = the person's own channel, which carries the orgs they run.
    */
-  channelNext?: (q: { userId: string; orgId: string | null; limit: number }) => Promise<ChannelNextMove[]>;
+  channelNext?: (q: { userId: string; orgId: string | null; limit: number; pieceKey?: string | null }) => Promise<ChannelNextMove[]>;
+  /**
+   * The steps the Queue's suggestion rules give one piece (2026-11-12, `channel-plan`):
+   * the host's loader model, its suggestions for that piece. The runner has checked
+   * that the piece is the person's; `orgId` as for `channelNext`. Null = the piece is
+   * not on this channel's board.
+   */
+  channelPlanProposals?: (q: { userId: string; orgId: string | null; pieceKey: string }) => Promise<ChannelPlanProposal[] | null>;
 }
 
 export interface StatusContext {
@@ -39,6 +47,8 @@ export interface StatusContext {
   subjectId?: string | null;
   /** The day a routine step reads (YYYY-MM-DD); absent = today in the entry's own zone. */
   day?: string | null;
+  /** `channel-next`: limit the moves to one piece (`thread:<id>` / `artwork:<id>`); anything else is ignored. */
+  pieceKey?: string | null;
   /** Host readers (`channel-next`). */
   sources?: ActionSources;
 }
@@ -310,11 +320,15 @@ export const CHECKS: Record<string, Check> = {
   },
   // The board's next moves, read through the host's reader (ActionSources). `orgId` is
   // the org channel settled by actionOrgId (owners and guides); null = the person's own.
-  async 'channel-next'({ userId, orgId, links, sources }) {
+  // `pieceKey` (2026-11-12) limits the moves to one piece; an invalid key is refused rather than read as "all".
+  async 'channel-next'({ userId, orgId, links, sources, pieceKey }) {
     const href = `${links.hub}/channel${orgId ? `?org=${encodeURIComponent(orgId)}` : ''}`;
     if (!sources?.channelNext) return { ...none('This site cannot read the channel; open Channel to see what is next.'), href };
-    const moves = await sources.channelNext({ userId, orgId: orgId ?? null, limit: 5 });
-    if (!moves.length) return ok('Nothing is waiting in the channel.', href);
+    const piece = pieceKey ? parseChannelPieceKey(pieceKey) : null;
+    if (pieceKey && !piece) return { ...none('Name the piece as thread:<id> or artwork:<id>.'), href };
+    const key = piece ? `${piece.kind}:${piece.id}` : null;
+    const moves = await sources.channelNext({ userId, orgId: orgId ?? null, limit: 5, pieceKey: key });
+    if (!moves.length) return ok(key ? 'Nothing is waiting for this piece.' : 'Nothing is waiting in the channel.', href);
     const top = moves[0];
     const more = moves.length > 1 ? ` (and ${moves.length - 1} more)` : '';
     return { done: false, partial: true, detail: `Next: ${top.title}${top.reason ? ` · ${top.reason}` : ''}${more}`, href, next: moves };

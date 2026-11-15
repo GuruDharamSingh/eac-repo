@@ -37,7 +37,7 @@ export function ChannelHome({ view }: { view: "list" | "matrix" }) {
               In motion
             </Link>
             <Link href={href(CHANNEL_BASE, { view: "matrix" })} aria-current={view === "matrix" ? "page" : undefined}>
-              Matrix
+              Board
             </Link>
           </div>
           {/* The broadcast booth is admin-only; for anyone else the button would open onto a refusal. */}
@@ -197,14 +197,15 @@ const FILTERS: Array<{ id: "all" | PieceKind; label: string }> = [
   { id: "meeting", label: "Meeting" },
 ];
 
-/** Coverage matrix (1b): pieces against outlets; gaps become suggestions. */
+/** Coverage matrix (1b), the Board: pieces against outlets, confirmed items only (2026-11-12); suggestions live in the Queue. */
 function Matrix() {
-  const { model, openPiece } = useChannel();
+  const { model, openPiece, href } = useChannel();
   const [filter, setFilter] = React.useState<"all" | PieceKind>("all");
   const match = (p: Piece) =>
     filter === "all" || p.kind === filter || (filter === "artwork" && p.kind === "product") || (filter === "series" && p.kind === "workshop") || (filter === "meeting" && p.kind === "event");
   const rows = model.pieces.filter(match).slice(0, 60);
   const coming = model.week.days;
+  const suggested = rows.reduce((n, p) => n + p.suggestions.length, 0);
 
   return (
     <>
@@ -226,10 +227,12 @@ function Matrix() {
           <li>
             <StateMark state="draft" /> Draft
           </li>
-          <li>
-            <span className="chn-gap is-sample">+ Suggestion</span>
-          </li>
         </ul>
+        {suggested > 0 && (
+          <Link className="chn-linkbtn" href={href(`${CHANNEL_BASE}/queue`)}>
+            {suggested === 1 ? "1 suggestion" : `${suggested} suggestions`} in the Queue
+          </Link>
+        )}
       </div>
       <div className="chn-matrix-wrap">
         <table className="chn-matrix">
@@ -264,8 +267,6 @@ function Matrix() {
                         <span className="chn-cell" data-state={cell.state}>
                           <StateMark state={cell.state} /> {cell.state === "draft" ? "Draft" : fmtDay(cell.at, model.timeZone)}
                         </span>
-                      ) : cell.suggestion ? (
-                        <NextChip suggestion={cell.suggestion} piece={p} compact />
                       ) : (
                         <span className="chn-none" aria-label="Not yet">
                           —

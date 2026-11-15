@@ -3,4 +3,4 @@ export type { CourseActionScope, ActionArea, ActionFailure, ActionLinks, ActionM
 export { ACTION_CATALOGUE, ACTION_IDS, COURSE_ACTIONS, AGENT_READ_IDS, AGENT_DRAFT_IDS, actionMeta, actionParams, agentExposure } from './catalogue';
 export { AGENT_EXPOSURE, withAgent } from './agent';
 export { HUB_ACTIONS, HUB_ACTION_IDS } from './hub';
-export { CHANNEL_OUTLET_IDS, CHANNEL_DOCK_ACTIONS, type ChannelOutletId, type ChannelMoveKind, type ChannelNextMove } from './channel';
+export { CHANNEL_OUTLET_IDS, CHANNEL_DOCK_ACTIONS, type ChannelOutletId, type ChannelMoveKind, type ChannelNextMove, type ChannelPlanProposal } from './channel';

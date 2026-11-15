@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/redis",
     // The authoring Studio at /publish (round 4, 2026-11-07).
     "@elkdonis/studio",
+    "@elkdonis/site-forms",
+    "@elkdonis/studio-forms",
     "@elkdonis/chat",
     "@elkdonis/pipeline",
   ],

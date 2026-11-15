@@ -50,6 +50,9 @@ export const AGENT_EXPOSURE: Readonly<Record<string, 'read' | 'draft'>> = {
   'channel-slot-fill': 'draft',
   // From an agent door only op 'add' (ticks stay with the app and the dock); the agent door enforces it.
   'channel-plan-step': 'draft',
+  'channel-delivery-save': 'draft',
+  // Writes only the plan and its proposed steps (2026-11-12, developer: "Plan it" on any piece).
+  'channel-plan': 'draft',
 };
 
 /** The entry with its agent exposure applied. An `appOnly` entry never gets one. */

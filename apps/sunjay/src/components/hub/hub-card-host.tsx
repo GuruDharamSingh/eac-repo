@@ -10,6 +10,8 @@ import { HubRoot, lucideHubIcons } from "@elkdonis/hub/ui";
 import { siteBuilderCard, type SiteBuilderHost } from "@elkdonis/hub/site-builder";
 import type { SiteBuilderDetailData, SiteBuilderFaceData } from "@elkdonis/hub/site-builder/model";
 import { runHubAction } from "@/app/hub/actions";
+import { SITE_STYLE_HREF } from "@/components/site-style/SiteStyleButton";
+import { TEMPLATE_SLUGS } from "@/lib/puck/reserved";
 
 /** Pilot theme for review (Justin, 2026-11-08); the org palette comes after. */
 const THEME = "industry";
@@ -27,11 +29,13 @@ function useHost(): SiteBuilderHost {
     };
     const host: HubCardHost = {
       hubHref,
-      liveHref: (path) => `/${path}`,
+      // A template (event-detail, post-detail, journal-piece) draws other pages and has no address: no View (2026-11-14).
+      liveHref: (path) => (TEMPLATE_SLUGS.has(path) ? null : `/${path}`),
       // The home page is edited from `/` itself (the studio routes redirect there).
       puckEditHref: (path) => (path ? `/studio/${path}` : "/"),
       // Para Theater has no theme editor yet; the Theme tab states the theme only.
-      themeEditorHref: () => null,
+      // Site style opens over the home page (components/site-style/SiteStyleButton.tsx, round 2).
+      themeEditorHref: () => SITE_STYLE_HREF,
       studioHref: () => "/studio",
       manageHref: () => null,
       loginHref: (next) => `/login?next=${encodeURIComponent(next)}`,
