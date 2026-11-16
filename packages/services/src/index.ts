@@ -1352,3 +1352,30 @@ export { savePostContent, loadPostContent, removePostContent, listPostContent, t
 export { createSiteSeries, type CreateSiteSeriesInput, type CreateSiteSeriesResult } from "./site-series-create";
 // Booking offers, org-checked (booking module phase 1, migrations 265-266, 2026-11-15).
 export { canEditBookingOffer, saveBookingOffer, loadBookingOfferForEdit, getPublicBookingOffer, bookFreeOffering, listMyHostBookings } from "./booking-offers";
+
+// One upload path (docs/open/UPLOADS_ONE_PATH_2026-11-16.md): storeUpload, the
+// route factory, the image re-encode and the per-org avatar reader.
+export {
+  storeUpload,
+  checkUpload,
+  registerLibraryItem,
+  resolveAvatarUrl,
+  applyNarrow,
+  maxUploadBytes,
+  UPLOAD_POLICIES,
+  UploadRefusal,
+} from "./uploads";
+export type {
+  UploadKind,
+  UploadActor,
+  StoreUploadInput,
+  StoreUploadResult,
+  StoredUpload,
+  RefusedUpload,
+  LibraryItem,
+  UploadIO,
+  Policy as UploadPolicy,
+} from "./uploads";
+export { uploadRoutes } from "./upload-routes";
+export type { UploadRoutesOptions, UploadViewer } from "./upload-routes";
+export { processImage } from "./image-process";
