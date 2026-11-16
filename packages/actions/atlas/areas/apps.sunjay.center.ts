@@ -237,6 +237,7 @@ const capabilities: Capability[] = [
       "public"
     ],
     "id": "sunjay-center-layout-save",
+    "updated": "2026-11-16",
     "label": "Arrange the organisation's Center page",
     "does": "Saves which sections Para Theater's /center page shows, in what order. An owner, guide or global admin saves for a named org; the network default (org elkdonis) is admin only.",
     "class": "person",
@@ -332,6 +333,7 @@ const capabilities: Capability[] = [
       "public"
     ],
     "id": "sunjay-quote-submit",
+    "updated": "2026-11-16",
     "label": "Add a line to the Center quote band",
     "does": "A signed-in person adds a quote to Para Theater's rotating band; it is pending until an owner or guide publishes it (their own goes up directly).",
     "class": "person",

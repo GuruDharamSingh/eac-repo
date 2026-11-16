@@ -190,6 +190,7 @@ const capabilities: Capability[] = [
       "public"
     ],
     "id": "sunjay-cycle-confirm",
+    "updated": "2026-11-16",
     "label": "Confirm or cancel this cycle's gathering",
     "does": "An owner or guide marks the current occurrence of a recurring gathering as confirmed or cancelled (an append-only event, the latest within the cycle wins).",
     "class": "person",
@@ -210,10 +211,6 @@ const capabilities: Capability[] = [
         }
       },
       {
-        "key": "sql:apps/sunjay/src/app/api/threads/[id]/cycle/route.ts#POST",
-        "note": "sql twin of api:apps/sunjay/src/app/api/threads/[id]/cycle/route.ts#POST"
-      },
-      {
         "key": "api:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST",
         "service": [
           "(raw INSERT thread_cycle_events)"
@@ -223,10 +220,6 @@ const capabilities: Capability[] = [
           "path": "/manage",
           "how": "the row menu 'Confirm this cycle' / cancel in components/manage/content-row-actions.tsx"
         }
-      },
-      {
-        "key": "sql:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST",
-        "note": "sql twin of api:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST"
       },
       {
         "key": "api:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST",
@@ -240,13 +233,6 @@ const capabilities: Capability[] = [
         }
       },
       {
-        "key": "sql:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST",
-        "service": [
-          "raw SQL"
-        ],
-        "note": "twin of api:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST"
-      },
-      {
         "key": "api:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST",
         "service": [
           "(raw SQL INSERT into thread_cycle_events)"
@@ -256,13 +242,6 @@ const capabilities: Capability[] = [
           "path": "/manage",
           "how": "the Confirm / Cancel buttons of a content row (components/manage/content-row-actions.tsx:65)"
         }
-      },
-      {
-        "key": "sql:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST",
-        "service": [
-          "(raw SQL in the same function)"
-        ],
-        "note": "sql twin of api:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST"
       },
     ],
     "entry": null,
@@ -590,20 +569,12 @@ const capabilities: Capability[] = [
         ]
       },
       {
-        "key": "sql:apps/sunjay/src/app/api/upload/route.ts#POST",
-        "note": "sql twin of api:apps/sunjay/src/app/api/upload/route.ts#POST"
-      },
-      {
         "key": "api:apps/amrit-canada/src/app/api/upload/route.ts#POST",
         "service": [
           "@elkdonis/services#uploadFile",
           "@elkdonis/utils#validateUploadBuffer",
           "(raw INSERT media)"
         ]
-      },
-      {
-        "key": "sql:apps/amrit-canada/src/app/api/upload/route.ts#POST",
-        "note": "sql twin of api:apps/amrit-canada/src/app/api/upload/route.ts#POST"
       },
       {
         "key": "api:apps/fourthwayBookreaders/src/app/api/upload/route.ts#POST",
@@ -641,10 +612,6 @@ const capabilities: Capability[] = [
         }
       },
       {
-        "key": "sql:apps/hidden-enneagram/src/app/api/upload/route.ts#POST",
-        "note": "sql twin of api:apps/hidden-enneagram/src/app/api/upload/route.ts#POST"
-      },
-      {
         "key": "api:apps/innergathering/src/app/api/upload/route.ts#POST",
         "service": [
           "@elkdonis/services#uploadFile",
@@ -655,13 +622,6 @@ const capabilities: Capability[] = [
           "path": "/manage",
           "how": "the media pickers of the content composer (components/manage/media-field.tsx, content-composer-body.tsx, materials-field.tsx, landing/page-picture-chooser.tsx)"
         }
-      },
-      {
-        "key": "sql:apps/innergathering/src/app/api/upload/route.ts#POST",
-        "service": [
-          "(raw SQL in the same function)"
-        ],
-        "note": "sql twin of api:apps/innergathering/src/app/api/upload/route.ts#POST"
       },
     ],
     "status": "media has a row for the org with the url and nextcloud_path",

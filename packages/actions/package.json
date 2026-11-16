@@ -32,6 +32,8 @@
     "check:registry": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-registry.mts",
     "atlas:inventory": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-inventory.mts",
     "atlas:check": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-atlas.mts",
+    "check:rails": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-rails.mts",
+    "atlas:q": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-q.mts",
     "atlas:reports": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-reports.mts",
     "atlas:emit": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-emit.mts"
   }

@@ -1,0 +1,24 @@
+// Tracks: profile, publishing, organisation (2026-11-16, lane rails). Candidates from the atlas; steps are capability ids.
+import type { Track } from './types';
+
+export const tracks: Track[] = [
+  { id: 'profile-basics', area: 'profile', label: 'Name, photo, line about what you do', steps: ['edit-my-profile', 'upload-profile-photo'], requires: [], provides: ['has_profile_photo'], leads_to: ['profile-take-space', 'profile-look'], status: 'candidate', note: 'registry entry profile. "Keep it current" reuses this track.' },
+  { id: 'profile-take-space', area: 'profile', label: 'Take your space, link the cloud sign-in', steps: ['take-your-space', 'link-cloud-sign-in'], requires: ['has_profile_photo'], provides: ['has_space'], leads_to: ['profile-listing', 'publish-first-work'], status: 'candidate', note: 'registry entries gain-space and cloud' },
+  { id: 'profile-listing', area: 'profile', label: 'Choose where the page shows', steps: ['set-where-i-show', 'profile-section-toggle'], requires: ['has_space'], leads_to: [], status: 'candidate', note: 'registry entries listing and show-on' },
+  { id: 'profile-look', area: 'profile', label: 'Change the look of the own page', steps: ['user-theme-save'], requires: [], leads_to: [], status: 'candidate' },
+  { id: 'profile-in-org', area: 'profile', label: 'Per-organisation photo and bio', steps: [{ gap: 'a profile (photo, bio) per organisation, separate from the network profile' }], requires: ['has_space'], leads_to: [], status: 'candidate', note: 'save-org-identity edits the org, not the person in the org' },
+  { id: 'profile-pen-name', area: 'profile', label: 'Create or retire a pen name', steps: ['create-pen-name', 'retire-pen-name', 'restore-pen-name'], requires: ['has_space'], leads_to: [], status: 'candidate' },
+
+  { id: 'publish-post', area: 'publishing', label: 'Write and publish a post', steps: ['create-content', 'publish-draft-post'], requires: ['has_space'], leads_to: ['publish-more-sites'], status: 'candidate' },
+  { id: 'publish-first-work', area: 'publishing', label: 'Write a piece of work and publish it', steps: ['writing-piece-start', 'writing-piece-save'], requires: ['has_space'], provides: ['has_published_work'], leads_to: ['publish-more-sites', 'publish-share-social'], status: 'candidate', note: 'registry entry studio' },
+  { id: 'publish-more-sites', area: 'publishing', label: 'Show a published piece on other sites', steps: ['choose-sites-for-post', 'post-to-a-site'], requires: ['has_published_work'], leads_to: [], status: 'candidate', note: 'registry entry show-on' },
+  { id: 'publish-share-social', area: 'publishing', label: 'Connect an account and share a piece', steps: ['connect-social-account', 'create-social-post', 'publish-social-post'], requires: ['has_published_work'], provides: ['has_connected_social'], leads_to: ['publish-plan-posts'], status: 'candidate' },
+  { id: 'publish-plan-posts', area: 'publishing', label: 'Plan and schedule posts for a piece', steps: ['start-piece-plan', 'plan-or-schedule-post', 'tick-plan-step'], requires: ['has_connected_social'], leads_to: [], status: 'candidate' },
+  { id: 'publish-paid-work', area: 'publishing', label: 'Put paid work on sale', steps: ['artwork-draft-save', 'artwork-journey-publish'], requires: ['payouts_connected', 'has_store'], leads_to: [], status: 'candidate', note: 'money: the dock links, never runs' },
+  { id: 'publish-event', area: 'publishing', label: 'Create an event that takes RSVPs', steps: ['meeting-save', 'set-workshop-listing'], requires: ['has_space'], leads_to: [], status: 'candidate', note: 'the RSVP itself is the audience side (rsvp-to-event)' },
+  { id: 'publish-forum-thread', area: 'publishing', label: 'Start a forum thread with media', steps: ['forum-topic-start', 'elktours-upload-forum-media'], requires: ['has_space'], leads_to: [], status: 'candidate', note: 'media upload for forum posts is atlas-mapped on elktours only' },
+
+  { id: 'org-start', area: 'organisation', label: 'Start an organisation and set its identity', steps: ['org-site-create', 'save-org-identity'], requires: ['has_space'], provides: ['has_org'], leads_to: ['org-people', 'site-theme', 'email-identity'], status: 'candidate', note: 'registry entries org, org-details, org-site' },
+  { id: 'org-people', area: 'organisation', label: 'Invite members and set their roles', steps: ['org-person-role-set', 'remove-person-from-org', { gap: 'invite a person to the organisation by email' }], requires: ['has_org'], leads_to: [], status: 'candidate', note: 'registry entry org-people' },
+  { id: 'org-offering', area: 'organisation', label: 'Publish the organisation\'s first offering', steps: ['create-content', 'workshop-save'], requires: ['has_org'], leads_to: [], status: 'candidate', note: 'registry entry org-offering' },
+];

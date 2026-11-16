@@ -1,0 +1,23 @@
+#!/bin/sh
+# Warn-only pre-commit reminder (2026-11-16, lane rails). Not active until: git config core.hooksPath .githooks
+# If staged code under apps/*/src or packages/*/src looks like a write and no atlas file is staged, print the commands.
+# Fast: git only, no docker. Never blocks the commit.
+staged=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+[ -z "$staged" ] && exit 0
+echo "$staged" | grep -q '^packages/actions/atlas/' && exit 0
+code=$(echo "$staged" | grep -E '^(apps|packages)/[^/]+/src/.*\.(ts|tsx|mts|js|jsx|mjs)$')
+[ -z "$code" ] && exit 0
+hits=""
+for f in $code; do
+  d=$(git diff --cached -U0 -- "$f" | grep '^+' | grep -v '^+++')
+  [ -z "$d" ] && continue
+  if echo "$d" | grep -Eq '"use server"|'"'"'use server'"'"'|export (async )?(function|const) (POST|PUT|PATCH|DELETE)\b|export const \{[^}]*(POST|PUT|PATCH|DELETE)|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+[A-Za-z_."]+[[:space:]]+SET|DELETE[[:space:]]+FROM'; then
+    hits="$hits $f"
+  fi
+done
+[ -z "$hits" ] && exit 0
+echo "atlas: staged code looks like a write, and no packages/actions/atlas/ file is staged:" >&2
+for f in $hits; do echo "  $f" >&2; done
+echo "  new write: claim it in atlas/areas/ with added; changed: re-check, set updated, check-atlas --accept <id|file>; deleted: remove its host." >&2
+echo "  run: atlas:inventory, then check-atlas --strict (README: packages/actions/atlas/README.md); append a line to atlas/JOURNAL.md" >&2
+exit 0

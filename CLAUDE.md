@@ -343,3 +343,11 @@ Update this section when work starts or finishes; keep it under ten lines.
 - `docs/sessions/` — handovers (`/handover`).
 - `docs/archive/` — reports before 2026-09-23; historical, often stale.
 - Write in the neutral register described at the end of `docs/README.md`.
+
+## Action atlas
+
+`packages/actions/atlas/` maps every write on the network (server actions, write routes, raw SQL writes) to a capability: who may do it,
+risk, address, registry entry. Read its `README.md` and `JOURNAL.md` first. Query: `pnpm --filter @elkdonis/actions atlas:q -- <term>`
+(also `--file <repo path>`, `--risk`, `--app`, `--security`, `--needs-review`, `--json`; run it in the throwaway container the README shows).
+Upkeep: a new write is claimed in the same commit, a changed write is re-checked and accepted (`check-atlas --accept`), a deleted write
+is removed; then `atlas:inventory`, `check-atlas --strict`, and a line in `JOURNAL.md`. Rule: `.claude/rules/atlas.md`.

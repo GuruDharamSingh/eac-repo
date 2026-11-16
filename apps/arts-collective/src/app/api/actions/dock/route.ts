@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { dockData } from "@elkdonis/actions/server";
-import { getActiveEnrolment, getCourseBySlug, getLearnerOutline, listMyEnrolments, stepTask } from "@elkdonis/lms";
+import { getActiveEnrolment, getCourseBySlug, getCourseTags, getLearnerOutline, listMyEnrolments, stepTask } from "@elkdonis/lms";
 import { settleTaskStep } from "@elkdonis/lms";
 import { isAdmin } from "@elkdonis/auth-server";
 import { getCurrentUser } from "@/lib/session";
@@ -29,7 +29,7 @@ const LINKS = {
 
 // settleTask lets the dock record a step the person finished on a page outside the registry (lms tasks.ts).
 const LMS = {
-  getCourseBySlug, getActiveEnrolment, listMyEnrolments, getLearnerOutline, stepTask,
+  getCourseBySlug, getActiveEnrolment, listMyEnrolments, getLearnerOutline, stepTask, getCourseTags,
   settleTask: (viewer: { userId: string | null; roles: Record<string, string> }, input: { courseId: string; stepSlug: string; status: () => Promise<import("@elkdonis/actions").ActionStatus> }) =>
     settleTaskStep(viewer, { courseId: input.courseId, stepSlug: input.stepSlug, status: () => input.status() }),
 };

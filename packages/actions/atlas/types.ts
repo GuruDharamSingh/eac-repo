@@ -41,6 +41,8 @@ export interface InventoryHost {
   registry: boolean;
   /** Raw SQL write statements found in the symbol's body. */
   rawSql: boolean;
+  /** Fingerprint of the body (tokens only, no whitespace or comments); compared with atlas/fingerprints.json. */
+  hash: string;
 }
 
 export type Actor = 'visitor' | 'person' | 'member' | 'guide' | 'owner' | 'operator' | 'admin' | 'system';
@@ -104,6 +106,15 @@ export interface Capability {
   canonical?: string; // the service function / host that should be the single path
   open?: string; // a question for Justin or the next session
   verified: string; // "2026-11-16 read" — date + how it was checked
+  /**
+   * ISO dates (YYYY-MM-DD). `added`: when the row entered the atlas. `updated`: when its row was last re-checked
+   * against changed code. Absence of `added` means 2026-11-16 (the atlas's creation); absence of `updated` means
+   * never changed since `added`. New and changed rows set them (see README "Upkeep").
+   */
+  added?: string;
+  updated?: string;
+  /** Optional MCP tool group (proposal, lane families). Not backfilled; Justin has not decided. */
+  family?: 'directory' | 'market' | 'studio' | 'rails' | 'network' | 'business' | 'site' | 'profiles';
 }
 
 /** Inventory keys an area deliberately does not map, with why (reads mislabelled as writes, dev tools, dead code). */

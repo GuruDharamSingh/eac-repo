@@ -27,23 +27,6 @@ const capabilities: Capability[] = [
         service: ['auth-server#handleSignup'],
       },
       {
-        "key": "api:apps/admin/src/app/api/auth/signup/route.ts#POST",
-        "service": [
-          "@elkdonis/auth-server#handleSignup",
-          "(raw UPDATE contacts)"
-        ],
-        "address": {
-          "app": "admin",
-          "path": "/login",
-          "how": "no screen: apps/admin has no sign-up form (login-form.tsx only signs in); the route answers any POST"
-        },
-        "note": "Public. Creating an account opens nothing: admin rights are users.is_admin only."
-      },
-      {
-        "key": "sql:apps/admin/src/app/api/auth/signup/route.ts#POST",
-        "note": "sql twin of api:apps/admin/src/app/api/auth/signup/route.ts#POST"
-      },
-      {
         "key": "api:apps/amrit-canada/src/app/api/auth/signup/route.ts#POST",
         "service": [
           "@elkdonis/auth-server#handleSignup"

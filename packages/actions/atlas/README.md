@@ -38,3 +38,33 @@ cd ~/eac && sudo -n docker compose run --rm --no-deps -w /app/packages/actions a
 - `money` risk means the dock links, never runs.
 - Drift is recorded, not fixed. Code is merged to the `canonical` path in a separate, approved pass.
 - Write judgement calls in `JOURNAL.md` (date, area, decision, why), so the next session picks them up.
+
+## Query it
+
+```
+pnpm --filter @elkdonis/actions atlas:q -- rsvp                      # term in id, label, does, notes
+pnpm --filter @elkdonis/actions atlas:q -- --file apps/sunjay/src/lib/cms/actions.ts
+pnpm --filter @elkdonis/actions atlas:q -- --risk money --app elktours
+pnpm --filter @elkdonis/actions atlas:q -- --security | --entry | --needs-review | --status <v> | --area <a> | --host <key>
+```
+One line per capability: `id · label · risk · hosts · first host file`. Add `--full` for the whole row, `--json` for agents.
+Run it in the throwaway container (see Commands above; `atlas:q` is the script `atlas-q.mts`).
+
+## Dates and freshness
+
+- `added` and `updated` (ISO dates) on a `Capability`. No `added` = 2026-11-16 (the atlas's creation). No `updated` = unchanged since `added`.
+- `inventory.json` carries a `hash` per host: its body's tokens with whitespace and comments stripped.
+  `fingerprints.json` is the committed baseline `{hostKey: hash}`. `check-atlas` prints hosts whose hash differs as
+  "needs review" (and warns about hosts with no baseline entry, and baseline entries whose host is gone).
+  Regenerate the inventory first, so the hashes are current.
+- `check-atlas --accept <capability id | repo file path | all>` re-baselines after a review.
+  `atlas-q --needs-review` reads the same comparison.
+
+## Upkeep (alongside development)
+
+- A **new write** (server action, write route, raw SQL write) is claimed in the same commit, with `added`.
+- A **changed write**: re-check its row, set `updated`, then `check-atlas --accept <capability id>`.
+- A **deleted write**: remove its host from the row (and the row if it was the last host).
+- Then append a dated line to `JOURNAL.md`.
+- `.githooks/pre-commit` prints a reminder when staged code looks like a write and no atlas file is staged. It only
+  warns. It is not active until `git config core.hooksPath .githooks` is run.

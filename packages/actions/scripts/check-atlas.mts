@@ -5,12 +5,16 @@
 //
 // Run (any container with the workspace at /app; tsx comes from @elkdonis/lms):
 //   pnpm --filter @elkdonis/actions atlas:check [-- --app arts-collective] [--strict]
+//   ... --accept <capability id | repo file path | all>   re-baseline fingerprints after review (atlas/fingerprints.json)
+// Freshness: each host's body fingerprint (inventory.json `hash`) is compared with atlas/fingerprints.json; hosts that
+// differ are reported as "needs review". Regenerate the inventory first (atlas:inventory) so the hashes are current.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ACTION_CATALOGUE } from '../src/catalogue';
 import { loadAreas } from '../atlas/index';
 import type { InventoryHost } from '../atlas/types';
+import { compareFreshness, readBaseline, writeBaseline } from '../atlas/freshness';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -18,6 +22,10 @@ const strict = args.includes('--strict');
 const appIdx = args.indexOf('--app');
 const onlyApp = appIdx >= 0 ? args[appIdx + 1] : undefined;
 if (appIdx >= 0 && !onlyApp) { console.error('--app needs a name'); process.exit(2); }
+
+const acceptIdx = args.indexOf('--accept');
+const acceptArg = acceptIdx >= 0 ? args[acceptIdx + 1] : undefined;
+if (acceptIdx >= 0 && !acceptArg) { console.error('--accept needs a capability id, a repo file path or "all"'); process.exit(2); }
 
 const inv = JSON.parse(fs.readFileSync(path.join(HERE, '../atlas/inventory.json'), 'utf8')) as { hosts: InventoryHost[] };
 const byKey = new Map(inv.hosts.map((h) => [h.key as string, h]));
@@ -116,6 +124,34 @@ if (unclaimed.length) {
   if (strict) { errors.push(msg); for (const k of unclaimed.slice(0, 20)) errors.push(`  unclaimed: ${k}`); }
   else warnings.push(msg);
 }
+// Freshness against the fingerprint baseline.
+const baseline = readBaseline();
+if (acceptArg) {
+  const invHosts = onlyApp ? inv.hosts.filter((h) => h.app === onlyApp) : inv.hosts;
+  let keys: string[];
+  if (acceptArg === 'all') keys = invHosts.map((h) => h.key);
+  else {
+    const capHosts = Object.values(areas).flatMap((a) => a.capabilities).filter((c) => c.id === acceptArg).flatMap((c) => c.hosts.map((h) => h.key));
+    const fileNorm = acceptArg.replace(/^\.\//, '');
+    keys = capHosts.length ? capHosts : invHosts.filter((h) => h.file === fileNorm).map((h) => h.key);
+    if (!keys.length) { console.error(`--accept: '${acceptArg}' matches no capability id and no inventory file`); process.exit(2); }
+  }
+  let n = 0;
+  for (const k of keys) { const h = byKey.get(k); if (h?.hash && baseline[k] !== h.hash) { baseline[k] = h.hash; n++; } }
+  if (acceptArg === 'all') for (const k of Object.keys(baseline)) if (!byKey.has(k) && (!onlyApp || keyApp(k) === onlyApp)) { delete baseline[k]; n++; }
+  writeBaseline(baseline);
+  console.log(`Accepted ${n} fingerprint(s) for '${acceptArg}' -> atlas/fingerprints.json`);
+}
+const fresh = compareFreshness(onlyApp ? inv.hosts.filter((h) => h.app === onlyApp) : inv.hosts, baseline);
+const claimedCap = new Map<string, string>();
+for (const area of Object.values(areas)) for (const c of area.capabilities) for (const h of c.hosts) claimedCap.set(h.key, c.id);
+if (fresh.changed.length) {
+  console.log(`Needs review (${fresh.changed.length}): host body changed since the baseline. Re-check the row, bump \`updated\`, then --accept <capability id | file>.`);
+  for (const h of fresh.changed) console.log(`  ${claimedCap.get(h.key) ?? '(unclaimed)'}  ${h.key}`);
+}
+if (fresh.unbaselined.length) warnings.push(`${fresh.unbaselined.length} host(s) have no fingerprint yet (new since the baseline): ${fresh.unbaselined.slice(0, 5).map((h) => h.key).join(', ')}${fresh.unbaselined.length > 5 ? ', ...' : ''}`);
+if (fresh.gone.length) warnings.push(`${fresh.gone.length} baseline entr${fresh.gone.length === 1 ? 'y is' : 'ies are'} gone from the inventory (deleted or renamed; remove the row): ${fresh.gone.slice(0, 5).join(', ')}${fresh.gone.length > 5 ? ', ...' : ''}`);
+if (!fresh.changed.length) console.log('Needs review: none.');
 for (const w of warnings) console.warn(`warn: ${w}`);
 if (errors.length) {
   console.error(`Atlas check: ${errors.length} error(s)`);

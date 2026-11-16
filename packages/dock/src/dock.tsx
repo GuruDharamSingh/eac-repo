@@ -33,6 +33,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { presentAction, type PresentField, type Presentation } from "@elkdonis/actions/present";
 import { withTicket } from "@elkdonis/actions/route";
 import { CHANNEL_DOCK_ACTIONS, type ActionResult, type ActionStatus, type ChannelNextMove } from "@elkdonis/actions";
+import { DOCK_FORMS } from "./forms";
 import "./dock.css";
 
 /** The route's JSON (packages/actions/src/server/dock.ts `DockData`; kept in step by hand: that file is server-only). */
@@ -53,12 +54,14 @@ export interface DockWire {
       orgId: string | null;
       status: ActionStatus;
       route?: { href: string; anchor: string | null; how: string | null } | null;
+      /** A module form key drawn inline before routing (ActionMeta.dockForm). */
+      dockForm?: string | null;
       confirm?: { kind: "text" | "draft" | "generic"; text: string; risk: string[]; money: boolean } | null;
     };
   };
   away?: null | { returnHref: string; stepTitle: string | null; anchor: string | null; ticketOk: boolean };
   done?: null | { stepTitle: string; courseSlug: string; nextStepTitle: string | null; courseDone: boolean };
-  picker?: null | Array<{ courseSlug: string; title: string; enrolled: boolean; doneRequired: number; totalRequired: number; current: boolean }>;
+  picker?: null | Array<{ courseSlug: string; title: string; enrolled: boolean; doneRequired: number; totalRequired: number; current: boolean; area?: string | null; buildsOn?: string[] }>;
   post: null | {
     id: string;
     title: string;
@@ -298,8 +301,11 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
           {!pending && data.picker && (
             <div className="eac-dock__part eac-dock__picker">
               <p className="eac-dock__label">Choose a trail</p>
+              {pickerGroups(data.picker).map(([area, rows]) => (
+              <React.Fragment key={area}>
+              {area && <p className="eac-dock__hint">{area}</p>}
               <ul className="eac-dock__list">
-                {data.picker.map((c) => (
+                {rows.map((c) => (
                   <li key={c.courseSlug}>
                     {c.enrolled ? (
                       <button type="button" className={`eac-dock__btn eac-dock__btn--quiet${c.current ? " eac-dock__btn--on" : ""}`} aria-pressed={c.current} onClick={() => void choose(c.courseSlug)}>
@@ -308,9 +314,12 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
                     ) : (
                       <a className="eac-dock__btn eac-dock__btn--quiet" href={`/learn/${encodeURIComponent(c.courseSlug)}`}>{c.title} <span className="eac-dock__hint">Begin</span></a>
                     )}
+                    {c.buildsOn && c.buildsOn.length > 0 && <span className="eac-dock__hint"> Builds on: {c.buildsOn.join(", ")}</span>}
                   </li>
                 ))}
               </ul>
+              </React.Fragment>
+              ))}
             </div>
           )}
           {post && (
@@ -423,6 +432,18 @@ function ConfirmCard({ pending, onConfirm, onCancel }: { pending: Pending; onCon
   );
 }
 
+/** The picker's courses grouped by area tag (untagged last), keeping the given order inside a group. */
+function pickerGroups(rows: NonNullable<DockWire["picker"]>): Array<[string, NonNullable<DockWire["picker"]>]> {
+  const by = new Map<string, NonNullable<DockWire["picker"]>>();
+  for (const r of rows) {
+    const k = r.area ?? "";
+    const g = by.get(k);
+    if (g) g.push(r);
+    else by.set(k, [r]);
+  }
+  return [...by.entries()].sort((a, b) => (a[0] === "" ? 1 : b[0] === "" ? -1 : a[0] < b[0] ? -1 : 1));
+}
+
 function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }: {
   step: NonNullable<DockWire["step"]>;
   links: DockWire["links"];
@@ -436,6 +457,8 @@ function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }:
   const task = step.task;
   const c: Presentation | null = task ? presentAction({ id: task.id, status: task.status, orgId: task.orgId, links, params: task.params }) : null;
   const key = task ? `step:${task.id}` : "";
+  // Precedence: a module form drawn here (confirm, then run), then the address (route and highlight), then nothing.
+  const Module = task?.dockForm ? DOCK_FORMS[task.dockForm] : undefined;
   return (
     <div className="eac-dock__part">
       <p className="eac-dock__label">
@@ -448,7 +471,16 @@ function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }:
           {task.status.detail && <span className="eac-dock__detail">{task.status.detail}</span>}
         </p>
       )}
-      {task && c && (
+      {task && Module && (
+        <Module
+          key={JSON.stringify(task.status.values ?? {})}
+          values={task.status.values ?? {}}
+          label={busy === key ? "Saving…" : "Save"}
+          busy={busy !== null}
+          submit={(values) => ask(key, task.id, values, { org: task.orgId }, { title: task.label ?? step.stepTitle, confirm: task.confirm })}
+        />
+      )}
+      {task && c && !Module && (
         c.kind === "form" ? (
           <DockForm
             key={JSON.stringify(task.status.values ?? {})}

@@ -127,6 +127,15 @@ export interface StepContent {
   refs: StepRefs;
 }
 
+/** The broad areas a course is tagged with (lms_courses.area, migration 277; Justin 2026-11-16). */
+export const COURSE_AREAS = ['profile', 'publishing', 'business', 'site', 'production', 'artwork', 'email', 'organisation'] as const;
+export type CourseArea = (typeof COURSE_AREAS)[number];
+/** A course's tags: its area, and the slugs of the courses it builds on (derived from the track nexus; see packages/actions/atlas/tracks). */
+export interface CourseTags {
+  area: CourseArea | null;
+  buildsOn: string[];
+}
+
 export interface Course {
   id: string;
   orgId: string;

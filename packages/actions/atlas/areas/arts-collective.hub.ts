@@ -6,6 +6,7 @@ const capabilities: Capability[] = [
   // ---------------- hub.profile ----------------
   {
     id: 'edit-my-profile',
+    updated: '2026-11-16',
     area: 'hub.profile',
     label: 'Edit my profile',
     does: 'Change the name, line, bio, place, links, page address and comment colour that the network shows for a person.',
@@ -1007,6 +1008,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'follow-organisation',
+    updated: '2026-11-16',
     area: 'hub.org',
     label: 'Follow an organisation',
     does: 'Signed-in person follows an organisation to see its news.',
@@ -1114,6 +1116,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'unfollow-organisation',
+    updated: '2026-11-16',
     area: 'hub.org',
     label: 'Stop following an organisation',
     does: "Removes the person's follow of an organisation.",

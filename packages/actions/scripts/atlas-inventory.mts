@@ -12,6 +12,7 @@
 import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -21,7 +22,7 @@ const OUT = path.join(HERE, '../atlas/inventory.json');
 type Kind = 'sa' | 'api' | 'sql';
 interface Host {
   key: string; kind: Kind; app: string; file: string; symbol: string; line: number;
-  imports: string[]; calls: string[]; registry: boolean; rawSql: boolean;
+  imports: string[]; calls: string[]; registry: boolean; rawSql: boolean; hash: string;
 }
 interface Reexport { file: string; name: string; from: string; kind: 'sa' | 'api' }
 
@@ -126,6 +127,22 @@ function analyze(node: ts.Node, imports: Map<string, ImportInfo>): { calls: stri
   return { calls: [...calls].sort(cmp), registry };
 }
 
+/**
+ * Fingerprint of a host's body: the leaf tokens of its AST joined by one space, so whitespace and comments
+ * (and JSDoc) do not change it. sha1, first 12 hex chars. Used by check-atlas to flag changed hosts.
+ */
+function fingerprint(node: ts.Node, sf: ts.SourceFile): string {
+  const toks: string[] = [];
+  const walkTok = (n: ts.Node) => {
+    if (n.kind >= ts.SyntaxKind.FirstJSDocNode && n.kind <= ts.SyntaxKind.LastJSDocNode) return;
+    const kids = n.getChildren(sf);
+    if (kids.length === 0) { if (n.kind !== ts.SyntaxKind.EndOfFileToken) toks.push(n.getText(sf)); return; }
+    for (const k of kids) walkTok(k);
+  };
+  walkTok(node);
+  return createHash('sha1').update(toks.join(' ')).digest('hex').slice(0, 12);
+}
+
 function rangeHasSql(sqlPos: number[], node: ts.Node): boolean {
   const lo = node.getStart(), hi = node.end;
   return sqlPos.some((p) => p >= lo && p < hi);
@@ -227,6 +244,7 @@ function main(): void {
       hosts.set(key, {
         key, kind, app, file, symbol, line: lineOf(anchor), imports: importList, calls: a.calls, registry: a.registry,
         rawSql: rawSqlOverride ?? (body ? rangeHasSql(sqlPos, body) : false),
+        hash: fingerprint(body ?? anchor, sf),
       });
     };
 
@@ -259,6 +277,11 @@ function main(): void {
         exported.push({ name: hasMod(s, ts.SyntaxKind.DefaultKeyword) ? 'default' : s.name?.text ?? 'default', anchor: s.name ?? s, body: s, plainConst: false });
       } else if (ts.isVariableStatement(s) && hasMod(s, ts.SyntaxKind.ExportKeyword)) {
         for (const d of s.declarationList.declarations) {
+          // `export const { POST, DELETE } = uploadRoutes({...})`: each binding is a handler made by a factory (2026-11-16)
+          if (ts.isObjectBindingPattern(d.name) && d.initializer && ts.isCallExpression(unwrap(d.initializer))) {
+            for (const el of d.name.elements) if (ts.isIdentifier(el.name) && !el.dotDotDotToken) exported.push({ name: el.name.text, anchor: el.name, body: d.initializer, plainConst: false });
+            continue;
+          }
           if (!ts.isIdentifier(d.name) || !d.initializer) continue;
           exported.push({ name: d.name.text, anchor: d.name, body: d.initializer, plainConst: !isFnInit(d.initializer) });
         }

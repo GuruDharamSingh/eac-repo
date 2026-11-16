@@ -12,8 +12,12 @@ import { HUB_ACTIONS } from './hub';
 import { withAgent } from './agent';
 import { REGISTRY_DATA } from './registry-data';
 
+/** Entry id -> module form key (packages/dock/src/forms.tsx). Stub: one example. */
+const DOCK_FORM: Record<string, string> = { profile: 'profile-basics' };
+
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
+  ...(DOCK_FORM[id] ? { dockForm: DOCK_FORM[id] } : {}),
 });
 
 export const ACTION_CATALOGUE: readonly ActionMeta[] = [

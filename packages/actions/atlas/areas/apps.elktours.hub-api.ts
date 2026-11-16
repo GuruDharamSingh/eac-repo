@@ -70,7 +70,6 @@ const capabilities: Capability[] = [
     scope: 'org',
     hosts: [
       host(api('upload', 'POST'), ['@elkdonis/services#uploadFile', '@elkdonis/utils#validateUploadBuffer', 'raw SQL INSERT media'], '/manage', 'the file choosers in the composer and the media field (components/manage/media-field.tsx, materials-field.tsx, asset-panel.tsx)'),
-      twin(sqr('upload', 'POST'), api('upload', 'POST')),
     ],
     status: 'a media row for the org exists with the stored path and a file in Nextcloud',
     risk: ['public'],

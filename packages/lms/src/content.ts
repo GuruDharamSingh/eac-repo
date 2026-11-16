@@ -5,8 +5,9 @@ import { db } from '@elkdonis/db';
 import { sanitizeRichText } from '@elkdonis/utils';
 import type {
   Course, LmsViewer, Outline, OutlineModule, PublishedCourse, PublishedModule, PublishedStep,
-  StepContent, StepRefs, StepSettings, UnlockRule, WriteResult, CourseVisibility,
+  StepContent, StepRefs, StepSettings, UnlockRule, WriteResult, CourseVisibility, CourseArea, CourseTags,
 } from './types';
+import { COURSE_AREAS } from './types';
 import { DEFAULT_RULE } from './unlock';
 import { hashContent, isOrgStaff, newId, plainText, slugify, RESERVED_COURSE_SLUGS, RESERVED_STEP_SLUGS } from './util';
 
@@ -25,6 +26,24 @@ function mapCourse(r: CourseRow): Course {
     summary: r.summary, descriptionHtml: r.description_html, coverUrl: r.cover_url, language: r.language,
     visibility: r.visibility, publishedVersionId: r.published_version_id, updatedAt: r.updated_at,
   };
+}
+
+/**
+ * Course tags by slug (area, builds_on; migration 277). Read on its own, never in COURSE_SELECT, and tolerant: when the
+ * columns are not there yet (migration not applied) it returns an empty map instead of failing the course reads.
+ */
+export async function getCourseTags(slugs: string[]): Promise<Record<string, CourseTags>> {
+  if (slugs.length === 0) return {};
+  try {
+    const rows = await db<Array<{ slug: string; area: string | null; builds_on: string[] | null }>>`
+      SELECT slug, area, builds_on FROM lms_courses WHERE slug IN ${db(slugs)}
+    `;
+    const out: Record<string, CourseTags> = {};
+    for (const r of rows) out[r.slug] = { area: (COURSE_AREAS as readonly string[]).includes(r.area ?? '') ? (r.area as CourseArea) : null, buildsOn: r.builds_on ?? [] };
+    return out;
+  } catch {
+    return {};
+  }
 }
 
 // ── authorisation ───────────────────────────────────────────────────────────

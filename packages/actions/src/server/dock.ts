@@ -29,6 +29,8 @@ import { resolveActionOrg } from './org';
 
 /** The parts of `@elkdonis/lms` the dock reads, passed in by the host. Structural on purpose. */
 export interface DockLms {
+  /** Course tags by slug (lms getCourseTags). Optional: a host without it shows ungrouped courses. */
+  getCourseTags?(slugs: string[]): Promise<Record<string, { area: string | null; buildsOn: string[] }>>;
   getCourseBySlug(slug: string): Promise<{ id: string; slug: string; title: string; publishedVersionId: string | null } | null>;
   getActiveEnrolment(userId: string, courseId: string): Promise<{ id: string; status: string } | null>;
   listMyEnrolments(userId: string): Promise<Array<{ courseId: string; courseSlug: string; status: string }>>;
@@ -91,6 +93,8 @@ export interface DockStep {
     route: ActionRoute | null;
     /** The confirm card for a `do` step, already resolved for who is looking (confirm.ts). */
     confirm: ConfirmCard | null;
+    /** A module form key the dock draws inline, before it routes (ActionMeta.dockForm). */
+    dockForm: string | null;
   };
 }
 
@@ -119,6 +123,10 @@ export interface DockPickerRow {
   doneRequired: number;
   totalRequired: number;
   current: boolean;
+  /** Course tag (lms_courses.area); null when untagged or the column is not there yet. */
+  area: string | null;
+  /** Titles of the courses this one builds on (course tag `builds_on`), for a dry hint. */
+  buildsOn: string[];
 }
 
 export interface DockPostAction {
@@ -279,7 +287,7 @@ async function dockStepRead(opts: DockOptions): Promise<StepResult> {
         const kind: DockStep['kind'] = present.kind === 'run' || present.kind === 'form' ? (money || !meta?.runnable ? 'go' : 'do') : present.kind === 'none' ? 'check' : 'go';
         const route = kind === 'go' ? routeFor(t.id, { hub: hubOf(opts.links), orgSlug: await orgSlugOf(orgId), partial: Boolean(status.partial) }) : null;
         const confirm = kind === 'do' && meta ? confirmView({ ...meta, confirm: REGISTRY_CONFIRM[meta.id] ?? meta.confirm }, opts.confirmMode ?? 'live') : null;
-        picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm }, kind };
+        picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm, dockForm: meta?.dockForm ?? null }, kind };
         break;
       }
       if (ticked) continue;
@@ -305,12 +313,21 @@ export async function dockPicker(opts: DockOptions): Promise<DockPickerRow[]> {
     const c = await lms.getCourseBySlug(e.courseSlug);
     if (!c?.publishedVersionId) continue;
     const o = await lms.getLearnerOutline({ userId, roles: {} }, { courseId: c.id }).catch(() => null);
-    rows.push({ courseSlug: c.slug, title: c.title, enrolled: true, doneRequired: o?.doneRequired ?? 0, totalRequired: o?.totalRequired ?? 0, current: false });
+    rows.push({ courseSlug: c.slug, title: c.title, enrolled: true, doneRequired: o?.doneRequired ?? 0, totalRequired: o?.totalRequired ?? 0, current: false, area: null, buildsOn: [] });
   }
   for (const slug of opts.courses ?? ['getting-started']) {
     if (seen.has(slug)) continue;
     const c = await lms.getCourseBySlug(slug);
-    if (c?.publishedVersionId) rows.push({ courseSlug: c.slug, title: c.title, enrolled: false, doneRequired: 0, totalRequired: 0, current: false });
+    if (c?.publishedVersionId) rows.push({ courseSlug: c.slug, title: c.title, enrolled: false, doneRequired: 0, totalRequired: 0, current: false, area: null, buildsOn: [] });
+  }
+  // Course tags (area, builds_on): read tolerantly, so a database without the columns still gives a plain list.
+  const tags = lms.getCourseTags ? await lms.getCourseTags(rows.map((r) => r.courseSlug)).catch(() => ({})) as Record<string, { area: string | null; buildsOn: string[] }> : {};
+  const titles = new Map(rows.map((r) => [r.courseSlug, r.title]));
+  for (const r of rows) {
+    const t = tags[r.courseSlug];
+    if (!t) continue;
+    r.area = t.area;
+    r.buildsOn = t.buildsOn.map((s) => titles.get(s) ?? s);
   }
   const current = rows.find((r) => r.courseSlug === stored)?.courseSlug ?? rows.find((r) => r.enrolled)?.courseSlug;
   return rows.map((r) => ({ ...r, current: r.courseSlug === current }));

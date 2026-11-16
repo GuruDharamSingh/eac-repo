@@ -118,6 +118,12 @@ export interface ActionMeta {
    * ./agent.ts (never on an `appOnly` entry); check:registry enforces the rules.
    */
   agent?: 'read' | 'draft';
+  /**
+   * A key naming a module form the dock can draw inline (packages/dock/src/forms.tsx `DOCK_FORMS`), so the person finishes
+   * the step without leaving the page. Data only: the registry never imports a component. Precedence in the dock:
+   * dockForm (inline, confirm, run), then `address` (route and highlight), then nothing. Added 2026-11-16 (lane rails).
+   */
+  dockForm?: string;
   /** Where the control lives (generated from atlas/entries.ts into ./registry-data.ts). */
   address?: ActionAddress;
   /** The confirm card's wording and its approval status. */

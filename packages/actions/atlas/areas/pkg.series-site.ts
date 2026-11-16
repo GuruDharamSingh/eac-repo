@@ -40,12 +40,7 @@ const capabilities: Capability[] = [
     class: 'internal',
     actors: ['owner', 'guide', 'member'],
     scope: 'org',
-    hosts: [{
-      key: sql('routes/mediaUpload.ts', 'POST'),
-      service: ['services#uploadFile', 'services#isOccurrenceHost', 'utils#validateUploadBuffer', '(raw INSERT media)'],
-      address: { app: 'sunjay', path: '/api/media/upload', how: 'the media picker of the compose surface and the week page\'s in-place editor, posting to /api/media/upload (apps/sunjay and apps/ifac app/api/media/upload/route.ts re-export mediaUploadRoutes(site).POST)' },
-      note: 'The sql twin stands for the whole route (the api: host is not inventoried because the app route file only re-exports). Same route in apps/ifac.',
-    }],
+    hosts: [],
     status: 'a media row for the org with the url and nextcloud_path',
     risk: ['public'],
     drift: 'same family as apps.sunjay.audience:sunjay-media-upload and the other org upload routes (internal, each with its own policy); this one is the series-site copy used by sunjay and ifac, and adds the week-host path (a member who hosts the occurrence may upload).',

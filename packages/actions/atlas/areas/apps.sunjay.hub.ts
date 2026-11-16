@@ -12,6 +12,7 @@ const capabilities: Capability[] = [
       "public"
     ],
     "id": "sunjay-document-create",
+    "updated": "2026-11-16",
     "label": "Start a shared document",
     "does": "A member creates a living document for the group in Nextcloud (named by date when no title is given); the share link is public and writable.",
     "class": "person",
@@ -111,6 +112,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "sunjay-document-assign",
+    "updated": "2026-11-16",
     "label": "Attach a document to an idea",
     "does": "A member links an existing document to an idea, or removes the link.",
     "class": "person",
@@ -288,6 +290,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "sunjay-whiteboard-save",
+    "updated": "2026-11-16",
     "label": "Draw on the group's whiteboard",
     "does": "A member saves the group's shared Excalidraw scene (one scene per organisation, last save wins).",
     "class": "person",
@@ -375,6 +378,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "sunjay-chat-post",
+    "updated": "2026-11-16",
     "label": "Post in the group chat",
     "does": "A member posts a message in the organisation's Nextcloud Talk room, under their profile name (never a name from the request).",
     "class": "person",
@@ -479,6 +483,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "sunjay-chat-name-set",
+    "updated": "2026-11-16",
     "label": "Choose my chat name",
     "does": "A member changes the display name they post under in the group chat (their own guest account only; no user id in the request).",
     "class": "person",

@@ -22,3 +22,4 @@ export {
   type ChannelActing,
 } from './channel';
 export * from '../index';
+export * from './gates';
