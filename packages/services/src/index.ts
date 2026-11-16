@@ -1381,3 +1381,4 @@ export type { UploadRoutesOptions, UploadViewer } from "./upload-routes";
 export { processImage } from "./image-process";
 export { followRoutes, quoteRoutes, cycleRoutes, whiteboardRoutes } from "./org-site-routes";
 export type { SiteViewer } from "./org-site-routes";
+export { centerLayoutRoutes, profileRoutes, hubDocumentRoutes, hubCalendarRoutes } from "./org-site-routes-2";

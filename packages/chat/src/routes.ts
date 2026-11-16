@@ -12,7 +12,14 @@
 // ============================================================================
 
 import { NextResponse } from "next/server";
-import { OrgChatScopeError } from "@elkdonis/services";
+import {
+  OrgChatScopeError,
+  getOrgChatIdentity,
+  getProfile,
+  listOrgChatMessages,
+  postOrgChatMessage,
+  setOrgChatDisplayName,
+} from "@elkdonis/services";
 
 /** The minimum an app's viewer must expose. Apps may return a richer object. */
 export interface ChatViewer {
@@ -76,3 +83,52 @@ export function createChatApi<V extends ChatViewer>(options: ChatRouteOptions<V>
 }
 
 export type ChatApi<V extends ChatViewer = ChatViewer> = ReturnType<typeof createChatApi<V>>;
+
+// ---- the two General Chat routes every site copied (2026-11-16) ----------
+type ChatApiLike<V extends ChatViewer> = {
+  orgId: string;
+  withMember: (handler: (viewer: V) => Promise<NextResponse>) => Promise<NextResponse>;
+  badRequest: (message: string) => NextResponse;
+};
+
+/** GET the room, POST a message. The author name comes from the viewer's profile, never the body. */
+export function chatMessageRoutes<V extends ChatViewer>(api: ChatApiLike<V>) {
+  async function GET() {
+    return api.withMember(async (viewer) =>
+      NextResponse.json(await listOrgChatMessages(api.orgId, viewer.userId))
+    );
+  }
+  async function POST(request: Request) {
+    return api.withMember(async (viewer) => {
+      const body = await request.json().catch(() => null);
+      const message = typeof body?.message === "string" ? body.message.trim() : "";
+      if (!message) return api.badRequest("A message is required");
+      const profile = await getProfile(viewer.userId);
+      const displayName = profile?.displayName?.trim() || viewer.email;
+      const posted = await postOrgChatMessage(api.orgId, viewer.userId, displayName, message);
+      return NextResponse.json(posted, { status: 201 });
+    });
+  }
+  return { GET, POST };
+}
+
+/** The name this member posts under (GET) and changing it (PUT). Never accepts a user id. */
+export function chatIdentityRoutes<V extends ChatViewer>(api: ChatApiLike<V>) {
+  async function GET() {
+    return api.withMember(async (viewer) => {
+      const profile = await getProfile(viewer.userId);
+      const fallback = profile?.displayName?.trim() || viewer.email;
+      return NextResponse.json(await getOrgChatIdentity(api.orgId, viewer.userId, fallback));
+    });
+  }
+  async function PUT(request: Request) {
+    return api.withMember(async (viewer) => {
+      const body = await request.json().catch(() => null);
+      const displayName = typeof body?.displayName === "string" ? body.displayName.trim() : "";
+      if (!displayName) return api.badRequest("A display name is required");
+      if (displayName.length > 64) return api.badRequest("That name is too long");
+      return NextResponse.json(await setOrgChatDisplayName(api.orgId, viewer.userId, displayName));
+    });
+  }
+  return { GET, PUT };
+}
