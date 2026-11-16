@@ -1,105 +1,32 @@
-import { Buffer } from "node:buffer";
-import { NextRequest, NextResponse } from "next/server";
-import { validateUploadBuffer } from "@elkdonis/utils";
-import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
-import { db } from "@elkdonis/db";
-import { nanoid } from "nanoid";
+import { uploadRoutes } from "@elkdonis/services";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import type { MeetingVisibility } from "@elkdonis/types";
 
 /**
- * Uploads a service's cover/banner image to EAC_Network/<org>/Media/Images
- * in Nextcloud and records it in the `media` table. Ported from
- * amrit-canada's api/upload — same folder convention, same media row shape.
+ * Owner/guide upload into EAC_Network/<org>/Media. Images, plus audio for the
+ * Music tab (60 MB cap). The logic is `uploadRoutes` kind `site`, narrowed.
  */
+export const dynamic = "force-dynamic";
 
-const ORG_ID = siteConfig.orgId;
+const MB = 1024 * 1024;
 
-const MAX_SIZE_MB = 25;
-const MAX_AUDIO_MB = 60;
-
-export async function POST(request: NextRequest) {
-  try {
+export const { POST } = uploadRoutes({
+  orgId: siteConfig.orgId,
+  who: async () => {
     const editor = await getApiEditor();
-    if (!editor) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const visibility = (formData.get("visibility") as MeetingVisibility) || "PUBLIC";
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-    // `kind=audio` is the Music tab's tracks; anything else is an image, as before.
-    const isAudio = formData.get("kind") === "audio";
-    const maxMb = isAudio ? MAX_AUDIO_MB : MAX_SIZE_MB;
-    if (!file.type.startsWith(isAudio ? "audio/" : "image/")) {
-      return NextResponse.json({ error: `Unsupported file type: ${file.type || "unknown"}` }, { status: 400 });
-    }
-    if (file.size > maxMb * 1024 * 1024) {
-      return NextResponse.json({ error: `File size must be less than ${maxMb}MB` }, { status: 400 });
-    }
-
-    // Named after the work when the surface sends a title, else after the
-    // uploaded file. This address outlives the upload — it is what a stored
-    // page, a gallery item and every <img src> carries. See uploadFilename.
-    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
-    const filename = uploadFilename(file.name, title || null);
-    const relativePath = getUploadPath(ORG_ID, isAudio ? "Audio" : "Images", filename, visibility);
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // The client-supplied MIME type above is attacker-controlled, and
-    // `image/svg+xml` passes a `startsWith("image/")` check. An SVG is a
-    // script container, so verify the actual leading bytes — validateUploadBuffer
-    // classifies SVG as its own kind, never `image`.
-    const validation = validateUploadBuffer(buffer, isAudio ? ["audio"] : ["image"]);
-    if (!validation.ok) {
-      return NextResponse.json(
-        { error: "reason" in validation ? validation.reason : "Rejected" },
-        { status: 415 }
-      );
-    }
-
-
-    const uploadSuccess = await uploadFile(relativePath, buffer, file.type);
-    if (!uploadSuccess) {
-      return NextResponse.json({ error: "Failed to upload file to Nextcloud" }, { status: 500 });
-    }
-
-    const fileUrl = getProxyFileUrl(relativePath);
-    const mediaId = nanoid();
-
-    try {
-      await db`
-        INSERT INTO media (
-          id, org_id, uploaded_by, nextcloud_file_id, nextcloud_path,
-          url, type, filename, size_bytes, mime_type
-        ) VALUES (
-          ${mediaId}, ${ORG_ID}, ${editor.userId}, ${filename}, ${relativePath},
-          ${fileUrl}, ${isAudio ? "audio" : "image"}, ${file.name}, ${file.size}, ${file.type}
-        )
-      `;
-
-      return NextResponse.json({
-        success: true,
-        id: mediaId,
-        url: fileUrl,
-        path: relativePath,
-        filename: file.name,
-        mimeType: file.type,
-        size: file.size,
-      });
-    } catch (dbError) {
-      console.error("[hidden-enneagram] upload db error:", dbError);
-      return NextResponse.json({ error: "File uploaded but failed to save metadata" }, { status: 500 });
-    }
-  } catch (error) {
-    console.error("[hidden-enneagram] upload error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
+    return editor ? { userId: editor.userId, canEdit: true } : null;
+  },
+  kinds: ["site"],
+  defaultKind: "site",
+  unauthorized: { status: 401, error: "Unauthorized" },
+  narrow: { site: { kinds: ["image", "audio"], allowText: false, caps: { image: 25 * MB, audio: 60 * MB } } },
+  respond: (r) => ({
+    success: true,
+    id: r.id,
+    url: r.url,
+    path: r.path,
+    filename: r.filename,
+    mimeType: r.mimeType,
+    size: r.size,
+  }),
+});

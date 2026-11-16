@@ -887,8 +887,14 @@ export type SurfaceProfileTarget = { kind: "org"; orgId: string } | undefined;
 export interface SurfaceProfileConnectors {
   load: (target: SurfaceProfileTarget) => Promise<SurfaceProfile | null>;
   save: (target: SurfaceProfileTarget, input: SurfaceProfileInput) => Promise<SaveProfileResult>;
-  /** Omit to hide the avatar control. Resolves to the stored URL. */
-  uploadAvatar?: (file: File) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
+  /**
+   * Omit to hide the avatar control. Resolves to the stored URL. `{ scope: "org" }` sets the photo for this
+   * site's organisation only (the network photo is untouched); the result then carries `scope: "org"`.
+   */
+  uploadAvatar?: (
+    file: File,
+    opts?: { scope?: "org" }
+  ) => Promise<{ ok: true; url: string; scope?: "org" } | { ok: false; error: string }>;
   /**
    * What the person's own page carries, and whether they can be paid.
    *

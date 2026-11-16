@@ -52,3 +52,5 @@ export {
   loadPersonBlockContext,
   type LoadPersonBlockContextOptions,
 } from "./server/person-page.server";
+
+export { threadFeedRoutes } from "./server/thread-feed-routes";

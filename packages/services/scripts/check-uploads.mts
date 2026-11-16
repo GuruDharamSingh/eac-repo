@@ -323,6 +323,72 @@ await t('factory: an org-less site (arts-collective) refuses scope=org with 400'
   assert.equal(r.status, 400);
 });
 
+// ---- step 2: legacy site-media shims (same options the app routes pass) --
+const MB = 1024 * 1024;
+const editor = async () => ({ userId: 'u-ed', canEdit: true });
+const shim = (over: any = {}) =>
+  mk({ who: editor, kinds: ['site'], defaultKind: 'site', unauthorized: { status: 401, error: 'Unauthorized' }, ...over });
+const legacyKeys = (r: any) => ({
+  success: true, id: r.id, fileId: r.name, url: r.url, path: r.path,
+  filename: r.filename, mimeType: r.mimeType, size: r.size, mediaType: r.mediaType,
+});
+await t('site shim: /api/upload shape keeps success,id,fileId,url,path,filename,mimeType,size,mediaType', async () => {
+  reset();
+  const r = await shim({ respond: legacyKeys })(req({ visibility: 'ORGANIZATION', title: 'Nightjar' }));
+  const j = await r.json();
+  assert.equal(r.status, 200);
+  assert.deepEqual(Object.keys(j).sort(), ['fileId', 'filename', 'id', 'mediaType', 'mimeType', 'path', 'size', 'success', 'url']);
+  assert.equal(j.id, 'row-1');
+  assert.equal(j.mediaType, 'image');
+  assert.match(j.path, /^EAC_Network\/orgA\/Private\/Media\/Images\/nightjar-/);
+  assert.equal(rows.length, 1);
+});
+await t('site shim: signed out -> 401 {error:"Unauthorized"}; non-editor -> 403', async () => {
+  const r = await shim({ who: async () => null })(req({}));
+  assert.equal(r.status, 401);
+  assert.equal((await r.json()).error, 'Unauthorized');
+  assert.equal((await shim({ who: async () => ({ userId: 'u' }) })(req({}))).status, 403);
+});
+await t('site shim: an image labelled video/mp4 lands in Images; SVG named .png is refused 415', async () => {
+  reset();
+  const f = new FormData();
+  f.set('file', new File([png], 'p.mp4', { type: 'video/mp4' }));
+  const r = await shim()(new Request('http://x', { method: 'POST', body: f }));
+  assert.match((await r.json()).path, /\/Media\/Images\//);
+  assert.equal((await shim()(req({}, svg, 'a.png'))).status, 415);
+});
+await t('mediaUploadRoutes shape: success,id,url,path,type,name(original)', async () => {
+  const respond = (r: any) => ({ success: true, id: r.id, url: r.url, path: r.path, type: r.mediaType, name: r.filename });
+  const j = await (await shim({ respond })(req({}, png, 'Nightjar.png'))).json();
+  assert.equal(j.name, 'Nightjar.png');
+  assert.equal(j.type, 'image');
+});
+await t('mediaUploadRoutes: occurrence host (authorize true) may upload without canEdit; denied -> 403', async () => {
+  const who = async () => ({ userId: 'u-host' });
+  assert.equal((await shim({ who, authorize: async () => true })(req({}))).status, 200);
+  assert.equal((await shim({ who, authorize: async () => false })(req({}))).status, 403);
+});
+await t('hidden-enneagram narrow: image and audio only, audio capped at 60 MB, video refused', async () => {
+  const narrow = { site: { kinds: ['image', 'audio'], allowText: false, caps: { image: 25 * MB, audio: 60 * MB } } };
+  const p = applyNarrow(UPLOAD_POLICIES.site, narrow.site as any);
+  assert.deepEqual(p.kinds, ['image', 'audio']);
+  assert.equal(p.caps.audio, 60 * MB);
+  assert.equal(p.caps.video, undefined);
+  assert.equal((await shim({ narrow })(req({}, mp4(2000), 'v.mp4'))).status, 415);
+  assert.equal((await shim({ narrow })(req({}))).status, 200);
+});
+await t('applyNarrow: a kind narrowed away drops its cap (body-size gate tightens)', () => {
+  const p = applyNarrow(UPLOAD_POLICIES.site, { kinds: ['image'] } as any);
+  assert.deepEqual(Object.keys(p.caps), ['image']);
+});
+await t('fourthway shape: ok,path,url,name,size; signed out -> 403', async () => {
+  const respond = (r: any) => ({ ok: true, path: r.path, url: r.url, name: r.name, size: r.size });
+  const j = await (await shim({ respond })(req({}))).json();
+  assert.deepEqual(Object.keys(j).sort(), ['name', 'ok', 'path', 'size', 'url']);
+  assert.equal((await shim({ who: async () => null, unauthorized: { status: 403, error: 'Not allowed' } })(req({}))).status, 403);
+});
+
+
 console.log(`\n${pass} passed, ${failures.length} failed`);
 if (failures.length) {
   console.log(failures.join('\n'));

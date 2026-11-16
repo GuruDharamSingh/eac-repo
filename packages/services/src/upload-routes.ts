@@ -57,6 +57,13 @@ export interface UploadRoutesOptions {
   narrow?: Partial<Record<UploadKind, Partial<Policy>>>;
   /** side effects that are not storage (portfolio append, markArtist) */
   onStored?: (result: StoredUpload, ctx: UploadCtx) => Promise<void>;
+  /**
+   * A legacy URL keeps its response shape: map the stored upload to the body the
+   * old route returned. Default is the full StoredUpload plus `success: true`.
+   */
+  respond?: (result: StoredUpload, ctx: UploadCtx) => Record<string, unknown>;
+  /** the status and message for a signed-out request (default 401 "Sign in first") */
+  unauthorized?: { status: number; error: string };
   /** tests only: replace storage and database access */
   io?: Partial<UploadIO>;
 }
@@ -78,7 +85,7 @@ export function uploadRoutes(opts: UploadRoutesOptions) {
   async function POST(request: Request): Promise<Response> {
     try {
       const viewer = await opts.who();
-      if (!viewer) return fail(401, 'Sign in first');
+      if (!viewer) return fail(opts.unauthorized?.status ?? 401, opts.unauthorized?.error ?? 'Sign in first');
 
       // Refuse a huge body before reading it. Slack covers multipart framing.
       const limit = maxUploadBytes(opts.kinds, opts.narrow) + 256 * 1024;
@@ -146,7 +153,7 @@ export function uploadRoutes(opts: UploadRoutesOptions) {
       if ("status" in result) return fail(result.status, result.error);
       console.log(`[uploads] ${kind} ${viewer.userId} ${result.size}b ${result.mimeType}`);
       if (opts.onStored) await opts.onStored(result, ctx).catch((e) => console.error('[uploads] onStored:', e));
-      return json({ ...result, success: true });
+      return json(opts.respond ? opts.respond(result, ctx) : { ...result, success: true });
     } catch (error) {
       console.error('[uploads] route:', error);
       return fail(500, 'Upload failed');

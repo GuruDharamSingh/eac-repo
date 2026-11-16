@@ -242,6 +242,8 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  // Own profile only: the next photo is this organisation's, not the network's.
+  const [orgOnly, setOrgOnly] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [tone, setTone] = React.useState<"normal" | "error">("normal");
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -433,9 +435,17 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
     if (!file || !connectors.profile?.uploadAvatar) return;
     setUploading(true);
     setNotice(null);
-    const r = await connectors.profile.uploadAvatar(file);
+    const forOrg = orgOnly && !target;
+    const r = await connectors.profile.uploadAvatar(file, forOrg ? { scope: "org" } : undefined);
     setUploading(false);
     if (r.ok === false) return fail(r.error);
+    if (forOrg) {
+      // Saved on the server already, and the network photo is untouched: leave the draft alone.
+      setTone("normal");
+      setNotice(`Photo set for ${connectors.orgName ?? "this organisation"}`);
+      connectors.onMutated?.();
+      return;
+    }
     const url = r.url;
     setDraft((d) => (d ? { ...d, avatarUrl: url } : d));
     setTone("normal");
@@ -480,6 +490,12 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
       >
         {uploading ? "Uploading…" : draft.avatarUrl ? "Change photo" : "Add a photo"}
       </button>
+      {!target && connectors.orgName && (
+        <label className="flex items-center gap-1 text-xs text-[color:var(--sf-muted)]">
+          <input type="checkbox" checked={orgOnly} onChange={(e) => setOrgOnly(e.target.checked)} />
+          Only for {connectors.orgName}
+        </label>
+      )}
       {draft.avatarUrl && (
         <button
           type="button"

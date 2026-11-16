@@ -413,13 +413,16 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
             },
           }
         : {}),
-      async uploadAvatar(file) {
+      async uploadAvatar(file, o) {
         const body = new FormData();
         body.append("file", file);
+        if (o?.scope === "org") body.append("scope", "org");
         const res = await fetch(r.avatar, { method: "POST", body });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.url) return { ok: false, error: data.error ?? "Could not upload that." };
-        return { ok: true, url: data.url as string };
+        return o?.scope === "org"
+          ? { ok: true, url: data.url as string, scope: "org" as const }
+          : { ok: true, url: data.url as string };
       },
     };
   }

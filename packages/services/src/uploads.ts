@@ -67,7 +67,8 @@ export function applyNarrow(base: Policy, narrow?: Partial<Policy>): Policy {
   for (const k of Object.keys(base.caps) as SniffedKind[]) {
     const b = base.caps[k];
     const n = narrow.caps?.[k];
-    if (b !== undefined) caps[k] = n !== undefined ? Math.min(b, n) : b;
+    // a kind narrowed away loses its cap too, so the body-size gate tightens with it
+    if (b !== undefined && kinds.includes(k)) caps[k] = n !== undefined ? Math.min(b, n) : b;
   }
   return { ...base, kinds, caps, allowText: base.allowText && narrow.allowText !== false };
 }

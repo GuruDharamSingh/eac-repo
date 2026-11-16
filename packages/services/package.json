@@ -27,7 +27,8 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "check:thread-access": "npx tsx scripts/check-thread-access.mts"
+    "check:thread-access": "npx tsx scripts/check-thread-access.mts",
+    "check:uploads": "npx tsx scripts/check-uploads.mts"
   },
   "dependencies": {
     "@elkdonis/booking": "workspace:*",
