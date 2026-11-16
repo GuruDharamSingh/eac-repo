@@ -188,13 +188,18 @@ export async function saveResponse(viewer: LmsViewer, input: SaveResponseInput):
   // "My guide" means the people named on this run. With no one named, there is no one to show it to.
   if (visibility === 'guide' && !(await hasRunGuides(l.run.id))) return { ok: false, error: 'No guide has been named for this group yet, so there is no one to show this to. Keep it for yourself for now.' };
 
+  // Writing is always allowed; completing goes through the same unlock check as completeStep (atlas round 3).
+  const status = await statusMap(input.enrolmentId);
+  const access = evaluateAccess(l.step, { steps: l.published.steps, status, anchorAt: l.e.anchor_at, now: new Date() });
+
   let courseCompleted = false;
   const id = input.responseId ?? newId();
   const result = await db.begin(async (tx) => {
     if (input.responseId) {
       const upd = await tx`
         UPDATE lms_responses SET body = ${body}, visibility = ${visibility}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${viewer.userId} RETURNING id
+        WHERE id = ${id} AND user_id = ${viewer.userId}
+          AND enrolment_id = ${input.enrolmentId} AND step_id = ${input.stepId} RETURNING id
       `;
       if (!upd.length) return 'missing';
     } else {
@@ -206,7 +211,7 @@ export async function saveResponse(viewer: LmsViewer, input: SaveResponseInput):
       await tx`INSERT INTO lms_events (org_id, actor_id, verb, object_type, object_id, object_version_id, enrolment_id, result)
                VALUES (${l.e.org_id}, ${viewer.userId}, 'responded', 'step', ${input.stepId}, ${l.step.stepVersionId}, ${input.enrolmentId}, ${tx.json({ kind, visibility, responseId: id })})`;
     }
-    if (kind === 'reflection' && stepTypeDef(l.step.type).completion === 'response') {
+    if (kind === 'reflection' && stepTypeDef(l.step.type).completion === 'response' && access.allowed) {
       courseCompleted = await markComplete(tx, viewer.userId!, l.e, l.step, l.published);
     }
     return 'ok';

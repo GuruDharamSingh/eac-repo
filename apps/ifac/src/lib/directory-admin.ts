@@ -163,6 +163,10 @@ export async function createProfile(input: DirectoryInput): Promise<AdminDirecto
 export async function updateProfile(id: string, input: DirectoryInput): Promise<AdminDirectoryRow | null> {
   const [existing] = await db<{ slug: string | null }[]>`SELECT slug FROM users WHERE id = ${id}`;
   if (!existing) return null;
+  // The users row is the person's network-wide profile: only someone this org lists may be edited here
+  // (atlas security #51, 2026-11-16).
+  const [listed] = await db`SELECT 1 FROM org_profiles WHERE org_id = ${siteConfig.orgId} AND user_id = ${id} LIMIT 1`;
+  if (!listed) return null;
 
   const slug = input.slug && input.slug !== existing.slug
     ? await ensureUniqueUserSlug(input.slug, id)

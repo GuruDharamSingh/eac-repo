@@ -17,7 +17,7 @@ import {
   type ContentFormValues,
 } from "@/lib/cms/schema";
 import { siteConfig } from "@/config/site";
-import { deriveExcerpt } from "@elkdonis/utils";
+import { deriveExcerpt, sanitizeRichText } from "@elkdonis/utils";
 import { ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
 
 /**
@@ -86,7 +86,7 @@ export async function saveContentAction(
           title: data.title,
           subtitle: data.subtitle || null,
           descriptionShort: deriveExcerpt(data.body, { explicit: data.excerpt }) ?? data.title,
-          body: data.body || null,
+          body: sanitizeRichText(data.body) || null,
           bookingType: data.bookingType,
           format: data.format ?? null,
           price: data.price,
@@ -129,7 +129,7 @@ export async function saveContentAction(
           section      = ${data.feedSlug},
           title        = ${data.title},
           slug         = ${slug},
-          body         = ${data.body || null},
+          body         = ${sanitizeRichText(data.body) || null},
           excerpt      = ${excerpt},
           status       = ${data.status},
           visibility   = ${data.visibility},
@@ -150,7 +150,7 @@ export async function saveContentAction(
         status, visibility, metadata, is_rsvp_enabled, published_at
       ) VALUES (
         ${id}, ${ORG}, ${editor.userId}, 'post', ${data.feedSlug},
-        ${data.title}, ${slug}, ${data.body || null}, ${excerpt},
+        ${data.title}, ${slug}, ${sanitizeRichText(data.body) || null}, ${excerpt},
         ${data.status}, ${data.visibility}, ${db.json(metadata)}, FALSE, ${publishedAt}
       )
     `;

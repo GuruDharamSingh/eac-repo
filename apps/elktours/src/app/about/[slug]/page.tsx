@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { sanitizeRichText } from "@elkdonis/utils";
 import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { ThreadCard } from "@/components/thread-card";
@@ -70,7 +71,8 @@ export default async function GuidePage({ params }: GuidePageProps) {
       {guide.bio && (
         <div className="prose-amrit mt-8 max-w-none">
           {guide.bio.includes("<") ? (
-            <div dangerouslySetInnerHTML={{ __html: guide.bio }} />
+            // Sanitised here: the bio is stored as written (atlas security #21, 2026-11-16).
+            <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(guide.bio) }} />
           ) : (
             guide.bio.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
           )}

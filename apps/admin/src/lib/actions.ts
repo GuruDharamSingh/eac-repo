@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createMeeting } from "./data";
 import type { MeetingType, MeetingVisibility } from "@elkdonis/types";
+import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 
 type CreateMeetingActionPayload = {
   title: string;
@@ -21,6 +22,10 @@ type CreateMeetingActionPayload = {
 };
 
 export async function createMeetingAction(payload: CreateMeetingActionPayload) {
+  // Server actions are public endpoints: check the caller here, not only in the page (atlas recommendations §1).
+  const userId = (await getServerSession().catch(() => null))?.user?.id;
+  if (!userId || !(await isAdmin(userId))) throw new Error("Admins only.");
+
   const { orgId, guideId, title, slug, meetingType } = payload;
 
   // Validate required fields

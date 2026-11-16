@@ -40,7 +40,9 @@ export interface RoomResult {
 
 async function writer() {
   const viewer = await getViewer();
-  return viewer?.isAffiliate ? viewer : null;
+  // Member rule (Justin, 2026-11-16): participants read, RSVP, comment and post to the forum; publishing under
+  // the org needs member or above (atlas security #2).
+  return viewer?.isMember ? viewer : null;
 }
 
 function toRoom(post: {

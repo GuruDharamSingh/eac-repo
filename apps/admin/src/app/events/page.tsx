@@ -1,4 +1,5 @@
 import { Events } from '@elkdonis/db';
+import { requireAdminPage } from '@/lib/require-admin-page';
 import { Container, Stack, Title, Text, Paper, Group, Badge, Select, Table } from '@mantine/core';
 import { Activity, Filter } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -19,6 +20,7 @@ export default async function EventsPage({
 }: {
   searchParams: { action?: string; type?: string; org?: string }
 }) {
+  await requireAdminPage();
   const { action, type, org } = searchParams;
 
   // Fetch events with filters

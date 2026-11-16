@@ -20,7 +20,7 @@ import { contentFormSchema, slugifyTitle, type ContentFormValues } from "@/lib/c
 import { zonedInputToDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { deriveExcerpt, sanitizeRichText } from "@elkdonis/utils";
-import { SERIES_KIND, ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
+import { SERIES_KIND, ensureUniqueThreadSlug, removeThreadAs, getOrgRole } from "@elkdonis/services";
 
 /**
  * Server actions for the editorial surface.
@@ -517,6 +517,11 @@ export async function saveGuideProfileAction(input: {
   const editor = await requireOrgEditor();
   if (editor.role !== "owner") {
     return { ok: false, error: "Only the site owner can publish profiles." };
+  }
+  // updateProfile below writes the person's network-wide profile, so they must belong to this org
+  // (atlas security #20, 2026-11-16).
+  if (!(await getOrgRole(input.userId, ORG))) {
+    return { ok: false, error: "That person is not a member of this organisation." };
   }
 
   let slug = input.slug.trim();

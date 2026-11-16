@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/require-admin-page";
 import {
   Badge,
   Box,
@@ -40,6 +41,7 @@ const sampleDate = new Date('2026-06-21T14:00:00-04:00').toISOString();
 const sampleDueDate = new Date('2026-06-24T17:00:00-04:00').toISOString();
 
 export default async function EmailTemplatesPage() {
+  await requireAdminPage();
   const sharedOrderItems = [
     {
       description: 'Framed study: Blue Garden',

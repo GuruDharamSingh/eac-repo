@@ -121,7 +121,11 @@ export function createThreadAdminRoutes(opts: {
       const { id } = await ctx.params;
       const viewer = await opts.viewer().catch(() => null);
       if (!viewer) return json({ error: 'Sign in first.' }, 401);
-      const r = await removeThreadAs(viewer.userId, id, { editor: viewer.canEdit });
+      // The host's editor tier covers its own org only: the thread id comes from the URL (atlas security #14b,
+      // 2026-11-16). Authors and the thread org's own moderators are still decided by removeThread.
+      const [row] = await db<Array<{ org_id: string }>>`SELECT org_id FROM threads WHERE id = ${id}`;
+      if (!row) return json({ error: 'No such thread.' }, 404);
+      const r = await removeThreadAs(viewer.userId, id, { editor: viewer.canEdit && row.org_id === opts.orgId });
       if (r.ok === false) return json({ error: r.error }, r.error.startsWith('No such') ? 404 : 403);
       return json({ ok: true, section: r.section, kind: r.kind, already: r.already });
     },

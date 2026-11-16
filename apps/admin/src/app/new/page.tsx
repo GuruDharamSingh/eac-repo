@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/require-admin-page";
 import { Plus } from "lucide-react";
 import { Container, Group, Paper, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 
@@ -5,6 +6,7 @@ import { NewMeetingForm } from "./new-meeting-form";
 import { getOrganizations } from "@/lib/data";
 
 export default async function NewMeetingPage() {
+  await requireAdminPage();
   const organizations = await getOrganizations();
 
   return (

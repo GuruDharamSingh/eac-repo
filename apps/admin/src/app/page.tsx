@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { requireAdminPage } from "@/lib/require-admin-page";
 import Link from 'next/link';
 import { db } from '@elkdonis/db';
 import { listOrders } from '@elkdonis/commerce/queries';
@@ -81,6 +82,7 @@ function QuickLink({ icon, label, description, href }: QuickLinkProps) {
 }
 
 export default async function OverviewPage() {
+  await requireAdminPage();
   const [
     [{ count: totalMeetings }],
     [{ count: upcomingMeetings }],

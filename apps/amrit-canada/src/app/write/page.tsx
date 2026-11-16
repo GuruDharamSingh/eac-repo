@@ -17,7 +17,7 @@ type Props = { searchParams: Promise<{ piece?: string }> };
 export default async function WritePage({ searchParams }: Props) {
   const viewer = await getViewer();
   if (!viewer) redirect(`/login?next=${encodeURIComponent("/write")}`);
-  if (!viewer.isAffiliate) redirect("/");
+  if (!viewer.isMember) redirect("/"); // member rule, atlas security #2
 
   const { piece: pieceId } = await searchParams;
 
