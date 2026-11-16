@@ -14,7 +14,7 @@ Each item has a short description, the card text, and one line to answer:
 - The badges tell you how careful the card must be. MONEY cards never run anything: the dock only takes the person to the checkout or Stripe page.
 - The style we aimed for: short, plain, "you", say what changes and who will see it. Tell us if a card does not sound like you.
 
-86 cards.
+69 cards.
 
 ## Channel (social posting) (channel.board)
 
@@ -140,7 +140,7 @@ The seller cancels a booking and tells the buyer; any refund is handled by email
 
 ### 12. Create a post, event, meeting or workshop (create-content)
 
-Make a new piece of content on an organisation's site, as a draft or published at once. Done by an owner or a guide. You find it at: Create button on the Organization tab; surface compose:{kind}.
+Make a new piece of content on an organisation's site, as a draft or published at once. Done by an owner, a guide or a member. You find it at: Create button on the Organization tab; surface compose:{kind}.
 
 [PUBLIC: others can see the result]
 
@@ -192,27 +192,7 @@ Lets a post from another network site that asked to show here appear on this sit
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 17. Change someone's role in the organisation (change-person-role)
-
-Make a person a viewer, member or guide of an organisation. Done by an owner or a guide. You find it at: Settings > People & roles, or the People band "Roles & removal"; also the Center journey on /learn.
-
-[AFFECTS OTHER PEOPLE]
-
-> **The card will say:** Make {person} a {role} of {org}? This changes what they can do there.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 18. Start an organisation (create-organisation)
-
-Creates an organisation with a name and an address on the network, and makes the person its owner. Done by any signed-in person. You find it at: The tier cards show SetupForm; its Create button posts here.
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Create {org} at {where}? You will be its owner, and the address goes public once the collective confirms it.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 19. Decide a member’s submission (decide-submission)
+### 17. Decide a member’s submission (decide-submission)
 
 Lets a member’s post or store panel through, or turns it down (owners and guides). Done by an owner or a guide. You find it at: Approve or Decline on a submission in the Review queue card (review ReviewQueue).
 
@@ -222,7 +202,7 @@ Lets a member’s post or store panel through, or turns it down (owners and guid
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 20. Turn down a post from another site (decline-post-from-other-site)
+### 18. Turn down a post from another site (decline-post-from-other-site)
 
 Keeps a post from another network site off this site. Done by an owner or a guide. You find it at: Decline on a request in the Review queue card (review ReviewQueue).
 
@@ -232,7 +212,7 @@ Keeps a post from another network site off this site. Done by an owner or a guid
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 21. Dismiss someone who arrived from another site (dismiss-arrival)
+### 19. Dismiss someone who arrived from another site (dismiss-arrival)
 
 Takes an arrival off the arrivals queue without giving a role (owners and guides). Done by an owner or a guide. You find it at: The Dismiss control on the Arrivals tab of the Members card (members ArrivalsTab).
 
@@ -242,17 +222,7 @@ Takes an arrival off the arrivals queue without giving a role (owners and guides
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 22. List or unlist someone in the organisation's directory (list-person-in-directory)
-
-Show or hide a person on the organisation's public people list. Done by an owner, a guide or a member. You find it at: The listed switch in the People surface.
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Set {person} to {state} on {org}’s public people list? Visitors can see who is listed.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 23. Remove someone from the organisation (remove-person-from-org)
+### 20. Remove someone from the organisation (remove-person-from-org)
 
 Takes a person out of an organisation. Done by an owner. You find it at: People surface "Roles & removal"; control not traced to the exact button.
 
@@ -262,7 +232,7 @@ Takes a person out of an organisation. Done by an owner. You find it at: People 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 24. Save the organisation's identity (save-org-identity)
+### 21. Save the organisation's identity (save-org-identity)
 
 Change an organisation's name, line, bio, photo and place as the network shows them. Done by an owner, a guide or a network admin. You find it at: Settings > Identity section, the Save button in components/hub/OrgIdentityPanel.tsx.
 
@@ -272,7 +242,7 @@ Change an organisation's name, line, bio, photo and place as the network shows t
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 25. Hold members’ submissions for a look (switch-submission-review)
+### 22. Hold members’ submissions for a look (switch-submission-review)
 
 Sets whether members’ posts wait for a look first, and whether members’ store panels are hosted. Done by an owner or a guide. You find it at: The review switches in the Review queue card (review card).
 
@@ -282,7 +252,7 @@ Sets whether members’ posts wait for a look first, and whether members’ stor
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 26. Welcome someone who arrived from another site (welcome-arrival)
+### 23. Welcome someone who arrived from another site (welcome-arrival)
 
 Gives a signed-in arrival from another network site a role here (owners pick viewer, member or guide; guides welcome as viewer). Done by an owner or a guide. You find it at: The Welcome control on the Arrivals tab of the Members card (members ArrivalsTab).
 
@@ -294,9 +264,9 @@ Gives a signed-in arrival from another network site a role here (owners pick vie
 
 ## Your hub (hub.profile)
 
-### 27. Show a post on other sites (choose-sites-for-post)
+### 24. Show a post on other sites (choose-sites-for-post)
 
-Pick which organisations' sites also list one of the person's published posts. Done by any signed-in person. You find it at: The "Where you show" / Show on panel in the profile popup.
+Pick which organisations' sites also list one of the person's published posts. Done by any signed-in person, an owner or a guide. You find it at: The "Where you show" / Show on panel in the profile popup.
 
 [PUBLIC: others can see the result]
 
@@ -304,9 +274,9 @@ Pick which organisations' sites also list one of the person's published posts. D
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 28. Connect or adjust a social account (connect-social-account)
+### 25. Connect or adjust a social account (connect-social-account)
 
-Add an Instagram, Facebook, Threads or YouTube connection, check it, add a page, or set which channel an organisation posts under. Done by any signed-in person, an owner or a guide. You find it at: Connections tab of the profile popup (ConnectionsBand on the Organization tab for orgs). Backed by services connectionsHandlers.
+Add an Instagram, Facebook, Threads or YouTube connection, check it, add a page, or set which channel an organisation posts under. Done by any signed-in person, an owner, a guide or a member. You find it at: Connections tab of the profile popup (ConnectionsBand on the Organization tab for orgs). Backed by services connectionsHandlers.
 
 [PUBLIC: others can see the result]
 
@@ -314,9 +284,9 @@ Add an Instagram, Facebook, Threads or YouTube connection, check it, add a page,
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 29. Edit my profile (edit-my-profile)
+### 26. Edit my profile (edit-my-profile)
 
-Change the name, line, bio, place, links, page address and comment colour that the network shows for a person. Done by any signed-in person. You find it at: The profile card on the Network tab opens the profile popup; its Save button (cms-ui surface profile, served by api/center/profile).
+Change the name, line, bio, place, links, page address and comment colour that the network shows for a person. Done by any signed-in person, an owner, a guide or a member. You find it at: The profile card on the Network tab opens the profile popup; its Save button (cms-ui surface profile, served by api/center/profile).
 
 [PUBLIC: others can see the result]
 
@@ -326,7 +296,7 @@ Change the name, line, bio, place, links, page address and comment colour that t
 
 ## Your hub (hub.store)
 
-### 30. Suggest a charity to receive a share of sales (add-charity-beneficiary)
+### 27. Suggest a charity to receive a share of sales (add-charity-beneficiary)
 
 Adds a charity as a possible beneficiary of the organisation's sales. Done by an owner or a network admin. You find it at: The beneficiaries panel in store-panels.tsx.
 
@@ -336,7 +306,7 @@ Adds a charity as a possible beneficiary of the organisation's sales. Done by an
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 31. Add a beneficiary to the organisation’s store (add-org-beneficiary)
+### 28. Add a beneficiary to the organisation’s store (add-org-beneficiary)
 
 Adds an approved beneficiary so a share of the store’s sales goes to them. Done by an owner or a network admin. You find it at: The add control in the beneficiaries panel.
 
@@ -346,7 +316,7 @@ Adds an approved beneficiary so a share of the store’s sales goes to them. Don
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 32. Approve a beneficiary (approve-beneficiary)
+### 29. Approve a beneficiary (approve-beneficiary)
 
 Marks a suggested charity active so it can receive a share of sales. Done by an owner or a network admin. You find it at: The approve control in the beneficiaries panel.
 
@@ -356,7 +326,7 @@ Marks a suggested charity active so it can receive a share of sales. Done by an 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 33. Open the organisation's store (open-org-store)
+### 30. Open the organisation's store (open-org-store)
 
 Opens a store on the marketplace owned by the organisation. Done by an owner or a network admin. You find it at: The Open a store button on /hub/store.
 
@@ -366,7 +336,7 @@ Opens a store on the marketplace owned by the organisation. Done by an owner or 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 34. Remove a beneficiary from the organisation’s store (remove-org-beneficiary)
+### 31. Remove a beneficiary from the organisation’s store (remove-org-beneficiary)
 
 Removes a beneficiary so sales no longer go to them. Done by an owner or a network admin. You find it at: The remove control in the beneficiaries panel.
 
@@ -378,67 +348,7 @@ Removes a beneficiary so sales no longer go to them. Done by an owner or a netwo
 
 ## Learning (learn.journeys)
 
-### 35. Disconnect payouts (disconnect-payouts)
-
-Disconnects the person's Stripe payout account. Done by any signed-in person. You find it at: The disconnect control on the Payouts tab.
-
-[MONEY: the dock only points to the checkout, it never pays or charges] [CANNOT BE UNDONE]
-
-> **The card will say:** Disconnect your payout account? Sales and bookings cannot be paid out until you set it up again. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 36. Open your store on the market (open-your-store)
-
-Publishes the person's own store on the collective's art marketplace. Done by any signed-in person. You find it at: The Open store step of the sell-your-art journey popup.
-
-[PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Open your own store on the art market? Buyers can then see your work. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 37. Publish artworks to the market (publish-artworks)
-
-Publishes up to 50 saved artwork drafts so they appear on the marketplace. Done by any signed-in person. You find it at: The Publish button of the artwork step in the sell-your-art journey popup.
-
-[PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Publish {count} artworks at the prices you set? Visitors to the market can buy them. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 38. Save a service of my own (save-my-service)
-
-Saves a service (title, short text, price, format) on the person's own page; publishing it makes it public. Done by any signed-in person. You find it at: The Offer form in the me popup.
-
-[PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Save your service “{title}” at {price}? If it is published, visitors can book it. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 39. Publish or hide a service of mine (set-my-service-status)
-
-Switches one of the person's own services between draft and published. Done by any signed-in person. You find it at: The publish / unpublish switch on a service row in the me popup.
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Set your service “{title}” to {state}? Visitors see it only while it is published.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 40. Set up payouts (start-payouts)
-
-Starts Stripe onboarding so sales and bookings can be paid out to the person. Done by any signed-in person. You find it at: The Set up payouts button on the Payouts tab of the profile popup; it returns a Stripe link.
-
-[MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Set up payouts? You go to Stripe to confirm your details, and the collective never sees your bank details. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 41. Take your space (take-your-space)
+### 32. Take your space (take-your-space)
 
 Gives a person a folder of their own, membership of the artist directory and a listing, in one step. Done by any signed-in person. You find it at: The one-button task of the getting-started step.
 
@@ -450,7 +360,7 @@ Gives a person a folder of their own, membership of the artist directory and a l
 
 ## Account and network (network.bookings)
 
-### 42. Confirm a booking time (buyer) (confirm-booking-time-as-buyer)
+### 33. Confirm a booking time (buyer) (confirm-booking-time-as-buyer)
 
 The buyer opens their private link and picks one of the proposed times. Done by a visitor. You find it at: The time buttons on the buyer’s booking page (app/bookings/[token])
 
@@ -462,7 +372,7 @@ The buyer opens their private link and picks one of the proposed times. Done by 
 
 ## The other organisations’ sites (orgapps.artwork)
 
-### 43. Change how an artwork is shown on the site (artwork-display-set)
+### 34. Change how an artwork is shown on the site (artwork-display-set)
 
 Sets an artwork as for sale, portfolio-only or hidden on the artist's own site, and may confirm its title. Done by an owner. You find it at: artwork row mode buttons
 
@@ -472,9 +382,9 @@ Sets an artwork as for sale, portfolio-only or hidden on the artist's own site, 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 44. Save an artwork (artwork-draft-save)
+### 35. Save an artwork (artwork-draft-save)
 
-Creates or updates an artwork (title, picture, size, price) in the person's marketplace store as a draft; katie's form can publish in the same save. Done by any signed-in person, an owner or a guide. You find it at: artwork journey card, Save piece
+Creates or updates an artwork (title, picture, size, price) in the person's marketplace store as a draft; katie's form can publish in the same save. Done by any signed-in person, an owner, a guide or a member. You find it at: artwork journey card, Save piece
 
 [MONEY: the dock only points to the checkout, it never pays or charges] [PUBLIC: others can see the result]
 
@@ -482,7 +392,7 @@ Creates or updates an artwork (title, picture, size, price) in the person's mark
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 45. Put artworks on sale (artwork-journey-publish)
+### 36. Put artworks on sale (artwork-journey-publish)
 
 Publishes up to 50 of the person's artworks on the marketplace and returns their links. Done by any signed-in person. You find it at: artwork journey card, Publish
 
@@ -494,7 +404,7 @@ Publishes up to 50 of the person's artworks on the marketplace and returns their
 
 ## The other organisations’ sites (orgapps.cms)
 
-### 46. Place or clear the promotion on the Center page (center-promo-save)
+### 37. Place or clear the promotion on the Center page (center-promo-save)
 
 Puts a hand-written promotion card (title, blurb, link, image) on the /center page, or clears it. Done by an owner or a guide. You find it at: center promo editor Save
 
@@ -504,7 +414,7 @@ Puts a hand-written promotion card (title, blurb, link, image) on the /center pa
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 47. Publish or update a teacher or guide page (guide-profile-save)
+### 38. Publish or update a teacher or guide page (guide-profile-save)
 
 Fills in a member's public teacher page: URL slug, display name, role title, bio, photo, city, order and whether it is public. Done by an owner. You find it at: profile editor in components/manage/member-row.tsx
 
@@ -514,7 +424,7 @@ Fills in a member's public teacher page: URL slug, display name, role title, bio
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 48. Pin a post to the top of the landing page (manage-content-pin)
+### 39. Pin a post to the top of the landing page (manage-content-pin)
 
 Pins or unpins one post at the top of the home page. Done by an owner or a guide. You find it at: Pin button in components/manage/content-row-actions.tsx
 
@@ -524,7 +434,7 @@ Pins or unpins one post at the top of the home page. Done by an owner or a guide
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 49. Take a post off the site (manage-content-remove)
+### 40. Take a post off the site (manage-content-remove)
 
 Archives a post or gathering so it leaves the site. Done by an owner or a guide. You find it at: Remove button (with a confirm) in components/manage/content-row-actions.tsx
 
@@ -534,7 +444,7 @@ Archives a post or gathering so it leaves the site. Done by an owner or a guide.
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 50. Write or edit a post, gathering or service in the site manager (manage-content-save)
+### 41. Write or edit a post, gathering or service in the site manager (manage-content-save)
 
 Creates or updates one piece of content (a post, a dated gathering, or in hidden-enneagram a service offering) from the /manage editor: title, body, which page it lives on, status, audience, and for gatherings the schedule, RSVP rules, attached files, a shared document and a Talk room. Done by an owner, a guide or a member. You find it at: content form, Save / Publish
 
@@ -544,7 +454,7 @@ Creates or updates one piece of content (a post, a dated gathering, or in hidden
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 51. Publish or unpublish a post (manage-content-status-set)
+### 42. Publish or unpublish a post (manage-content-status-set)
 
 Switches one post or gathering between draft and published from the row buttons in the content list, without opening the editor. Done by an owner or a guide. You find it at: Publish / Unpublish button in components/manage/content-row-actions.tsx
 
@@ -554,7 +464,7 @@ Switches one post or gathering between draft and published from the row buttons 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 52. Change a member's role from the owner console (manage-member-role-set)
+### 43. Change a member's role from the owner console (manage-member-role-set)
 
 Sets a person in the org to viewer, member or guide from the /manage/people table (owners only). Done by an owner. You find it at: role dropdown in components/manage/member-row.tsx
 
@@ -564,7 +474,7 @@ Sets a person in the org to viewer, member or guide from the /manage/people tabl
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 53. Remove a service offering (service-offering-remove)
+### 44. Remove a service offering (service-offering-remove)
 
 Takes a service offering off the site (archived) from the services list. Done by an owner or a guide. You find it at: service list delete (kept for the services list)
 
@@ -574,7 +484,7 @@ Takes a service offering off the site (archived) from the services list. Done by
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 54. Confirm that an e-Transfer payment arrived (service-order-confirm)
+### 45. Confirm that an e-Transfer payment arrived (service-order-confirm)
 
 Marks a service order's e-Transfer as received so the buyer's booking is confirmed. Done by an owner or a guide. You find it at: Confirm button in app/manage/orders/confirm-order-button.tsx
 
@@ -586,7 +496,7 @@ Note: money: the dock only links here, never runs it
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 55. Add or edit a site page (name, tagline, visibility) (site-feed-save)
+### 46. Add or edit a site page (name, tagline, visibility) (site-feed-save)
 
 Creates or updates one of the site's pages (feeds): its name, tagline, description, presenter, accent, order and whether it is public. Done by an owner or a guide. You find it at: feed editor Save
 
@@ -596,7 +506,7 @@ Creates or updates one of the site's pages (feeds): its name, tagline, descripti
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 56. Edit a page's wording (site-section-copy-save)
+### 47. Edit a page's wording (site-section-copy-save)
 
 Saves the copy slots of one fixed-layout page (headline, intro and so on) into the site's page-copy table. Done by an owner or a guide. You find it at: section editor Save
 
@@ -606,7 +516,7 @@ Saves the copy slots of one fixed-layout page (headline, intro and so on) into t
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 57. Choose the gathering the hub leads with (standing-meeting-set)
+### 48. Choose the gathering the hub leads with (standing-meeting-set)
 
 Flags one gathering (or none) as the standing one the hub puts first, instead of letting the hub guess. Done by an owner or a guide. You find it at: Standing gathering toggle in components/manage/content-row-actions.tsx
 
@@ -618,7 +528,7 @@ Flags one gathering (or none) as the standing one the hub puts first, instead of
 
 ## The other organisations’ sites (orgapps.content)
 
-### 58. Start a new gallery (gallery-create)
+### 49. Start a new gallery (gallery-create)
 
 Creates a gallery (a titled set of pictures) on the person's page. Done by any signed-in person, an owner or a guide. You find it at: New gallery button in components/galleries-section.tsx
 
@@ -628,7 +538,7 @@ Creates a gallery (a titled set of pictures) on the person's page. Done by any s
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 59. Delete a gallery (gallery-delete)
+### 50. Delete a gallery (gallery-delete)
 
 Deletes a gallery. Done by any signed-in person, an owner or a guide. You find it at: Delete in gallery-editor.tsx
 
@@ -638,7 +548,7 @@ Deletes a gallery. Done by any signed-in person, an owner or a guide. You find i
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 60. Change a gallery's title, description, page or privacy (gallery-details-save)
+### 51. Change a gallery's title, description, page or privacy (gallery-details-save)
 
 Edits a gallery's title and description, whether it is public, which page it is attached to, whether it also shows on IFAC, or its own look. Done by any signed-in person, an owner or a guide. You find it at: inline title and description in the live editor
 
@@ -648,7 +558,7 @@ Edits a gallery's title and description, whether it is public, which page it is 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 61. Change the pictures in a gallery (gallery-items-save)
+### 52. Change the pictures in a gallery (gallery-items-save)
 
 Adds, removes, reorders, retitles or links the pictures of a gallery (including artworks from the catalogue in danamccool). Done by any signed-in person, an owner or a guide. You find it at: picture grid editor in components/gallery-editor.tsx
 
@@ -658,7 +568,7 @@ Adds, removes, reorders, retitles or links the pictures of a gallery (including 
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 62. Reorder my galleries (gallery-reorder)
+### 53. Reorder my galleries (gallery-reorder)
 
 Saves the order the person's galleries are listed in. Done by an owner or a guide. You find it at: drag to reorder in the galleries panel
 
@@ -668,27 +578,7 @@ Saves the order the person's galleries are listed in. Done by an owner or a guid
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 63. Disconnect my payout account (innergathering Center) (payout-disconnect-center)
-
-Disconnects the person's Stripe account and forgets the country. Done by any signed-in person, a member, an owner or a guide. You find it at: Disconnect in the Payouts tab
-
-[MONEY: the dock only points to the checkout, it never pays or charges] [CANNOT BE UNDONE]
-
-> **The card will say:** Disconnect your payout account? You will need to set payouts up again before you can be paid.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 64. Connect Stripe to get paid (innergathering Center) (payout-stripe-start-center)
-
-Begins or resumes Stripe Express onboarding for the signed-in person and returns the Stripe link. Done by any signed-in person, a member, an owner or a guide. You find it at: Payouts tab of the profile pop-up (first tab of the Center)
-
-[MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Take you to Stripe to set up payouts for {email}? You choose the country there.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 65. Turn my blog on or off (profile-blog-set)
+### 54. Turn my blog on or off (profile-blog-set)
 
 Switches the Writing shelf on or off on the member's own page, and remembers whether it shows only pieces written here or everything they have written on the network. Done by a member, an owner or a guide. You find it at: Page sections card in the profile surface (hub); href goes to /artists|/dealers/<slug>/writing
 
@@ -698,19 +588,9 @@ Switches the Writing shelf on or off on the member's own page, and remembers whe
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 66. Show or hide a section on my page (profile-section-toggle-more)
-
-Flips one optional section (writing shelf, available work, feed) on or off on the member's own page. Done by a member, an owner or a guide. You find it at: Page sections panel in the profile surface
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Show the {section} section on your page? Anyone who visits your page will see it.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
 ## The other organisations’ sites (orgapps.editing)
 
-### 67. Turn the designed page on for a gathering (gathering-detail-page-set)
+### 55. Turn the designed page on for a gathering (gathering-detail-page-set)
 
 Switches a gathering's designed detail page on or off, and makes its Talk room when it is turned on. Done by an owner or a guide. You find it at: Detail page toggle in the gathering editor
 
@@ -720,7 +600,7 @@ Switches a gathering's designed detail page on or off, and makes its Talk room w
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 68. Create a Talk room for a gathering (gathering-talk-room-create)
+### 56. Create a Talk room for a gathering (gathering-talk-room-create)
 
 Makes a Nextcloud Talk room for a gathering that has none. Done by an owner or a guide. You find it at: Create room button in the gathering editor
 
@@ -730,7 +610,7 @@ Makes a Nextcloud Talk room for a gathering that has none. Done by an owner or a
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 69. Change the hub's look (hub-skin-save)
+### 57. Change the hub's look (hub-skin-save)
 
 Chooses the visual skin of the members' hub. Done by an owner or a guide. You find it at: skin picker on the appearance page
 
@@ -740,7 +620,7 @@ Chooses the visual skin of the members' hub. Done by an owner or a guide. You fi
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 70. Put the home page back as it was written in code (landing-restore)
+### 58. Put the home page back as it was written in code (landing-restore)
 
 Deletes the saved home page tree so the site shows the original code-written home page again. Done by an owner or a guide. You find it at: Restore original in the direct-edit menu
 
@@ -750,7 +630,7 @@ Deletes the saved home page tree so the site shows the original code-written hom
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 71. Publish the home page tree (landing-save)
+### 59. Publish the home page tree (landing-save)
 
 Saves the home page as a designed tree from the canvas, instead of the version written in code. Done by an owner or a guide. You find it at: Publish on the home page in direct-edit
 
@@ -760,17 +640,7 @@ Saves the home page as a designed tree from the canvas, instead of the version w
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 72. Publish a phone page design (mobile-page-save)
-
-Saves one of ElkTours' phone page documents (home, tours and so on) from the phone studio. Done by an owner or a guide. You find it at: Publish in the phone studio
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Publish your changes to the {name} phone page of {org}? Phone visitors will see them.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 73. Save edits to the home page text (page-edits-save)
+### 60. Save edits to the home page text (page-edits-save)
 
 Saves the patches (changed text and images) laid over the home page's fixed layout. Done by an owner or a guide. You find it at: Save in the page-edits direct editor
 
@@ -780,9 +650,9 @@ Saves the patches (changed text and images) laid over the home page's fixed layo
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 74. Publish a page from the visual editor (page-save)
+### 61. Publish a page from the visual editor (page-save)
 
-Saves the page the person has been editing on the canvas (blocks, layout, words) so visitors see it at its address. Done by an owner or a guide. You find it at: Publish in the direct-edit canvas (lib/puck editor; /manage/builder lists pages)
+Saves the page the person has been editing on the canvas (blocks, layout, words) so visitors see it at its address. Done by an owner, a guide or a member. You find it at: Publish in the direct-edit canvas (lib/puck editor; /manage/builder lists pages)
 
 [PUBLIC: others can see the result]
 
@@ -790,7 +660,7 @@ Saves the page the person has been editing on the canvas (blocks, layout, words)
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 75. Edit my bio or photo on my page (profile-field-save)
+### 62. Edit my bio or photo on my page (profile-field-save)
 
 Saves the bio text or profile photo of an artist page from the live editor. Done by any signed-in person or an owner. You find it at: bio in the profile editor panel
 
@@ -800,7 +670,7 @@ Saves the bio text or profile photo of an artist page from the live editor. Done
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 76. Arrange the pictures on my page (profile-portfolio-save)
+### 63. Arrange the pictures on my page (profile-portfolio-save)
 
 Saves the picture wall (portfolio) on an artist's page. Done by any signed-in person or an owner. You find it at: components/gallery-panel.tsx
 
@@ -812,7 +682,7 @@ Saves the picture wall (portfolio) on an artist's page. Done by any signed-in pe
 
 ## The other organisations’ sites (orgapps.journeys)
 
-### 77. Open my store on the marketplace (auction-store-publish)
+### 64. Open my store on the marketplace (auction-store-publish)
 
 One-click step of the Center's auction journey: publishes the signed-in person's store on the art marketplace. Done by any signed-in person. You find it at: auction journey card, Open store step
 
@@ -824,9 +694,9 @@ One-click step of the Center's auction journey: publishes the signed-in person's
 
 ## The other organisations’ sites (orgapps.money)
 
-### 78. Save one of my services (own-service-save)
+### 65. Save one of my services (own-service-save)
 
-Creates or updates a service the signed-in person offers (title, price in CAD, format), published to the network when set to published. Done by any signed-in person. You find it at: My services tab, Save
+Creates or updates a service the signed-in person offers (title, price in CAD, format), published to the network when set to published. Done by any signed-in person, a member, a guide or an owner. You find it at: My services tab, Save
 
 [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 
@@ -834,9 +704,9 @@ Creates or updates a service the signed-in person offers (title, price in CAD, f
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 79. Disconnect my payout account (payout-disconnect)
+### 66. Disconnect my payout account (payout-disconnect)
 
-Disconnects the person's Stripe account and forgets the country, the only way out of an account created under the wrong country. Done by any signed-in person, an owner or a guide. You find it at: Disconnect in the Payouts tab
+Disconnects the person's Stripe account and forgets the country, the only way out of an account created under the wrong country. Done by any signed-in person, an owner, a guide or a member. You find it at: Disconnect in the Payouts tab
 
 [MONEY: the dock only points to the checkout, it never pays or charges] [CANNOT BE UNDONE]
 
@@ -844,7 +714,7 @@ Disconnects the person's Stripe account and forgets the country, the only way ou
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 80. Save where I get paid (country and payout method) (payout-setup-save)
+### 67. Save where I get paid (country and payout method) (payout-setup-save)
 
 Saves the signed-in person's country and payout rail (Interac e-Transfer, Stripe or manual) and, for e-Transfer, the email to send to. Done by any signed-in person, an owner or a guide. You find it at: PayoutSetup form
 
@@ -854,9 +724,9 @@ Saves the signed-in person's country and payout rail (Interac e-Transfer, Stripe
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-### 81. Connect Stripe to get paid (payout-stripe-start)
+### 68. Connect Stripe to get paid (payout-stripe-start)
 
-Begins or resumes Stripe Express onboarding for the signed-in person and sends the browser to Stripe. Done by any signed-in person, an owner or a guide. You find it at: Payouts tab of the profile pop-up
+Begins or resumes Stripe Express onboarding for the signed-in person and sends the browser to Stripe. Done by any signed-in person, an owner, a guide or a member. You find it at: Payouts tab of the profile pop-up
 
 [MONEY: the dock only points to the checkout, it never pays or charges]
 
@@ -864,58 +734,14 @@ Begins or resumes Stripe Express onboarding for the signed-in person and sends t
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
 
-## The Studio (studio.meetings)
-
-### 82. Save or publish a meeting (save-meeting)
-
-Saves a meeting (a gathering with time, place or link) as a draft or publishes it on the organisation's site. Done by an owner or a guide. You find it at: The Meeting kind in the Studio create canvas.
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Save the meeting “{title}” for {org}? If it is published, visitors can see it and RSVP.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
 ## The Studio (studio.offerings)
 
-### 83. Save or publish an artwork (save-artwork)
-
-Saves an artwork with photos, price and availability in the marketplace store; publishes it when asked. Done by any signed-in person. You find it at: The Artwork form in the Studio create canvas.
-
-[PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
-
-> **The card will say:** Save “{title}” at {price} in your store? If you publish it, visitors can buy it. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 84. Publish a service (save-service-offering)
+### 69. Publish a service (save-service-offering)
 
 Saves an offering (lesson, commission, reading...) from the Studio form; published offerings show on the organisation's site. Done by an owner or a guide. You find it at: The Service form in the Studio create canvas.
 
 [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 
 > **The card will say:** Save the service “{title}” at {price} for {org}? If it is published, visitors can book it. Payments happen on the checkout or Stripe page, not here.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-## The Studio (studio.writing)
-
-### 85. Save or publish a piece of writing (save-writing-piece)
-
-Saves the text, cover, series, byline and status of a piece; setting its status to published puts it live. Done by any signed-in person. You find it at: Autosave, and the Published / Drafts switch in packages/studio/src/writing/WritingEditor.tsx.
-
-[PUBLIC: others can see the result]
-
-> **The card will say:** Save “{title}”? If it is set to published, anyone can read it on your page.
-
-**Answer:**  [ ] approve   [ ] change to: ______________________________
-
-### 86. Start a piece of writing (start-writing-piece)
-
-Creates a new draft piece in the Studio, on the person's blog or one organisation they belong to. Done by any signed-in person, a member, a guide or an owner. You find it at: The new piece control in the Studio shell.
-
-[No special risk]
-
-> **The card will say:** Start a draft called “{title}” on {where}? Only you can see it until you publish.
 
 **Answer:**  [ ] approve   [ ] change to: ______________________________
