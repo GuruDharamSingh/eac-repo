@@ -540,93 +540,8 @@ services:
       - eac-network
       - nextcloud-network
 
-  # Inner Gathering App
-  inner-gathering:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    image: eac-dev
-    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
-    container_name: eac-inner-gathering
-    # Production mode: the ceiling has to clear `next build` (the peak), not
-    # steady state. Serving afterwards is a fraction of this.
-    mem_limit: 6g
-    depends_on:
-      postgres:
-        condition: service_healthy
-      supabase-auth:
-        condition: service_started
-    environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
-
-      # Supabase Auth (Docker internal)
-      SUPABASE_URL: http://supabase-auth:9999
-      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
-
-      # Supabase Realtime (WebSocket for browser)
-      NEXT_PUBLIC_SUPABASE_REALTIME_URL: ${REALTIME_URL:-ws://localhost:4000/socket}
-
-      # Redis
-      REDIS_URL: redis://redis:6379
-
-      # Nextcloud
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
-      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
-      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
-      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
-      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
-      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
-      # OIDC provider (now hosted on this app — must match Nextcloud sociallogin clientSecret)
-      JWT_SECRET: ${JWT_SECRET}
-      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET}
-      NEXTCLOUD_DEFAULT_GROUP: ${NEXTCLOUD_DEFAULT_GROUP:-EAC_Network}
-      NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3000}
-      # SendGrid
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
-      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
-      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
-      # Cloudflare Turnstile
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
-
-      # Node environment
-      NODE_ENV: production
-      # Sized for `next build`, which is the memory-hungry phase; the
-      # `next start` runtime that follows sits far below this because it
-      # serves prebuilt output instead of holding a live module graph.
-      NODE_OPTIONS: --max-old-space-size=5120
-      PORT: 3004
-      NEXT_PUBLIC_APP_URL: ${INNER_GATHERING_URL:-http://localhost:3004}
-      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
-    volumes:
-      - .:/app
-      - /app/apps/inner-gathering/.next
-    ports:
-      - "3004:3004"
-    # Build only when there is no build to serve, then start. `next start`
-    # serves prebuilt output — no dev compiler, no module graph held in memory,
-    # which is the whole point of the switch. Rebuilding on every restart would
-    # make a crash-restart take minutes instead of seconds.
-    # (mem_limit below is a ceiling, not a reservation: it has to clear the
-    # occasional rebuild, while steady-state serving sits far under it.)
-    #
-    # The sentinel is server/pages-manifest.json: the file `next start` opens
-    # first, and one that only a COMPLETED `next build` writes. BUILD_ID was the
-    # wrong choice — `next dev` writes one too — and prerender-manifest.json is
-    # no better, because it lands BEFORE page collection. An OOM-killed build
-    # leaves both behind with no .next/server directory at all, so a guard on
-    # either skips the rebuild forever and the service restart-loops with no way
-    # out. That is exactly what happened to amrit-canada. NEXT_BUILD_CPUS caps
-    # the worker count so the build fits under mem_limit instead of being killed.
-    command: sh -c "cd apps/inner-gathering && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
-    restart: unless-stopped
-    networks:
-      - eac-network
-      - nextcloud-network
+  # inner-gathering (the legacy twin of innergathering) was retired 2026-11-16 (Justin): stopped since 2026-10 and
+  # superseded by innergathering (:3015). The app source stays in apps/inner-gathering for reference.
 
   # Elkdonis Arts Collective Main Site
   elkdonis-arts-collective:
@@ -2169,6 +2084,11 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
       ELKTOURS_OWNER_EMAIL: ${ELKTOURS_OWNER_EMAIL:-danamccoolart@gmail.com}
+      # Departures on the shared booking tables (@elkdonis/booking set_dates), cut over 2026-11-15
+      # (docs/open/ELKTOURS_MOBILE_2026-11-15/CUTOVER.md). 0 = back to tour_departures.
+      BOOKING_TABLES: "1"
+      # Optional own Stripe webhook (/api/stripe/webhook); unset = rely on art-auction's platform webhook.
+      STRIPE_WEBHOOK_SECRET: ${ELKTOURS_STRIPE_WEBHOOK_SECRET:-}
       NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
       NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}

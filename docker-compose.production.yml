@@ -130,49 +130,8 @@ services:
     networks:
       - eac-network
 
-  # Inner Gathering App
-  inner-gathering:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      target: production
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-    image: eac-inner-gathering:production
-    container_name: eac-inner-gathering-prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-      supabase-auth:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-      SUPABASE_URL: http://supabase-auth:9999
-      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
-      REDIS_URL: ${REDIS_URL}
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
-      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL}
-      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
-      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
-      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
-      PORT: 3004
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_INNER_GATHERING_URL}
-    ports:
-      - "127.0.0.1:3004:3004"
-    restart: unless-stopped
-    networks:
-      - eac-network
-      - nextcloud-network
-    deploy:
-      resources:
-        limits:
-          memory: 1G
+  # inner-gathering (the legacy twin of innergathering) was retired 2026-11-16 (Justin): stopped since 2026-10 and
+  # superseded by innergathering (:3015). The app source stays in apps/inner-gathering for reference.
 
   # Admin App
   admin:

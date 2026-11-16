@@ -124,63 +124,8 @@ services:
     networks:
       - eac-network-prod
 
-  # Inner Gathering - Production Build
-  inner-gathering-prod:
-    build:
-      context: .
-      dockerfile: apps/inner-gathering/Dockerfile
-      args:
-        NODE_ENV: production
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-    container_name: eac-inner-gathering-prod
-    depends_on:
-      postgres-prod:
-        condition: service_healthy
-      supabase-auth-prod:
-        condition: service_started
-    environment:
-      # Node
-      NODE_ENV: production
-      NODE_OPTIONS: "--max-old-space-size=512"
-      PORT: 3004
-
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}
-
-      # Supabase Auth
-      SUPABASE_URL: http://supabase-auth-prod:9999
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
-      JWT_SECRET: ${JWT_SECRET}
-
-      # Redis
-      REDIS_URL: redis://redis-prod:6379
-
-      # Nextcloud (connects to existing dev Nextcloud via network bridge)
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
-      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
-      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
-      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
-      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL}
-      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET}
-      NEXTCLOUD_WEBHOOK_SECRET: ${NEXTCLOUD_WEBHOOK_SECRET}
-
-      # Inter-app
-      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
-
-      # URLs
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_INNER_GATHERING_URL}
-      SITE_URL: ${SITE_URL}
-    ports:
-      - "3014:3004"  # Different external port to avoid conflict
-    restart: unless-stopped
-    mem_limit: 768m
-    memswap_limit: 768m
-    networks:
-      - eac-network-prod
-      - nextcloud-network  # Connect to existing Nextcloud
+  # inner-gathering (the legacy twin of innergathering) was retired 2026-11-16 (Justin): stopped since 2026-10 and
+  # superseded by innergathering (:3015). The app source stays in apps/inner-gathering for reference.
 
 volumes:
   postgres_data_prod:
