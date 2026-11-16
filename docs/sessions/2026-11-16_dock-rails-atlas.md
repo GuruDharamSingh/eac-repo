@@ -91,3 +91,74 @@ Log `~/eac-backups/next/rebuild-2026-11-16.log`; previous builds are backed up n
 - **Typecheck:** use the real exit code (`tsc ... ; echo $?`), not `| tail`.
 - **ssh:** an apostrophe inside a single-quoted remote command breaks it. Write files or messages locally and scp them.
 - **Agents:** hand out curation by explicit app or file, not by page area (areas collided). Prefix generic ids per app. Verify every security lead end to end before calling it confirmed.
+
+---
+
+## Second half of 2026-11-16 (afternoon): two scopes, five lanes
+
+Justin asked for two scopes, each with Sonnet agents, plus a liaison agent in the middle:
+- **Scope 1** carries the MCP work forward.
+- **Scope 2** finds "the greatest synthesis of ambition" for the house editor, Puck, the clone site and package structure.
+
+Everything below is committed on `work/2026-11-16`, **not pushed**.
+
+### Live in production
+
+- **Migrations 275 and 276 are applied** (15:20), on Justin's words: "go: apply 275 and 276 and rebuild arts-collective". They were applied alone, by a one-off script that mirrors `migrate.mjs` (same lock, same tracker row). **263 is still pending; it belongs to another session.**
+- **arts-collective was rebuilt at 15:22**, and the dock slice 1 is live. The tenant smoke test passes. "Failed to find Server Action" lines in its log come from tabs left open across the deploy.
+- Build hold: lanes' unreviewed edits were swapped out for their pre-edit backups during the build and restored after (`~/eac-backups/build-hold.sh`). Reuse it for the next builds.
+
+### Commits
+
+| Commit | What |
+|---|---|
+| `6b690d28` | Uploads step 2: site media routes in 6 apps and series-site are shims on `uploadRoutes`. Per-org photo checkbox. Five byte-identical families lifted (follow, quotes, cycle, whiteboard, thread-feed) |
+| `1bf484a0` | `docs/open/SITE_FORM_2026-11-16/`: `A_SITE_FORM.md` (clone-site form), `B_FAMILIES.md` (package families), `SYNTHESIS.md` (**read this**: one plan, 15 moves, decisions D1 to D11) |
+| `6dcd6204` | Four more families: center layout and profile, hub documents and calendar (`services/src/org-site-routes-2.ts`), and chat (`packages/chat/src/routes.ts`) |
+| `96b16534` | Atlas as a living source of truth: `atlas:q`, fingerprints and needs-review, `added`/`updated`/`family`, a warn-only `.githooks/pre-commit` (NOT activated), CLAUDE.md section. Dock: course `area`/`builds_on` (migration **277 written, NOT applied**), `dockForm` before address. **Track nexus** `atlas/tracks/` (47 tracks, 21 candidate courses, 19 gates), report `atlas/reports/rails-nexus.md` with the gap list |
+| `6b554025` | Media: `@elkdonis/utils/media-thumbnail` (one helper for the existing `?w=` thumbnail tool); 42 image surfaces sized; `mediaRoutes` factory (4 apps); masters at q95 |
+
+`.claude/` is gitignored. The new `.claude/rules/atlas.md` and the atlas steps in the orient and handover skills live on eris only.
+
+### Not live yet (needs Justin's go per app; sunjay first as the canary)
+
+- **sunjay, amrit-canada, elktours, hidden-enneagram, innergathering, fourthwayBookreaders:** upload shims, merged copy routes, sized images, mediaRoutes.
+- **danamccool, katie-the-potter:** thread-feed route, sized images.
+- **artdirect:** sized picker images, `?w=`.
+- **arts-collective:** course tags and module forms (with migration 277 if Justin says yes), sized images.
+
+Behaviour changes in those builds:
+- uploads sniff types and re-encode (EXIF dropped, q95), and refusals are 413/415;
+- signed-out private media on the 4 mediaRoutes apps returns 404, not 401.
+
+### The idea that joins it all (SYNTHESIS.md)
+
+**One declaration, three renderings.** artdirect's sidebar is generated from a field declaration (`cms-bindings/src/dossier/field-registry.ts`). If each capability points at one field declaration (one vocabulary: `ContentFieldSpec`), that renders:
+1. the house editor's sidebar boxes;
+2. the dock's module form;
+3. the MCP tool's input.
+
+A capability's `family` picks its package home and MCP tool group. Moves 1 to 7 prove this on katie.
+
+### Waiting on Justin
+
+All of these are in the liaison's queue, `docs/open/LIAISON_2026-11-16.md`, with options and recommendations:
+- the wording wave (drier cards in `atlas/reports/wording-wave-01-dry.md`, 7 batches);
+- RSVP questions;
+- `markArtistByFolder`;
+- whether to turn on the atlas hook;
+- site plan D1 to D11. D1 (the elktours header list) and D2 (an artdirect sidebar review) need his own eyes.
+- the ifac drive upload;
+- migration 277 and course tags;
+- media 404;
+- rebuilds.
+
+### Lessons
+
+- **The permission check needs Justin's exact words for production actions.** "Continue with next steps 1-6" was refused; "go: apply 275 and 276 and rebuild arts-collective" passed.
+- **Other sessions edit the same files in parallel** (services index.ts, package.json, cms-ui types.ts, CLAUDE.md, utils package.json).
+  - Stage with `~/eac-backups/stage-lane.sh <lane backup dir>`. It stages HEAD plus that lane's hunks only, then scans for secrets.
+  - Always check the staged hunks of mixed files.
+  - When `patch` fails, rebuild the file from HEAD by hand.
+- **Lanes must back up every file**, package.json included.
+- **Subagent tsc runs** sometimes lose the exit code. Re-run the affected apps yourself with `./node_modules/.bin/tsc --noEmit -p .; echo EXIT=$?`.
