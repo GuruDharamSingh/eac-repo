@@ -1,0 +1,140 @@
+import type { Area, Capability, Host, HostKey } from '../types';
+
+// packages/email: the org address book, sender identity, templates, inbox and the send/event ledgers.
+// 2026-11-16, round 3 curator (packages). The person-facing rows (the /hub/email routes of arts-collective, ifac and
+// innergathering) are already mapped; these are the shared SQL writes behind them, `internal`, or `system` for the
+// webhook-fed ledgers. No route factory lives in this package, so there is no person row here.
+
+const SRC = 'packages/email/src/';
+const V = (files: string) => `2026-11-16 read packages/email/src/${files}`;
+const sql = (file: string, fn: string): HostKey => `sql:${SRC}${file}#${fn}` as HostKey;
+const h = (file: string, fn: string, service: string[], note?: string): Host => ({ key: sql(file, fn), service, ...(note ? { note } : {}) });
+
+const capabilities: Capability[] = [
+  {
+    id: 'pkg-email-contacts',
+    area: 'email.contacts',
+    label: 'Add, edit, stop or remove an address in an org\'s book',
+    does: 'Pastes addresses into an org\'s contacts (skipping anyone who unsubscribed), edits a contact\'s name, tags and notes, writes an unsubscribed row for an address the org was asked to stop mailing, or deletes a manual contact.',
+    class: 'internal',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      h('address-book.ts', 'addAddresses', ['email#addAddresses'], 'No gate in the function: the route checks the org role. SELECT then INSERT per address (not atomic).'),
+      h('address-book.ts', 'updateContact', ['email#updateContact'], 'WHERE org_id AND id: org-scoped, so an id alone cannot touch another org\'s contact.'),
+      h('address-book.ts', 'suppressAddress', ['email#suppressAddress'], 'Upsert on (org_id, lower(email)) to unsubscribed.'),
+      h('address-book.ts', 'removeContact', ['email#removeContact'], 'DELETE WHERE org_id AND id: org-scoped. Irreversible.'),
+    ],
+    status: 'a contacts row for (org, email) with the status, name and tags',
+    risk: ['others', 'emails'],
+    drift: 'backs arts-collective.hub:add-email-contacts (POST), edit-email-contact (PATCH), stop-email-to-address (PATCH), remove-email-contact (DELETE); arts-collective.hub:add-email-contacts, edit-email-contact, stop-email-to-address, remove-email-contact; arts-collective.hub:add-email-contacts, edit-email-contact, stop-email-to-address, ig-email-contacts-remove.',
+    canonical: 'packages/email address-book.ts (one org email route in services)',
+    open: 'GOOD: org scoping is in every WHERE; an unsubscribed address is never revived by a paste (CASL) and is reported back. SECURITY (consent): addAddresses inserts pasted addresses as status `new`, source `manual`, with no record that the person consented; the newsletter list (listRecipients: status <> unsubscribed) then mails them. A paste is the org\'s own claim of consent, but nothing stores who asserted it beyond added_by. A concurrent paste of the same address can hit the unique index and throw (the select-then-insert race), failing the batch mid-way after earlier rows were written. tags are stored as sent (no length or count cap).',
+    verified: V('address-book.ts'),
+  },
+  {
+    id: 'pkg-email-identity-save',
+    area: 'email.identity',
+    label: 'Save an org\'s email sender identity and look',
+    does: 'Merges the org\'s stored sender settings (from name, from address, reply-to, owner addresses, unsubscribe group, accent colour, palette, inbound-replies flag) into site_config, clearing fields set to null.',
+    class: 'internal',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [h('identity.ts', 'saveOrgEmailIdentity', ['email#saveOrgEmailIdentity'], 'No gate in the function: the route checks the org role. Reads current first and refuses to write if it cannot, so a partial save cannot erase the rest.')],
+    status: 'site_config row (org, email identity key) carries the values',
+    risk: ['emails', 'public'],
+    drift: 'backs arts-collective.hub:save-org-email-identity (PATCH), arts-collective.hub:save-org-email-identity.',
+    canonical: 'packages/email identity.ts#saveOrgEmailIdentity',
+    open: 'GOOD: a requested From address is used only when isAuthenticatedSender says the domain is verified (otherwise the network address is sent), so the stored fromEmail cannot spoof an unauthenticated domain. SECURITY (low): asmGroupId is stored as any finite number: SendGrid unsubscribe group ids are account-wide, so an org can point its letters at another org\'s suppression group (their unsubscribes then land in that group, and that group\'s list applies to them); ownerEmails accepts any string containing "@" (no verification the person agreed to get the org\'s inbound mail). The read-merge-write is not atomic (two saves at once lose one).',
+    verified: V('identity.ts'),
+  },
+  {
+    id: 'pkg-email-template',
+    area: 'email.templates',
+    label: 'Save or reset an org\'s version of a letter',
+    does: 'Merges an org\'s override of a template (text, html, copy slots, links, media, recipients, editor project) into email_template_settings, or deletes the override so the network default applies.',
+    class: 'internal',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      h('template-store.ts', 'saveOrgTemplate', ['email#saveOrgTemplate'], 'No gate in the function. Read-merge-write with a size cap (MAX_BYTES).'),
+      h('template-store.ts', 'clearOrgTemplate', ['email#clearOrgTemplate'], 'DELETE WHERE org_id AND template_key: org-scoped.'),
+    ],
+    status: 'an email_template_settings row for (org, template_key), or none after reset',
+    risk: ['emails'],
+    drift: 'backs arts-collective.hub:save-email-template (PUT), arts-collective.hub:save-email-template and ig-email-template-reset, arts-collective.hub:save-email-template and ig-email-template-reset.',
+    canonical: 'packages/email template-store.ts#saveOrgTemplate',
+    open: 'SECURITY: saveOrgTemplate stores `html` (the whole letter from the Silex/email editor, "legacy editor; email making") and `bodyHtml` as given: sanitising is the route\'s job (ifac sanitises bodyHtml and copyHtml only, per its row), so a full-document `html` is sent to recipients as written by an org owner or guide, under the org\'s authenticated sender. templateKey is free text (no check against known keys, only an overall size cap), so an org can store any number of unused keys. The merge reads then writes, so concurrent saves of different slots can lose one (the editor saves one slot at a time).',
+    verified: V('template-store.ts'),
+  },
+  {
+    id: 'pkg-email-inbox-state',
+    area: 'email.inbox',
+    label: 'Mark an inbox message, or move it in or out of spam',
+    does: 'Sets a message\'s state (unread, read, replied, archived) or its classification (reclassify, which also flips state to archived for spam and unread otherwise).',
+    class: 'internal',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      h('inbox.ts', 'setInboxState', ['email#setInboxState'], 'UPDATE WHERE org_id AND id: org-scoped ("the id alone must never be enough").'),
+      h('inbox.ts', 'reclassifyInbox', ['email#reclassifyInbox'], 'Same org-scoped UPDATE; classification is cast from the route.'),
+    ],
+    status: 'email_inbox.state / classification changed',
+    risk: ['none'],
+    drift: 'backs arts-collective.hub:mark-inbox-message and reclassify-inbox-message (PATCH), arts-collective.hub:mark-inbox-message, ifac-inbox-reply-send (sets replied) and reclassify-inbox-message, arts-collective.hub:mark-inbox-message and ig-inbox-message-classify.',
+    canonical: 'packages/email inbox.ts#setInboxState',
+    open: 'GOOD: org-scoped. The `state` and `classification` values are typed but not validated at runtime in the function (a bad value reaches the CHECK constraint, if any).',
+    verified: V('inbox.ts'),
+  },
+  {
+    id: 'pkg-email-inbound-file',
+    area: 'email.inbox',
+    label: 'File an arriving email in an org\'s inbox',
+    does: 'Inserts an inbound message (sender, subject, bodies, classification, attachments, spam score) into email_inbox, linked to the matching contact, and ignores a message id it has already filed.',
+    class: 'system',
+    actors: ['system'],
+    scope: 'org',
+    hosts: [h('inbox.ts', 'recordInbound', ['email#recordInbound'], 'Called by arts-collective api/email/inbound; ON CONFLICT (org_id, message_id) DO NOTHING makes the provider\'s retries safe.')],
+    status: 'an email_inbox row for (org, message_id)',
+    risk: ['none'],
+    drift: 'backs arts-collective.network:receive-email-events (the inbound half; the events half is pkg-email-events-ingest). Inbound key is set; the events key is not (finding 1 of ATLAS_SECURITY_2026-11-16.md).',
+    canonical: 'packages/email inbox.ts#recordInbound',
+    open: 'The org id is derived from the recipient address by the route (not here), so this function trusts orgId and fromEmail. bodyHtml is stored raw (from an arbitrary sender): it must be sanitised or sandboxed where the inbox renders it (not checked in this pass). Messages without a message_id are not deduplicated.',
+    verified: V('inbox.ts'),
+  },
+  {
+    id: 'pkg-email-events-ingest',
+    area: 'email.ledger',
+    label: 'Record delivery events and suppress bounced addresses',
+    does: 'Stores each SendGrid event once (by sg_event_id), moves the matching send row\'s status, and on a hard bounce, drop, spam report or unsubscribe writes an unsubscribed contact so that address is not mailed again.',
+    class: 'system',
+    actors: ['system'],
+    scope: 'org',
+    hosts: [h('ledger.ts', 'ingestEvents', ['email#ingestEvents'], 'Called by arts-collective api/email/events. Deduped by sg_event_id; per event orgId is taken from the event\'s customArgs, else from the send row.')],
+    status: 'an email_events row for the sg_event_id; contacts.status unsubscribed after a bounce',
+    risk: ['others'],
+    drift: 'backs arts-collective.network:receive-email-events (events half).',
+    canonical: 'packages/email ledger.ts#ingestEvents',
+    open: 'Logged already as finding 1 (ATLAS_SECURITY_2026-11-16.md): SENDGRID_EVENT_PUBLIC_KEY is unset, so the events route accepts unsigned posts. What this function adds to that: SECURITY: orgId is read from `ev.orgId` in the POSTED body when present (customArgs) and trusted for the contacts INSERT, so a forged event can suppress any address in ANY org by naming the org id, with no signature check to stop it. Each event is handled with no transaction, so a crash mid-batch leaves some events stored and their suppressions unwritten while the retry skips them as already seen (the dedupe INSERT runs first). The soft/hard split uses `type === blocked` (the label SendGrid gives blocked mail), which matches its documented bounce types; deferred and processed events change nothing.',
+    verified: V('ledger.ts'),
+  },
+  {
+    id: 'pkg-email-send-ledger',
+    area: 'email.ledger',
+    label: 'Record each email send in the ledger',
+    does: 'Writes one email_sends row per recipient from sendEmail, including failures; never throws.',
+    class: 'system',
+    actors: ['system'],
+    scope: 'org',
+    hosts: [h('ledger.ts', 'recordSend', ['email#recordSend'], 'Called inside sendEmail (client.ts) for every send; errors logged and swallowed.')],
+    status: 'an email_sends row for (org, to_email) with the status',
+    risk: ['none'],
+    drift: 'called by every capability that sends mail (sendEmail in packages/email client.ts): newsletter sends (pkg-newsletter-send), series reminders (pkg-series-site-reminders), order and booking mails, apps.ifac.email:ifac-inbox-reply-send. No person row.',
+    canonical: 'packages/email ledger.ts#recordSend',
+    open: 'A failed ledger write is swallowed by design, so a send can exist with no record; nothing reconciles. The status moves later from webhook events (pkg-email-events-ingest).',
+    verified: V('ledger.ts'),
+  },
+];
+
+const area: Area = { capabilities, ignored: [] };
+export default area;

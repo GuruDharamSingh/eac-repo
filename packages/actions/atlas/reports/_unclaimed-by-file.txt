@@ -1,0 +1,122 @@
+## commerce 67
+20	packages/commerce/src/server/series.ts
+19	packages/commerce/src/server/index.ts
+8	packages/commerce/src/server/series-social.ts
+6	packages/commerce/src/server/payees.ts
+4	packages/commerce/src/server/bidding.ts
+3	packages/commerce/src/server/auctions.ts
+2	packages/commerce/src/server/presentation.ts
+1	packages/commerce/src/queries/index.ts
+1	packages/commerce/src/server/auction-clock.ts
+1	packages/commerce/src/server/journeys.ts
+1	packages/commerce/src/server/settings.ts
+1	packages/commerce/src/server/store-team.ts
+## admin 32
+2	apps/admin/src/app/api/auth/login/route.ts
+2	apps/admin/src/app/api/auth/signup/route.ts
+2	apps/admin/src/app/api/contacts/route.ts
+2	apps/admin/src/app/api/meetings/[id]/workshop/route.ts
+2	apps/admin/src/app/api/nextcloud/setup-folders/route.ts
+2	apps/admin/src/app/api/nextcloud/sync-user/[userId]/route.ts
+2	apps/admin/src/app/api/nextcloud/sync-users/route.ts
+2	apps/admin/src/app/api/users/[userId]/org-role/route.ts
+2	apps/admin/src/app/api/users/[userId]/route.ts
+2	apps/admin/src/app/api/work-question/route.ts
+2	apps/admin/src/lib/oidc.ts
+1	apps/admin/src/app/api/agent/post/route.ts
+1	apps/admin/src/app/api/auth/logout/route.ts
+1	apps/admin/src/app/api/moderation/route.ts
+1	apps/admin/src/app/api/nextcloud/files/route.ts
+1	apps/admin/src/app/api/nextcloud/talk/route.ts
+1	apps/admin/src/app/api/nextcloud/upload/route.ts
+1	apps/admin/src/app/api/oidc/token/route.ts
+1	apps/admin/src/app/api/organizations/grants/route.ts
+1	apps/admin/src/lib/actions.ts
+1	apps/admin/src/lib/data.ts
+## lms 30
+6	packages/lms/src/delivery.ts
+6	packages/lms/src/hub.ts
+6	packages/lms/src/record.ts
+5	packages/lms/src/content.ts
+3	packages/lms/src/authoring.ts
+2	packages/lms/src/pool.ts
+1	packages/lms/src/refs.ts
+1	packages/lms/src/workshops.ts
+## astro-corpus 23
+5	packages/astro-corpus/src/foundations.ts
+5	packages/astro-corpus/src/reasoning.ts
+3	packages/astro-corpus/src/studio.ts
+3	packages/astro-corpus/src/vocab.ts
+2	packages/astro-corpus/src/server.ts
+1	packages/astro-corpus/src/claims.ts
+1	packages/astro-corpus/src/helper.ts
+1	packages/astro-corpus/src/library.ts
+1	packages/astro-corpus/src/ref-votes.ts
+1	packages/astro-corpus/src/sources.ts
+## email 12
+4	packages/email/src/address-book.ts
+3	packages/email/src/inbox.ts
+2	packages/email/src/ledger.ts
+2	packages/email/src/template-store.ts
+1	packages/email/src/identity.ts
+## elkdonis-arts-collective 9
+2	apps/elkdonis-arts-collective/src/app/api/admin/site-config/route.ts
+2	apps/elkdonis-arts-collective/src/app/api/contact/route.ts
+2	apps/elkdonis-arts-collective/src/app/api/inquiries/route.ts
+1	apps/elkdonis-arts-collective/src/app/api/admin/media-gallery/route.ts
+1	apps/elkdonis-arts-collective/src/app/api/admin/media-gallery/upload/route.ts
+1	apps/elkdonis-arts-collective/src/app/api/auth/signup/route.ts
+## auth-server 9
+4	packages/auth-server/src/device-tokens.ts
+3	packages/auth-server/src/api-routes.ts
+1	packages/auth-server/src/arrival.ts
+1	packages/auth-server/src/handoff.ts
+## forum 4
+1	apps/forum/src/app/api/drawing/[id]/route.ts
+1	apps/forum/src/app/api/drawing/route.ts
+1	apps/forum/src/app/api/forum/[action]/route.ts
+1	apps/forum/src/app/api/pulse/route.ts
+## mcp 4
+3	packages/mcp/src/server/grants.ts
+1	packages/mcp/src/server/audit.ts
+## messaging 4
+4	packages/messaging/src/server.ts
+## newsletter 4
+4	packages/newsletter/src/server.ts
+## art-auction 3
+2	apps/art-auction/src/lib/store-panel/actions.ts
+1	apps/art-auction/src/app/api/galleries/[id]/items/route.ts
+## blog-guru-dharam 3
+1	apps/blog-guru-dharam/src/app/api/auth/signup/route.ts
+1	apps/blog-guru-dharam/src/app/api/media/upload/route.ts
+1	apps/blog-guru-dharam/src/app/entry/page.tsx
+## blog-tester 3
+1	apps/blog-tester/src/app/api/auth/signup/route.ts
+1	apps/blog-tester/src/app/api/media/upload/route.ts
+1	apps/blog-tester/src/app/entry/page.tsx
+## actions 3
+2	packages/actions/src/server/run.ts
+1	packages/actions/src/server/sb-runners.ts
+## blog-server 3
+1	packages/blog-server/src/auth.ts
+1	packages/blog-server/src/media.ts
+1	packages/blog-server/src/posts.ts
+## page-builder 3
+2	packages/page-builder/src/user-store.ts
+1	packages/page-builder/src/store.ts
+## series-site 3
+2	packages/series-site/src/lib/reminders.ts
+1	packages/series-site/src/routes/mediaUpload.ts
+## elastrocal 2
+1	apps/elastrocal/src/app/hub/profile/actions.ts
+1	apps/elastrocal/src/app/services/[slug]/actions.ts
+## sophia 1
+1	apps/sophia/src/app/api/lms/[action]/route.ts
+## analytics 1
+1	packages/analytics/src/collect.ts
+## nextcloud 1
+1	packages/nextcloud/src/users.ts
+## openclaw-bridge 1
+1	packages/openclaw-bridge/src/post.ts
+## silex-render 1
+1	packages/silex-render/src/contact.ts

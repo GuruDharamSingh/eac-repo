@@ -26,6 +26,9 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "check:registry": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-registry.mts"
+    "check:registry": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-registry.mts",
+    "atlas:inventory": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-inventory.mts",
+    "atlas:check": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-atlas.mts",
+    "atlas:reports": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-reports.mts"
   }
 }
