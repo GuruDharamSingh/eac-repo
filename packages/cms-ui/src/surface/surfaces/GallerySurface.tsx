@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import type { SurfaceDescriptor, SurfaceImage } from "../types";
 import { useLayer, useSurface } from "../context";
@@ -167,7 +168,7 @@ export function GallerySurface({ descriptor }: { descriptor: Descriptor }) {
               onClick={() => setLightbox(i)}
               aria-label={`View ${item.name}`}
             >
-              <img src={item.url} alt={item.name} loading="lazy" />
+              <img src={mediaThumbnail(item.url, 512)} alt={item.name} loading="lazy" />
               <span className="eac-gal-name">{item.name}</span>
             </button>
           ))}

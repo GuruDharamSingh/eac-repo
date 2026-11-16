@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { defineBlock, type PropsOf } from "../registry";
 import { OPENS_PROP, openedAttrs, type Opened } from "../opens";
 
@@ -89,7 +90,7 @@ export function FeaturedPerson({ person, layout = "side", showPortrait = true, s
       {showPortrait &&
         (photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="blk-fperson-portrait" src={photo} alt="" loading="lazy" />
+          <img className="blk-fperson-portrait" src={mediaThumbnail(photo, 512)} alt="" loading="lazy" />
         ) : (
           <span className="blk-fperson-portrait blk-fperson-portrait--none" aria-hidden />
         ))}

@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { defineBlock, type PropsOf } from "../registry";
 import { CycleBadge } from "./cycle-badge";
 
@@ -177,7 +178,7 @@ export function ThreadFeed({
           >
             {showCovers && item.coverImageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="blk-item-cover" src={item.coverImageUrl} alt="" loading="lazy" />
+              <img className="blk-item-cover" src={mediaThumbnail(item.coverImageUrl, 512)} alt="" loading="lazy" />
             )}
 
             {(item.kind || item.kicker) && (

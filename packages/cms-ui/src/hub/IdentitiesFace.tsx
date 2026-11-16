@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { SurfaceCard, useSurface } from "../surface";
 import type { SurfaceIdentity } from "../surface";
@@ -51,7 +52,7 @@ export function IdentitiesFace({ identities }: { identities?: SurfaceIdentity[] 
                 <span className="eac-ident-face-dot" aria-hidden>
                   {identity.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={identity.avatarUrl} alt="" />
+                    <img src={mediaThumbnail(identity.avatarUrl, 256)} alt="" />
                   ) : (
                     identity.displayName.slice(0, 1).toUpperCase()
                   )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import Link from "next/link";
 import { fmtDay, fmtTime, fromZonedInput, toZonedInput } from "../model";
@@ -185,7 +186,7 @@ function Head({ row, compact = false }: { row: GridRow; compact?: boolean }) {
     );
   return (
     <>
-      {h.showThumb ? h.imageUrl ? <img className="kch-thumb" src={h.imageUrl} alt="" loading="lazy" style={{ width: 40, height: 40 }} /> : <span className="kch-thumb" aria-hidden="true" style={{ width: 40, height: 40 }} /> : null}
+      {h.showThumb ? h.imageUrl ? <img className="kch-thumb" src={mediaThumbnail(h.imageUrl, 128)} alt="" loading="lazy" style={{ width: 40, height: 40 }} /> : <span className="kch-thumb" aria-hidden="true" style={{ width: 40, height: 40 }} /> : null}
       <span className="kch-grid-name">
         {h.title}
         {h.line ? <span className="kch-fine">{h.line}</span> : null}

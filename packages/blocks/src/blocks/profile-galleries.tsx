@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { defineBlock, type PropsOf } from "../registry";
 
 // ============================================================================
@@ -76,7 +77,7 @@ export function ProfileGalleries({
           <a className="blk-room-link" href={room.href}>
             {room.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="blk-room-cover" src={room.coverUrl} alt="" loading="lazy" />
+              <img className="blk-room-cover" src={mediaThumbnail(room.coverUrl, 512)} alt="" loading="lazy" />
             ) : (
               <span className="blk-room-cover blk-room-cover-blank" aria-hidden="true" />
             )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { kindMeta, useSurfaceOptional } from "../surface";
 import type { CenterThread } from "./types";
@@ -67,7 +68,7 @@ export function CenterThreadRow({
         <span className="block h-11 w-11 overflow-hidden rounded-full border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
           {thread.authorAvatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thread.authorAvatar} alt="" className="h-full w-full object-cover" />
+            <img src={mediaThumbnail(thread.authorAvatar, 128)} alt="" className="h-full w-full object-cover" />
           ) : (
             <span className="grid h-full w-full place-items-center text-[color:var(--sf-faint)]" aria-hidden>
               ◯
@@ -93,7 +94,7 @@ export function CenterThreadRow({
           {thread.coverImageUrl && (
             <span className="block h-16 w-24 overflow-hidden rounded-[var(--sf-radius-sm)] border border-[color:var(--sf-line)] sm:h-20 sm:w-32">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={thread.coverImageUrl} alt="" className="h-full w-full object-cover" />
+              <img src={mediaThumbnail(thread.coverImageUrl, 256)} alt="" className="h-full w-full object-cover" />
             </span>
           )}
         </span>

@@ -389,6 +389,47 @@ await t('fourthway shape: ok,path,url,name,size; signed out -> 403', async () =>
 });
 
 
+// ---- masters keep quality (2026-11-16) -------------------------------------
+await t('site and artwork re-encode at JPEG q95; avatar and forum stay at the default', () => {
+  assert.equal((UPLOAD_POLICIES.site.reencode as any).quality, 95);
+  assert.equal((UPLOAD_POLICIES.artwork.reencode as any).quality, 95);
+  assert.equal((UPLOAD_POLICIES.avatar.reencode as any).quality, undefined);
+  assert.equal((UPLOAD_POLICIES.forum.reencode as any).quality, undefined);
+});
+await t('q95 master: larger than q88 on a detailed photo, same size, no EXIF, not resized', async () => {
+  const w = 1200, h = 900;
+  const px = Buffer.alloc(w * h * 3);
+  let seed = 7;
+  for (let i = 0; i < px.length; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    px[i] = ((i / 3) % 255) ^ (seed >> 20);
+  }
+  const photo = await sharp(px, { raw: { width: w, height: h, channels: 3 } })
+    .withMetadata({ exif: { IFD0: { Copyright: 'someone' } } })
+    .jpeg({ quality: 100 })
+    .toBuffer();
+  const store = async (kind: 'site' | 'avatar') => {
+    let stored: Uint8Array | null = null;
+    const r: any = await storeUpload(
+      { kind, actor: { userId: 'u1' }, orgId: 'org1', file: file(photo, 'p.jpg', 'image/jpeg') } as any,
+      { ...io, put: async (_p, b) => ((stored = b), true) }
+    );
+    assert.equal(r.ok, true, JSON.stringify(r));
+    return { bytes: stored as unknown as Uint8Array, r };
+  };
+  const master = await store('site');
+  const low = await storeUpload(
+    { kind: 'artwork', actor: { userId: 'u1' }, file: file(photo, 'p.jpg', 'image/jpeg') } as any,
+    { ...io, put: async () => true }
+  );
+  assert.equal((low as any).ok, true);
+  const q88 = await sharp(Buffer.from(photo)).jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+  assert.ok(master.bytes.byteLength > q88.byteLength, `${master.bytes.byteLength} vs ${q88.byteLength}`);
+  const meta = await sharp(Buffer.from(master.bytes)).metadata();
+  assert.equal(meta.exif, undefined);
+  assert.equal(`${meta.width}x${meta.height}`, `${w}x${h}`);
+});
+
 console.log(`\n${pass} passed, ${failures.length} failed`);
 if (failures.length) {
   console.log(failures.join('\n'));

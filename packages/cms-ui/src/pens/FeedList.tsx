@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import {
   createContext,
   useCallback,
@@ -277,7 +278,7 @@ export function FeedItem({
       >
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="eac-pen-feed-avatar" data-flip="avatar" src={avatar} alt={avatarAlt} />
+          <img className="eac-pen-feed-avatar" data-flip="avatar" src={mediaThumbnail(avatar, 128)} alt={avatarAlt} />
         ) : (
           <span className="eac-pen-feed-avatar" data-flip="avatar" aria-hidden />
         )}

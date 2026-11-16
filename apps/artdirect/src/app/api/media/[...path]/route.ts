@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { serveMedia } from "@elkdonis/services";
+import { parseThumbnailWidth, serveMedia } from "@elkdonis/services";
 import { getServerSession } from "@elkdonis/auth-server";
 
 /**
@@ -29,5 +29,6 @@ export async function GET(
     viewerId: session.user?.db_user_id ?? session.user?.id ?? null,
     allowedPrefixes: ["EAC_Network/"],
     range: request.headers.get("range"),
+    width: parseThumbnailWidth(request.nextUrl.searchParams.get("w")),
   });
 }

@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { defineBlock, type PropsOf } from "../registry";
 import type { PersonBlockLink, PersonBlockPerson } from "../person-context";
 import { SAMPLE_PERSON } from "./person-header";
@@ -69,7 +70,7 @@ export function PersonCard({
       ) : null}
       {showPortrait && person.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="eac-person-portrait" src={person.avatarUrl} alt={person.displayName} />
+        <img className="eac-person-portrait" src={mediaThumbnail(person.avatarUrl, 512)} alt={person.displayName} />
       ) : null}
       {bio.length > 0 ? (
         <div className="eac-person-bio">

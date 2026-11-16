@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 
 // ============================================================================
@@ -39,7 +40,7 @@ export function CrossPostCycler({ items, title = "Across the collective" }: { it
     <>
       {cur.coverImageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="eac-hs-cross-img" src={cur.coverImageUrl} alt="" loading="lazy" />
+        <img className="eac-hs-cross-img" src={mediaThumbnail(cur.coverImageUrl, 512)} alt="" loading="lazy" />
       ) : (
         <span className="eac-hs-cross-img is-empty" aria-hidden>
           {cur.orgName.slice(0, 1)}

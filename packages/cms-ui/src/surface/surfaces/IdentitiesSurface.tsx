@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import type { SurfaceAction, SurfaceIdentity } from "../types";
 import { useLayer, useSurface } from "../context";
@@ -285,7 +286,7 @@ function IdentityRow({
       <span className="eac-ident-avatar" aria-hidden>
         {identity.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={identity.avatarUrl} alt="" />
+          <img src={mediaThumbnail(identity.avatarUrl, 256)} alt="" />
         ) : (
           <span className="eac-ident-initial">
             {identity.displayName.slice(0, 1).toUpperCase()}

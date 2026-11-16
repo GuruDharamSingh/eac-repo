@@ -21,6 +21,8 @@ export class UploadRefusal extends Error {
 
 export const HEIC_MESSAGE = 'HEIC photo: please send a JPEG (on a phone, set the camera to "Most Compatible").';
 const MAX_PIXELS = 100_000_000;
+/** JPEG/WebP quality when a policy does not ask for more (avatars, forum). */
+export const DEFAULT_QUALITY = 88;
 
 export interface ProcessedImage {
   data: Uint8Array;
@@ -40,8 +42,9 @@ export function isHeicBytes(buf: Uint8Array): boolean {
 
 export async function processImage(
   input: Uint8Array,
-  opts: { maxEdge?: number } = {}
+  opts: { maxEdge?: number; quality?: number } = {}
 ): Promise<ProcessedImage> {
+  const quality = opts.quality ?? DEFAULT_QUALITY;
   if (isHeicBytes(input)) throw new UploadRefusal(415, HEIC_MESSAGE);
   const sharp = (await import('sharp')).default;
   const buf = Buffer.from(input);
@@ -70,7 +73,7 @@ export async function processImage(
       mime = 'image/png';
       ext = 'png';
     } else if (meta.format === 'webp') {
-      data = await img.webp({ quality: 88 }).toBuffer();
+      data = await img.webp({ quality }).toBuffer();
       mime = 'image/webp';
       ext = 'webp';
     } else if (meta.format === 'gif') {
@@ -79,7 +82,7 @@ export async function processImage(
       mime = 'image/png';
       ext = 'png';
     } else {
-      data = await img.jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+      data = await img.jpeg({ quality, mozjpeg: true }).toBuffer();
       mime = 'image/jpeg';
       ext = 'jpg';
     }

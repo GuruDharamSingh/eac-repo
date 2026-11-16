@@ -3,6 +3,7 @@
 // The copy-slot form for a template page: groups, a 2-column grid, every slot type. Shared by the
 // pop-up (1e) and the detail page (1i). Controlled: the owner keeps the draft (see live.tsx).
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from 'react';
 import { Btn, Icon } from '../ui/primitives';
 import type { SiteBuilderHost } from './host';
@@ -65,7 +66,7 @@ function ImageSlot({ id, slot, value, onChange, host, disabled }: {
           }}
         >
           {filled && looksLikeUrl(value) ? (
-            <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={mediaThumbnail(value, 256)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <Icon name="image" size={20} />
           )}

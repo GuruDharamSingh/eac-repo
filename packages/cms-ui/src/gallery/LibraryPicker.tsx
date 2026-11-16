@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { useEffect, useMemo, useState } from "react";
 
 /**
@@ -153,7 +154,7 @@ export function LibraryPicker({ endpoint, existingUrls, onAdd, onClose, sourceLa
                   aria-pressed={on}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={e.url} alt="" loading="lazy" />
+                  <img src={mediaThumbnail(e.url, 256)} alt="" loading="lazy" />
                   <span className="eac-lib-name">{e.name}</span>
                   {on && <span className="eac-lib-check" aria-hidden>✓</span>}
                   {inGallery && <span className="eac-lib-check eac-lib-check--used" aria-hidden>in gallery</span>}

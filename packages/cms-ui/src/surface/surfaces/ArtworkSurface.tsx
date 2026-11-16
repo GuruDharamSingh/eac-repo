@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import type { SurfaceArtworkInput } from "../types";
 import { useLayer, useSurface } from "../context";
@@ -215,7 +216,7 @@ export function ArtworkSurface() {
             <button type="button" className="eac-artwork-queue-item" data-current={i === current || undefined} data-state={p.state} onClick={() => setCurrent(i)}>
               {p.fields.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.fields.imageUrl} alt="" />
+                <img src={mediaThumbnail(p.fields.imageUrl, 512)} alt="" />
               ) : (
                 <span className="eac-artwork-queue-blank" aria-hidden />
               )}

@@ -3,6 +3,7 @@
 // Shared hub card primitives (README "Shared hub patterns"). Client-only, no
 // next/*, no data. Every colour is a --hc-* token (theme/hub-cards.css).
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from 'react';
 import { loadFonts } from '@elkdonis/fonts';
 import type { HubIconMap, HubIconName, HubRole } from '../contract';
@@ -407,7 +408,7 @@ export function Thumb({ url, title, width, height, large }: {
   if (url) {
     return (
       <span className="hc-thumb hc-frame" style={{ width, height }}>
-        <img src={url} alt="" loading="lazy" />
+        <img src={mediaThumbnail(url, 512)} alt="" loading="lazy" />
       </span>
     );
   }

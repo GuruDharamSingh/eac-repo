@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurfaceOptional } from "../surface";
 import type { SurfaceProfileTab } from "../surface";
@@ -38,7 +39,7 @@ export function PersonPanel({
     <span className="relative block h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
       {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        <img src={mediaThumbnail(avatarUrl, 256)} alt="" className="h-full w-full object-cover" />
       ) : (
         <span className="grid h-full w-full place-items-center text-xl text-[color:var(--sf-muted)]" aria-hidden>
           ◯

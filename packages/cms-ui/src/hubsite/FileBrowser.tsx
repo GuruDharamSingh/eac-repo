@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { FileIcon, badgeOf, familyName, familyOf, formatBytes } from "./file-types";
 
@@ -243,7 +244,7 @@ export function FileBrowser({ sources, title = "Files" }: { sources: FileBrowser
                 <span className="eac-hs-grid-thumb">
                   {thumb ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`${e.url}${e.url.includes("?") ? "&" : "?"}w=320`} alt="" loading="lazy" />
+                    <img src={mediaThumbnail(e.url, 512)} alt="" loading="lazy" />
                   ) : (
                     <FileIcon family={fam} badge={badgeOf(e, fam)} size={52} />
                   )}

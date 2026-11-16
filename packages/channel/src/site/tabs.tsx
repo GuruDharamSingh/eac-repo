@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { parsePlan } from "@elkdonis/services/channel-plan-md";
@@ -23,7 +24,7 @@ const isArtwork = (p: Piece) => p.kind === "artwork" || p.kind === "product";
 
 export function Thumb({ piece, size = 52 }: { piece: Piece; size?: number }) {
   return piece.imageUrl ? (
-    <img className="kch-thumb" src={piece.imageUrl} alt="" loading="lazy" style={{ width: size, height: size }} />
+    <img className="kch-thumb" src={mediaThumbnail(piece.imageUrl, 128)} alt="" loading="lazy" style={{ width: size, height: size }} />
   ) : (
     <span className="kch-thumb" aria-hidden="true" style={{ width: size, height: size }} />
   );

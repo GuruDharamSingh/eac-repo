@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { SurfaceCard, kindMeta } from "../surface";
 import { CenterThreadRow } from "./CenterThreadRow";
@@ -423,7 +424,7 @@ export function CenterPage({
               <span className="block h-16 w-16 overflow-hidden rounded-[var(--sf-radius-sm)] border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
                 {org?.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={org.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={mediaThumbnail(org.avatarUrl, 128)} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <span className="grid h-full w-full place-items-center text-2xl text-[color:var(--sf-faint)]" aria-hidden>
                     ◆
@@ -508,7 +509,7 @@ export function CenterPage({
               <span className="block h-16 w-16 overflow-hidden rounded-[var(--sf-radius-sm)] border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
                 {org?.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={org.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={mediaThumbnail(org.avatarUrl, 128)} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <span className="grid h-full w-full place-items-center text-2xl text-[color:var(--sf-faint)]" aria-hidden>
                     ◆
@@ -603,7 +604,7 @@ export function CenterPage({
                     t.coverImageUrl ? (
                       <div className="eac-center-featured-media">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={t.coverImageUrl} alt="" />
+                        <img src={mediaThumbnail(t.coverImageUrl, 512)} alt="" />
                       </div>
                     ) : undefined
                   }

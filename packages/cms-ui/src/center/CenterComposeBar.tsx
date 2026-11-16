@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurfaceOptional } from "../surface";
 
@@ -37,7 +38,7 @@ export function CenterComposeBar({
       <span className="block h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={mediaThumbnail(avatarUrl, 128)} alt="" className="h-full w-full object-cover" />
         ) : (
           <span className="grid h-full w-full place-items-center text-[color:var(--sf-faint)]" aria-hidden>
             ◯

@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
@@ -259,7 +260,7 @@ export function FilesCard({
                 <>
                   {isImage(e) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img className="eac-files-thumb" src={e.url} alt="" loading="lazy" />
+                    <img className="eac-files-thumb" src={mediaThumbnail(e.url, 128)} alt="" loading="lazy" />
                   ) : (
                     <span className="eac-files-thumb eac-files-thumb--none" aria-hidden />
                   )}

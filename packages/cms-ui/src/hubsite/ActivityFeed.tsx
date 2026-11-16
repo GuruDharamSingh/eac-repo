@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurfaceOptional } from "../surface";
 
@@ -51,7 +52,7 @@ export function ActivityFeed({ items, moreHref }: { items: ActivityItem[]; moreH
               <span className="eac-hs-avatar">
                 {t.authorAvatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.authorAvatar} alt="" />
+                  <img src={mediaThumbnail(t.authorAvatar, 128)} alt="" />
                 ) : (
                   <span aria-hidden>{(t.authorName ?? t.title).slice(0, 1)}</span>
                 )}
@@ -72,7 +73,7 @@ export function ActivityFeed({ items, moreHref }: { items: ActivityItem[]; moreH
               </span>
               {t.coverImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img className="eac-hs-feed-cover" src={t.coverImageUrl} alt="" loading="lazy" />
+                <img className="eac-hs-feed-cover" src={mediaThumbnail(t.coverImageUrl, 512)} alt="" loading="lazy" />
               )}
             </>
           );

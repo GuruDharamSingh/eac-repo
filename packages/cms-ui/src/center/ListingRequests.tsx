@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 
 // ============================================================================
@@ -72,7 +73,7 @@ export function ListingRequests({
             <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
               {r.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.avatarUrl} alt="" className="h-full w-full object-cover" />
+                <img src={mediaThumbnail(r.avatarUrl, 128)} alt="" className="h-full w-full object-cover" />
               ) : null}
             </span>
             <span className="grid min-w-0 flex-1 gap-0.5">

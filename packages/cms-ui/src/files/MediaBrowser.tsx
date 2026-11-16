@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
 /**
@@ -233,7 +234,7 @@ export function MediaBrowser({ endpoint, value, onPick, picked, onToggle, kind, 
                           <video src={`${p.url}#t=0.5`} preload="metadata" muted playsInline />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.thumb ?? p.url} alt="" loading="lazy" draggable={false} />
+                          <img src={mediaThumbnail((p.thumb ?? p.url) as string, 256)} alt="" loading="lazy" draggable={false} />
                         )}
                         {kind === "video" ? <span className="eac-browse-name">{p.name}</span> : null}
                         {onToggle && on ? <span className="eac-browse-check" aria-hidden="true">✓</span> : null}

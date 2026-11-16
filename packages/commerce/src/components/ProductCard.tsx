@@ -1,6 +1,7 @@
 import * as React from "react";
 import { formatMoney, nextMinimumBid } from "../money";
 import type { Artwork, AuctionLot } from "../types";
+import { mediaThumbnail, buildSrcSet } from "@elkdonis/utils/media-thumbnail";
 
 /**
  * How a piece is being sold right now, reduced to the one thing a card has to
@@ -354,44 +355,7 @@ export function readState(artwork: Artwork): ProductState {
   return !variant || variant.priceMinor <= 0 ? { kind: "ask" } : { kind: "price" };
 }
 
-/**
- * The widths the network's media route actually renders. Asking for anything
- * else just rounds up to one of these, so a `srcset` built from other numbers
- * would advertise variants that do not exist and hand the browser the next
- * size up under a wrong label.
- */
-const THUMB_WIDTHS = [256, 512, 1024] as const;
-
-/**
- * The `?w=` convention shared by every app's `/api/media` route.
- *
- * Applied only to that route: an artwork image can be an absolute URL on
- * someone else's host, and bolting a query string onto it would at best be
- * ignored and at worst break a signed link.
- */
-export function mediaThumbnail(url: string, width: number): string {
-  if (!url.includes("/api/media/") || url.includes("?")) return url;
-  return `${url}?w=${width}`;
-}
-
-/**
- * Why this exists: the marketplace was serving master files to its grid —
- * fourteen cards at one to four megabytes each, some forty megabytes of
- * pictures for one screen. On anything short of a desk connection the page
- * rendered as a row of empty shadows for several seconds, which is exactly
- * what a broken site looks like. The same image at `?w=256` is under 60KB.
- */
-export function buildSrcSet(
-  url: string | null | undefined,
-  thumb: (url: string, width: number) => string
-): string | undefined {
-  if (!url) return undefined;
-  const entries = THUMB_WIDTHS.map((w) => [thumb(url, w), w] as const).filter(
-    ([built]) => built !== url
-  );
-  if (entries.length === 0) return undefined;
-  return entries.map(([built, w]) => `${built} ${w}w`).join(", ");
-}
+export { mediaThumbnail, buildSrcSet } from "@elkdonis/utils/media-thumbnail";
 
 /**
  * Dimensions the way a label prints them.

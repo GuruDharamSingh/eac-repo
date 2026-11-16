@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurface } from "../surface";
 
@@ -109,7 +110,7 @@ export function InlineCompose({
         <span className="eac-hs-avatar">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" />
+            <img src={mediaThumbnail(avatarUrl, 128)} alt="" />
           ) : (
             <span aria-hidden>{name.slice(0, 1)}</span>
           )}

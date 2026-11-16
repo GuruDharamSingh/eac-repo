@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurfaceOptional } from "../surface";
 
@@ -219,7 +220,7 @@ function Banner({ meeting, timeZone }: { meeting: MeetingBannerData; timeZone: s
           <span className="eac-hs-avatar">
             {meeting.host?.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={meeting.host.avatarUrl} alt="" />
+              <img src={mediaThumbnail(meeting.host.avatarUrl, 128)} alt="" />
             ) : (
               <span aria-hidden>{(meeting.host?.name ?? "?").slice(0, 1)}</span>
             )}

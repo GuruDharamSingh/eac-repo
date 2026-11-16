@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import {
   useSurfaceOptional,
@@ -406,7 +407,7 @@ function PeopleTable({ orgId, rows, setRows }: { orgId: string; rows: SurfaceOrg
                 <span className="eac-jt-person">
                   {r.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.avatarUrl} alt="" />
+                    <img src={mediaThumbnail(r.avatarUrl, 128)} alt="" />
                   ) : (
                     <span className="eac-jt-person-blank" aria-hidden />
                   )}
@@ -908,7 +909,7 @@ function IdentityForm({ target, note, onSaved }: { target: { kind: "org"; orgId:
         <div className="eac-jt-image">
           {d.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={d.avatarUrl} alt="" />
+            <img src={mediaThumbnail(d.avatarUrl, 128)} alt="" />
           ) : (
             <span className="eac-jt-image-blank">{isOrg ? "display image" : "portrait"}</span>
           )}

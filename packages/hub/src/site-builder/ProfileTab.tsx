@@ -2,6 +2,7 @@
 
 // Detail page, Profile tab (1m/1n): the org's identity card, what kind of org it is, and how the network shows it.
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from 'react';
 import { Btn, Frame, Tag } from '../ui/primitives';
 import type { SiteBuilderHost } from './host';
@@ -26,7 +27,7 @@ function Mark({ identity, data, size, font }: { identity: OrgIdentity; data: Sit
         border: identity.markUrl ? '1px solid var(--hc-n-400)' : '1px dashed var(--hc-n-400)',
       }}
     >
-      {identity.markUrl ? <img src={identity.markUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : data.org.mark}
+      {identity.markUrl ? <img src={mediaThumbnail(identity.markUrl, 256)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : data.org.mark}
     </span>
   );
 }

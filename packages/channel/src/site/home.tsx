@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import Link from "next/link";
 import { PieceRow } from "@elkdonis/content/ui";
 import { MATRIX_COLUMNS, MATRIX_LABELS, PIECE_KINDS, kindLabel, type ChannelModel, type ItemState, type Piece, type PieceKind } from "../model";
@@ -154,7 +155,7 @@ export function ChannelHome({ model, links, moves, movePieces, kind, piecesMode,
               {pieces.map((p) => (
                 <li key={p.key}>
                   <Link className="kch-card-link" href={rowLinks.manageHref(p)} scroll={false}>
-                    {p.imageUrl ? <img className="kch-card-cover" src={p.imageUrl} alt="" loading="lazy" /> : <span className="kch-card-band" data-type={p.kind} aria-hidden="true" />}
+                    {p.imageUrl ? <img className="kch-card-cover" src={mediaThumbnail(p.imageUrl, 512)} alt="" loading="lazy" /> : <span className="kch-card-band" data-type={p.kind} aria-hidden="true" />}
                     <span className="kch-card-body">
                       <span className="kch-eb">{kindLabel(p.kind)}</span>
                       <span className="kch-card-title">{p.title || "Untitled"}</span>

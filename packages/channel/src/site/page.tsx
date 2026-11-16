@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -395,7 +396,7 @@ export async function ChannelSitePage({ org, viewer, origin, networkUrl, searchP
                           const c = cardHref(it);
                           const body = (
                             <>
-                              {it.cover ? <img className="kch-card-cover" src={it.cover} alt="" loading="lazy" /> : <span className="kch-card-band" data-type={it.type} aria-hidden="true" />}
+                              {it.cover ? <img className="kch-card-cover" src={mediaThumbnail(it.cover, 512)} alt="" loading="lazy" /> : <span className="kch-card-band" data-type={it.type} aria-hidden="true" />}
                               <span className="kch-card-body">
                                 <span className="kch-eb">{typeLabel(it.type)}</span>
                                 <span className="kch-card-title">{it.title || "Untitled"}</span>

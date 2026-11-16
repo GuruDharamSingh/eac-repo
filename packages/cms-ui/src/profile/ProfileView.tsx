@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import type { ReactNode } from "react";
 
 /**
@@ -80,7 +81,7 @@ export function ProfileView({
       <header className="eac-profile-head">
         {person.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="eac-profile-portrait" src={person.avatarUrl} alt="" />
+          <img className="eac-profile-portrait" src={mediaThumbnail(person.avatarUrl, 512)} alt="" />
         ) : (
           <div
             className="eac-profile-portrait eac-profile-portrait--empty"

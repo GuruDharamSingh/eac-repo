@@ -668,6 +668,8 @@ export type { DavEntry } from './dav';
 export { serveMedia } from './media-serve';
 export type { ServeMediaOptions } from './media-serve';
 export { THUMBNAIL_WIDTHS, parseThumbnailWidth } from './media-thumbnail';
+export { mediaRoutes } from "./media-route";
+export type { MediaRoutesOptions } from "./media-route";
 // The Studio's image tools: a stored picture resized/converted with sharp. See media-convert.ts.
 export { convertMediaImage, CONVERT_SIZES } from './media-convert';
 export type { ConvertMediaOptions, ConvertFormat } from './media-convert';

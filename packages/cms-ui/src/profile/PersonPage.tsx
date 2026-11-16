@@ -1,3 +1,4 @@
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 
 /**
@@ -111,7 +112,7 @@ export function PersonPage({
       <ul className="eac-person-work">
         {portfolio.map((item, i) => (
           <li key={`${item.url}-${i}`}>
-            <img src={item.url} alt={item.title ?? ""} loading="lazy" />
+            <img src={mediaThumbnail(item.url, 512)} alt={item.title ?? ""} loading="lazy" />
             {item.title && <span>{item.title}</span>}
           </li>
         ))}
@@ -148,7 +149,7 @@ export function PersonPage({
       <div className={featuredColumn ? "eac-person-body" : "eac-person-body eac-person-body--single"}>
         <aside className="eac-person-sidebar eac-person-panel">
           {person.avatarUrl && (
-            <img className="eac-person-portrait" src={person.avatarUrl} alt={person.displayName} />
+            <img className="eac-person-portrait" src={mediaThumbnail(person.avatarUrl, 512)} alt={person.displayName} />
           )}
           {person.bioHtml ? (
             <div className="eac-person-bio" data-trait="bio" dangerouslySetInnerHTML={{ __html: person.bioHtml }} />
@@ -275,7 +276,7 @@ export function PersonGalleryCards({ title = "Galleries", items }: { title?: str
           <li key={g.href}>
             <a className="eac-person-card" href={g.href}>
               {g.coverUrl ? (
-                <img className="eac-person-card-cover" src={g.coverUrl} alt="" loading="lazy" />
+                <img className="eac-person-card-cover" src={mediaThumbnail(g.coverUrl, 512)} alt="" loading="lazy" />
               ) : (
                 <span className="eac-person-card-cover eac-person-card-cover--blank" aria-hidden="true" />
               )}

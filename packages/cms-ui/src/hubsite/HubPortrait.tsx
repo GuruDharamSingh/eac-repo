@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import * as React from "react";
 import { useSurfaceOptional } from "../surface";
 
@@ -30,7 +31,7 @@ export function HubPortrait({
       <div className="eac-hs-portrait-img">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" />
+          <img src={mediaThumbnail(avatarUrl, 512)} alt="" />
         ) : (
           <span className="eac-hs-portrait-initial" aria-hidden>
             {name.slice(0, 1)}

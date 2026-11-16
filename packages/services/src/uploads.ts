@@ -24,6 +24,7 @@ import { processImage, UploadRefusal } from './image-process';
 export { UploadRefusal } from './image-process';
 
 const MB = 1024 * 1024;
+const MASTER_QUALITY = 95;
 
 export type UploadKind = 'avatar' | 'site' | 'personal' | 'artwork' | 'forum';
 export type MediaFolder = 'Images' | 'Audio' | 'Videos' | 'Documents';
@@ -35,7 +36,7 @@ export interface Policy {
   /** cap in bytes per SNIFFED kind; a kind with no cap is not accepted */
   caps: Partial<Record<SniffedKind, number>>;
   /** images: strip metadata (and optionally shrink); false keeps them as sent */
-  reencode: false | { maxEdge?: number };
+  reencode: false | { maxEdge?: number; quality?: number };
   /** write a library row (`media`) for the stored file when an org is known */
   record: boolean;
 }
@@ -46,7 +47,8 @@ export const UPLOAD_POLICIES: Record<UploadKind, Policy> = {
     kinds: ['image', 'audio', 'video', 'document'],
     allowText: true,
     caps: { image: 25 * MB, audio: 150 * MB, video: 500 * MB, document: 50 * MB },
-    reencode: {},
+    // A master: the thumbnail route serves the small sizes, so keep this one near-lossless.
+    reencode: { quality: MASTER_QUALITY },
     record: true,
   },
   personal: {
@@ -55,7 +57,7 @@ export const UPLOAD_POLICIES: Record<UploadKind, Policy> = {
     reencode: {},
     record: true,
   },
-  artwork: { kinds: ['image', 'video'], caps: { image: 25 * MB, video: 250 * MB }, reencode: {}, record: false },
+  artwork: { kinds: ['image', 'video'], caps: { image: 25 * MB, video: 250 * MB }, reencode: { quality: MASTER_QUALITY }, record: false },
   forum: { kinds: ['image', 'video'], caps: { image: 15 * MB, video: 100 * MB }, reencode: {}, record: true },
 };
 
@@ -393,7 +395,7 @@ async function run(input: StoreUploadInput, X: UploadIO): Promise<StoreUploadRes
   let ext: string | null = null;
 
   if (checked.kind === 'image' && policy.reencode) {
-    const out = await processImage(file.bytes, { maxEdge: policy.reencode.maxEdge });
+    const out = await processImage(file.bytes, { maxEdge: policy.reencode.maxEdge, quality: policy.reencode.quality });
     data = out.data;
     mime = out.mime;
     width = out.width;

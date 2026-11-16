@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/utils/media-thumbnail";
 import { useMemo, useRef, useState } from "react";
 import { MediaBrowser, isMediaDrag, readMediaDrop } from "./MediaBrowser";
 
@@ -181,7 +182,7 @@ export function MediaPicker({
       {value && preview === "thumb" && (
         <div className="eac-picker-current">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="" />
+          <img src={mediaThumbnail(value, 512)} alt="" />
           <button type="button" onClick={() => onChange("")} className="eac-picker-clear">
             Remove
           </button>

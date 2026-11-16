@@ -16,6 +16,7 @@
     "./settlement": "./src/server/settlement.ts",
     "./ledger": "./src/server/ledger.ts",
     "./links": "./src/links.ts",
+    "./media-thumbnail": "./src/media-thumbnail.ts",
     "./commerce.css": "./src/components/commerce.css",
     "./payout-rails": "./src/payout-rails.ts",
     "./shipping": "./src/shipping/index.ts"

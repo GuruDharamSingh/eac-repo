@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaThumbnail } from "@elkdonis/commerce/media-thumbnail";
 import * as React from "react";
 import {
   AlertTriangle,
@@ -100,7 +101,7 @@ export function StatusTag({ state }: { state: ContentCellState }) {
 export function Thumb({ cover, type, size = 52, h }: { cover: string | null; type: ContentType; size?: number; h?: number }) {
   return cover ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img className="chn-thumb" src={cover} alt="" width={size} height={h ?? size} loading="lazy" style={{ width: size, height: h ?? size }} />
+    <img className="chn-thumb" src={mediaThumbnail(cover, Math.max(size, h ?? size) * 2)} alt="" width={size} height={h ?? size} loading="lazy" style={{ width: size, height: h ?? size }} />
   ) : (
     <span className="chn-thumb is-empty" style={{ width: size, height: h ?? size }} aria-hidden>
       {typeGlyph(type)}
