@@ -1,1 +1,1 @@
-export { Dock, type DockProps, type DockRun, type DockWire } from './dock';
+export { Dock, type DockProps, type DockRun, type DockTrail, type DockWire } from './dock';

@@ -785,6 +785,11 @@ export interface SurfaceAction {
   disabled?: boolean;
   /** Download hint for `href` — an .ics file, say. */
   download?: string;
+  /**
+   * The registry entry id this control performs, written as `data-eac-anchor` so the dock can outline
+   * it after "Take me there" (packages/actions/src/anchor.ts; written literally here, no dependency).
+   */
+  anchor?: string;
 }
 
 // ── The profile surface ───────────────────────────────────────────────────

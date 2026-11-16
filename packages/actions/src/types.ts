@@ -49,6 +49,37 @@ export interface ActionParam {
   default: string;
 }
 
+/** What an entry risks (atlas `Risk` minus 'none'; an empty list means none). `money` means the dock only routes, never runs. */
+export type ActionRisk = 'money' | 'irreversible' | 'public' | 'emails' | 'others';
+
+/** Who may perform an entry (shown to others as context only). */
+export type ActionRole = 'person' | 'member' | 'guide' | 'owner' | 'admin';
+
+/**
+ * Where the control lives (2026-11-16, DOCK_LOOP_SLICE1 §2). Resolved per org at run time by `routeFor`.
+ * `surface` is a serialized cms-ui descriptor (`profile:edit`, `journey:org:{org}`), `anchor` the
+ * `data-eac-anchor` value to outline (default: the entry id).
+ */
+export interface ActionAddress {
+  host: 'hub' | 'org-site' | 'app';
+  app?: string;
+  path?: string;
+  surface?: string;
+  anchor?: string;
+  /** Done in the dock itself (a run or form): nothing to travel to. */
+  dock?: true;
+  /** Another origin (Nextcloud): a popup, no return ticket. */
+  external?: true;
+  how?: string;
+}
+
+/** Confirm-card wording. Only `approved` / `changed` text may show on a live dock (wording waves, D-16). */
+export interface ActionConfirm {
+  text: string;
+  status: 'draft' | 'proposed' | 'approved' | 'changed';
+  wave?: number;
+}
+
 /** The author-facing description of an entry. Pure data. */
 export interface ActionMeta {
   /**
@@ -87,6 +118,14 @@ export interface ActionMeta {
    * ./agent.ts (never on an `appOnly` entry); check:registry enforces the rules.
    */
   agent?: 'read' | 'draft';
+  /** Where the control lives (generated from atlas/entries.ts into ./registry-data.ts). */
+  address?: ActionAddress;
+  /** The confirm card's wording and its approval status. */
+  confirm?: ActionConfirm;
+  /** What it risks; `money` forces route-only in the dock. Absent = not curated yet. */
+  risk?: readonly ActionRisk[];
+  /** Who may perform it. */
+  roles?: readonly ActionRole[];
 }
 
 /** What the registry reports about an entry for one person. Same shape as @elkdonis/lms TaskStatus. */

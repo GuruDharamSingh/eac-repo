@@ -63,6 +63,20 @@ export interface ActorContext {
   subjectId?: string | null;
   /** Set by performAction for a `thread` entry: the post, read from the database. Never from the caller. */
   thread?: ThreadSubject;
+  /**
+   * Pushed completion (2026-11-16): called after a successful run has been recorded, so the host can
+   * re-check the course steps that name the entry. Optional; errors are logged and never change the result.
+   */
+  onPerformed?: (e: PerformedEvent) => Promise<void>;
+}
+
+/** What `onPerformed` is told. */
+export interface PerformedEvent {
+  id: string;
+  userId: string;
+  orgId: string | null;
+  via: string;
+  subjectId: string | null;
 }
 
 /** One post as a subject-scoped runner sees it. */
@@ -429,6 +443,13 @@ export async function performAction(id: string, ctx: ActorContext, raw: unknown)
   const started = Date.now();
   const { input, result, ctx: used } = await perform(id, ctx, raw);
   await record(id, used, input, result, Date.now() - started);
+  if (result.ok === true && used.onPerformed) {
+    try {
+      await used.onPerformed({ id, userId: used.userId, orgId: used.orgId ?? null, via: used.via ?? 'app', subjectId: typeof used.subjectId === 'string' ? used.subjectId : null });
+    } catch (err) {
+      console.error('[actions] onPerformed:', id, err);
+    }
+  }
   return result;
 }
 

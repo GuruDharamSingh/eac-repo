@@ -8,6 +8,7 @@
 import type { LmsViewer, PublishedStep, StepTask, TaskStatus } from './types';
 import { getLearnerOutline, completeStep } from './record';
 import { stepTypeDef } from './step-types';
+import { listMyEnrolments } from './delivery';
 
 /** The task a step asks for, or null when it is not a task step. */
 export function stepTask(step: Pick<PublishedStep, 'type' | 'settings'>): StepTask | null {
@@ -61,4 +62,46 @@ export async function settleTaskStep(
   }
   const r = await completeStep(viewer, o.enrolment.id, step.stepId);
   return { task, status, completedNow: r.ok, courseCompleted: r.ok ? r.courseCompleted : false };
+}
+
+export interface SettledNamed {
+  courseSlug: string;
+  stepSlug: string;
+  stepTitle: string;
+  completedNow: boolean;
+  courseCompleted: boolean;
+}
+
+/**
+ * Pushed completion (2026-11-16, DOCK_LOOP_SLICE1 §4.5): after the registry performed `taskId` for
+ * this person, re-check every open step of their active enrolments that names it, through
+ * `settleTaskStep` (so completeStep, events, awards and course completion are the lesson's own
+ * path). The host's `status` stays authoritative: nothing ticks unless it says done. Steps still
+ * locked by sequential unlock are skipped; they settle when the lesson or dock next looks.
+ * Routine (repeat) steps are never recorded. Never throws.
+ */
+export async function settleTasksNaming(
+  viewer: LmsViewer,
+  input: { taskId: string; status: (task: StepTask) => Promise<TaskStatus> },
+): Promise<SettledNamed[]> {
+  const out: SettledNamed[] = [];
+  if (!viewer.userId) return out;
+  try {
+    for (const e of await listMyEnrolments(viewer.userId)) {
+      if (e.status !== 'active') continue;
+      const o = await getLearnerOutline(viewer, { courseId: e.courseId });
+      if (!o) continue;
+      for (const step of o.steps) {
+        const task = stepTask(step);
+        if (!task || task.id !== input.taskId || task.repeat) continue;
+        if (step.status === 'completed' || step.status === 'waived' || !step.access.allowed) continue;
+        // eslint-disable-next-line no-await-in-loop
+        const r = await settleTaskStep(viewer, { courseId: e.courseId, stepSlug: step.slug, status: input.status });
+        if (r) out.push({ courseSlug: e.courseSlug, stepSlug: step.slug, stepTitle: step.title, completedNow: r.completedNow, courseCompleted: r.courseCompleted });
+      }
+    }
+  } catch (err) {
+    console.error('[lms] settleTasksNaming:', input.taskId, err);
+  }
+  return out;
 }

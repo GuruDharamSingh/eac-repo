@@ -446,13 +446,13 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   const actions: SurfaceAction[] = [];
   if (current === "profile") {
     if (isEditing) {
-      actions.push({ label: saving ? "Saving…" : "Save", primary: true, disabled: saving, onClick: saveCard });
+      actions.push({ label: saving ? "Saving…" : "Save", primary: true, disabled: saving, onClick: saveCard, anchor: "profile" });
       actions.push({ label: "Done", quiet: true, onClick: () => setEditing(false) });
     } else if (canEdit) {
       actions.push({ label: "Edit", primary: true, onClick: () => setEditing(true) });
     }
   } else if (current === "details") {
-    actions.push({ label: saving ? "Saving…" : "Save details", primary: true, disabled: saving, onClick: saveDetails });
+    actions.push({ label: saving ? "Saving…" : "Save details", primary: true, disabled: saving, onClick: saveDetails, anchor: "listing" });
   }
   if (profile.pageHref) actions.push({ label: target ? "Open page" : "Your page", href: profile.pageHref, quiet: true });
   if (current === "profile" && !target && connectors.viewer.canCompose) {
@@ -907,6 +907,7 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
         <button
           type="button"
           role="switch"
+          {...(row.key === "you" && column.key === "directory" ? { "data-eac-anchor": "listing" } : {})}
           aria-checked={cell.on}
           aria-label={`${row.label} — ${column.label}`}
           disabled={busy}
@@ -1044,7 +1045,7 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
     if (!listings || listings.posts.length === 0 || listings.orgs.length === 0) return null;
     const { posts, orgs } = listings;
     return (
-      <section aria-labelledby="eac-show-on-head" className="grid gap-3">
+      <section aria-labelledby="eac-show-on-head" className="grid gap-3" data-eac-anchor="show-on">
         <h3 id="eac-show-on-head" className="text-[0.95rem] font-semibold">
           Show your posts on
         </h3>

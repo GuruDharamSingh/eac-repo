@@ -10,6 +10,7 @@
 import type { ActionMeta } from './types';
 import { HUB_ACTIONS } from './hub';
 import { withAgent } from './agent';
+import { REGISTRY_DATA } from './registry-data';
 
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
@@ -116,7 +117,13 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   // Hub card entries (2026-11-08), kept in ./hub.ts.
   ...HUB_ACTIONS,
   // Agent exposure (2026-11-08, ./agent.ts): default deny, never on appOnly entries.
-].map(withAgent);
+].map(withAgent).map(withRegistry);
+
+/** Applies the generated entry data (address, confirm, risk, roles; src/registry-data.ts) to an entry. */
+function withRegistry(meta: ActionMeta): ActionMeta {
+  const r = REGISTRY_DATA[meta.id];
+  return r ? { ...meta, ...(r.address ? { address: r.address } : {}), ...(r.confirm ? { confirm: r.confirm } : {}), risk: r.risk, roles: r.roles } : meta;
+}
 
 /** The entries a course step can name: person and org entries (`CourseActionScope`). */
 export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => (m.scope === 'person' || m.scope === 'org') && !m.appOnly) as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;

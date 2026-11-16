@@ -177,3 +177,22 @@ p.eac-dock__hint { margin: 0 0 8px; }
   .eac-dock__tab { align-self: flex-end; }
   .eac-dock__box { width: auto; }
 }
+
+/* Dock loop (2026-11-16): confirm card, badges, away strip, picker, and the outlined control. */
+.eac-dock__draft { color: var(--dk-partial); background: var(--dk-partial-ground); border-radius: 4px; padding: 1px 6px; margin-left: 6px; font-weight: 600; }
+.eac-dock__badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.eac-dock__badge { border: 1px solid var(--dk-line); border-radius: 999px; padding: 1px 8px; font-size: 12px; color: var(--dk-none); background: var(--dk-none-ground); }
+.eac-dock__link { border: 0; background: none; padding: 0; font: inherit; color: var(--dk-link); text-decoration: underline; cursor: pointer; }
+.eac-dock__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.eac-dock__btn--on { border-width: 2px; }
+.eac-dock__away .eac-dock__title, .eac-dock__done .eac-dock__title { margin-bottom: 4px; }
+
+/* The control "Take me there" points at. Lives outside .eac-dock: the control is the page's own. */
+[data-eac-outlined="true"] {
+  outline: 3px solid var(--eac-dock-link, #1d4ed8) !important;
+  outline-offset: 3px !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-eac-outlined="true"] { animation: eac-dock-pulse 1.6s ease-out 2; }
+}
+@keyframes eac-dock-pulse { from { outline-offset: 10px; } to { outline-offset: 3px; } }

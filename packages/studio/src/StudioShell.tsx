@@ -770,6 +770,7 @@ export function StudioShell({
           ) : (
             <button
               type="button"
+              data-eac-anchor="studio"
               className="studio-fbtn studio-fbtn--primary"
               disabled={!piece?.id}
               title={piece?.id ? undefined : 'Start writing; it saves itself, then you can publish'}
@@ -1005,6 +1006,7 @@ export function StudioShell({
         ) : (
           <button
             type="button"
+            data-eac-anchor="studio"
             className="studio-btn studio-btn--primary"
             disabled={!piece?.id}
             title={piece?.id ? undefined : 'Start writing; it saves itself, then you can publish'}

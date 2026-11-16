@@ -306,6 +306,7 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
     {
       label: saving === "published" ? "Publishing…" : editing ? "Save & publish" : "Publish",
       primary: true,
+      anchor: "org-offering",
       onClick: () => save("published"),
       disabled: !canSave || Boolean(saving),
     },

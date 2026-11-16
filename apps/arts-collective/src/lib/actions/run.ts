@@ -24,6 +24,7 @@ import { actionOrgId, performAction } from "@elkdonis/actions/server";
 import type { ActionResult } from "@elkdonis/actions";
 import { getCurrentUser } from "@/lib/session";
 import { channelNextSource, channelPlanProposalsSource } from "@/lib/channel/next-source";
+import { onActionPerformed } from "@/lib/lms/completion";
 
 export async function runAction(id: string, input: unknown = undefined, opts: { org?: string | null; subject?: string | null } = {}): Promise<ActionResult> {
   const user = await getCurrentUser();
@@ -33,5 +34,5 @@ export async function runAction(id: string, input: unknown = undefined, opts: { 
   const orgClaim = typeof opts?.org === "string" ? opts.org.slice(0, 64) : null;
   const orgId = await actionOrgId(entry, user.id, orgClaim);
   const subjectId = typeof opts?.subject === "string" && opts.subject.trim() ? opts.subject.trim() : null;
-  return performAction(entry, { userId: user.id, email: user.email, orgId, orgClaim, subjectId, sources: { channelNext: channelNextSource, channelPlanProposals: channelPlanProposalsSource } }, input);
+  return performAction(entry, { userId: user.id, email: user.email, orgId, orgClaim, subjectId, sources: { channelNext: channelNextSource, channelPlanProposals: channelPlanProposalsSource }, onPerformed: onActionPerformed }, input);
 }

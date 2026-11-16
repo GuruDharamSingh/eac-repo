@@ -241,6 +241,30 @@ needs the 9 GB build cap), and before any cookie change. Nothing gets committed 
 - **D-18: help tutorials are written by AI later**, as we run through the trails. First the dock shows runbook
   progress; later the same progress view extends to tutorials of all kinds. No tutorial authoring in P0–P3.
 
+
+## 5b. Structural direction (Justin, 2026-11-16, after the atlas)
+
+Architecture only. Course and tutorial content is out of scope until its own pass.
+
+- **The LMS is the central admin, with the MCP as its rails.** It flips switches and adds or edits, from the dock or from the course module itself.
+- **The dock prefers its own module UI.** Where an action can be done in a dock module (a form or card the dock renders from the entry's input schema), do that. Navigating across pages and highlighting the real control is the fallback for actions the dock can't supply itself. Architecturally, each registry entry declares the two capabilities separately: `dockForm` (the dock can render and run it) and `address` (where the real control lives). `presentAction` picks dockForm first.
+- **Courses are layered.** Areas run from broad, fundamental courses to specific ones that reuse the same entries. The structure only needs:
+  - a course `area` (a tag);
+  - `builds_on` links between courses, so a specific course can reuse a fundamental course's steps;
+  - steps that are references to registry entries, not copied content.
+  
+  Skeletal for now: placeholders that name areas and entries, with no prose.
+- **Broad areas** (tags to hang courses on later; each maps to atlas areas):
+  - *profile*: establish, maintain;
+  - *publishing*: posts, work, paid work;
+  - *business*: offerings, booking, money; then *tours* (elktours: a tour with stops and a description, plus slots) as a specific layer on business/booking;
+  - *site*: page builder and house editor; template page by hand, then customise, then themes;
+  - *production*: studio, media, routines and the channel;
+  - *artwork*: pieces, the store, auctions;
+  - *email*: setup, then org/event template customisation.
+- **Confirm-card wording should be drier.** The naming conventions are fine. House-style change for the next waves: state the action and its effect plainly, with no warmth or reassurance.
+- **Stripe refunds** are automatic but triggered by hand: a cancel records the refund as due, and one press issues it through Stripe. In the dock this is a money entry, so it links to the refund control and never runs it.
+
 ## 6. Risks
 
 - **Size**: 120–180 entries is weeks of curation. P0–P2 on arts-collective prove the loop before the

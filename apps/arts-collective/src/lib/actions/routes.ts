@@ -2,6 +2,7 @@ import { actionRoutes } from "@elkdonis/actions/server";
 import { publicOriginFrom } from "@elkdonis/checkout/booking";
 import { getCurrentUser } from "@/lib/session";
 import { channelNextSource, channelPlanProposalsSource } from "@/lib/channel/next-source";
+import { onActionPerformed } from "@/lib/lms/completion";
 import { ACTION_LINKS } from "./links";
 
 /**
@@ -21,4 +22,6 @@ export const actionHttp = actionRoutes({
   publicOrigin: (req) => publicOriginFrom(req.headers, process.env.NEXT_PUBLIC_APP_URL),
   // channel-next reads the board through the /channel loader (lib/channel/next-source.ts).
   sources: { channelNext: channelNextSource, channelPlanProposals: channelPlanProposalsSource },
+  // Pushed completion for the HTTP door too (lib/lms/completion.ts).
+  onPerformed: onActionPerformed,
 });

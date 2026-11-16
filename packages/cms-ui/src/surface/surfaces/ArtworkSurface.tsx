@@ -251,7 +251,7 @@ export function ArtworkSurface() {
       actions={[
         { label: "Done", quiet: true, onClick: () => pop() },
         { label: busy === "draft" ? "…" : "Save as draft", onClick: saveDrafts, disabled: busy !== null || readOnly },
-        { label: busy === "publish" ? "…" : "Publish all", primary: true, onClick: publishAll, disabled: busy !== null },
+        { label: busy === "publish" ? "…" : "Publish all", primary: true, onClick: publishAll, disabled: busy !== null, anchor: "artwork" },
       ]}
     >
       <div className="eac-artwork-form" aria-live="polite">

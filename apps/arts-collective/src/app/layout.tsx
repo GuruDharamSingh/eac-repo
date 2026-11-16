@@ -3,7 +3,7 @@ import { Fraunces, Inter, Noto_Sans_Symbols } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import { Dock } from "@elkdonis/dock";
-import { runDockAction } from "@/lib/actions/dock-actions";
+import { runDockAction, dockDepart, dockReturn, dockChooseCourse, dockAckDone } from "@/lib/actions/dock-actions";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -52,7 +52,7 @@ export default function RootLayout({
         {children}
         <Toaster richColors position="top-right" />
         <AnalyticsBeacon />
-        <Dock run={runDockAction} />
+        <Dock run={runDockAction} trail={{ depart: dockDepart, back: dockReturn, choose: dockChooseCourse, ack: dockAckDone }} />
       </body>
     </html>
   );

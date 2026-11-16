@@ -158,6 +158,7 @@ export function ActionButton({ action }: { action: SurfaceAction }) {
         target={action.external ? "_blank" : undefined}
         rel={action.external ? "noreferrer" : undefined}
         download={action.download}
+        data-eac-anchor={action.anchor}
         aria-disabled={action.disabled || undefined}
         onClick={action.disabled ? (e) => e.preventDefault() : undefined}
       >
@@ -170,6 +171,7 @@ export function ActionButton({ action }: { action: SurfaceAction }) {
     <button
       type="button"
       className={cls}
+      data-eac-anchor={action.anchor}
       disabled={action.disabled || busy}
       aria-busy={busy || undefined}
       onClick={async () => {

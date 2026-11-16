@@ -115,3 +115,6 @@ Leads 41-54 from the round-2 curation notes, verified read-only (code end to end
 - **#41 forum wiki: by design.** "Wiki is meant to be open for input." Not a defect. Archive/revert by anyone remains a product choice, worth an edit history someday.
 - **#42 RSVP to members-only threads: by design.** "If someone is rsvping than they should get info for members, as they will basically be a member by rsvping." Not a defect. Consequence to remember: RSVP is a self-serve way in, so the members-only gates on those threads are soft by intent.
 - #51 (ifac directory admin overwrites any user's global profile): not answered yet; still open.
+
+### Live (2026-11-16 12:36)
+Rebuilt and restarted with Justin's go ("Do all those"): elktours, sunjay, hidden-enneagram, amrit-canada, innergathering, ifac, sophia, arts-collective. apps/admin runs next dev, so its gate went live on save. **Live fixes:** #11, #14b, #20, #21, #51, #2, the admin gate, the LMS unlock. The fix strings were checked in the compiled output, and every site answers 200 through the edge. Log: ~/eac-backups/next/rebuild-2026-11-16.log; previous builds backed up next to it. Lesson: every production container sets NODE_OPTIONS=--max-old-space-size=1024, so builds need --max-old-space-size=3584 (sunjay OOMed at 1024).

@@ -18,6 +18,11 @@ import { db } from '@elkdonis/db';
 import { canManageOrgPeople } from '@elkdonis/services';
 import type { ActionLinks, ActionStatus } from '../types';
 import { actionMeta } from '../catalogue';
+import { presentAction } from '../present';
+import { confirmView, isMoneyMeta, type ConfirmCard, type ConfirmMode } from '../confirm';
+import { routeFor, type ActionRoute } from '../route';
+import { REGISTRY_CONFIRM } from './registry-confirm';
+import { readDockState, writeDockStep, dockMarkDone, type DockState } from './dock-state';
 import { CHANNEL_DOCK_ACTIONS, type ChannelNextMove } from '../channel';
 import { actionStatus, type ActionSources } from './status';
 import { resolveActionOrg } from './org';
@@ -37,6 +42,15 @@ export interface DockLms {
     totalRequired: number;
   } | null>;
   stepTask(step: DockOutlineStep): { id: string; scope?: 'person' | 'org'; params?: Record<string, string>; repeat?: 'daily' } | null;
+  /**
+   * Optional (2026-11-16): record a task step's completion when its status says done (the lesson's
+   * `settleTaskStep`). With it the dock ticks a step the person finished on a page that does not
+   * go through the registry (a profile popup's Save) as soon as it re-reads.
+   */
+  settleTask?(
+    viewer: { userId: string | null; roles: Record<string, string> },
+    input: { courseId: string; stepSlug: string; status: () => Promise<ActionStatus> },
+  ): Promise<{ completedNow: boolean; courseCompleted: boolean } | null>;
 }
 
 /** How many open steps of one course the dock reads statuses for before giving up on it. */
@@ -61,13 +75,50 @@ export interface DockStep {
   href: string;
   doneRequired: number;
   totalRequired: number;
+  /**
+   * What the step asks of the dock (2026-11-16): `do` (run it here, after a confirm), `go` (take the
+   * person to the control; money entries are always this), `check` (nothing to press), `read` (no task).
+   */
+  kind: 'do' | 'go' | 'check' | 'read';
   /** Present for a task step: the entry, its status, and the inputs of `presentAction`. */
   task: null | {
     id: string;
+    label: string;
     params: Record<string, string> | null;
     orgId: string | null;
     status: ActionStatus;
+    /** Where the control lives, for a `go` step that has an address. */
+    route: ActionRoute | null;
+    /** The confirm card for a `do` step, already resolved for who is looking (confirm.ts). */
+    confirm: ConfirmCard | null;
   };
+}
+
+/** Set while "Take me there" has the person away from the trail (lms_dock_state). */
+export interface DockAway {
+  returnHref: string;
+  stepTitle: string | null;
+  /** The anchor to outline on arrival, when the stored step is still the current one. */
+  anchor: string | null;
+  /** True when the page's `?eac-step=` is this departure's ticket. */
+  ticketOk: boolean;
+}
+
+/** A step the person has just finished, shown once. */
+export interface DockDone {
+  stepTitle: string;
+  courseSlug: string;
+  nextStepTitle: string | null;
+  courseDone: boolean;
+}
+
+export interface DockPickerRow {
+  courseSlug: string;
+  title: string;
+  enrolled: boolean;
+  doneRequired: number;
+  totalRequired: number;
+  current: boolean;
 }
 
 export interface DockPostAction {
@@ -104,6 +155,10 @@ export interface DockChannel {
 
 export interface DockData {
   step: DockStep | null;
+  away: DockAway | null;
+  done: DockDone | null;
+  /** Only when asked for (`picker: true`). */
+  picker: DockPickerRow[] | null;
   post: DockPost | null;
   /** On Channel's inner pages and in the Studio, when the host passes `sources.channelNext`. */
   channel: DockChannel | null;
@@ -117,8 +172,16 @@ export interface DockOptions {
   path: string | null;
   links: ActionLinks;
   lms: DockLms;
-  /** Course slugs tried first, in order; then the person's other enrolments. Default: getting-started. */
+  /** Course slugs tried after the person's stored trail, in order; then their other enrolments. Default: getting-started. */
   courses?: readonly string[];
+  /** The person's stored dock state (lms_dock_state), read by `dockData`. */
+  state?: DockState | null;
+  /** Draft confirm wording shows only in `draft-visible` (a dev preview or a global admin). Default `live`. */
+  confirmMode?: ConfirmMode;
+  /** The page's `?eac-step=` ticket, to tell whether this is the departure's own arrival. */
+  ticket?: string | null;
+  /** Include the course picker. */
+  picker?: boolean;
   /**
    * Show only routine steps (task.repeat 'daily', like the Akhand Path reading),
    * never the stages of a course (owner, 2026-11-07: the dock is the assistant's
@@ -133,12 +196,33 @@ export interface DockOptions {
 
 const isDone = (s: { status: string | null }) => s.status === 'completed' || s.status === 'waived';
 
+const hubOf = (links: ActionLinks) => links.hub;
+
+async function orgSlugOf(orgId: string | null): Promise<string | null> {
+  if (!orgId) return null;
+  const [o] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${orgId} LIMIT 1`;
+  return o?.slug ?? null;
+}
+
+interface StepResult {
+  step: DockStep | null;
+  /** Steps this read ticked (the status said done), so the Done card can show them. */
+  justDone: Array<{ courseSlug: string; stepSlug: string; stepTitle: string; courseDone: boolean }>;
+}
+
 /** The person's current step, or null (no enrolment, finished, or nothing open). */
 export async function dockStep(opts: DockOptions): Promise<DockStep | null> {
+  return (await dockStepRead(opts)).step;
+}
+
+async function dockStepRead(opts: DockOptions): Promise<StepResult> {
   const { userId, lms } = opts;
-  const preferred = opts.courses ?? ['getting-started'];
+  const justDone: StepResult['justDone'] = [];
+  // The stored trail first (the person's choice), then the defaults, then their other enrolments.
+  const preferred = [...(opts.state?.courseSlug ? [opts.state.courseSlug] : []), ...(opts.courses ?? ['getting-started'])];
   const candidates: Array<{ slug: string; id: string; title: string }> = [];
   for (const slug of preferred) {
+    if (candidates.some((c) => c.slug === slug)) continue;
     const c = await lms.getCourseBySlug(slug);
     if (c?.publishedVersionId) candidates.push({ slug: c.slug, id: c.id, title: c.title });
   }
@@ -152,36 +236,84 @@ export async function dockStep(opts: DockOptions): Promise<DockStep | null> {
     const enrolment = await lms.getActiveEnrolment(userId, c.id);
     // Only an enrolled course: without one, getLearnerOutline would create the default run.
     if (!enrolment || enrolment.status === 'completed') continue;
-    const o = await lms.getLearnerOutline({ userId, roles: {} }, { courseId: c.id });
-    if (!o) continue;
-    // The continue step, then the other open steps in order. A routine step (task.repeat
-    // 'daily') is never recorded as completed, so the LMS keeps offering it; once its
-    // status says done for today it gives way to the next step, and a routine course
-    // with every step done today gives way to the next course (2026-11-07). Courses
-    // without routine steps take the first step, as before.
-    const open = o.steps.filter((s) => s.slug !== o.continueStep?.slug && !isDone(s) && s.access.allowed);
-    const order = (o.continueStep ? [o.continueStep, ...open] : open).slice(0, STEP_WALK);
-    let picked: { step: DockOutlineStep; task: DockStep['task'] } | null = null;
-    for (const step of order) {
-      const t = lms.stepTask(step);
-      if (opts.routinesOnly && t?.repeat !== 'daily') continue;
-      if (!t) {
-        picked = { step, task: null };
+    // A pass settles a step whose status says done and then reads the outline again (the next step
+    // unlocks only after the tick); at most three, so a surprise cannot loop.
+    for (let pass = 0; pass < 3; pass++) {
+      const o = await lms.getLearnerOutline({ userId, roles: {} }, { courseId: c.id });
+      if (!o) break;
+      // The stored step first when it is still open, then the continue step, then the other open
+      // steps in order. A routine step (task.repeat 'daily') is never recorded as completed, so the
+      // LMS keeps offering it; once its status says done for today it gives way to the next step, and a
+      // routine course with every step done today gives way to the next course (2026-11-07).
+      const open = o.steps.filter((s) => s.slug !== o.continueStep?.slug && !isDone(s) && s.access.allowed);
+      let order = (o.continueStep ? [o.continueStep, ...open] : open);
+      const stored = opts.state?.courseSlug === c.slug ? order.find((s) => s.slug === opts.state?.stepSlug) : undefined;
+      if (stored) order = [stored, ...order.filter((s) => s !== stored)];
+      order = order.slice(0, STEP_WALK);
+      let picked: { step: DockOutlineStep; task: NonNullable<DockStep['task']> | null; kind: DockStep['kind'] } | null = null;
+      let ticked = false;
+      for (const step of order) {
+        const t = lms.stepTask(step);
+        if (opts.routinesOnly && t?.repeat !== 'daily') continue;
+        if (!t) {
+          picked = { step, task: null, kind: 'read' };
+          break;
+        }
+        const orgId = t.scope === 'org' ? await resolveActionOrg(userId, null) : null;
+        const params = t.params && Object.keys(t.params).length ? t.params : null;
+        const status = await actionStatus(t.id, { userId, orgId, links: opts.links, params });
+        if (t.repeat === 'daily' && status.done) continue;
+        // Done on the platform but not yet recorded: record it now (the lesson's own path), then move on.
+        if (status.done && !t.repeat && lms.settleTask) {
+          const r = await lms.settleTask({ userId, roles: {} }, { courseId: c.id, stepSlug: step.slug, status: async () => status }).catch(() => null);
+          if (r?.completedNow) {
+            justDone.push({ courseSlug: c.slug, stepSlug: step.slug, stepTitle: step.title, courseDone: r.courseCompleted });
+            await dockMarkDone(userId, c.slug, step.slug, { keep: true });
+            ticked = true;
+            break;
+          }
+        }
+        const meta = actionMeta(t.id);
+        const present = presentAction({ id: t.id, status, orgId, links: opts.links, params });
+        const money = meta ? isMoneyMeta(meta) : false;
+        const kind: DockStep['kind'] = present.kind === 'run' || present.kind === 'form' ? (money || !meta?.runnable ? 'go' : 'do') : present.kind === 'none' ? 'check' : 'go';
+        const route = kind === 'go' ? routeFor(t.id, { hub: hubOf(opts.links), orgSlug: await orgSlugOf(orgId), partial: Boolean(status.partial) }) : null;
+        const confirm = kind === 'do' && meta ? confirmView({ ...meta, confirm: REGISTRY_CONFIRM[meta.id] ?? meta.confirm }, opts.confirmMode ?? 'live') : null;
+        picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm }, kind };
         break;
       }
-      const orgId = t.scope === 'org' ? await resolveActionOrg(userId, null) : null;
-      const params = t.params && Object.keys(t.params).length ? t.params : null;
-      const status = await actionStatus(t.id, { userId, orgId, links: opts.links, params });
-      if (t.repeat === 'daily' && status.done) continue;
-      picked = { step, task: { id: t.id, params, orgId, status } };
-      break;
+      if (ticked) continue;
+      if (!picked) break;
+      const { step, task, kind } = picked;
+      if (opts.state?.courseSlug !== c.slug || opts.state?.stepSlug !== step.slug) await writeDockStep(userId, c.slug, step.slug);
+      const href = opts.stepHref ? opts.stepHref(c.slug, step.slug) : `/learn/${encodeURIComponent(c.slug)}/${encodeURIComponent(step.slug)}`;
+      return { justDone, step: { courseSlug: c.slug, courseTitle: c.title, stepSlug: step.slug, stepTitle: step.title, href, doneRequired: o.doneRequired, totalRequired: o.totalRequired, kind, task } };
     }
-    if (!picked) continue;
-    const { step, task } = picked;
-    const href = opts.stepHref ? opts.stepHref(c.slug, step.slug) : `/learn/${encodeURIComponent(c.slug)}/${encodeURIComponent(step.slug)}`;
-    return { courseSlug: c.slug, courseTitle: c.title, stepSlug: step.slug, stepTitle: step.title, href, doneRequired: o.doneRequired, totalRequired: o.totalRequired, task };
   }
-  return null;
+  return { step: null, justDone };
+}
+
+/** The courses the person can pick from: their enrolments, and the default course when they have not begun it. */
+export async function dockPicker(opts: DockOptions): Promise<DockPickerRow[]> {
+  const { userId, lms } = opts;
+  const rows: DockPickerRow[] = [];
+  const seen = new Set<string>();
+  const stored = opts.state?.courseSlug ?? null;
+  for (const e of (await lms.listMyEnrolments(userId)).slice(0, 8)) {
+    if (e.status === 'withdrawn' || seen.has(e.courseSlug)) continue;
+    seen.add(e.courseSlug);
+    const c = await lms.getCourseBySlug(e.courseSlug);
+    if (!c?.publishedVersionId) continue;
+    const o = await lms.getLearnerOutline({ userId, roles: {} }, { courseId: c.id }).catch(() => null);
+    rows.push({ courseSlug: c.slug, title: c.title, enrolled: true, doneRequired: o?.doneRequired ?? 0, totalRequired: o?.totalRequired ?? 0, current: false });
+  }
+  for (const slug of opts.courses ?? ['getting-started']) {
+    if (seen.has(slug)) continue;
+    const c = await lms.getCourseBySlug(slug);
+    if (c?.publishedVersionId) rows.push({ courseSlug: c.slug, title: c.title, enrolled: false, doneRequired: 0, totalRequired: 0, current: false });
+  }
+  const current = rows.find((r) => r.courseSlug === stored)?.courseSlug ?? rows.find((r) => r.enrolled)?.courseSlug;
+  return rows.map((r) => ({ ...r, current: r.courseSlug === current }));
 }
 
 /**
@@ -277,13 +409,37 @@ export async function dockChannel(opts: Pick<DockOptions, 'userId' | 'path' | 'l
 
 /** Everything the dock shows for one person on one path; null when there is nothing. */
 export async function dockData(opts: DockOptions): Promise<DockData | null> {
-  const [step, post, channel] = await Promise.all([
-    dockStep(opts).catch((err) => { console.error('[actions] dock step:', err); return null; }),
+  const state = opts.state === undefined ? await readDockState(opts.userId) : opts.state;
+  const withState = { ...opts, state };
+  const [read, post, channel, picker] = await Promise.all([
+    dockStepRead(withState).catch((err): StepResult => { console.error('[actions] dock step:', err); return { step: null, justDone: [] }; }),
     dockPost(opts).catch((err) => { console.error('[actions] dock post:', err); return null; }),
     dockChannel(opts).catch((err) => { console.error('[actions] dock channel:', err); return null; }),
+    opts.picker ? dockPicker(withState).catch(() => null) : Promise.resolve(null),
   ]);
-  if (!step && !post && !channel) return null;
-  return { step, post, channel, links: { artdirect: opts.links.artdirect, nextcloud: opts.links.nextcloud } };
+  const step = read.step;
+  const away: DockAway | null = state?.departedFrom
+    ? { returnHref: state.departedFrom, stepTitle: step?.stepTitle ?? null, anchor: step?.task?.route?.anchor ?? null, ticketOk: Boolean(opts.ticket && state.ticket === opts.ticket) }
+    : null;
+  const done = await doneCard(withState, read, step).catch(() => null);
+  if (!step && !post && !channel && !away && !done && !picker) return null;
+  return { step, away, done, picker, post, channel, links: { artdirect: opts.links.artdirect, nextcloud: opts.links.nextcloud } };
+}
+
+/** The Done card: a step this read just ticked, or the one the completion hook ticked and nobody has seen. */
+async function doneCard(opts: DockOptions, read: StepResult, step: DockStep | null): Promise<DockDone | null> {
+  const next = (courseSlug: string) => (step && step.courseSlug === courseSlug ? step.stepTitle : null);
+  const s = opts.state;
+  const fresh = read.justDone[read.justDone.length - 1];
+  if (!s?.donePending || !s.doneCourseSlug || !s.doneStepSlug) {
+    return fresh ? { stepTitle: fresh.stepTitle, courseSlug: fresh.courseSlug, nextStepTitle: next(fresh.courseSlug), courseDone: fresh.courseDone || !step } : null;
+  }
+  const c = await opts.lms.getCourseBySlug(s.doneCourseSlug);
+  if (!c) return null;
+  const o = await opts.lms.getLearnerOutline({ userId: opts.userId, roles: {} }, { courseId: c.id });
+  const title = o?.steps.find((x) => x.slug === s.doneStepSlug)?.title;
+  if (!title) return null;
+  return { stepTitle: title, courseSlug: c.slug, nextStepTitle: next(c.slug), courseDone: !step || (o?.doneRequired ?? 0) >= (o?.totalRequired ?? 1) };
 }
 
 /** Entries the dock may perform: course entries, the two post entries and the channel moves it offers. */
@@ -292,6 +448,8 @@ export function isDockAction(id: string): boolean {
   if (!m) return false;
   // Hub card writes (appOnly) run only through the site-bound hub door, never the dock.
   if (m.appOnly) return false;
+  // Money entries are route-only: the dock never runs them (DOCK_RAILS_PLAN §1, DOCK_LOOP_SLICE1 §0).
+  if (isMoneyMeta(m)) return false;
   if (m.scope === 'channel') return CHANNEL_DOCK_ACTIONS.includes(id);
   return m.scope !== 'thread' || id === 'thread-publish' || id === 'thread-pin';
 }

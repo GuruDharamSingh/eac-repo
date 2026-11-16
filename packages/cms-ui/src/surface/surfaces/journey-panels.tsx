@@ -81,11 +81,11 @@ function Notice({ text, tone }: { text: string | null; tone: "normal" | "error" 
   ) : null;
 }
 
-function SubTabs<T extends string>({ items, value, onChange }: { items: Array<{ id: T; label: string; badge?: number }>; value: T; onChange: (t: T) => void }) {
+function SubTabs<T extends string>({ items, value, onChange }: { items: Array<{ id: T; label: string; badge?: number; anchor?: string }>; value: T; onChange: (t: T) => void }) {
   return (
     <div className="eac-jt-subtabs" role="tablist">
       {items.map((it) => (
-        <button key={it.id} type="button" role="tab" aria-selected={value === it.id} className="eac-jt-subtab" onClick={() => onChange(it.id)}>
+        <button key={it.id} type="button" role="tab" data-eac-anchor={it.anchor} aria-selected={value === it.id} className="eac-jt-subtab" onClick={() => onChange(it.id)}>
           {it.label}
           {it.badge ? <span className="eac-jt-badge">{it.badge}</span> : null}
         </button>
@@ -215,7 +215,7 @@ export function SellingPanel() {
           )}
           <div className="eac-jt-controls">
             {j && j.store.state !== "active" && j.canClaimStore && (j.store.state === "none" || j.store.state === "pending") && api && (
-              <button type="button" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "store"} onClick={openStore}>
+              <button type="button" data-eac-anchor="store" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "store"} onClick={openStore}>
                 {busy === "store" ? "…" : j.store.state === "none" ? "Open your store" : "Publish to the auction"}
               </button>
             )}
@@ -268,7 +268,7 @@ export function SellingPanel() {
                   </select>
                 </label>
               )}
-              <button type="button" className="eac-jt-btn eac-jt-btn--dark" disabled={busy === "payouts" || (needsCountry && !country)} onClick={connect}>
+              <button type="button" data-eac-anchor="payouts" className="eac-jt-btn eac-jt-btn--dark" disabled={busy === "payouts" || (needsCountry && !country)} onClick={connect}>
                 {busy === "payouts" ? "…" : j.payouts.state === "pending" ? "Finish with Stripe" : "Connect Stripe"}
               </button>
             </div>
@@ -332,7 +332,7 @@ export function OrgPanel({ orgId }: { orgId: string }) {
         <SubTabs<"details" | "people">
           items={[
             { id: "details", label: "Details" },
-            ...(people ? [{ id: "people" as const, label: "People", badge: newCount }] : []),
+            ...(people ? [{ id: "people" as const, label: "People", badge: newCount, anchor: "org-people" }] : []),
           ]}
           value={sub}
           onChange={setSub}
@@ -699,7 +699,7 @@ function OfferTab({
                 </label>
               </div>
               <div className="eac-jt-controls">
-                <button type="button" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "service" || editing.title.trim().length < 2} onClick={() => saveService("published")}>
+                <button type="button" data-eac-anchor="service" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "service" || editing.title.trim().length < 2} onClick={() => saveService("published")}>
                   {busy === "service" ? "…" : "Publish"}
                 </button>
                 <button type="button" className="eac-jt-btn" disabled={busy === "service" || editing.title.trim().length < 2} onClick={() => saveService("draft")}>
@@ -712,7 +712,7 @@ function OfferTab({
             </div>
           ) : (
             <div className="eac-jt-controls">
-              <button type="button" className="eac-jt-btn eac-jt-btn--primary" onClick={() => setEditing({ id: null, title: "", shortDescription: "", price: "", format: "online" })}>
+              <button type="button" data-eac-anchor="service" className="eac-jt-btn eac-jt-btn--primary" onClick={() => setEditing({ id: null, title: "", shortDescription: "", price: "", format: "online" })}>
                 {(services ?? []).length ? "Offer another" : "Offer a service"}
               </button>
             </div>
@@ -740,7 +740,7 @@ function OfferTab({
               </p>
               <div className="eac-jt-controls">
                 {auction?.canClaimStore && journeyApi ? (
-                  <button type="button" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "open-store"} onClick={openStore}>
+                  <button type="button" data-eac-anchor="store" className="eac-jt-btn eac-jt-btn--primary" disabled={busy === "open-store"} onClick={openStore}>
                     {busy === "open-store" ? "…" : "Open your store"}
                   </button>
                 ) : (
@@ -813,7 +813,7 @@ function PayoutBlock({ payouts, priced }: { payouts: NonNullable<NonNullable<Pag
               </select>
             </label>
           )}
-          <button type="button" className="eac-jt-btn eac-jt-btn--dark" disabled={busy || (needsCountry && !country)} onClick={connect}>
+          <button type="button" data-eac-anchor="payouts" className="eac-jt-btn eac-jt-btn--dark" disabled={busy || (needsCountry && !country)} onClick={connect}>
             {busy ? "…" : payouts.state === "pending" ? "Finish with Stripe" : "Connect Stripe"}
           </button>
         </div>
@@ -954,7 +954,7 @@ function IdentityForm({ target, note, onSaved }: { target: { kind: "org"; orgId:
         </div>
       </div>
       <div className="eac-jt-controls">
-        <button type="submit" className="eac-jt-btn eac-jt-btn--primary" disabled={busy !== null || !p.canEdit}>
+        <button type="submit" {...(target ? { "data-eac-anchor": "org-details" } : {})} className="eac-jt-btn eac-jt-btn--primary" disabled={busy !== null || !p.canEdit}>
           {busy === "save" ? "Saving…" : "Save"}
         </button>
         <span className="eac-jt-muted">{note}</span>
@@ -1223,7 +1223,7 @@ export function SitePanel() {
                     {slug ? <strong>{slug}.{host}</strong> : null} {slug ? "· " : ""}{hint}
                   </p>
                   <div className="eac-jt-controls">
-                    <button type="submit" className="eac-jt-btn eac-jt-btn--primary" disabled={busy || !valid}>
+                    <button type="submit" data-eac-anchor="org" className="eac-jt-btn eac-jt-btn--primary" disabled={busy || !valid}>
                       {busy ? "Creating…" : "Create the organisation"}
                     </button>
                   </div>

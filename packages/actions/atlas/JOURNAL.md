@@ -409,3 +409,31 @@ Stopped: nothing left unclaimed for arts-collective. Next: C/D rows for the othe
 - **Refused to merge (kept as separate rows; cross-referenced in `drift` for the rsvp, quote, delivery, slot-fill and store pairs, the rest are listed only here)**: `ig-rsvp-join` and `ig-rsvp-cancel` (paid branch with createThreadOrder and Stripe checkout, workshop materials: a money risk the others do not carry; the dock must only link, never run); `ig-rsvp-guest` and its copies are one guest-RSVP row, separate from the member RSVP; `add-quote` (owner/guide only) vs the `sunjay-quote-submit` family (any signed-in person, pending); `plan-or-schedule-post` (can schedule, risk public) vs `sunjay-channel-delivery-save` (plans only, nothing sent); `sunjay/katie-channel-slot-fill` stay apart from `accept-channel-suggestion` (their own registry entry `channel-slot-fill`); `open-org-store`, `add-store-team-member`, `add-charity-beneficiary` vs the orgapps `ifac-store-*` rows (person vs admin gate); the five sophia lms rows (each one covers many arts-collective.learn rows through one dispatcher with cases, so no 1:1 merge); `ifac-hub-card-door` vs the nine `runTenantHubAction` rows (a door, same reason); `elktours-experience-save` vs `elktours-experience-draft-save` (artist vs office actor); `elktours-experience-inquiry-send` vs `elktours-inquiry-send` (stores and emails vs stores only); `elktours-feed-post-review` vs `elktours-experience-decide`; `confirm-booking-time`, `-as-buyer` and `propose-booking-times-as-buyer` (seller vs buyer); `market-store-panel-save` and the pkg `backs` rows (package rows stay as rows, with refs fixed); the admin-app `admin-user-update`, `admin-workshop-promote` (no shared code, different gate; not same canonical).
 - **Not merged although similar, for the next pass**: `ifac-image-upload`, `dana-media-upload`, `artdirect-image-upload`, `elktours-upload-media`, `upload-my-file`, `upload-image`, `artwork-image-upload` are all one upload route family with different policies; `site-style-save` (8 hosts) vs `site-theme-save`; the amrit/sunjay `*-forum-*` side rows without a forum-app twin were merged amrit+sunjay only.
 - **drift.md**: now one section per canonical target (table first: target, apps, hosts, rows, service variants; widest first), each listing its rows with apps, hosts and the per-app differences from `drift`, plus the direction notes; rows with no canonical are one id list at the end; a second section keeps "rows whose hosts call different services". `scripts/atlas-reports.mts` changed for this (only the drift block). Unchanged: coverage and wording waves.
+
+## 2026-11-16 · Justin: uploads direction
+- **Per-org avatars and descriptions, with fallback.** A person may carry an org-specific avatar and bio (versioned per org) that falls back to their network profile (`users.avatar_url`/`bio`). This extends sunjay's `org_profiles.bio_override` pattern and the #20 fix (write the org half, not the global row). For this plan: the `avatar` kind takes an optional `orgId`. With an org, it stores the image under the org and records it on the org profile; without one, it updates the network profile. Readers resolve org first, then global. Keeping earlier versions is wanted ("allow versioning").
+- **Uploads should go through the content library.** Uploads and the library were already moving toward the content library (`docs/open/CONTENT_LIBRARY_COMPONENT_2026-11-08.md`). `storeUpload` should create or attach content-library media items rather than loose files, so an upload is findable and reusable in the library.
+- cms-ui vs site-forms: Justin hasn't compared them yet; noted as an open comparison (cms-ui is in 16 apps, site-forms in 6).
+
+## 2026-11-16 · Justin: structural direction (also DOCK_RAILS_PLAN §5b)
+
+Architecture only. Course and tutorial content is out of scope until its own pass.
+
+- **The LMS is the central admin, with the MCP as its rails.** It flips switches and adds or edits, from the dock or from the course module itself.
+- **The dock prefers its own module UI.** Where an action can be done in a dock module (a form or card the dock renders from the entry's input schema), do that. Navigating across pages and highlighting the real control is the fallback for actions the dock can't supply itself. Architecturally, each registry entry declares the two capabilities separately: `dockForm` (the dock can render and run it) and `address` (where the real control lives). `presentAction` picks dockForm first.
+- **Courses are layered.** Areas run from broad, fundamental courses to specific ones that reuse the same entries. The structure only needs:
+  - a course `area` (a tag);
+  - `builds_on` links between courses, so a specific course can reuse a fundamental course's steps;
+  - steps that are references to registry entries, not copied content.
+  
+  Skeletal for now: placeholders that name areas and entries, with no prose.
+- **Broad areas** (tags to hang courses on later; each maps to atlas areas):
+  - *profile*: establish, maintain;
+  - *publishing*: posts, work, paid work;
+  - *business*: offerings, booking, money; then *tours* (elktours: a tour with stops and a description, plus slots) as a specific layer on business/booking;
+  - *site*: page builder and house editor; template page by hand, then customise, then themes;
+  - *production*: studio, media, routines and the channel;
+  - *artwork*: pieces, the store, auctions;
+  - *email*: setup, then org/event template customisation.
+- **Confirm-card wording should be drier.** The naming conventions are fine. House-style change for the next waves: state the action and its effect plainly, with no warmth or reassurance.
+- **Stripe refunds** are automatic but triggered by hand: a cancel records the refund as due, and one press issues it through Stripe. In the dock this is a money entry, so it links to the refund control and never runs it.

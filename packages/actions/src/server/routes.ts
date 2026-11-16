@@ -52,7 +52,7 @@
 import { ACTION_CATALOGUE, actionMeta } from '../catalogue';
 import type { ActionFailure, ActionLinks, ActionMeta, ActionResult } from '../types';
 import { actionStatus, type ActionSources } from './status';
-import { performAction, RUNNABLE_IDS } from './run';
+import { performAction, RUNNABLE_IDS, type ActorContext } from './run';
 import { actionJsonSchema } from './schema';
 import { actionOrgId } from './org';
 
@@ -84,6 +84,8 @@ export interface ActionRoutesOptions {
   rateLimit?: ActionRateLimit;
   /** Host readers for statuses computed by the host's own model (`channel-next`). */
   sources?: ActionSources;
+  /** Pushed completion: passed to performAction for every POST (see run.ts `onPerformed`). */
+  onPerformed?: ActorContext['onPerformed'];
 }
 
 /** A catalogue row as the catalogue route serves it. */
@@ -238,7 +240,9 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         const actions: ActionCatalogueRow[] = ACTION_CATALOGUE.map((m) => {
           // `runnable` is what this door will perform (the runner table), not only what the catalogue declares.
           const runnable = RUNNABLE_IDS.includes(m.id);
-          return runnable ? { ...m, runnable, input: actionJsonSchema(m.id) } : { ...m, runnable };
+          // Wording that is not approved never leaves the server (D-16): the catalogue shows approved text only.
+          const shown = m.confirm && m.confirm.status !== 'approved' && m.confirm.status !== 'changed' ? { ...m, confirm: undefined } : m;
+          return runnable ? { ...shown, runnable, input: actionJsonSchema(m.id) } : { ...shown, runnable };
         });
         return json({ actions });
       }),
@@ -288,7 +292,7 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         const orgClaim = typeof raw.org === 'string' ? raw.org.slice(0, 64) : null;
         const orgId = await actionOrgId(id, actor.userId, orgClaim);
         const subjectId = subjectOf(raw.subject);
-        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, orgClaim, subjectId, via: 'http', sources: opts.sources }, raw.input);
+        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, orgClaim, subjectId, via: 'http', sources: opts.sources, onPerformed: opts.onPerformed }, raw.input);
         return json(result, resultStatus(result));
       }),
     },
