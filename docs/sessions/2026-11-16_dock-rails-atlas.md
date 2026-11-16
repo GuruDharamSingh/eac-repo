@@ -162,3 +162,12 @@ All of these are in the liaison's queue, `docs/open/LIAISON_2026-11-16.md`, with
   - When `patch` fails, rebuild the file from HEAD by hand.
 - **Lanes must back up every file**, package.json included.
 - **Subagent tsc runs** sometimes lose the exit code. Re-run the affected apps yourself with `./node_modules/.bin/tsc --noEmit -p .; echo EXIT=$?`.
+
+### Rebuilt 16:48 to 16:58 (Justin: "Go ahead rebuild whatever. And push to git ya")
+
+All ten apps rebuilt, one at a time (`~/eac-backups/rebuild-2026-11-16c.sh`, log `~/eac-backups/next/rebuild-2026-11-16c.log`, previous builds backed up next to it): sunjay as the canary, then amrit-canada, elktours, hidden-enneagram, innergathering, fourthwayBookreaders, danamccool, katie-the-potter, artdirect, arts-collective. Everything in the commits above is now live.
+- Canary: the 20 merged routes answer exactly as the old code did, signed out (`~/eac-backups/canary.sh <new port> <old port>`); `?w=256` on a sunjay photo: 358 KB JPEG became a 3 KB WebP.
+- tenant-smoke 9/9; no errors in any app log after restart. elktours logged one ChunkLoadError at 16:51:10, during its own build (the old server reading a half-written .next), none after.
+- fourthway, danamccool, katie and artdirect (last built 11-11 to 11-15) also picked up about 58 uncommitted shared files from other sessions that were already live on the other apps since 12:30.
+- Migration 277 is still NOT applied (course tags fall back to none).
+- Branch pushed: `origin/work/2026-11-16`.
