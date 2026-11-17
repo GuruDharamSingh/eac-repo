@@ -14,6 +14,8 @@ export type ConfirmMode = 'live' | 'draft-visible';
 export interface ConfirmCard {
   kind: 'text' | 'draft' | 'generic';
   text: string;
+  /** Approved card heading, when the row has one. */
+  title?: string;
   risk: ActionRisk[];
   /** A money entry has no confirm card at all (route only); the dock checks this first. */
   money: boolean;
@@ -27,7 +29,7 @@ export function confirmView(meta: Pick<ActionMeta, 'label' | 'confirm' | 'risk'>
   const risk = [...(meta.risk ?? [])];
   const money = risk.includes('money');
   const c = meta.confirm;
-  if (c && c.text.trim() && (c.status === 'approved' || c.status === 'changed')) return { kind: 'text', text: c.text, risk, money };
-  if (c && c.text.trim() && mode === 'draft-visible') return { kind: 'draft', text: c.text, risk, money };
+  if (c && c.text.trim() && (c.status === 'approved' || c.status === 'changed')) return { kind: 'text', text: c.text, ...(c.title ? { title: c.title } : {}), risk, money };
+  if (c && c.text.trim() && mode === 'draft-visible') return { kind: 'draft', text: c.text, ...(c.title ? { title: c.title } : {}), risk, money };
   return { kind: 'generic', text: `${meta.label}. This runs now, on your account.`, risk, money };
 }

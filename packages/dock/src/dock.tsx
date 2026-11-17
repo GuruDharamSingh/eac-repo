@@ -56,7 +56,7 @@ export interface DockWire {
       route?: { href: string; anchor: string | null; how: string | null } | null;
       /** A module form key drawn inline before routing (ActionMeta.dockForm). */
       dockForm?: string | null;
-      confirm?: { kind: "text" | "draft" | "generic"; text: string; risk: string[]; money: boolean } | null;
+      confirm?: { kind: "text" | "draft" | "generic"; text: string; title?: string; risk: string[]; money: boolean } | null;
     };
   };
   away?: null | { returnHref: string; stepTitle: string | null; anchor: string | null; ticketOk: boolean };
@@ -217,7 +217,7 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
   const ask = (key: string, id: string, input: unknown, opts: { org?: string | null; subject?: string | null }, card: { title: string; confirm?: NonNullable<NonNullable<DockWire["step"]>["task"]>["confirm"] | null }) => {
     setMessage(null);
     const c = card.confirm;
-    setPending({ key, id, input, opts, title: card.title, text: c?.text ?? `${card.title}. This runs now, on your account.`, tag: c?.kind === "draft" ? "draft" : null, risk: c?.risk ?? [] });
+    setPending({ key, id, input, opts, title: c?.title ?? card.title, text: c?.text ?? `${card.title}. This runs now, on your account.`, tag: c?.kind === "draft" ? "draft" : null, risk: c?.risk ?? [] });
   };
 
   /** Perform an entry, then read the dock again and refresh the page under it. */

@@ -25,7 +25,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Save “{title}” at {price} in {where}. Private until put on sale.",
+      "title": "Save artwork",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "cloud": {
     "address": {
@@ -50,7 +56,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Create your folder, public page and artists’ directory listing.",
+      "title": "Set up your space",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "listing": {
     "address": {
@@ -96,7 +108,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     "roles": [
       "owner",
       "guide"
-    ]
+    ],
+    "confirm": {
+      "text": "Change {org}’s name, line and bio. Visible on the network and its site.",
+      "title": "Save org identity",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "org-email": {
     "address": {
@@ -110,7 +128,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     "roles": [
       "owner",
       "guide"
-    ]
+    ],
+    "confirm": {
+      "text": "Send {org}’s mail as “{name}”, replies to {email}. Everyone who gets its mail sees this.",
+      "title": "Set sender identity",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "org-offering": {
     "address": {
@@ -169,7 +193,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Start Stripe payout setup for {email}. Country is fixed unless you disconnect.",
+      "title": "Set up Stripe payouts",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "profile": {
     "address": {
@@ -184,7 +214,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Save profile changes. Your name, line and bio update publicly and in the directory.",
+      "title": "Save profile",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "service": {
     "address": {
@@ -200,7 +236,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Save your service “{title}” at {price}. If published, visitors can see it.",
+      "title": "Save my service",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "show-on": {
     "address": {
@@ -215,7 +257,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Show “{title}” on {where}. Visitors there can read it; some sites review first.",
+      "title": "Choose sites for post",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "store": {
     "address": {
@@ -231,7 +279,13 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     ],
     "roles": [
       "person"
-    ]
+    ],
+    "confirm": {
+      "text": "Open your marketplace store. Published artworks can be sold there.",
+      "title": "Open my store",
+      "status": "approved",
+      "wave": 1
+    }
   },
   "studio": {
     "address": {

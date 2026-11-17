@@ -26,7 +26,7 @@ export async function render(): Promise<{ data: string; confirms: string }> {
       const cap = areas[file]?.capabilities.find((c) => c.id === capId);
       if (!cap) throw new Error(`entries.ts: ${id}: no atlas row ${e.confirmFrom}`);
       if (!cap.confirm) throw new Error(`entries.ts: ${id}: atlas row ${e.confirmFrom} has no confirm`);
-      const c = { text: cap.confirm.text, status: cap.confirm.status, ...(cap.confirm.wave !== undefined ? { wave: cap.confirm.wave } : {}) };
+      const c = { text: cap.confirm.text, ...(cap.confirm.title ? { title: cap.confirm.title } : {}), status: cap.confirm.status, ...(cap.confirm.wave !== undefined ? { wave: cap.confirm.wave } : {}) };
       confirms[id] = c;
       // Only approved wording goes into the client-safe file; drafts stay in the server-only one.
       if (c.status === 'approved' || c.status === 'changed') row.confirm = c;

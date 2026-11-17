@@ -1,6 +1,8 @@
 # Wording wave 01, drier version
 
-Drier rewrite of `wording-wave-01.md` (69 cards). Rules: verb first, say what changes and who sees it, use the object name, no reassurance, no exclamation marks, title up to 6 words, body up to 18 words. Money and irreversible cards keep their consequence line. Words in {braces} are filled in by the dock.
+Approved by Justin 2026-11-16 (batch 1 as written; batches 2-7 with two fixes)
+
+Drier rewrite of `wording-wave-01.md` (69 cards). Rules: verb first, say what changes and who sees it, use the object name, no reassurance, no exclamation marks, title up to 6 words, body up to 18 words. Irreversible cards keep Cannot be undone. Money cards 33 and 36 keep Payment at checkout; the checkout line is dropped from the other money cards (Justin, 2026-11-16). Words in {braces} are filled in by the dock.
 
 Answer per card: approve, or write a change. Batches are about 10 cards, by area.
 
@@ -103,7 +105,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Accept “{title}”? {share}% of your sales through {org} will be shared with it. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Accept agreement
-- **Dry card:** Accept “{title}”. {share}% of your sales through {org} goes to it. Payment happens at checkout, not here.
+- **Dry card:** Accept “{title}”. {share}% of your sales through {org} goes to it.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -112,7 +114,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Save a draft agreement “{title}” that takes {share}% of sales? Nothing is in force until you publish it. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Save draft agreement
-- **Dry card:** Save draft “{title}” at {share}% of sales. Not in force until published. Payment happens at checkout.
+- **Dry card:** Save draft “{title}” at {share}% of sales. Not in force until published.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -121,7 +123,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges] [PUBLIC: others can see the result] [AFFECTS OTHER PEOPLE]
 - Current: Publish “{title}”? Members are asked to accept it, and {share}% of their sales goes to {org}. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Publish agreement
-- **Dry card:** Publish “{title}”. Members are asked to accept; {share}% of their sales goes to {org}. Payment at checkout.
+- **Dry card:** Publish “{title}”. Members are asked to accept; {share}% of their sales goes to {org}.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -130,7 +132,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges] [CANNOT BE UNDONE] [AFFECTS OTHER PEOPLE]
 - Current: Retire “{title}”? No one new can accept it, and existing acceptances are kept. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Retire agreement
-- **Dry card:** Retire “{title}”. No new acceptances; existing ones stay. Cannot be undone. Payment at checkout.
+- **Dry card:** Retire “{title}”. No new acceptances; existing ones stay. Cannot be undone.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -139,7 +141,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Withdraw your acceptance of “{title}”? The terms stop applying to you from now on. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Withdraw acceptance
-- **Dry card:** Withdraw your acceptance of “{title}”. Its terms stop applying to you now. Payment at checkout.
+- **Dry card:** Withdraw your acceptance of “{title}”. Its terms stop applying to you now.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -148,7 +150,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Add {name} as a possible beneficiary of {org}’s sales? It stays a suggestion until approved. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Suggest charity
-- **Dry card:** Suggest {name} as a beneficiary of {org}’s sales. Stays a suggestion until approved. Payment at checkout.
+- **Dry card:** Suggest {name} as a beneficiary of {org}’s sales. Stays a suggestion until approved.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -157,7 +159,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Add {name} as a beneficiary of {org}’s store? A share of its sales goes to them from now on. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Add store beneficiary
-- **Dry card:** Add {name} as a beneficiary of {org}’s store. A share of sales goes to them. Payment at checkout.
+- **Dry card:** Add {name} as a beneficiary of {org}’s store. A share of sales goes to them.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -166,7 +168,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Approve {name} to receive a share of {org}’s sales? Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Approve beneficiary
-- **Dry card:** Approve {name} to receive a share of {org}’s sales. Payment at checkout.
+- **Dry card:** Approve {name} to receive a share of {org}’s sales.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -175,7 +177,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Open a store for {org} on the marketplace? Visitors can then see its work. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Open org store
-- **Dry card:** Open a marketplace store for {org}. Visitors can see its work. Payment at checkout.
+- **Dry card:** Open a marketplace store for {org}. Visitors can see its work.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -184,7 +186,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Remove {name} as a beneficiary of {org}’s store? Its sales stop going to them from now on. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Remove store beneficiary
-- **Dry card:** Remove {name} as a beneficiary of {org}’s store. Sales stop going to them. Payment at checkout.
+- **Dry card:** Remove {name} as a beneficiary of {org}’s store. Sales stop going to them.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -287,7 +289,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [SENDS EMAIL] [CANNOT BE UNDONE] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Cancel {person}’s booking of “{title}”? They get an email, and any refund is arranged by reply. This cannot be undone. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Cancel booking
-- **Dry card:** Cancel {person}’s booking of “{title}”. They get an email. Refund is arranged by reply. Cannot be undone. Payment at checkout.
+- **Dry card:** Cancel {person}’s booking of “{title}”. They get an email. The refund is recorded as due. Cannot be undone.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -379,7 +381,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Show “{title}” as {state} on {org}’s site? Visitors see the change straight away. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Set artwork display
-- **Dry card:** Show “{title}” as {state} on {org}’s site. Visitors see it at once. Payment at checkout.
+- **Dry card:** Show “{title}” as {state} on {org}’s site. Visitors see it at once.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -388,7 +390,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges] [PUBLIC: others can see the result]
 - Current: Save “{title}” at {price} in {where}? It stays private until you put it on sale. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Save artwork
-- **Dry card:** Save “{title}” at {price} in {where}. Private until put on sale. Payment at checkout.
+- **Dry card:** Save “{title}” at {price} in {where}. Private until put on sale.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -415,7 +417,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Open your own store on the marketplace? Your published artworks can then be sold there. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Open my store
-- **Dry card:** Open your marketplace store. Published artworks can be sold there. Payment at checkout.
+- **Dry card:** Open your marketplace store. Published artworks can be sold there.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -424,7 +426,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Save your service “{title}” at {price}? If it is published, visitors can see it. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Save my service
-- **Dry card:** Save your service “{title}” at {price}. If published, visitors can see it. Payment at checkout.
+- **Dry card:** Save your service “{title}” at {price}. If published, visitors can see it.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -433,7 +435,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges] [CANNOT BE UNDONE]
 - Current: Disconnect your payout account? You need to set it up again before you can be paid. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Disconnect payout account
-- **Dry card:** Disconnect your payout account. You must set it up again to be paid. Cannot be undone. Payment at checkout.
+- **Dry card:** Disconnect your payout account. You must set it up again to be paid. Cannot be undone.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -442,7 +444,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Save your payout details? Payments from {org} will go to {where}. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Save payout details
-- **Dry card:** Save payout details. Payments from {org} go to {where}. Payment at checkout.
+- **Dry card:** Save payout details. Payments from {org} go to {where}.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -451,7 +453,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Set up payouts at Stripe for {email}? You choose the country there, and it cannot be changed without disconnecting. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Set up Stripe payouts
-- **Dry card:** Start Stripe payout setup for {email}. Country is fixed unless you disconnect. Payment at checkout.
+- **Dry card:** Start Stripe payout setup for {email}. Country is fixed unless you disconnect.
 
 Answer: [ ] approve   [ ] change to: ________
 
@@ -460,7 +462,7 @@ Answer: [ ] approve   [ ] change to: ________
 - Badges: [PUBLIC: others can see the result] [MONEY: the dock only points to the checkout, it never pays or charges]
 - Current: Save the service “{title}” at {price} for {org}? If it is published, visitors can book it. Payments happen on the checkout or Stripe page, not here.
 - **Dry title:** Save service
-- **Dry card:** Save the service “{title}” at {price} for {org}. If published, visitors can book it. Payment at checkout.
+- **Dry card:** Save the service “{title}” at {price} for {org}. If published, visitors can book it.
 
 Answer: [ ] approve   [ ] change to: ________
 

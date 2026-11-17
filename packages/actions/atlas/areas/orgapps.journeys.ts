@@ -40,8 +40,9 @@ const capabilities: Capability[] = [
     status: 'getStoreForUser(userId) returns an active store',
     risk: ['public', 'money'],
     confirm: {
-      text: 'Open your own store on the marketplace? Your published artworks can then be sold there. Payments happen on the checkout or Stripe page, not here.',
-      status: 'draft',
+      text: 'Open your marketplace store. Published artworks can be sold there.',
+      title: 'Open my store',
+      status: 'approved',
       wave: 1,
     },
     drift: "Byte-identical code; only the doc comment differs. Gate: any signed-in person (a store is a fact about the person, like being payable), no org role. The display_name is read with a raw SELECT inside the action.\nMerged 2026-11-16 (consolidation 2): 2 rows, 2 apps (ifac, arts-collective). Differences by app:\n- arts-collective (was open-your-store): Org stores open through openOrgStore (hub open-org-store); a person's through publishStoreForAuction.",

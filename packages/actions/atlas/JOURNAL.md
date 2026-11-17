@@ -447,3 +447,6 @@ Architecture only. Course and tutorial content is out of scope until its own pas
 - Dock structure: course tags `area` and `builds_on` (migration 277 written, NOT applied; reads tolerate absent columns), `ActionMeta.dockForm` with a stub `DOCK_FORMS`, picker grouped by area. Track nexus in `atlas/tracks/` with `check-rails` and `reports/rails-nexus.md`.
 
 - 2026-11-16 (lead): lane media committed (thumbnail helper in utils, mediaRoutes factory, q95 masters). Inventory regenerated: 2033 hosts, 0 unclaimed, 0 needs review; media GET routes are reads, not hosts.
+
+## 2026-11-16 · wording lane
+- Wording wave 1 approved by Justin (batch 1 as written; batches 2-7 with two fixes: Payment at checkout kept only on cards 33 and 36, card 11 body reworded) and folded in from reports/wording-wave-01-dry.md. 69 cards, 69 rows matched, 69 set to status approved (wave 1), 0 not found. Row text is the drier card body; new optional Wording.title holds the drier title and is emitted into registry-data and registry-confirm (ActionConfirm.title). The dock confirm card heading shows the approved title, else the task label. atlas:emit, check:registry, atlas:inventory, atlas:check --strict (0 unclaimed, no needs-review) and tsc for packages/actions, packages/dock and apps/arts-collective all exit 0.

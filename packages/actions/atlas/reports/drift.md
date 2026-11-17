@@ -1,6 +1,6 @@
 # Atlas drift
 
-Generated from inventory of 2026-11-16. Do not edit; regenerate with `pnpm --filter @elkdonis/actions atlas:reports`.
+Generated from inventory of 2026-11-17. Do not edit; regenerate with `pnpm --filter @elkdonis/actions atlas:reports`.
 
 Drift is recorded, not fixed. Merging to a `canonical` path is a separate, approved pass.
 
@@ -10,11 +10,10 @@ After consolidation 2 one capability = one row with every host across apps. Sect
 
 | canonical target | apps | hosts | rows | service variants |
 |---|--:|--:|--:|--:|
-| auth-server handleSignup (already shared); keep one route per app, no custom copies | 18 | 19 | 1 | 4 |
+| auth-server handleSignup (already shared); keep one route per app, no custom copies | 17 | 17 | 1 | 2 |
 | services updateProfile + ensureUniqueUserSlug behind one shared kit action; add URL/media- | 8 | 12 | 1 | 7 |
 | a services setProfileSection(userId, key, on) that owns the SQL and the allowed-key list;  | 7 | 20 | 1 | 6 |
 | one shared handler in @elkdonis/services (rsvpHandlers, like connectionsHandlers) that eac | 7 | 12 | 2 | 10 |
-| one upload route in services with a per-app policy object (types, sizes, who) | 7 | 12 | 2 | 9 |
 | one shared action in the planned org-site kit: gate getApiEditor, services/page-builder sa | 7 | 11 | 1 | 11 |
 | checkout startPayoutsFor, with origin resolved by publicOriginFrom in every host; one kit  | 7 | 9 | 1 | 4 |
 | services savePostContent via one shared org-site kit action; membersMayPost and href/reval | 7 | 8 | 1 | 4 |
@@ -24,6 +23,7 @@ After consolidation 2 one capability = one row with every host across apps. Sect
 | packages/chat createChatApi | 6 | 8 | 2 | 3 |
 | services createWritingPost (+updateWritingPost) behind one shared desk action in the org-s | 6 | 8 | 1 | 5 |
 | one post-creation service (createThread) | 6 | 7 | 2 | 4 |
+| one upload route in services with a per-app policy object (types, sizes, who) | 6 | 7 | 2 | 6 |
 | services saveMeetingContent behind one shared 'use server' action in the planned org-site  | 6 | 7 | 1 | 3 |
 | services updateWritingPost + canEditProfile behind one shared desk action. | 6 | 7 | 1 | 7 |
 | packages/chat createChatApi (already shared) | 6 | 6 | 1 | 2 |
@@ -41,11 +41,11 @@ After consolidation 2 one capability = one row with every host across apps. Sect
 | services removeThreadAs with the org check moved inside (an org id parameter), behind one  | 5 | 5 | 1 | 1 |
 | services saveCenterLayout behind one shared route (already a service); keep per-app auth o | 5 | 5 | 1 | 2 |
 | One org-site kit action: getApiEditor + services saveSiteTheme + a services saveSiteChrome | 4 | 8 | 1 | 2 |
-| a shared cycle-event handler in services | 4 | 8 | 1 | 6 |
 | one shared guest RSVP handler in services with rate limit and email validation | 4 | 8 | 1 | 6 |
 | auth-server login handler (shared); decide whether sign-in should ever join an org (signup | 4 | 5 | 1 | 4 |
 | packages/forum-ui handleForumAction with phone routes calling the same connectors | 4 | 5 | 1 | 3 |
 | One kit action over startBookingCheckout (booking module, offer-driven) for every site; st | 4 | 4 | 1 | 3 |
+| a shared cycle-event handler in services | 4 | 4 | 1 | 3 |
 | a shared trigger-email handler in services | 4 | 4 | 1 | 3 |
 | commerce setPayoutIdentity with the country/rail/email validation (including the email reg | 4 | 4 | 1 | 1 |
 | packages/chat createChatApi. | 4 | 4 | 1 | 2 |
@@ -141,24 +141,24 @@ After consolidation 2 one capability = one row with every host across apps. Sect
 | extract lib/manage-claim.ts to @elkdonis/services/claim-links (session doc open item 9) wi | 1 | 6 | 3 | 5 |
 | packages/actions performHubAction (the registry door) | 1 | 6 | 6 | 1 |
 | one experience writer in services with an artist and an office entry | 1 | 4 | 2 | 3 |
-| one shared upload route in services with a policy per role | 1 | 4 | 2 | 3 |
 | services artistProfile module | 1 | 4 | 2 | 2 |
 | services handleUserProvisioning | 1 | 4 | 2 | 2 |
 | @elkdonis/page-builder/server#savePage | 1 | 3 | 2 | 3 |
 | @elkdonis/services#reviewThread | 1 | 3 | 2 | 3 |
 | commerce/server booking functions, with one action file per host | 1 | 3 | 3 | 3 |
 | one server action over services setOrgRole/removeOrgMember that takes an org id and checks | 1 | 3 | 3 | 2 |
+| one shared upload route in services with a policy per role | 1 | 3 | 2 | 3 |
 | services reviewListing | 1 | 2 | 2 | 1 |
-| (no canonical recorded) | 23 | 626 | 328 | 376 |
+| (no canonical recorded) | 24 | 684 | 338 | 392 |
 
 ### auth-server handleSignup (already shared); keep one route per app, no custom copies
 
-- apps (18): admin, amrit-canada, art-auction, artdirect, arts-collective, blog-guru-dharam, blog-tester, danamccool, elastrocal, elkdonis-arts-collective, elktours, fourthwayBookreaders, hidden-enneagram, ifac, innergathering, katie-the-potter, pigeonshoot, sunjay
-- hosts: 19; rows: 1; distinct service sets: 4
+- apps (17): amrit-canada, art-auction, artdirect, arts-collective, blog-guru-dharam, blog-tester, danamccool, elastrocal, elkdonis-arts-collective, elktours, fourthwayBookreaders, hidden-enneagram, ifac, innergathering, katie-the-potter, pigeonshoot, sunjay
+- hosts: 17; rows: 1; distinct service sets: 2
 
 #### create-account (arts-collective.network): Create an account
 
-18 app(s), 19 host(s): admin, amrit-canada, art-auction, artdirect, arts-collective, blog-guru-dharam, blog-tester, danamccool, elastrocal, elkdonis-arts-collective, elktours, fourthwayBookreaders, hidden-enneagram, ifac, innergathering, katie-the-potter, pigeonshoot, sunjay.
+17 app(s), 17 host(s): amrit-canada, art-auction, artdirect, arts-collective, blog-guru-dharam, blog-tester, danamccool, elastrocal, elkdonis-arts-collective, elktours, fourthwayBookreaders, hidden-enneagram, ifac, innergathering, katie-the-potter, pigeonshoot, sunjay.
 
 Differences:
 
@@ -243,32 +243,6 @@ Differences:
 > Direction (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).
 > amrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.
 > Kept separate on purpose (a paid branch and a different risk): ig-rsvp-join and ig-rsvp-cancel (innergathering, paid places, workshop materials); the guest door is sunjay-rsvp-guest (visitor, no account).
-
-### one upload route in services with a per-app policy object (types, sizes, who)
-
-- apps (7): amrit-canada, fourthwayBookreaders, hidden-enneagram, innergathering, katie-the-potter, series-site, sunjay
-- hosts: 12; rows: 2; distinct service sets: 9
-
-#### pkg-series-site-media-upload (pkg.series-site): Upload a file into the organisation's media folder
-
-1 app(s), 1 host(s): series-site.
-
-Curator note: same family as apps.sunjay.audience:sunjay-media-upload and the other org upload routes (internal, each with its own policy); this one is the series-site copy used by sunjay and ifac, and adds the week-host path (a member who hosts the occurrence may upload).
-
-#### sunjay-media-upload (apps.sunjay.audience): Upload a file for the site
-
-6 app(s), 11 host(s): amrit-canada, fourthwayBookreaders, hidden-enneagram, innergathering, katie-the-potter, sunjay.
-
-Differences:
-
-- amrit-canada (was amrit-media-upload): Same family as arts-collective.network:upload-image / upload-my-file and art-auction artwork-image-upload, each with its own rules. This copy: owner/guide only, org fixed, validateUploadBuffer refuses SVG. Same file in sunjay (apps.sunjay.*.ts: sunjay-media-upload); byte-identical bar log prefixes.
-- fourthwayBookreaders (was fourthway-media-upload): Same family as sunjay-media-upload and the other upload routes; differs: uses the consolidated uploadOrgFile (no media table row, no visibility field) and refuses SVG after sniffing; the org-app copies write a media row via raw SQL.
-- katie-the-potter (was katie-media-upload): Same family as sunjay-media-upload, sunjay-media-upload and art-auction artwork-image-upload. Differs: images only, files go to the ARTIST's own tree (users/<slug>/Media/Images or Galleries/<gallery>), never the org tree, via resolveUserPath; the gallery slug is regex-checked; HEIC is refused with a message for Katie.
-- hidden-enneagram (was he-media-upload): Fourth upload family (ifac api/upload, artdirect api/upload, danamccool api/media/upload). This one writes the org tree, not a person folder, and supports audio.
-- innergathering (was ig-media-upload): Same upload route in 10 other apps (amrit-canada, art-auction, artdirect, elktours, fourthwayBookreaders, hidden-enneagram, ifac, inner-gathering, pigeonshoot, sunjay): not diffed. arts-collective has a different upload/image route.
-
-> Direction (Justin, 2026-11-16): avatars and uploads should become one upload path (shared validateUploadBuffer route with a per-purpose policy), not one route per app and purpose.
-> amrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.
 
 ### one shared action in the planned org-site kit: gate getApiEditor, services/page-builder savePageContent that does cleanBoxDoc + stripResolved(config RESOLVED_KEYS) + reserved-slug and feed check (hooks per app), then savePage and revalidate by a per-app route map.
 
@@ -614,6 +588,32 @@ Differences:
 
 > Direction (Justin, 2026-11-16): the canonical is the hub / Channel path (hub surface pages, cards and pop-ups), not the /manage page shape. amrit-canada is the oldest site and is being left behind, so its copy is not a model; sunjay is moving from /manage pages to hub + Channel.
 
+### one upload route in services with a per-app policy object (types, sizes, who)
+
+- apps (6): amrit-canada, fourthwayBookreaders, hidden-enneagram, innergathering, katie-the-potter, sunjay
+- hosts: 7; rows: 2; distinct service sets: 6
+
+#### pkg-series-site-media-upload (pkg.series-site): Upload a file into the organisation's media folder
+
+0 app(s), 0 host(s): .
+
+Curator note: same family as apps.sunjay.audience:sunjay-media-upload and the other org upload routes (internal, each with its own policy); this one is the series-site copy used by sunjay and ifac, and adds the week-host path (a member who hosts the occurrence may upload).
+
+#### sunjay-media-upload (apps.sunjay.audience): Upload a file for the site
+
+6 app(s), 7 host(s): amrit-canada, fourthwayBookreaders, hidden-enneagram, innergathering, katie-the-potter, sunjay.
+
+Differences:
+
+- amrit-canada (was amrit-media-upload): Same family as arts-collective.network:upload-image / upload-my-file and art-auction artwork-image-upload, each with its own rules. This copy: owner/guide only, org fixed, validateUploadBuffer refuses SVG. Same file in sunjay (apps.sunjay.*.ts: sunjay-media-upload); byte-identical bar log prefixes.
+- fourthwayBookreaders (was fourthway-media-upload): Same family as sunjay-media-upload and the other upload routes; differs: uses the consolidated uploadOrgFile (no media table row, no visibility field) and refuses SVG after sniffing; the org-app copies write a media row via raw SQL.
+- katie-the-potter (was katie-media-upload): Same family as sunjay-media-upload, sunjay-media-upload and art-auction artwork-image-upload. Differs: images only, files go to the ARTIST's own tree (users/<slug>/Media/Images or Galleries/<gallery>), never the org tree, via resolveUserPath; the gallery slug is regex-checked; HEIC is refused with a message for Katie.
+- hidden-enneagram (was he-media-upload): Fourth upload family (ifac api/upload, artdirect api/upload, danamccool api/media/upload). This one writes the org tree, not a person folder, and supports audio.
+- innergathering (was ig-media-upload): Same upload route in 10 other apps (amrit-canada, art-auction, artdirect, elktours, fourthwayBookreaders, hidden-enneagram, ifac, inner-gathering, pigeonshoot, sunjay): not diffed. arts-collective has a different upload/image route.
+
+> Direction (Justin, 2026-11-16): avatars and uploads should become one upload path (shared validateUploadBuffer route with a per-purpose policy), not one route per app and purpose.
+> amrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.
+
 ### services saveMeetingContent behind one shared 'use server' action in the planned org-site kit (packages/org-site) taking {siteConfig, viewerResolver, hrefFor(record), revalidate(record)} so only the route templates are per-app.
 
 - apps (6): amrit-canada, arts-collective, elktours, ifac, innergathering, sunjay
@@ -885,24 +885,7 @@ Differences:
 
 4 app(s), 8 host(s): elktours, hidden-enneagram, katie-the-potter, sunjay.
 
-Curator note: Four copies of the same pair of files. saveSiteStyleAction is byte-identical in sunjay, elktours, katie-the-potter (md5 f2092db3/607303ab family: getApiEditor then saveSiteStyle, NO revalidatePath, so the public site may show the old style until a cache expiry). hidden-enneagram adds revalidatePath('/', 'layout') and its error text says 'owners and editors' (actually owner/guide, same getApiEditor). site-style.ts differs only in comments (sunjay/elktours/katie/HE). Each app has its own site-style-schema.ts (62-86 lines) that differs, so allowed values are per-app. All gates are getApiEditor (o
-
-### a shared cycle-event handler in services
-
-- apps (4): amrit-canada, elktours, innergathering, sunjay
-- hosts: 8; rows: 1; distinct service sets: 6
-
-#### sunjay-cycle-confirm (apps.sunjay.audience): Confirm or cancel this cycle's gathering
-
-4 app(s), 8 host(s): amrit-canada, elktours, innergathering, sunjay.
-
-Differences:
-
-- amrit-canada (was amrit-cycle-confirm): Not in arts-collective. inner-gathering uses the same vocabulary (route comment). Same file in sunjay (apps.sunjay.*.ts: sunjay-cycle-confirm); byte-identical bar log prefixes.
-- elktours (was elktours-cycle-confirm): Copy of the inner-gathering route (named in the code comment).
-- innergathering (was ig-cycle-mark): Same route in amrit-canada, elktours and sunjay (not diffed). Writes raw SQL where every other write here goes through a service.
-
-> Direction (Justin, 2026-11-16): the canonical is the hub / Channel path (hub surface pages, cards and pop-ups), not the /manage page shape. amrit-canada is the oldest site and is being left behind, so its copy is not a model; sunjay is moving from /manage pages to hub + Channel.
+Curator note: Four copies of the same pair of files. saveSiteStyleAction is byte-identical in sunjay, elktours, katie-the-potter (md5 f2092db3/607303ab family: getApiEditor then saveSiteStyle, NO revalidatePath in sunjay and elktours (katie revalidates, like HE; corrected 2026-11-16 by lane siteform), so the public site may show the old style until a cache expiry). hidden-enneagram adds revalidatePath('/', 'layout') and its error text says 'owners and editors' (actually owner/guide, same getApiEditor). site-style.ts differs only in comments (sunjay/elktours/katie/HE). Each app has its own site-style-schema.
 
 ### one shared guest RSVP handler in services with rate limit and email validation
 
@@ -969,6 +952,23 @@ Differences:
 - elastrocal (was elastrocal-service-book): none beyond the app and its basePath (/astro); same startServiceCheckout call as artdirect and sunjay.
 
 > Direction (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).
+
+### a shared cycle-event handler in services
+
+- apps (4): amrit-canada, elktours, innergathering, sunjay
+- hosts: 4; rows: 1; distinct service sets: 3
+
+#### sunjay-cycle-confirm (apps.sunjay.audience): Confirm or cancel this cycle's gathering
+
+4 app(s), 4 host(s): amrit-canada, elktours, innergathering, sunjay.
+
+Differences:
+
+- amrit-canada (was amrit-cycle-confirm): Not in arts-collective. inner-gathering uses the same vocabulary (route comment). Same file in sunjay (apps.sunjay.*.ts: sunjay-cycle-confirm); byte-identical bar log prefixes.
+- elktours (was elktours-cycle-confirm): Copy of the inner-gathering route (named in the code comment).
+- innergathering (was ig-cycle-mark): Same route in amrit-canada, elktours and sunjay (not diffed). Writes raw SQL where every other write here goes through a service.
+
+> Direction (Justin, 2026-11-16): the canonical is the hub / Channel path (hub surface pages, cards and pop-ups), not the /manage page shape. amrit-canada is the oldest site and is being left behind, so its copy is not a model; sunjay is moving from /manage pages to hub + Channel.
 
 ### a shared trigger-email handler in services
 
@@ -2511,23 +2511,6 @@ Curator note: Differs from the office writer elktours-experience-save: artists c
 
 Curator note: Different from the tour save (tour-actions saveTourAction) and the artist draft save (elktours-experience-draft-save): three writers of the same thread kind with different fields.
 
-### one shared upload route in services with a policy per role
-
-- apps (1): elktours
-- hosts: 4; rows: 2; distinct service sets: 3
-
-#### elktours-upload-forum-media (apps.elktours.hub-api): Add a photo or video to a forum post
-
-1 app(s), 2 host(s): elktours.
-
-Curator note: Narrower sibling of elktours-upload-media.
-
-#### elktours-upload-media (apps.elktours.hub-api): Upload a file for the site
-
-1 app(s), 2 host(s): elktours.
-
-Curator note: Close to the inner-gathering route; /api/upload/forum is a narrower copy for followers.
-
 ### services artistProfile module
 
 - apps (1): arts-collective
@@ -2642,6 +2625,23 @@ Curator note: The same setOrgRole and removeOrgMember are called from api/org/[s
 
 Curator note: The same setOrgRole and removeOrgMember are called from api/org/[slug]/members, the hub members panel, cms/org-people-actions and here, each with its own role check.
 
+### one shared upload route in services with a policy per role
+
+- apps (1): elktours
+- hosts: 3; rows: 2; distinct service sets: 3
+
+#### elktours-upload-forum-media (apps.elktours.hub-api): Add a photo or video to a forum post
+
+1 app(s), 2 host(s): elktours.
+
+Curator note: Narrower sibling of elktours-upload-media.
+
+#### elktours-upload-media (apps.elktours.hub-api): Upload a file for the site
+
+1 app(s), 1 host(s): elktours.
+
+Curator note: Close to the inner-gathering route; /api/upload/forum is a narrower copy for followers.
+
 ### services reviewListing
 
 - apps (1): arts-collective
@@ -2659,7 +2659,7 @@ Curator note: Org side of choose-sites-for-post (the poster’s side). Not the s
 
 ### (no canonical recorded)
 
-328 rows have no canonical path recorded yet (mostly single-app writers); ids: about-media-upload, about-page-save, accept-agreement, accept-terms, acknowledge-response, add-associated-org, add-channel-routine, add-channel-todo, add-email-contacts, add-facebook-page, add-listed-guide, add-org-beneficiary, add-quote, add-run-guide, add-to-course-pool, admin-contact-status-set, admin-content-moderate, admin-nextcloud-files, admin-nextcloud-setup-folders, admin-nextcloud-talk, admin-nextcloud-upload, admin-oidc-issue-code, admin-oidc-token-exchange, admin-org-grant-set, admin-work-question-set, adopt-latest-version, answer-listing-request, app-records-sync, approve-beneficiary, archive-channel-routine, archive-social-post, archive-video-project, artwork-archive, artwork-favorite-toggle, artwork-hide, artwork-present, artwork-publish, artwork-unpresent, artwork-update, astro-claim-review, astro-correspondence-cell-add, astro-foundation-item-add, astro-foundation-review, astro-interpretation-create, astro-interpretation-requeue, astro-library-note, astro-passage-mark-delete, astro-question-interpretation-create, astro-reasoning-review, astro-reference-vote, astro-vocab-review, astro-vocab-term-add, begin-course, bidder-register, book-outline-save, booking-hold-lifecycle, cancel-booking, capture-from-phone, cart-add, cart-remove-line, chart-cache-refresh, chart-delete, chart-guest-claim, chart-save, chart-update, check-social-account, collect-page-pulse, commerce-internal-writes, complete-step, confirm-org-address, connect-social-account, control-broadcast-booth, create-course, create-course-run, create-pen-name, create-video-project, delete-my-file, delete-org-file, delete-quote, delete-recording, delete-response, delete-tradition, device-link, device-unlink, disconnect-social-account, draft-agreement, eac-site-inquiry-record, edit-agreement-draft, edit-associated-org, edit-channel-routine, edit-course-outline, edit-course-pool-item, edit-email-contact, edit-social-account, edit-social-post, edit-workshop-live, elktours-artist-availability-save, elktours-asset-archive, elktours-asset-copy-to-stop, elktours-asset-save, elktours-asset-visible-set, elktours-business-claim-decide, elktours-business-facts-save, elktours-business-link-place, elktours-business-remove, elktours-business-restore, elktours-business-unlink-place, elktours-experience-link-to-stop, elktours-experience-people-set, elktours-experience-status-set, elktours-experience-submit, elktours-flyover-accept, elktours-flyover-cancel, elktours-flyover-reject, elktours-flyover-request, elktours-flyover-requeue, elktours-flyover-worker, elktours-forum-prefs, elktours-forum-topic-audience, elktours-hero-lead-set, elktours-invitation-respond, elktours-place-add-from-search, elktours-place-archive, elktours-place-create-from-pin, elktours-place-favourite-toggle, elktours-place-link-approve, elktours-place-link-reject, elktours-place-photo-discard, elktours-place-photo-pin, elktours-place-update-from-stop, elktours-place-website-set, elktours-review-delete-own, elktours-review-hide, elktours-review-save, elktours-settings-save, elktours-stop-excerpt-set, elktours-stop-note-add, elktours-stop-note-delete, elktours-stop-note-promote, elktours-suggest-lead, elktours-suggest-route, elktours-suggest-spot, elktours-suggestion-accept, elktours-suggestion-reject, follow-organisation, forum-drawing-save, forum-moderate, forum-react, forum-wiki-edit, go-live-relay, home-hero-save, home-welcome-save, installation-create, installation-delete, installation-layout-save, installation-publish-toggle, installation-rename, installation-scene-save, installation-venue-set, jerusalem-media-upload, jerusalem-video-publish, lamrim-review-delete, lamrim-review-save, landing-loft-publish, landing-loft-revert, landing-loft-save, link-cloud-sign-in, log-pureland-diagnostics, lot-cancel, mark-inbox-message, market-store-apply, market-store-profile-save, market-store-team-remove, marketplace-settings-save, message-artist, message-mark-read, message-send, never-suggest, open-course-discussions, open-silex-editor, order-cancel, order-fulfil, order-mark-shipped, order-pay-card, order-pay-etransfer, order-place, order-refund, order-refund-record, order-tracking-record, parcel-save, pigeon-card-moderate, pigeon-card-rate, pigeon-card-report, pigeon-card-submit, pigeon-criterion-retire, pigeon-criterion-save, pigeon-guest-block, pigeon-guest-claim, pigeon-guest-create, pigeon-rate-event, pigeon-report-resolve, pigeon-species-promote, pigeon-species-status, pigeon-tier-save, pkg-astro-corpus-chart-cache, pkg-astro-corpus-claim-review, pkg-astro-corpus-draft-store, pkg-astro-corpus-engine-candidate, pkg-astro-corpus-foundation-add, pkg-astro-corpus-foundation-review, pkg-astro-corpus-interpretation-write, pkg-astro-corpus-library-note, pkg-astro-corpus-ref-vote, pkg-astro-corpus-seed-and-import, pkg-astro-corpus-vocab-write, pkg-auth-server-device-token-revoke, pkg-auth-server-device-token-use, pkg-blog-server-app-user-ensure, pkg-blog-server-post-media-attach, pkg-mcp-key-last-used, post-to-elkdonis-forum, propose-booking-times, publish-agreement, publish-course, publish-org-landing-page, publish-video, receive-email-events, reclassify-inbox-message, release-held-funds, remove-associated-org, remove-email-contact, remove-listed-guide, remove-meeting, remove-org-beneficiary, remove-org-landing-page, remove-store-team-member, rename-recording, render-video, respond-to-step, restore-pen-name, retire-agreement, retire-pen-name, review-vetting-response, revoke-agreement-acceptance, save-classifieds-page, save-course, save-course-run, save-course-step, save-email-template, save-feed-card-design, save-listed-guide, save-piece-plan, save-silex-layout, save-tradition, save-video-project, scenario-question-draft, send-org-contact-message, series-create, series-editor-add, series-editor-remove, series-follow, series-invitation-decide, series-listing-add, series-lot-attach, series-lot-create, series-lot-remove, series-lots-renumber, series-media-upload, series-order-handover, series-order-received, series-org-invite, series-org-remove, series-publication-attach, series-publication-detach, series-reply, series-status-set, series-submit-own-piece, series-week-featured-set, series-week-item-add, series-week-item-approve, series-week-item-remove, serve-mcp, set-org-posting-channel, set-realm, set-up-relay-destinations, set-workshop-listing, ship-from-save, shipping-address-correct, shipping-label-buy, shipping-mark-shipped, shipping-mode-set, shipping-packing-save, shipping-rates-refresh, shipping-rechoose, shipping-shipment-internal, shipping-tracking-webhook, shop-order-cancel, shop-order-pay-card, shop-order-pay-etransfer, show-or-hide-quote, slot-booking-window, slot-run, stop-email-to-address, stop-relay, store-application-approve, store-application-reject, store-pause, store-shipping-mode-set, stripe-webhook-market, sync-run-rsvps, tick-channel-todo, tour-booking-cancel, tour-booking-defaults-save, tour-status-set, tour-stops-save, tour-type-set, unfollow-organisation, unpublish-video, upload-course-media, upload-org-file, upload-profile-photo, upload-recording, upload-reel-media, use-course-pool-item, use-video-extras, waive-step, weight-quote, withdraw-from-course
+338 rows have no canonical path recorded yet (mostly single-app writers); ids: about-media-upload, about-page-save, accept-agreement, accept-terms, acknowledge-response, add-associated-org, add-channel-routine, add-channel-todo, add-email-contacts, add-facebook-page, add-listed-guide, add-org-beneficiary, add-quote, add-run-guide, add-to-course-pool, admin-contact-status-set, admin-content-moderate, admin-nextcloud-files, admin-nextcloud-setup-folders, admin-nextcloud-talk, admin-nextcloud-upload, admin-oidc-issue-code, admin-oidc-token-exchange, admin-org-grant-set, admin-work-question-set, adopt-latest-version, answer-listing-request, app-records-sync, approve-beneficiary, archive-channel-routine, archive-social-post, archive-video-project, arrival-respond-route, artwork-archive, artwork-favorite-toggle, artwork-hide, artwork-present, artwork-publish, artwork-unpresent, artwork-update, astro-claim-review, astro-correspondence-cell-add, astro-foundation-item-add, astro-foundation-review, astro-interpretation-create, astro-interpretation-requeue, astro-library-note, astro-passage-mark-delete, astro-question-interpretation-create, astro-reasoning-review, astro-reference-vote, astro-vocab-review, astro-vocab-term-add, begin-course, bidder-register, book-outline-save, booking-hold-lifecycle, cancel-booking, capture-from-phone, cart-add, cart-remove-line, chart-cache-refresh, chart-delete, chart-guest-claim, chart-save, chart-update, check-social-account, collect-page-pulse, commerce-internal-writes, complete-step, confirm-org-address, connect-social-account, control-broadcast-booth, create-course, create-course-run, create-pen-name, create-video-project, delete-my-file, delete-org-file, delete-quote, delete-recording, delete-response, delete-tradition, device-link, device-unlink, disconnect-social-account, dock-course-choose, dock-step-leave-return, dock-step-record, draft-agreement, eac-site-inquiry-record, edit-agreement-draft, edit-associated-org, edit-channel-routine, edit-course-outline, edit-course-pool-item, edit-email-contact, edit-social-account, edit-social-post, edit-workshop-live, elktours-artist-availability-save, elktours-asset-archive, elktours-asset-copy-to-stop, elktours-asset-save, elktours-asset-visible-set, elktours-business-claim-decide, elktours-business-facts-save, elktours-business-link-place, elktours-business-remove, elktours-business-restore, elktours-business-unlink-place, elktours-experience-link-to-stop, elktours-experience-people-set, elktours-experience-status-set, elktours-experience-submit, elktours-flyover-accept, elktours-flyover-cancel, elktours-flyover-reject, elktours-flyover-request, elktours-flyover-requeue, elktours-flyover-worker, elktours-forum-prefs, elktours-forum-topic-audience, elktours-hero-lead-set, elktours-invitation-respond, elktours-place-add-from-search, elktours-place-archive, elktours-place-create-from-pin, elktours-place-favourite-toggle, elktours-place-link-approve, elktours-place-link-reject, elktours-place-photo-discard, elktours-place-photo-pin, elktours-place-update-from-stop, elktours-place-website-set, elktours-review-delete-own, elktours-review-hide, elktours-review-save, elktours-settings-save, elktours-stop-excerpt-set, elktours-stop-note-add, elktours-stop-note-delete, elktours-stop-note-promote, elktours-suggest-lead, elktours-suggest-route, elktours-suggest-spot, elktours-suggestion-accept, elktours-suggestion-reject, follow-organisation, forum-drawing-save, forum-moderate, forum-react, forum-wiki-edit, go-live-relay, home-hero-save, home-welcome-save, installation-create, installation-delete, installation-layout-save, installation-publish-toggle, installation-rename, installation-scene-save, installation-venue-set, jerusalem-media-upload, jerusalem-video-publish, lamrim-review-delete, lamrim-review-save, landing-loft-publish, landing-loft-revert, landing-loft-save, link-cloud-sign-in, log-pureland-diagnostics, lot-cancel, mark-inbox-message, market-store-apply, market-store-profile-save, market-store-team-remove, marketplace-settings-save, message-artist, message-mark-read, message-send, never-suggest, nextcloud-access-sync-route, open-course-discussions, open-silex-editor, order-cancel, order-fulfil, order-mark-shipped, order-pay-card, order-pay-etransfer, order-place, order-refund, order-refund-record, order-tracking-record, parcel-save, pigeon-card-moderate, pigeon-card-rate, pigeon-card-report, pigeon-card-submit, pigeon-criterion-retire, pigeon-criterion-save, pigeon-guest-block, pigeon-guest-claim, pigeon-guest-create, pigeon-rate-event, pigeon-report-resolve, pigeon-species-promote, pigeon-species-status, pigeon-tier-save, pkg-astro-corpus-chart-cache, pkg-astro-corpus-claim-review, pkg-astro-corpus-draft-store, pkg-astro-corpus-engine-candidate, pkg-astro-corpus-foundation-add, pkg-astro-corpus-foundation-review, pkg-astro-corpus-interpretation-write, pkg-astro-corpus-library-note, pkg-astro-corpus-ref-vote, pkg-astro-corpus-seed-and-import, pkg-astro-corpus-vocab-write, pkg-auth-server-device-token-revoke, pkg-auth-server-device-token-use, pkg-blog-server-app-user-ensure, pkg-blog-server-post-media-attach, pkg-mcp-key-last-used, post-to-elkdonis-forum, propose-booking-times, publish-agreement, publish-course, publish-org-landing-page, publish-video, receive-email-events, reclassify-inbox-message, release-held-funds, remove-associated-org, remove-email-contact, remove-listed-guide, remove-meeting, remove-org-beneficiary, remove-org-landing-page, remove-store-team-member, rename-recording, render-video, respond-to-step, restore-pen-name, retire-agreement, retire-pen-name, review-vetting-response, revoke-agreement-acceptance, save-classifieds-page, save-course, save-course-run, save-course-step, save-email-template, save-feed-card-design, save-listed-guide, save-piece-plan, save-silex-layout, save-tradition, save-video-project, scenario-question-draft, send-org-contact-message, series-audience-route, series-create, series-editor-add, series-editor-remove, series-follow, series-hub-route, series-invitation-decide, series-listing-add, series-lot-attach, series-lot-create, series-lot-remove, series-lots-renumber, series-media-upload, series-media-upload-route, series-order-handover, series-order-received, series-org-invite, series-org-remove, series-publication-attach, series-publication-detach, series-reply, series-status-set, series-submit-own-piece, series-week-featured-set, series-week-item-add, series-week-item-approve, series-week-item-remove, serve-mcp, set-org-posting-channel, set-realm, set-up-relay-destinations, set-workshop-listing, ship-from-save, shipping-address-correct, shipping-label-buy, shipping-mark-shipped, shipping-mode-set, shipping-packing-save, shipping-rates-refresh, shipping-rechoose, shipping-shipment-internal, shipping-tracking-webhook, shop-order-cancel, shop-order-pay-card, shop-order-pay-etransfer, show-or-hide-quote, slot-booking-window, slot-run, stop-email-to-address, stop-relay, store-application-approve, store-application-reject, store-pause, store-shipping-mode-set, stripe-webhook-market, sync-run-rsvps, thread-admin-route, thread-gather-route, tick-channel-todo, tour-booking-cancel, tour-booking-defaults-save, tour-status-set, tour-stops-save, tour-type-set, unfollow-organisation, unpublish-video, upload-course-media, upload-org-file, upload-profile-photo, upload-recording, upload-reel-media, use-course-pool-item, use-video-extras, waive-step, weight-quote, withdraw-from-course
 
 ## Rows whose hosts call different services
 
@@ -3113,8 +3113,6 @@ Control the booth (scene, record, stream, graphics).
 
 Create an account. Canonical: `auth-server handleSignup (already shared); keep one route per app, no custom copies`.
 
-- calls: (raw UPDATE contacts), @elkdonis/auth-server#handleSignup
-  - `api:apps/admin/src/app/api/auth/signup/route.ts#POST`
 - calls: @elkdonis/auth-server#handleSignup
   - `api:apps/amrit-canada/src/app/api/auth/signup/route.ts#POST`
   - `api:apps/art-auction/src/app/api/auth/signup/route.ts#POST`
@@ -3132,8 +3130,6 @@ Create an account. Canonical: `auth-server handleSignup (already shared); keep o
   - `api:apps/katie-the-potter/src/app/api/auth/signup/route.ts#POST`
   - `api:apps/pigeonshoot/src/app/api/auth/signup/route.ts#POST`
   - `api:apps/sunjay/src/app/api/auth/signup/route.ts#POST`
-- calls: @elkdonis/auth-server#handleSignup, @elkdonis/db#db
-  - `sql:apps/admin/src/app/api/auth/signup/route.ts#POST`
 - calls: auth-server#handleSignup
   - `api:apps/arts-collective/src/app/api/auth/signup/route.ts#POST`
 
@@ -3215,6 +3211,37 @@ Dismiss a suggestion. Canonical: `packages/actions server/channel.ts dismissSugg
   - `sa:apps/sunjay/src/lib/channel-door.ts#runChannelAction`
 - calls: createChannelDelivery
   - `sa:apps/arts-collective/src/lib/channel/actions.ts#dismissSuggestionAction`
+
+### dock-course-choose (arts-collective.dock)
+
+Choose a course in the dock.
+
+- calls: @elkdonis/actions/server#dockChoose
+  - `sa:apps/arts-collective/src/lib/actions/dock-actions.ts#dockChooseCourse`
+- calls: @elkdonis/db#db
+  - `sql:packages/actions/src/server/dock-state.ts#dockChoose`
+
+### dock-step-leave-return (arts-collective.dock)
+
+Leave a step and come back to the trail.
+
+- calls: @elkdonis/actions/server#dockDepart
+  - `sa:apps/arts-collective/src/lib/actions/dock-actions.ts#dockDepart`
+- calls: @elkdonis/actions/server#dockReturn
+  - `sa:apps/arts-collective/src/lib/actions/dock-actions.ts#dockReturn`
+- calls: @elkdonis/db#db
+  - `sql:packages/actions/src/server/dock-state.ts#dockDepart`
+
+### dock-step-record (arts-collective.dock)
+
+Record a finished step in the dock.
+
+- calls: @elkdonis/actions/server#dockMarkDoneSeen
+  - `sa:apps/arts-collective/src/lib/actions/dock-actions.ts#dockAckDone`
+- calls: @elkdonis/db#db
+  - `sql:packages/actions/src/server/dock-state.ts#dockMarkDone`
+  - `sql:packages/actions/src/server/dock-state.ts#dockMarkDoneSeen`
+  - `sql:packages/actions/src/server/dock-state.ts#writeDockStep`
 
 ### eac-site-config-save (apps.elkdonis-arts-collective)
 
@@ -3731,15 +3758,6 @@ Add a photo or video to a forum post. Canonical: `one shared upload route in ser
   - `api:apps/elktours/src/app/api/upload/forum/route.ts#POST`
 - calls: raw SQL
   - `sql:apps/elktours/src/app/api/upload/forum/route.ts#POST`
-
-### elktours-upload-media (apps.elktours.hub-api)
-
-Upload a file for the site. Canonical: `one shared upload route in services with a policy per role`.
-
-- calls: @elkdonis/services#uploadFile, @elkdonis/utils#validateUploadBuffer, raw SQL INSERT media
-  - `api:apps/elktours/src/app/api/upload/route.ts#POST`
-- calls: raw SQL
-  - `sql:apps/elktours/src/app/api/upload/route.ts#POST`
 
 ### follow-organisation (arts-collective.hub)
 
@@ -4577,7 +4595,7 @@ Write or edit a post, gathering or service in the site manager. Canonical: `serv
   - `sql:apps/sunjay/src/lib/cms/actions.ts#provisionNextcloud`
 - calls: @elkdonis/db#db, @elkdonis/services#createThread, @elkdonis/services#statusForNewThread
   - `sql:apps/ifac/src/lib/cms/actions.ts#saveContentAction`
-- calls: @elkdonis/db#db, @elkdonis/services#ensureUniqueThreadSlug, @elkdonis/services#getOrgFeed, @elkdonis/services#upsertServiceOffering, @elkdonis/utils#deriveExcerpt
+- calls: @elkdonis/db#db, @elkdonis/services#ensureUniqueThreadSlug, @elkdonis/services#getOrgFeed, @elkdonis/services#upsertServiceOffering, @elkdonis/utils#deriveExcerpt, @elkdonis/utils#sanitizeRichText
   - `sql:apps/hidden-enneagram/src/lib/cms/actions.ts#saveContentAction`
 - calls: @elkdonis/db#db, @elkdonis/services#ensureUniqueThreadSlug, @elkdonis/services#getOrgFeed, @elkdonis/services/thread-audience#audienceToStorage, @elkdonis/services/thread-audience#canViewThread, @elkdonis/utils#deriveExcerpt, @elkdonis/utils#sanitizeRichText
   - `sql:apps/innergathering/src/lib/cms/actions.ts#saveContentAction`
@@ -5639,6 +5657,23 @@ Send a contact form message to an organisation.
 - calls: handleOrgContact
   - `api:apps/arts-collective/src/app/api/org/[slug]/contact/route.ts#POST`
 
+### series-audience-route (shared.routes)
+
+Subscribe, RSVP, comment or mark coming on a series.
+
+- calls: @elkdonis/series-site/routes#comingRoutes
+  - `api:apps/ifac/src/app/api/series/coming/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/series/coming/route.ts#POST`
+- calls: @elkdonis/series-site/routes#commentRoutes
+  - `api:apps/ifac/src/app/api/series/comment/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/series/comment/route.ts#POST`
+- calls: @elkdonis/series-site/routes#rsvpRoutes
+  - `api:apps/ifac/src/app/api/series/rsvp/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/series/rsvp/route.ts#POST`
+- calls: @elkdonis/series-site/routes#subscribeRoutes
+  - `api:apps/ifac/src/app/api/series/subscribe/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/series/subscribe/route.ts#POST`
+
 ### series-editor-add (apps.art-auction.series)
 
 Add an editor or contributor to a series.
@@ -5647,6 +5682,20 @@ Add an editor or contributor to a series.
   - `sa:apps/art-auction/src/app/admin/series/actions.ts#setSeriesMemberAction`
 - calls: @elkdonis/commerce/server#setSeriesMemberById
   - `sa:apps/art-auction/src/app/series/[slug]/manage/actions.ts#addMemberAction`
+
+### series-hub-route (shared.routes)
+
+Create or edit a series and its page from the hub.
+
+- calls: @elkdonis/series-site/routes#hubNewSeriesRoutes
+  - `api:apps/ifac/src/app/api/hub/series/new/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/hub/series/new/route.ts#POST`
+- calls: @elkdonis/series-site/routes#hubSeriesPageRoutes
+  - `api:apps/ifac/src/app/api/hub/series-page/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/hub/series-page/route.ts#POST`
+- calls: @elkdonis/series-site/routes#hubSeriesRoutes
+  - `api:apps/ifac/src/app/api/hub/series/route.ts#POST`
+  - `api:apps/sunjay/src/app/api/hub/series/route.ts#POST`
 
 ### series-save (apps.art-auction.series)
 
@@ -6149,13 +6198,6 @@ Confirm or cancel this cycle's gathering. Canonical: `a shared cycle-event handl
   - `api:apps/sunjay/src/app/api/threads/[id]/cycle/route.ts#POST`
 - calls: (raw SQL INSERT into thread_cycle_events)
   - `api:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST`
-- calls: (raw SQL in the same function)
-  - `sql:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST`
-- calls: @elkdonis/db#db
-  - `sql:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST`
-  - `sql:apps/sunjay/src/app/api/threads/[id]/cycle/route.ts#POST`
-- calls: raw SQL
-  - `sql:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST`
 - calls: raw SQL INSERT thread_cycle_events
   - `api:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST`
 
@@ -6257,14 +6299,8 @@ Upload a file for the site. Canonical: `one upload route in services with a per-
   - `api:apps/sunjay/src/app/api/upload/route.ts#POST`
 - calls: (raw INSERT media), @elkdonis/services#uploadFile, @elkdonis/utils#validateUploadBuffer, getStorageSlug, resolveUserPath
   - `api:apps/katie-the-potter/src/app/api/media/upload/route.ts#POST`
-- calls: (raw SQL in the same function)
-  - `sql:apps/innergathering/src/app/api/upload/route.ts#POST`
 - calls: @elkdonis/db#db, @elkdonis/services#createUserFolder, @elkdonis/services#getProxyFileUrl, @elkdonis/services#getStorageSlug, @elkdonis/services#resolveUserPath, @elkdonis/services#uploadFile, @elkdonis/services#uploadFilename, @elkdonis/utils#validateUploadBuffer
   - `sql:apps/katie-the-potter/src/app/api/media/upload/route.ts#POST`
-- calls: @elkdonis/db#db, @elkdonis/services#getProxyFileUrl, @elkdonis/services#getUploadPath, @elkdonis/services#uploadFile, @elkdonis/services#uploadFilename, @elkdonis/utils#validateUploadBuffer
-  - `sql:apps/amrit-canada/src/app/api/upload/route.ts#POST`
-  - `sql:apps/hidden-enneagram/src/app/api/upload/route.ts#POST`
-  - `sql:apps/sunjay/src/app/api/upload/route.ts#POST`
 - calls: @elkdonis/services#uploadFile, @elkdonis/utils#validateUploadBuffer
   - `api:apps/innergathering/src/app/api/upload/route.ts#POST`
 - calls: @elkdonis/services#uploadOrgFile, @elkdonis/utils#validateUploadBuffer
@@ -6768,32 +6804,31 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 ## Hosts with raw SQL in their own body
 
-201 sa/api hosts write SQL directly instead of going through a service. 571 sql sites in total (see inventory).
+191 sa/api hosts write SQL directly instead of going through a service. 565 sql sites in total (see inventory).
 
 | app | raw-SQL sa/api hosts | claimed |
 |---|--:|--:|
-| admin | 9 | 9 |
-| amrit-canada | 11 | 11 |
+| admin | 8 | 8 |
+| amrit-canada | 9 | 9 |
 | art-auction | 1 | 1 |
 | artdirect | 6 | 6 |
 | arts-collective | 21 | 20 |
 | danamccool | 3 | 3 |
 | elastrocal | 7 | 7 |
 | elkdonis-arts-collective | 3 | 3 |
-| elktours | 53 | 49 |
+| elktours | 51 | 47 |
 | fourthwayBookreaders | 6 | 6 |
-| hidden-enneagram | 5 | 5 |
+| hidden-enneagram | 4 | 4 |
 | ifac | 9 | 8 |
 | inner-gathering | 25 | 1 |
-| innergathering | 12 | 12 |
+| innergathering | 10 | 10 |
 | katie-the-potter | 4 | 4 |
 | pigeonshoot | 14 | 13 |
-| sunjay | 12 | 12 |
+| sunjay | 10 | 10 |
 
 ### admin
 
 - `api:apps/admin/src/app/api/auth/login/route.ts#POST` (cap: sunjay-login)
-- `api:apps/admin/src/app/api/auth/signup/route.ts#POST` (cap: create-account)
 - `api:apps/admin/src/app/api/contacts/route.ts#PATCH` (cap: admin-contact-status-set)
 - `api:apps/admin/src/app/api/meetings/[id]/workshop/route.ts#PATCH` (cap: admin-workshop-promote)
 - `api:apps/admin/src/app/api/nextcloud/setup-folders/route.ts#POST` (cap: admin-nextcloud-setup-folders)
@@ -6806,10 +6841,8 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 - `api:apps/amrit-canada/src/app/api/inquiry/route.ts#POST` (cap: sunjay-inquiry-send)
 - `api:apps/amrit-canada/src/app/api/rsvp/route.ts#POST` (cap: sunjay-rsvp-guest)
-- `api:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST` (cap: sunjay-cycle-confirm)
 - `api:apps/amrit-canada/src/app/api/threads/[id]/reminder/route.ts#PATCH` (cap: sunjay-reminder-set)
 - `api:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST` (cap: rsvp-to-event)
-- `api:apps/amrit-canada/src/app/api/upload/route.ts#POST` (cap: sunjay-media-upload)
 - `sa:apps/amrit-canada/src/lib/account-actions.ts#setOwnProfileSectionAction` (cap: profile-section-toggle)
 - `sa:apps/amrit-canada/src/lib/cms/actions.ts#saveContentAction` (cap: manage-content-save)
 - `sa:apps/amrit-canada/src/lib/cms/actions.ts#saveSectionAction` (cap: site-section-copy-save)
@@ -6879,11 +6912,9 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 - `api:apps/elktours/src/app/api/inquiry/route.ts#POST` (cap: sunjay-inquiry-send)
 - `api:apps/elktours/src/app/api/rsvp/route.ts#POST` (cap: sunjay-rsvp-guest)
-- `api:apps/elktours/src/app/api/threads/[id]/cycle/route.ts#POST` (cap: sunjay-cycle-confirm)
 - `api:apps/elktours/src/app/api/threads/[id]/reminder/route.ts#PATCH` (cap: sunjay-reminder-set)
 - `api:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST` (cap: rsvp-to-event)
 - `api:apps/elktours/src/app/api/upload/forum/route.ts#POST` (cap: elktours-upload-forum-media)
-- `api:apps/elktours/src/app/api/upload/route.ts#POST` (cap: elktours-upload-media)
 - `sa:apps/elktours/src/lib/account-actions.ts#setOwnProfileSectionAction` (cap: profile-section-toggle)
 - `sa:apps/elktours/src/lib/artist-wizard-actions.ts#decideExperienceAction` (cap: elktours-experience-decide)
 - `sa:apps/elktours/src/lib/artist-wizard-actions.ts#saveArtistProfileAction` (cap: elktours-artist-profile-save)
@@ -6942,7 +6973,6 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 ### hidden-enneagram
 
-- `api:apps/hidden-enneagram/src/app/api/upload/route.ts#POST` (cap: sunjay-media-upload)
 - `sa:apps/hidden-enneagram/src/lib/cms/actions.ts#saveContentAction` (cap: manage-content-save)
 - `sa:apps/hidden-enneagram/src/lib/cms/actions.ts#setContentStatusAction` (cap: manage-content-status-set)
 - `sa:apps/hidden-enneagram/src/lib/studio/writing-actions.ts#savePublishPiece` (cap: writing-piece-save)
@@ -6992,9 +7022,7 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 - `api:apps/innergathering/src/app/api/contact/route.ts#POST` (cap: send-org-contact-message)
 - `api:apps/innergathering/src/app/api/rsvp/route.ts#POST` (cap: sunjay-rsvp-guest)
-- `api:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST` (cap: sunjay-cycle-confirm)
 - `api:apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts#POST` (cap: ig-rsvp-join)
-- `api:apps/innergathering/src/app/api/upload/route.ts#POST` (cap: sunjay-media-upload)
 - `api:apps/innergathering/src/app/api/work-question/route.ts#POST` (cap: ig-question-answer)
 - `sa:apps/innergathering/src/lib/cms/actions.ts#saveContentAction` (cap: manage-content-save)
 - `sa:apps/innergathering/src/lib/cms/actions.ts#saveSectionAction` (cap: site-section-copy-save)
@@ -7031,10 +7059,8 @@ Start a piece of writing. Canonical: `services createWritingPost (+updateWriting
 
 - `api:apps/sunjay/src/app/api/inquiry/route.ts#POST` (cap: sunjay-inquiry-send)
 - `api:apps/sunjay/src/app/api/rsvp/route.ts#POST` (cap: sunjay-rsvp-guest)
-- `api:apps/sunjay/src/app/api/threads/[id]/cycle/route.ts#POST` (cap: sunjay-cycle-confirm)
 - `api:apps/sunjay/src/app/api/threads/[id]/reminder/route.ts#PATCH` (cap: sunjay-reminder-set)
 - `api:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST` (cap: rsvp-to-event)
-- `api:apps/sunjay/src/app/api/upload/route.ts#POST` (cap: sunjay-media-upload)
 - `sa:apps/sunjay/src/lib/account-actions.ts#setOwnProfileSectionAction` (cap: profile-section-toggle)
 - `sa:apps/sunjay/src/lib/banner-actions.ts#saveBanner` (cap: site-banner-save)
 - `sa:apps/sunjay/src/lib/cms/actions.ts#saveContentAction` (cap: manage-content-save)

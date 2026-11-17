@@ -4,48 +4,57 @@ import type { ActionConfirm } from '../types';
 
 export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
   "artwork": {
-    "text": "Save “{title}” at {price} in {where}? It stays private until you put it on sale. Payments happen on the checkout or Stripe page, not here.",
-    "status": "draft",
+    "text": "Save “{title}” at {price} in {where}. Private until put on sale.",
+    "title": "Save artwork",
+    "status": "approved",
     "wave": 1
   },
   "gain-space": {
-    "text": "Set up your space? You get a folder of your own, and a public page and listing in the artists’ directory.",
-    "status": "draft",
+    "text": "Create your folder, public page and artists’ directory listing.",
+    "title": "Set up your space",
+    "status": "approved",
     "wave": 1
   },
   "org-details": {
-    "text": "Save {org}’s identity? Its name, line and bio change on the network and on its site.",
-    "status": "draft",
+    "text": "Change {org}’s name, line and bio. Visible on the network and its site.",
+    "title": "Save org identity",
+    "status": "approved",
     "wave": 1
   },
   "org-email": {
-    "text": "Send {org}’s mail under the name “{name}”, with replies to {email}? Everyone who gets mail from {org} sees this.",
-    "status": "draft",
+    "text": "Send {org}’s mail as “{name}”, replies to {email}. Everyone who gets its mail sees this.",
+    "title": "Set sender identity",
+    "status": "approved",
     "wave": 1
   },
   "payouts": {
-    "text": "Set up payouts at Stripe for {email}? You choose the country there, and it cannot be changed without disconnecting. Payments happen on the checkout or Stripe page, not here.",
-    "status": "draft",
+    "text": "Start Stripe payout setup for {email}. Country is fixed unless you disconnect.",
+    "title": "Set up Stripe payouts",
+    "status": "approved",
     "wave": 1
   },
   "profile": {
-    "text": "Save your profile changes? Your name, line and bio update on your public page and in the directory.",
-    "status": "draft",
+    "text": "Save profile changes. Your name, line and bio update publicly and in the directory.",
+    "title": "Save profile",
+    "status": "approved",
     "wave": 1
   },
   "service": {
-    "text": "Save your service “{title}” at {price}? If it is published, visitors can see it. Payments happen on the checkout or Stripe page, not here.",
-    "status": "draft",
+    "text": "Save your service “{title}” at {price}. If published, visitors can see it.",
+    "title": "Save my service",
+    "status": "approved",
     "wave": 1
   },
   "show-on": {
-    "text": "Show “{title}” on {where}? Visitors to those sites can read it, and some sites check posts first.",
-    "status": "draft",
+    "text": "Show “{title}” on {where}. Visitors there can read it; some sites review first.",
+    "title": "Choose sites for post",
+    "status": "approved",
     "wave": 1
   },
   "store": {
-    "text": "Open your own store on the marketplace? Your published artworks can then be sold there. Payments happen on the checkout or Stripe page, not here.",
-    "status": "draft",
+    "text": "Open your marketplace store. Published artworks can be sold there.",
+    "title": "Open my store",
+    "status": "approved",
     "wave": 1
   },
   "studio": {

@@ -243,8 +243,9 @@ const capabilities: Capability[] = [
     status: 'A published service offering exists for the org (listAllServiceOfferingsForOrg, status published)',
     risk: ['public', 'money'],
     confirm: {
-      text: 'Save the service “{title}” at {price} for {org}? If it is published, visitors can book it. Payments happen on the checkout or Stripe page, not here.',
-      status: 'draft',
+      text: 'Save the service “{title}” at {price} for {org}. If published, visitors can book it.',
+      title: 'Save service',
+      status: 'approved',
       wave: 1,
     },
     inputs: 'answers: title, price, feed, status',

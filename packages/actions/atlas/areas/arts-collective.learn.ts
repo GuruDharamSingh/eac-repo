@@ -30,8 +30,9 @@ const capabilities: Capability[] = [
     status: 'gain-space',
     risk: ['public'],
     confirm: {
-      text: 'Set up your space? You get a folder of your own, and a public page and listing in the artists’ directory.',
-      status: 'draft',
+      text: 'Create your folder, public page and artists’ directory listing.',
+      title: 'Set up your space',
+      status: 'approved',
       wave: 1,
     },
     drift: 'Also the artist wizard routes (api/wizard/*) call services gainSpace directly.',

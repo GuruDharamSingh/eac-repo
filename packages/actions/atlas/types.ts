@@ -57,6 +57,7 @@ export type Risk =
 /** Confirm-card wording. Justin approves wording in waves (D-16); only `approved` text reaches a live dock. */
 export interface Wording {
   text: string; // e.g. "Publish “{title}” on {org}'s site? Visitors will see it."
+  title?: string; // the card heading (approved with the text)
   status: 'draft' | 'proposed' | 'approved' | 'changed';
   wave?: number; // the review wave it went out in (atlas/reports/wording-wave-NN.md)
   note?: string; // Justin's note, or the open question

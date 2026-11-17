@@ -76,6 +76,7 @@ export interface ActionAddress {
 /** Confirm-card wording. Only `approved` / `changed` text may show on a live dock (wording waves, D-16). */
 export interface ActionConfirm {
   text: string;
+  title?: string;
   status: 'draft' | 'proposed' | 'approved' | 'changed';
   wave?: number;
 }

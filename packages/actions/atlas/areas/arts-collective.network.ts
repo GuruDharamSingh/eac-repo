@@ -608,8 +608,9 @@ const capabilities: Capability[] = [
     status: 'the booking shows the chosen time as confirmed',
     risk: ['money', 'others', 'emails'],
     confirm: {
-      text: 'Confirm {when} for “{title}”? {person} is told, and the time is held for you. Payments happen on the checkout or Stripe page, not here.',
-      status: 'draft',
+      text: 'Confirm {when} for “{title}”. {person} is told; the time is held for you. Payment at checkout.',
+      title: 'Confirm booking time',
+      status: 'approved',
       wave: 1,
     },
     drift: 'Seller side: arts-collective.hub:confirm-booking-time.',
