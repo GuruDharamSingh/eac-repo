@@ -171,3 +171,26 @@ All ten apps rebuilt, one at a time (`~/eac-backups/rebuild-2026-11-16c.sh`, log
 - fourthway, danamccool, katie and artdirect (last built 11-11 to 11-15) also picked up about 58 uncommitted shared files from other sessions that were already live on the other apps since 12:30.
 - Migration 277 is still NOT applied (course tags fall back to none).
 - Branch pushed: `origin/work/2026-11-16`.
+
+### Evening (Justin's answers, test courses, wording live)
+
+- **Site plan answers:**
+  - D3, D5, D6, D7, D8, D10 and D11 are accepted. D4 is accepted without the artdirect sidebar.
+  - D2 is dropped for now (artdirect's editing UI is not a shipped package).
+  - D9 (GPU) is later, and so is D1 (the elktours headers). See SYNTHESIS.md, "Justin's answers".
+- **Wording wave 1: all 69 cards approved** and folded into the atlas (`04b0f853`). Cards carry a title, which becomes the dock card heading.
+  - Placeholders become typed slots: entity search, preset or template, value, context. See DOCK_RAILS_PLAN §5b.
+- **RSVP decisions** (3a–3g, all as recommended; 3c becomes a follower, but newsletter mail needs its own opt-in), plus 8b, 9 and 10 as recommended.
+  - RSVP step 1 is in progress (lane rsvp).
+  - Done so far: `packages/booking/src/core/rsvp.ts` (pure rules) and `packages/services/src/rsvp-handler.ts` (service and route factories), plus migration `278_rsvp_one_logic.sql`, written and NOT applied.
+  - Still to do: the app shims and `check-rsvp.mts`.
+- **Avatars:** `markArtistByFolder` stays. "Artist" is just another name for a user on the platform.
+- **Atlas commit reminder is ON:** `git config core.hooksPath .githooks`, warn-only.
+- **Migration 277 applied** at 21:40 (alone; 263 is still pending and belongs to another session).
+- **21 public test courses seeded:** `rails-*`, via `packages/actions/scripts/seed-rails-courses.mts --write`, committed `d37910f7`.
+  - They have 104 steps: 20 dock tasks, 74 marked "not wired", and 10 marked "gap".
+  - getting-started is tagged `profile`.
+  - To undo, run the same command with `--remove`.
+- **arts-collective rebuilt at 21:49:** approved wording and course areas are live.
+  - RSVP lane files were held out of the build with `~/eac-backups/build-hold2.sh hold|restore <lane backup dir> [new files]`.
+  - tenant-smoke 9/9.
