@@ -8,6 +8,7 @@ const capabilities: Capability[] = [
   // ---------------- sites.audience ----------------
   {
     id: 'rsvp-to-event',
+    updated: '2026-11-16',
     area: 'sites.audience',
     label: 'RSVP to an event or join a workshop',
     does: 'A signed-in person says yes to a public event, or joins a free workshop (which also opens its materials folder in Nextcloud). Paid workshops are refused here (402).',
@@ -46,10 +47,6 @@ const capabilities: Capability[] = [
         }
       },
       {
-        "key": "sql:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST",
-        "note": "sql twin of api:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST"
-      },
-      {
         "key": "api:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST",
         "service": [
           "@elkdonis/services#checkRsvpEligibility",
@@ -66,13 +63,6 @@ const capabilities: Capability[] = [
         "note": "Member RSVP: also writes min_attendees_notified."
       },
       {
-        "key": "sql:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST",
-        "service": [
-          "raw SQL"
-        ],
-        "note": "twin of api:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST"
-      },
-      {
         "key": "api:apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts#POST",
         "service": [
           "@elkdonis/services#checkRsvpEligibility",
@@ -84,10 +74,6 @@ const capabilities: Capability[] = [
           "path": "/groups/{group}",
           "how": "the Join button of components/rsvp-button.tsx"
         }
-      },
-      {
-        "key": "sql:apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts#POST",
-        "note": "sql twin of api:apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts#POST"
       },
       {
         "key": "api:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -103,10 +89,6 @@ const capabilities: Capability[] = [
           "path": "/{section}/{slug}",
           "how": "the RSVP button of components/rsvp-panel.tsx (member path)"
         }
-      },
-      {
-        "key": "sql:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST",
-        "note": "sql twin of api:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST"
       },
       {
         "key": "api:apps/ifac/src/app/api/hub/rsvp/route.ts#POST",
@@ -131,14 +113,15 @@ const capabilities: Capability[] = [
       "emails"
     ],
     confirm: { text: 'Say yes to “{title}” on {when}? {org} will see your name on the list.', status: 'draft', wave: 2 },
-    drift: "Seven apps carry their own rsvp route (amrit-canada, arts-collective, elktours, fourthwayBookreaders, inner-gathering, innergathering, sunjay): 67 to 347 lines each. All call setRsvpStatus, but only arts-collective’s checks eligibility and syncs Nextcloud materials; the others have more rules (capacity, paid) inline.\nMerged 2026-11-16 (consolidation 2): 6 rows, 6 apps (arts-collective, amrit-canada, elktours, fourthwayBookreaders, sunjay, ifac). Differences by app:\n- amrit-canada (was amrit-rsvp-join): differs as in sunjay-rsvp-join. Same file in sunjay (apps.sunjay.*.ts: rsvp-to-event); differs only in EMBLEM_URL (amrit hard-codes its khanda-gold.png, sunjay has none) and log prefixes.\n- elktours (was elktours-rsvp-join): this copy does not sync Nextcloud materials, adds the min-attendees notice, and the confirmation uses the Khanda emblem with an amritcanada.ca image fallback; the loadThread helper filters by org and status published.\n- fourthwayBookreaders (was fourthway-rsvp-join): org-scoped published-thread check (route.ts:21-27), no email, no workshop or Nextcloud sync, and joining a reading group inserts a viewer row with raw SQL (the other copies never change a role).\n- sunjay (was sunjay-rsvp-join): pure thread-of-this-org lookup (route.ts:39-55, status published), no workshop or Nextcloud materials sync, no paid refusal, sends confirmation and owner emails, one-shot min-attendees nudge. Any signed-in person may RSVP (no role needed); a non-affiliate does not become a follower. Email emblem: sunjay uses env SUNJAY_EMAIL_EMBLEM_URL (none by default) but still passes emblemAlt \"Khanda\" (route.ts:150). Same file in amrit-canada (apps.amrit-canada.*.ts: rsvp-to-event); differs only in EMBLEM_URL (amrit hard-codes https://amritcanada.ca/email/khanda-gold.png) and log prefixes.\n- ifac (was ifac-rsvp-set): no Nextcloud material sync.\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.\nKept separate on purpose (a paid branch and a different risk): ig-rsvp-join and ig-rsvp-cancel (innergathering, paid places, workshop materials); the guest door is sunjay-rsvp-guest (visitor, no account).",
-    canonical: 'one shared handler in @elkdonis/services (rsvpHandlers, like connectionsHandlers) that each app mounts',
-    open: "Do the paid-workshop rules in the other apps (money) belong in the shared handler? Money would make this a link, not a run.\namrit-canada (amrit-rsvp-join): Any signed-in person may RSVP with no isMember check. The count in the response and the owner email use status yes only. OK as designed for public gatherings; confirm for ORGANIZATION- or member-only threads: loadThread filters only status published, not visibility (route.ts:46-53), so a follower or non-member can RSVP to a thread whose audience is members only if they know its id.\nelktours (elktours-rsvp-join): Good: every query is org scoped (loadThread) and the role comes from the session. DRIFT BUG: emblemUrl default is amritcanada.ca with alt \"Khanda\" in an app about Paris tours.\nfourthwayBookreaders (fourthway-rsvp-join): SECURITY: joining a reading_group self-grants the viewer role with raw SQL (route.ts:47-54), and a viewer is an affiliate who may comment and start threads in every circle (getApiAffiliate); no approval step. Intentional per auth.ts, but it is a join-by-click like arts-collective /api/org/join.",
+    drift: "Merged 2026-11-16 (lane rsvp, step 1): the six member copies are now shims on rsvpRoutes in packages/services/src/rsvp-handler.ts (joinThreadRsvp under a thread-row lock, capacity with holds and verified guests, waitlist, paid branch). ifac hub/rsvp calls joinThreadRsvp directly. The per-app differences below describe the code before the merge; the sql twins are gone.\nSeven apps carry their own rsvp route (amrit-canada, arts-collective, elktours, fourthwayBookreaders, inner-gathering, innergathering, sunjay): 67 to 347 lines each. All call setRsvpStatus, but only arts-collective’s checks eligibility and syncs Nextcloud materials; the others have more rules (capacity, paid) inline.\nMerged 2026-11-16 (consolidation 2): 6 rows, 6 apps (arts-collective, amrit-canada, elktours, fourthwayBookreaders, sunjay, ifac). Differences by app:\n- amrit-canada (was amrit-rsvp-join): differs as in sunjay-rsvp-join. Same file in sunjay (apps.sunjay.*.ts: rsvp-to-event); differs only in EMBLEM_URL (amrit hard-codes its khanda-gold.png, sunjay has none) and log prefixes.\n- elktours (was elktours-rsvp-join): this copy does not sync Nextcloud materials, adds the min-attendees notice, and the confirmation uses the Khanda emblem with an amritcanada.ca image fallback; the loadThread helper filters by org and status published.\n- fourthwayBookreaders (was fourthway-rsvp-join): org-scoped published-thread check (route.ts:21-27), no email, no workshop or Nextcloud sync, and joining a reading group inserts a viewer row with raw SQL (the other copies never change a role).\n- sunjay (was sunjay-rsvp-join): pure thread-of-this-org lookup (route.ts:39-55, status published), no workshop or Nextcloud materials sync, no paid refusal, sends confirmation and owner emails, one-shot min-attendees nudge. Any signed-in person may RSVP (no role needed); a non-affiliate does not become a follower. Email emblem: sunjay uses env SUNJAY_EMAIL_EMBLEM_URL (none by default) but still passes emblemAlt \"Khanda\" (route.ts:150). Same file in amrit-canada (apps.amrit-canada.*.ts: rsvp-to-event); differs only in EMBLEM_URL (amrit hard-codes https://amritcanada.ca/email/khanda-gold.png) and log prefixes.\n- ifac (was ifac-rsvp-set): no Nextcloud material sync.\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.\nKept separate on purpose (a paid branch and a different risk): ig-rsvp-join and ig-rsvp-cancel (innergathering, paid places, workshop materials); the guest door is sunjay-rsvp-guest (visitor, no account).",
+    canonical: 'Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: one shared handler in @elkdonis/services (rsvpHandlers, like connectionsHandlers) that each app mounts',
+    open: "Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nDo the paid-workshop rules in the other apps (money) belong in the shared handler? Money would make this a link, not a run.\namrit-canada (amrit-rsvp-join): Any signed-in person may RSVP with no isMember check. The count in the response and the owner email use status yes only. OK as designed for public gatherings; confirm for ORGANIZATION- or member-only threads: loadThread filters only status published, not visibility (route.ts:46-53), so a follower or non-member can RSVP to a thread whose audience is members only if they know its id.\nelktours (elktours-rsvp-join): Good: every query is org scoped (loadThread) and the role comes from the session. DRIFT BUG: emblemUrl default is amritcanada.ca with alt \"Khanda\" in an app about Paris tours.\nfourthwayBookreaders (fourthway-rsvp-join): SECURITY: joining a reading_group self-grants the viewer role with raw SQL (route.ts:47-54), and a viewer is an affiliate who may comment and start threads in every circle (getApiAffiliate); no approval step. Intentional per auth.ts, but it is a join-by-click like arts-collective /api/org/join.",
     verified: '2026-11-16 read api/org/*, api/threads/[id]/rsvp, api/silex/*, sites/[slug]/hub/actions.ts, lib/org.ts, FollowButton.tsx',
     inputs: "thread id, receive-email flag",
   },
   {
     id: 'cancel-rsvp',
+    updated: '2026-11-16',
     area: 'sites.audience',
     label: 'Cancel an RSVP or leave a workshop',
     does: 'Removes the person’s RSVP and, for a workshop, revokes the materials access.',
@@ -210,10 +193,10 @@ const capabilities: Capability[] = [
       status: 'draft',
       wave: 2,
     },
-    drift: "Same as rsvp-join.\nMerged 2026-11-16 (consolidation 2): 5 rows, 5 apps (arts-collective, amrit-canada, elktours, fourthwayBookreaders, sunjay). Differences by app:\n- amrit-canada (was amrit-rsvp-cancel): no workshop or Nextcloud materials revoke, sends no email. Same file in sunjay (apps.sunjay.*.ts: cancel-rsvp); byte-identical bar log prefixes.\n- elktours (was elktours-rsvp-cancel): same service deleteRsvp, org check via loadThread here.\n- fourthwayBookreaders (was fourthway-rsvp-cancel): no Nextcloud revoke; the viewer role is not removed.\n- sunjay (was sunjay-rsvp-cancel): no workshop or Nextcloud materials revoke, sends no email. Same file in amrit-canada (apps.amrit-canada.*.ts: cancel-rsvp); byte-identical bar log prefixes.\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.",
-    canonical: 'the shared rsvp handler',
+    drift: "Merged 2026-11-16 (lane rsvp, step 1): the member DELETE shims call leaveThreadRsvp in packages/services/src/rsvp-handler.ts (waitlist promotion, refund recorded as due for a paid place). The per-app differences below describe the code before the merge.\nSame as rsvp-join.\nMerged 2026-11-16 (consolidation 2): 5 rows, 5 apps (arts-collective, amrit-canada, elktours, fourthwayBookreaders, sunjay). Differences by app:\n- amrit-canada (was amrit-rsvp-cancel): no workshop or Nextcloud materials revoke, sends no email. Same file in sunjay (apps.sunjay.*.ts: cancel-rsvp); byte-identical bar log prefixes.\n- elktours (was elktours-rsvp-cancel): same service deleteRsvp, org check via loadThread here.\n- fourthwayBookreaders (was fourthway-rsvp-cancel): no Nextcloud revoke; the viewer role is not removed.\n- sunjay (was sunjay-rsvp-cancel): no workshop or Nextcloud materials revoke, sends no email. Same file in amrit-canada (apps.amrit-canada.*.ts: cancel-rsvp); byte-identical bar log prefixes.\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.",
+    canonical: 'Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: the shared rsvp handler',
     verified: '2026-11-16 read api/org/*, api/threads/[id]/rsvp, api/silex/*, sites/[slug]/hub/actions.ts, lib/org.ts, FollowButton.tsx',
-    open: "fourthwayBookreaders (fourthway-rsvp-cancel): Leaving never removes the viewer role granted at join, so access to the circle space stays after leaving.",
+    open: "Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nfourthwayBookreaders (fourthway-rsvp-cancel): Leaving never removes the viewer role granted at join, so access to the circle space stays after leaving.",
     inputs: "thread id",
   },
   // ---------------- sites.silex ----------------

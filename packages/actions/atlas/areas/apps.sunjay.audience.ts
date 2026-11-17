@@ -12,6 +12,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "sunjay-rsvp-guest",
+    "updated": "2026-11-16",
     "label": "RSVP as a guest, without an account",
     "does": "A visitor gives a name (and optionally email, phone, message) to say they are coming to a published RSVP-enabled gathering; the organiser gets an email and the guest a confirmation if they gave an address.",
     "class": "person",
@@ -33,10 +34,6 @@ const capabilities: Capability[] = [
         }
       },
       {
-        "key": "sql:apps/sunjay/src/app/api/rsvp/route.ts#POST",
-        "note": "sql twin of api:apps/sunjay/src/app/api/rsvp/route.ts#POST"
-      },
-      {
         "key": "api:apps/amrit-canada/src/app/api/rsvp/route.ts#POST",
         "service": [
           "(raw INSERT guest_submissions, contacts)",
@@ -48,10 +45,6 @@ const capabilities: Capability[] = [
           "path": "/{section}/{slug}",
           "how": "the guest form of the RSVP panel (components/rsvp-panel.tsx) posting to /api/rsvp"
         }
-      },
-      {
-        "key": "sql:apps/amrit-canada/src/app/api/rsvp/route.ts#POST",
-        "note": "sql twin of api:apps/amrit-canada/src/app/api/rsvp/route.ts#POST"
       },
       {
         "key": "api:apps/innergathering/src/app/api/rsvp/route.ts#POST",
@@ -67,13 +60,6 @@ const capabilities: Capability[] = [
         "note": "Priced gatherings are refused (409, \"please sign in to book a place\")."
       },
       {
-        "key": "sql:apps/innergathering/src/app/api/rsvp/route.ts#POST",
-        "service": [
-          "(raw SQL in the same function)"
-        ],
-        "note": "sql twin of api:apps/innergathering/src/app/api/rsvp/route.ts#POST"
-      },
-      {
         "key": "api:apps/elktours/src/app/api/rsvp/route.ts#POST",
         "service": [
           "@elkdonis/email#sendRsvpConfirmation",
@@ -86,13 +72,6 @@ const capabilities: Capability[] = [
           "how": "the guest RSVP form on a gathering page (components/rsvp-panel.tsx)"
         }
       },
-      {
-        "key": "sql:apps/elktours/src/app/api/rsvp/route.ts#POST",
-        "service": [
-          "raw SQL"
-        ],
-        "note": "twin of api:apps/elktours/src/app/api/rsvp/route.ts#POST"
-      },
     ],
     "entry": null,
     "status": "guest_submissions has a row of kind 'rsvp' for the thread and the name",
@@ -101,9 +80,9 @@ const capabilities: Capability[] = [
       "status": "draft",
       "wave": 6
     },
-    "drift": "No arts-collective guest route (arts-collective has only the member RSVP). Same file in amrit-canada (apps.amrit-canada.*.ts: sunjay-rsvp-guest); byte-identical bar log prefixes.\nMerged 2026-11-16 (consolidation 2): 4 rows, 4 apps (sunjay, amrit-canada, innergathering, elktours). Differences by app:\n- amrit-canada (was amrit-rsvp-guest): No arts-collective guest route (arts-collective has only the member RSVP). Same file in sunjay (apps.sunjay.*.ts: sunjay-rsvp-guest); byte-identical bar log prefixes.\n- innergathering (was ig-rsvp-guest): Same route (guest RSVP) in amrit-canada, elktours, sunjay and admin: not diffed here (other agents). The member door is ig-rsvp-join (arts-collective.sites.ts:rsvp-to-event is its twin).\n- elktours (was elktours-rsvp-guest): Same route exists in the other org apps (inner-gathering original); member RSVP is a separate route (rsvp-to-event).\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.\nRelated, not merged: rsvp-to-event (signed-in member RSVP).",
-    "canonical": "one shared guest RSVP handler in services with rate limit and email validation",
-    "open": "SECURITY: unauthenticated POST. route.ts:70 inserts a guest_submissions row on every call: no rate limit, no captcha, no duplicate check per email, no email format check; it then mails the visitor-supplied address (route.ts:99) and the organiser. Anyone can use it to send a confirmation email to any address and to inflate the head count. Org filter on the thread is correct (WHERE org_id).\ninnergathering (ig-rsvp-guest): SECURITY: the route is public with no rate limit, captcha or length cap on name, email, phone or message (rsvp/route.ts:24-29, 81-95), writes two tables and sends two emails per call, one to whatever address the caller typed (rsvp/route.ts:110-119). It can be used to fill the guest list and to send the confirmation mail to third parties; the email addresses are not format-checked. The author’s notification renders the free text through React email components, which escape it.\nelktours (elktours-rsvp-guest): SECURITY: fully public with no rate limit, captcha or per-address limit (app/api/rsvp/route.ts:19-); name, message and phone are unbounded in length and the email is not format-checked. Each call can send a confirmation to ANY address the caller types (sendRsvpConfirmation to `email`) with the caller's text inside, and a notification to the organiser: a mail-bomb and spam relay under the org's name. The thread must be published and RSVP-enabled (org filtered, good).",
+    "drift": "Merged 2026-11-16 (lane rsvp, step 1): the four guest routes are shims on guestRsvpRoutes in packages/services/src/rsvp-handler.ts (POST plus the verify GET, which is not a host). Rate limits RSVP_GUEST_LIMITS live there. The sql twins are gone.\nNo arts-collective guest route (arts-collective has only the member RSVP). Same file in amrit-canada (apps.amrit-canada.*.ts: sunjay-rsvp-guest); byte-identical bar log prefixes.\nMerged 2026-11-16 (consolidation 2): 4 rows, 4 apps (sunjay, amrit-canada, innergathering, elktours). Differences by app:\n- amrit-canada (was amrit-rsvp-guest): No arts-collective guest route (arts-collective has only the member RSVP). Same file in sunjay (apps.sunjay.*.ts: sunjay-rsvp-guest); byte-identical bar log prefixes.\n- innergathering (was ig-rsvp-guest): Same route (guest RSVP) in amrit-canada, elktours, sunjay and admin: not diffed here (other agents). The member door is ig-rsvp-join (arts-collective.sites.ts:rsvp-to-event is its twin).\n- elktours (was elktours-rsvp-guest): Same route exists in the other org apps (inner-gathering original); member RSVP is a separate route (rsvp-to-event).\nDirection (Justin, 2026-11-16): RSVP and booking should be straightened together; consider ONE logic for both (see rsvp-to-event, cancel-rsvp, ig-rsvp-join, ig-rsvp-cancel, sunjay-rsvp-guest and service-book-and-pay).\namrit-canada is the oldest site and much of it is being left behind: do not let its shape become the canonical.\nRelated, not merged: rsvp-to-event (signed-in member RSVP).",
+    "canonical": "Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: one shared guest RSVP handler in services with rate limit and email validation",
+    "open": "Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nSECURITY: unauthenticated POST. route.ts:70 inserts a guest_submissions row on every call: no rate limit, no captcha, no duplicate check per email, no email format check; it then mails the visitor-supplied address (route.ts:99) and the organiser. Anyone can use it to send a confirmation email to any address and to inflate the head count. Org filter on the thread is correct (WHERE org_id).\ninnergathering (ig-rsvp-guest): SECURITY: the route is public with no rate limit, captcha or length cap on name, email, phone or message (rsvp/route.ts:24-29, 81-95), writes two tables and sends two emails per call, one to whatever address the caller typed (rsvp/route.ts:110-119). It can be used to fill the guest list and to send the confirmation mail to third parties; the email addresses are not format-checked. The author’s notification renders the free text through React email components, which escape it.\nelktours (elktours-rsvp-guest): SECURITY: fully public with no rate limit, captcha or per-address limit (app/api/rsvp/route.ts:19-); name, message and phone are unbounded in length and the email is not format-checked. Each call can send a confirmation to ANY address the caller types (sendRsvpConfirmation to `email`) with the caller's text inside, and a notification to the organiser: a mail-bomb and spam relay under the org's name. The thread must be published and RSVP-enabled (org filtered, good).",
     "verified": "2026-11-16 read app/api/{rsvp,inquiry}/route.ts, app/api/threads/[id]/rsvp/route.ts, components/rsvp-panel.tsx, components/inquiry-form.tsx, diff of the sunjay and amrit copies",
     "inputs": "threadId, name, email, phone, message, wantsReminder"
   },

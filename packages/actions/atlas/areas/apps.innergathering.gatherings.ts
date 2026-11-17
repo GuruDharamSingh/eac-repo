@@ -24,6 +24,7 @@ const capabilities: Capability[] = [
   // ---- RSVP ----
   {
     id: 'ig-rsvp-join',
+    updated: '2026-11-16',
     area: 'innergathering.gatherings',
     label: 'Join a gathering',
     does: 'A signed-in person RSVPs yes to a published gathering. A free one records the RSVP at once, shares the workshop materials if it is a workshop, and emails the person and the author. A priced one creates an order and returns a Stripe checkout address instead; the place is granted when the payment lands.',
@@ -32,7 +33,6 @@ const capabilities: Capability[] = [
     scope: 'thread',
     hosts: [
       host(api('threads/[id]/rsvp', 'POST'), ['@elkdonis/services#setRsvpStatus', '@elkdonis/services#checkRsvpEligibility', '@elkdonis/commerce/server#createThreadOrder', '@elkdonis/checkout/stripe#startStripeCheckout', '@elkdonis/email#sendRsvpConfirmation'], '/{section}/{slug}', 'the Join / Book button of the gathering page (components/rsvp-panel.tsx)', 'Any signed-in person may join (getViewer, no role check). Money rows link only: the checkout page takes the payment.'),
-      twin(sq('threads/[id]/rsvp', 'POST'), 'api:apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts#POST'),
     ],
     entry: null,
     status: 'a thread_rsvps row with status yes for the person exists (for a priced one: the order is paid)',
@@ -44,14 +44,15 @@ const capabilities: Capability[] = [
     },
     inputs: 'thread id, receiveEmailNotice, amountMinor (sliding scale only)',
     drift:
-      'copy of arts-collective.sites.ts:rsvp-to-event; differs: this one is 287 lines against 149. Extras here: a paid branch (createThreadOrder + startStripeCheckout), workshop materials sharing (shareWorkshopMaterials), a min-attendees nudge to the author, and every query filtered by org_id and status published. arts-collective checks eligibility and syncs Nextcloud materials.',
-    canonical: 'one shared handler in @elkdonis/services (rsvpHandlers, like connectionsHandlers) that each app mounts',
+      'Merged 2026-11-16 (lane rsvp, step 1): the route is a shim on rsvpRoutes in packages/services/src/rsvp-handler.ts, which now carries the paid branch and workshop materials. The sql twin is gone.\ncopy of arts-collective.sites.ts:rsvp-to-event; differs: this one is 287 lines against 149. Extras here: a paid branch (createThreadOrder + startStripeCheckout), workshop materials sharing (shareWorkshopMaterials), a min-attendees nudge to the author, and every query filtered by org_id and status published. arts-collective checks eligibility and syncs Nextcloud materials.',
+    canonical: 'Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: one shared handler in @elkdonis/services (rsvpHandlers, like connectionsHandlers) that each app mounts',
     open:
-      'Amount: only passed to createThreadOrder when the workshop has a sliding scale (floor > 0); commerce re-validates it (not re-read here). SECURITY (mild): the api/hub/meeting/attendance door sets the same RSVP rows without the paid branch (see he-attendance-set). The origin for the Stripe return URL comes from lib/public-origin (forwarded headers), not read here.',
+      'Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nAmount: only passed to createThreadOrder when the workshop has a sliding scale (floor > 0); commerce re-validates it (not re-read here). SECURITY (mild): the api/hub/meeting/attendance door sets the same RSVP rows without the paid branch (see he-attendance-set). The origin for the Stripe return URL comes from lib/public-origin (forwarded headers), not read here.',
     verified: V,
   },
   {
     id: 'ig-rsvp-cancel',
+    updated: '2026-11-16',
     area: 'innergathering.gatherings',
     label: 'Cancel your RSVP',
     does: 'A signed-in person removes their RSVP row for a published gathering; for a workshop it also withdraws their share of the materials.',
@@ -69,9 +70,9 @@ const capabilities: Capability[] = [
       status: 'draft',
       wave: 6,
     },
-    drift: 'copy of arts-collective.sites.ts:cancel-rsvp; differs: org_id and published filter, and workshop-materials unshare.',
-    canonical: 'the shared rsvp handler',
-    open: 'SECURITY (mild): cancelling a paid place deletes the RSVP and does not touch the order or refund (threads/[id]/rsvp/route.ts:273-287); a person who cancelled and rejoins is sent to checkout again. Confirm whether refunds are meant to be manual.',
+    drift: 'Merged 2026-11-16 (lane rsvp, step 1): the DELETE shim calls leaveThreadRsvp in packages/services/src/rsvp-handler.ts, which records a paid place as refund due (see rsvp-refund-issue).\ncopy of arts-collective.sites.ts:cancel-rsvp; differs: org_id and published filter, and workshop-materials unshare.',
+    canonical: 'Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: the shared rsvp handler',
+    open: 'Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nSECURITY (mild): cancelling a paid place deletes the RSVP and does not touch the order or refund (threads/[id]/rsvp/route.ts:273-287); a person who cancelled and rejoins is sent to checkout again. Confirm whether refunds are meant to be manual.',
     verified: V,
   },
 

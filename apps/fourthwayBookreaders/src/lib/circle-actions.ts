@@ -6,10 +6,9 @@ import { db } from "@elkdonis/db";
 import {
   addCircleUnits,
   assignMeetingRole,
-  checkRsvpEligibility,
+  joinThreadRsvp,
   clearMeetingRole,
-  deleteRsvp,
-  setRsvpStatus,
+  leaveThreadRsvp,
   createThread,
   ensureCircleSessionDocument,
   ensureCircleSessionTopic,
@@ -406,10 +405,9 @@ export async function rsvpSession(form: FormData): Promise<void> {
   if (!group || !at) redirect("/");
   const topic = await ensureCircleSessionTopic(ORG, group.id, at, member.userId);
   if (text(form, "going", 3) === "yes") {
-    const eligible = await checkRsvpEligibility(topic.id);
-    if (eligible.ok) await setRsvpStatus(topic.id, member.userId, "yes");
+    await joinThreadRsvp(topic.id, member.userId, { orgId: ORG, followOnRsvp: true });
   } else {
-    await deleteRsvp(topic.id, member.userId);
+    await leaveThreadRsvp(topic.id, member.userId, { orgId: ORG });
   }
   revalidatePath("/", "layout");
   redirect(backTo(group, "#sessions"));

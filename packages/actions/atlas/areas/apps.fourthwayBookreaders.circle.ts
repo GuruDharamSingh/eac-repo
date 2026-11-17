@@ -443,6 +443,7 @@ const capabilities: Capability[] = [
       "others"
     ],
     "id": "fourthway-session-rsvp",
+    "updated": "2026-11-16",
     "label": "Say you are coming to a sitting",
     "does": "Anyone with a role in the org RSVPs yes to one sitting, or withdraws.",
     "class": "person",
@@ -473,9 +474,9 @@ const capabilities: Capability[] = [
       "status": "draft",
       "wave": 6
     },
-    "drift": "Only fourthwayBookreaders has reading circles; no copies elsewhere.",
-    "canonical": "one shared reading-circle kit action set in services (reading-circle.ts is already the service; these server actions are the only copy: no other app has circle actions)",
-    "open": "SECURITY: gated by getApiAffiliate (lib/auth.ts:84), any role including viewer (a follower or someone who joined a group), by owner decision 2026-09-26 (auth.ts comment). ensureCircleSessionTopic(orgId, circleId, occurrenceAt, actor) (services reading-circle.ts:738-783) never checks occurrenceAt is a real sitting of the schedule, so any follower can create a published, organisation-visible, RSVP-enabled topic for any timestamp, and each call for a new timestamp adds one thread (and a thread_gathers edge). No rate limit on this route.",
+    "drift": "Merged 2026-11-16 (lane rsvp, step 1): rsvpSession calls joinThreadRsvp and leaveThreadRsvp in packages/services/src/rsvp-handler.ts.\nOnly fourthwayBookreaders has reading circles; no copies elsewhere.",
+    "canonical": "Done in packages/services/src/rsvp-handler.ts (2026-11-16). Was: one shared reading-circle kit action set in services (reading-circle.ts is already the service; these server actions are the only copy: no other app has circle actions)",
+    "open": "Copies merged into rsvp-handler.ts 2026-11-16; re-check the notes below against it.\nSECURITY: gated by getApiAffiliate (lib/auth.ts:84), any role including viewer (a follower or someone who joined a group), by owner decision 2026-09-26 (auth.ts comment). ensureCircleSessionTopic(orgId, circleId, occurrenceAt, actor) (services reading-circle.ts:738-783) never checks occurrenceAt is a real sitting of the schedule, so any follower can create a published, organisation-visible, RSVP-enabled topic for any timestamp, and each call for a new timestamp adds one thread (and a thread_gathers edge). No rate limit on this route.",
     "verified": "2026-11-16 read lib/circle-actions.ts, lib/manage-actions.ts, lib/auth.ts, components/circle/{circle-manage,circle-page,circle-surfaces}.tsx, components/group-panels.tsx, services reading-circle.ts ensureCircleSessionTopic"
   },
   {

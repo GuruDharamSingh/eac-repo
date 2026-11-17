@@ -4,7 +4,7 @@
   "byKind": {
    "api": 585,
    "sa": 883,
-   "sql": 565
+   "sql": 556
   },
   "byApp": {
    "actions": {
@@ -20,7 +20,7 @@
    "amrit-canada": {
     "sa": 23,
     "api": 49,
-    "sql": 14
+    "sql": 12
    },
    "analytics": {
     "sa": 0,
@@ -95,7 +95,7 @@
    "elktours": {
     "sa": 167,
     "api": 51,
-    "sql": 85
+    "sql": 83
    },
    "email": {
     "sa": 0,
@@ -110,7 +110,7 @@
    "fourthwayBookreaders": {
     "sa": 26,
     "api": 23,
-    "sql": 11
+    "sql": 10
    },
    "hidden-enneagram": {
     "sa": 32,
@@ -130,7 +130,7 @@
    "innergathering": {
     "sa": 59,
     "api": 75,
-    "sql": 17
+    "sql": 15
    },
    "katie-the-potter": {
     "sa": 39,
@@ -195,13 +195,13 @@
    "sunjay": {
     "sa": 61,
     "api": 60,
-    "sql": 18
+    "sql": 16
    }
   }
  },
  "sharedSqlCount": {
   "db": 10,
-  "services": 314
+  "services": 323
  },
  "reexports": [],
  "hosts": [
@@ -1210,19 +1210,16 @@
    "app": "amrit-canada",
    "file": "apps/amrit-canada/src/app/api/rsvp/route.ts",
    "symbol": "POST",
-   "line": 19,
+   "line": 9,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
+    "@elkdonis/services#guestRsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "9a82c93f7b6c"
+   "rawSql": false,
+   "hash": "be07775006f1"
   },
   {
    "key": "api:apps/amrit-canada/src/app/api/threads/[id]/cycle/route.ts#POST",
@@ -1277,19 +1274,16 @@
    "app": "amrit-canada",
    "file": "apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 229,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#deleteRsvp"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "310e1c29a2e5"
+   "hash": "59a43bcca617"
   },
   {
    "key": "api:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -1297,24 +1291,16 @@
    "app": "amrit-canada",
    "file": "apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 103,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "f9736631aeb1"
+   "rawSql": false,
+   "hash": "59a43bcca617"
   },
   {
    "key": "api:apps/amrit-canada/src/app/api/threads/[id]/trigger-email/route.ts#POST",
@@ -2642,19 +2628,18 @@
    "app": "arts-collective",
    "file": "apps/arts-collective/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 126,
+   "line": 40,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#countConfirmedRsvps",
-    "@elkdonis/services#deleteRsvp",
-    "@elkdonis/services#isEnrolledInWorkshop"
+    "@elkdonis/services#isEnrolledInWorkshop",
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "d6236bacd513"
+   "hash": "600b3a440a07"
   },
   {
    "key": "api:apps/arts-collective/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -2662,19 +2647,18 @@
    "app": "arts-collective",
    "file": "apps/arts-collective/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 85,
+   "line": 40,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#countConfirmedRsvps",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#isEnrolledInWorkshop",
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "2709f396344c"
+   "hash": "600b3a440a07"
   },
   {
    "key": "api:apps/arts-collective/src/app/api/threads/data-deletion/route.ts#POST",
@@ -4038,19 +4022,16 @@
    "app": "elktours",
    "file": "apps/elktours/src/app/api/rsvp/route.ts",
    "symbol": "POST",
-   "line": 19,
+   "line": 9,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
+    "@elkdonis/services#guestRsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "856686e9be17"
+   "rawSql": false,
+   "hash": "be88633a26fa"
   },
   {
    "key": "api:apps/elktours/src/app/api/stripe/webhook/route.ts#POST",
@@ -4122,19 +4103,16 @@
    "app": "elktours",
    "file": "apps/elktours/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 229,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#deleteRsvp"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "310e1c29a2e5"
+   "hash": "93a49a9777bd"
   },
   {
    "key": "api:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -4142,24 +4120,16 @@
    "app": "elktours",
    "file": "apps/elktours/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 103,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "d5f1a552be83"
+   "rawSql": false,
+   "hash": "93a49a9777bd"
   },
   {
    "key": "api:apps/elktours/src/app/api/threads/[id]/trigger-email/route.ts#POST",
@@ -4613,17 +4583,16 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 56,
+   "line": 12,
    "imports": [
-    "@elkdonis/db",
     "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#deleteRsvp"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "0006f840731d"
+   "hash": "88f72685b45f"
   },
   {
    "key": "api:apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -4631,19 +4600,16 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 28,
+   "line": 12,
    "imports": [
-    "@elkdonis/db",
     "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "19db2cfd0219"
+   "rawSql": false,
+   "hash": "88f72685b45f"
   },
   {
    "key": "api:apps/fourthwayBookreaders/src/app/api/upload/route.ts#POST",
@@ -5860,7 +5826,7 @@
    ],
    "calls": [
     "@elkdonis/db#db",
-    "@elkdonis/services#checkRsvpEligibility",
+    "@elkdonis/services#checkAttendanceSeat",
     "@elkdonis/services#clearMeetingAttendance",
     "@elkdonis/services#countConfirmedRsvps",
     "@elkdonis/services#getMeetingAttendance",
@@ -5870,7 +5836,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "ba4b1d7df65c"
+   "hash": "a5fe9fee62fe"
   },
   {
    "key": "api:apps/ifac/src/app/api/hub/meeting/light/route.ts#POST",
@@ -5956,21 +5922,18 @@
    "app": "ifac",
    "file": "apps/ifac/src/app/api/hub/rsvp/route.ts",
    "symbol": "POST",
-   "line": 25,
+   "line": 17,
    "imports": [
-    "@elkdonis/db",
     "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/services#checkRsvpEligibility",
     "@elkdonis/services#countConfirmedRsvps",
-    "@elkdonis/services#deleteRsvp",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#joinThreadRsvp",
+    "@elkdonis/services#leaveThreadRsvp"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "a53f84cb5f62"
+   "hash": "284c7ccd040d"
   },
   {
    "key": "api:apps/ifac/src/app/api/hub/series-page/route.ts#POST",
@@ -8354,7 +8317,7 @@
    ],
    "calls": [
     "@elkdonis/db#db",
-    "@elkdonis/services#checkRsvpEligibility",
+    "@elkdonis/services#checkAttendanceSeat",
     "@elkdonis/services#clearMeetingAttendance",
     "@elkdonis/services#countConfirmedRsvps",
     "@elkdonis/services#getMeetingAttendance",
@@ -8364,7 +8327,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "5be5ee1a90af"
+   "hash": "e8e651b7478f"
   },
   {
    "key": "api:apps/innergathering/src/app/api/hub/meeting/light/route.ts#POST",
@@ -8895,19 +8858,16 @@
    "app": "innergathering",
    "file": "apps/innergathering/src/app/api/rsvp/route.ts",
    "symbol": "POST",
-   "line": 19,
+   "line": 9,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
+    "@elkdonis/services#guestRsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "fc67bdcb6166"
+   "rawSql": false,
+   "hash": "437ef329a1e6"
   },
   {
    "key": "api:apps/innergathering/src/app/api/threads/[id]/cycle/route.ts#POST",
@@ -8932,21 +8892,21 @@
    "app": "innergathering",
    "file": "apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 273,
+   "line": 24,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/server",
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#deleteRsvp"
+    "@elkdonis/checkout/stripe#isCardPaymentAvailable",
+    "@elkdonis/checkout/stripe#startStripeCheckout",
+    "@elkdonis/commerce/server#createThreadOrder",
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "a02eadc7b29b"
+   "hash": "de45dd4493c5"
   },
   {
    "key": "api:apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -8954,29 +8914,21 @@
    "app": "innergathering",
    "file": "apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 114,
+   "line": 24,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/server",
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/checkout/stripe#isCardPaymentAvailable",
     "@elkdonis/checkout/stripe#startStripeCheckout",
     "@elkdonis/commerce/server#createThreadOrder",
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "ab2c48f6f36f"
+   "rawSql": false,
+   "hash": "de45dd4493c5"
   },
   {
    "key": "api:apps/innergathering/src/app/api/threads/[id]/trigger-email/route.ts#POST",
@@ -10034,19 +9986,16 @@
    "app": "sunjay",
    "file": "apps/sunjay/src/app/api/rsvp/route.ts",
    "symbol": "POST",
-   "line": 19,
+   "line": 9,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
+    "@elkdonis/services#guestRsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "8352a7188513"
+   "rawSql": false,
+   "hash": "81317b768826"
   },
   {
    "key": "api:apps/sunjay/src/app/api/series/coming/route.ts#POST",
@@ -10169,19 +10118,16 @@
    "app": "sunjay",
    "file": "apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "DELETE",
-   "line": 233,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/services#deleteRsvp"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "310e1c29a2e5"
+   "hash": "05265eeb921f"
   },
   {
    "key": "api:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST",
@@ -10189,24 +10135,16 @@
    "app": "sunjay",
    "file": "apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts",
    "symbol": "POST",
-   "line": 107,
+   "line": 19,
    "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
+    "@elkdonis/services"
    ],
    "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#rsvpRoutes"
    ],
    "registry": false,
-   "rawSql": true,
-   "hash": "5b5cc0c15fa1"
+   "rawSql": false,
+   "hash": "05265eeb921f"
   },
   {
    "key": "api:apps/sunjay/src/app/api/threads/[id]/trigger-email/route.ts#POST",
@@ -20980,7 +20918,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "addCircleUnitsAction",
-   "line": 93,
+   "line": 92,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21001,7 +20939,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "baselineCirclePlan",
-   "line": 150,
+   "line": 149,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21020,7 +20958,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "createSessionDocument",
-   "line": 257,
+   "line": 256,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21040,7 +20978,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "createSessionThread",
-   "line": 328,
+   "line": 327,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21063,7 +21001,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "moveCircleUnitAction",
-   "line": 135,
+   "line": 134,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21082,7 +21020,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "postSessionComment",
-   "line": 309,
+   "line": 308,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21102,7 +21040,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "recordCircleStopAction",
-   "line": 163,
+   "line": 162,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21124,7 +21062,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "removeCircleUnitAction",
-   "line": 142,
+   "line": 141,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21143,21 +21081,20 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "rsvpSession",
-   "line": 401,
+   "line": 400,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#deleteRsvp",
     "@elkdonis/services#ensureCircleSessionTopic",
-    "@elkdonis/services#setRsvpStatus"
+    "@elkdonis/services#joinThreadRsvp",
+    "@elkdonis/services#leaveThreadRsvp"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "2f434a17aa9f"
+   "hash": "9ada444232e8"
   },
   {
    "key": "sa:apps/fourthwayBookreaders/src/lib/circle-actions.ts#saveCircleCover",
@@ -21165,7 +21102,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveCircleCover",
-   "line": 388,
+   "line": 387,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21184,7 +21121,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveCircleExcerpt",
-   "line": 449,
+   "line": 447,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21203,7 +21140,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveCircleSchedule",
-   "line": 364,
+   "line": 363,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21222,7 +21159,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveCircleStructure",
-   "line": 376,
+   "line": 375,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21242,7 +21179,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveSessionNotes",
-   "line": 270,
+   "line": 269,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21261,7 +21198,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "saveSessionPlan",
-   "line": 282,
+   "line": 281,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21280,7 +21217,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "setCircleUnitStatus",
-   "line": 126,
+   "line": 125,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21299,7 +21236,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "setFeaturedGroup",
-   "line": 419,
+   "line": 417,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21318,7 +21255,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "setSessionHost",
-   "line": 294,
+   "line": 293,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21338,7 +21275,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "setUpCircleSpace",
-   "line": 79,
+   "line": 78,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21357,7 +21294,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "stageCircleSession",
-   "line": 232,
+   "line": 231,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -21376,7 +21313,7 @@
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "stageNextCircleSessions",
-   "line": 241,
+   "line": 240,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -26602,26 +26539,6 @@
    "hash": "70254f3dca5f"
   },
   {
-   "key": "sql:apps/amrit-canada/src/app/api/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "amrit-canada",
-   "file": "apps/amrit-canada/src/app/api/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 19,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "9a82c93f7b6c"
-  },
-  {
    "key": "sql:apps/amrit-canada/src/app/api/threads/[id]/reminder/route.ts#PATCH",
    "kind": "sql",
    "app": "amrit-canada",
@@ -26637,31 +26554,6 @@
    "registry": false,
    "rawSql": true,
    "hash": "9488c7af68ca"
-  },
-  {
-   "key": "sql:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "amrit-canada",
-   "file": "apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 103,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "f9736631aeb1"
   },
   {
    "key": "sql:apps/amrit-canada/src/lib/account-actions.ts#setOwnProfileSectionAction",
@@ -28076,26 +27968,6 @@
    "hash": "b9c4ac898db6"
   },
   {
-   "key": "sql:apps/elktours/src/app/api/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "elktours",
-   "file": "apps/elktours/src/app/api/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 19,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "856686e9be17"
-  },
-  {
    "key": "sql:apps/elktours/src/app/api/threads/[id]/reminder/route.ts#PATCH",
    "kind": "sql",
    "app": "elktours",
@@ -28111,31 +27983,6 @@
    "registry": false,
    "rawSql": true,
    "hash": "9488c7af68ca"
-  },
-  {
-   "key": "sql:apps/elktours/src/app/api/threads/[id]/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "elktours",
-   "file": "apps/elktours/src/app/api/threads/[id]/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 103,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "d5f1a552be83"
   },
   {
    "key": "sql:apps/elktours/src/app/api/upload/forum/route.ts#POST",
@@ -29646,32 +29493,12 @@
    "hash": "fd0705901ce2"
   },
   {
-   "key": "sql:apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "fourthwayBookreaders",
-   "file": "apps/fourthwayBookreaders/src/app/api/threads/[id]/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 28,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/services"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#setRsvpStatus"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "19db2cfd0219"
-  },
-  {
    "key": "sql:apps/fourthwayBookreaders/src/lib/circle-actions.ts#setFeaturedGroup",
    "kind": "sql",
    "app": "fourthwayBookreaders",
    "file": "apps/fourthwayBookreaders/src/lib/circle-actions.ts",
    "symbol": "setFeaturedGroup",
-   "line": 419,
+   "line": 417,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/services",
@@ -31146,56 +30973,6 @@
    "hash": "f0088e90d58d"
   },
   {
-   "key": "sql:apps/innergathering/src/app/api/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "innergathering",
-   "file": "apps/innergathering/src/app/api/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 19,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "fc67bdcb6166"
-  },
-  {
-   "key": "sql:apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "innergathering",
-   "file": "apps/innergathering/src/app/api/threads/[id]/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 114,
-   "imports": [
-    "@elkdonis/checkout/stripe",
-    "@elkdonis/commerce/server",
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
-   ],
-   "calls": [
-    "@elkdonis/checkout/stripe#isCardPaymentAvailable",
-    "@elkdonis/checkout/stripe#startStripeCheckout",
-    "@elkdonis/commerce/server#createThreadOrder",
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "ab2c48f6f36f"
-  },
-  {
    "key": "sql:apps/innergathering/src/app/api/work-question/route.ts#POST",
    "kind": "sql",
    "app": "innergathering",
@@ -32298,26 +32075,6 @@
    "hash": "6ea5a1cf7541"
   },
   {
-   "key": "sql:apps/sunjay/src/app/api/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "sunjay",
-   "file": "apps/sunjay/src/app/api/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 19,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "8352a7188513"
-  },
-  {
    "key": "sql:apps/sunjay/src/app/api/threads/[id]/reminder/route.ts#PATCH",
    "kind": "sql",
    "app": "sunjay",
@@ -32333,31 +32090,6 @@
    "registry": false,
    "rawSql": true,
    "hash": "9488c7af68ca"
-  },
-  {
-   "key": "sql:apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts#POST",
-   "kind": "sql",
-   "app": "sunjay",
-   "file": "apps/sunjay/src/app/api/threads/[id]/rsvp/route.ts",
-   "symbol": "POST",
-   "line": 107,
-   "imports": [
-    "@elkdonis/db",
-    "@elkdonis/email",
-    "@elkdonis/services",
-    "@elkdonis/utils"
-   ],
-   "calls": [
-    "@elkdonis/db#db",
-    "@elkdonis/email#sendRsvpConfirmation",
-    "@elkdonis/email#sendRsvpNotification",
-    "@elkdonis/services#checkRsvpEligibility",
-    "@elkdonis/services#getRsvpStatus",
-    "@elkdonis/services#setRsvpStatus"
-   ],
-   "registry": false,
-   "rawSql": true,
-   "hash": "5b5cc0c15fa1"
   },
   {
    "key": "sql:apps/sunjay/src/lib/account-actions.ts#setOwnProfileSectionAction",

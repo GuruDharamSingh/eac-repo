@@ -1,6 +1,6 @@
 import { db } from "@elkdonis/db";
 import {
-  checkRsvpEligibility,
+  checkAttendanceSeat,
   clearMeetingAttendance,
   countConfirmedRsvps,
   getMeetingAttendance,
@@ -76,19 +76,19 @@ export async function POST(request: Request) {
 
   // Capacity and the deadline only bind a NEW yes. Someone already holding a
   // seat who changes an early yes to a certain one is not taking a second
-  // one, and `checkRsvpEligibility` counts them in the total it compares —
+  // one, and the seat check counts them in the total it compares —
   // so running it unconditionally would refuse a full meeting's own attendees
   // the right to sharpen their answer.
   if (flavour.status === "yes") {
     const held = await getMeetingAttendance(threadId, viewer.userId);
     if (held?.status !== "yes") {
-      const eligibility = await checkRsvpEligibility(threadId);
+      const eligibility = await checkAttendanceSeat(threadId, viewer.userId, { orgId: siteConfig.orgId });
       // `=== false` rather than `!ok`: the repo compiles with strict:false, so
       // TypeScript will not narrow a discriminated union on truthiness.
       if (eligibility.ok === false) {
         return Response.json(
           { error: eligibility.error ?? "RSVPs are not open" },
-          { status: 409 }
+          { status: eligibility.httpStatus }
         );
       }
     }

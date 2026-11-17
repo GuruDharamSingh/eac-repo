@@ -1384,3 +1384,30 @@ export { processImage } from "./image-process";
 export { followRoutes, quoteRoutes, cycleRoutes, whiteboardRoutes } from "./org-site-routes";
 export type { SiteViewer } from "./org-site-routes";
 export { centerLayoutRoutes, profileRoutes, hubDocumentRoutes, hubCalendarRoutes } from "./org-site-routes-2";
+
+// One RSVP logic (RSVP_BOOKING_ONE_LOGIC step 1, 2026-11-16): route factories + service functions.
+export {
+  rsvpRoutes,
+  guestRsvpRoutes,
+  joinThreadRsvp,
+  leaveThreadRsvp,
+  promoteWaitlist,
+  expireLapsedRsvpHolds,
+  checkAttendanceSeat,
+  markAttended,
+  listRsvpRefundsDue,
+  issueRsvpRefund,
+  setRsvpMailer,
+} from "./rsvp-handler";
+export type {
+  RsvpViewer,
+  RsvpRouteOptions,
+  GuestRsvpOptions,
+  RsvpEmails,
+  PaidContext,
+  JoinResult,
+  LeaveResult,
+  RefundDue,
+  RsvpThread,
+  RsvpMail,
+} from "./rsvp-handler";
