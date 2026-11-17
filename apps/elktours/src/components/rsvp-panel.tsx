@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, Input, Label, Checkbox } from "@elkdonis/primitives";
+
+const RSVP_FLAG_TEXT: Record<string, string> = {
+  confirmed: "Your place is confirmed.",
+  expired: "That link has expired. Send the form again.",
+  full: "This event is full.",
+};
 
 interface RsvpPanelProps {
   threadId: string;
@@ -39,6 +45,17 @@ export function RsvpPanel({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [wantsReminder, setWantsReminder] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // The guest's emailed link comes back to this page as ?rsvp=<outcome>.
+  useEffect(() => {
+    try {
+      const flag = new URLSearchParams(window.location.search).get("rsvp");
+      if (flag && RSVP_FLAG_TEXT[flag]) setNotice(RSVP_FLAG_TEXT[flag]);
+    } catch {
+      /* no window: nothing to show */
+    }
+  }, []);
 
   const full = attendeeLimit !== null && attendanceCount >= attendeeLimit && !attending;
 
@@ -65,7 +82,16 @@ export function RsvpPanel({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        toast.error(data.error ?? "Could not update your RSVP.");
+        const message = data.error ?? "Could not update your RSVP.";
+        setNotice(message);
+        toast.error(message);
+        return;
+      }
+
+      // A priced place is bought, not claimed: the server returns Stripe's
+      // hosted page and the seat follows the payment, so leave the page.
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl as string;
         return;
       }
 
@@ -96,7 +122,7 @@ export function RsvpPanel({
       }
 
       setGuestDone(true);
-      toast.success("Thanks — you're on the list.");
+      toast.success("Check your email to confirm your place.");
       router.refresh();
     } catch {
       toast.error("Could not reach the server. Try again.");
@@ -108,9 +134,14 @@ export function RsvpPanel({
   return (
     <section className="card-natural mt-8 p-6">
       <h2 className="font-serif text-xl">
-        {attending || guestDone ? "You're coming" : "Are you coming?"}
+        {attending ? "You're coming" : guestDone ? "One more step" : "Are you coming?"}
       </h2>
       <div className="mt-4">
+        {notice && (
+          <p role="status" className="mb-4 text-sm">
+            {notice}
+          </p>
+        )}
         {attendanceCount > 0 && (
           <p className="mb-4 text-sm text-muted-foreground">
             {attendanceCount} {attendanceCount === 1 ? "person has" : "people have"} said they&rsquo;re
@@ -129,7 +160,7 @@ export function RsvpPanel({
           </Button>
         ) : guestDone ? (
           <p className="text-sm">
-            You&rsquo;re on the list. We&rsquo;ve sent a confirmation to <strong>{email}</strong>.
+            Check your email to confirm your place. We sent a link to <strong>{email}</strong>.
           </p>
         ) : (
           <form onSubmit={submitGuestRsvp} className="space-y-4">

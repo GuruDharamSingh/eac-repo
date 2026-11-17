@@ -1,4 +1,7 @@
 import { rsvpRoutes } from "@elkdonis/services";
+
+/** Priced thread, no checkout on this site yet: say so, never dead-end. */
+const PAID_REFUSAL = "This event takes payment, and this site can't take it online yet. Please get in touch with the organiser.";
 import { getViewer } from "@/lib/auth";
 import { getThreadMaterials } from "@/lib/data";
 import {
@@ -21,6 +24,7 @@ export const { GET, POST, DELETE } = rsvpRoutes({
   orgName: siteConfig.orgName,
   label: "amrit-canada",
   shape: "attending",
+  paid: async () => Response.json({ error: PAID_REFUSAL }, { status: 402 }),
   followOnRsvp: true,
   who: async () => {
     const v = await getViewer();

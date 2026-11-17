@@ -1,4 +1,5 @@
 import { rsvpRoutes } from "@elkdonis/services";
+import { rsvpPaid } from "@elkdonis/checkout/rsvp";
 import { getViewer } from "@/lib/auth";
 import { getThreadMaterials } from "@/lib/data";
 import {
@@ -21,6 +22,8 @@ export const { GET, POST, DELETE } = rsvpRoutes({
   orgName: siteConfig.orgName,
   label: "sunjay",
   shape: "attending",
+  // A priced thread goes to checkout (payee: the thread's author); without a payout route it is refused in words.
+  paid: rsvpPaid({ orgId: siteConfig.orgId }),
   followOnRsvp: true,
   who: async () => {
     const v = await getViewer();

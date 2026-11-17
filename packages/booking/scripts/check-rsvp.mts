@@ -17,6 +17,7 @@ import {
   seatsFree,
   type RsvpStatusValue,
 } from "../src/core/index.ts";
+import { makeRsvpPaid, threadPathOf } from "../../checkout/src/rsvp-paid-core.ts";
 
 let pass = 0;
 let fail = 0;
@@ -159,6 +160,55 @@ eq("unknown kind", attendedAllowed(null), false);
 // Refund recorded as due only for a paid place
 eq("paid cancel records due", refundOnCancel({ hadPaidOrder: true, paidMinor: 2000 }), { record: true, amountMinor: 2000 });
 eq("comp cancel records nothing", refundOnCancel({ hadPaidOrder: false, paidMinor: 0 }), { record: false, amountMinor: 0 });
+
+// Paid RSVP callback (packages/checkout/src/rsvp-paid-core.ts), checkout stubbed: no Stripe, no database.
+{
+  const thread = { id: "t1", slug: "evening", section: "events", author_id: "u-author", price: 20, price_sliding_min: null };
+  const viewer = { userId: "u1", email: "a@b.co" };
+  const request = new Request("https://example.test/api/threads/t1/rsvp", { method: "POST" });
+  let started: Array<Record<string, unknown>> = [];
+  const mk = (avail: { ok: true } | { ok: false; reason: "no_card" | "no_payouts" }, fail = false) => {
+    started = [];
+    return makeRsvpPaid({
+      availability: async () => avail,
+      start: async (input) => {
+        if (fail) throw new Error("Sold out.");
+        started.push(input as unknown as Record<string, unknown>);
+        return { orderId: "o1", url: "https://checkout.stub/pay/o1" };
+      },
+    });
+  };
+  const run = async (paid: ReturnType<typeof mk>, body: Record<string, unknown> = {}, t = thread) => {
+    const res = await paid({ request, thread: t, viewer, body });
+    return { status: res.status, json: await res.json() };
+  };
+
+  const noPayout = await run(mk({ ok: false, reason: "no_payouts" }));
+  eq("no payout account: refused, no checkout", [noPayout.status, noPayout.json.error, started.length], [409, "This event takes payment. Its organiser hasn't set up payments yet.", 0]);
+  const noCard = await run(mk({ ok: false, reason: "no_card" }));
+  eq("no card switched on: refused", [noCard.status, noCard.json.reason, started.length], [409, "no_card", 0]);
+
+  const ok = await run(mk({ ok: true }));
+  eq("checkout url returned", ok, { status: 200, json: { requiresPayment: true, checkoutUrl: "https://checkout.stub/pay/o1", orderId: "o1" } });
+  eq("checkout input", started[0], { threadId: "t1", customerEmail: "a@b.co", customerId: "u1", threadPath: "/events/evening", request: {} });
+  eq("no sliding scale: chosen amount dropped", started[0].amountMinor, undefined);
+
+  const sliding = { ...thread, price_sliding_min: 5 };
+  await run(mk({ ok: true }), { amountMinor: 1500 }, sliding);
+  eq("sliding scale: chosen amount passed", started[0].amountMinor, 1500);
+  await run(mk({ ok: true }), {}, sliding);
+  eq("sliding scale: list price by default", started[0].amountMinor, 2000);
+
+  const failed = await run(mk({ ok: true }, true));
+  eq("checkout error becomes a message", [failed.status, failed.json.error], [400, "Sold out."]);
+
+  // Hold promotion: a promoted waitlister is not counted as taking a seat, so the thread page's button
+  // reaches this callback; the pay link is the thread page and the order returns them to it.
+  eq("held person reaches checkout", decideRsvp({ thread: { ...open, priceMinor: 2000, attendeeLimit: 1 }, now, seatsTaken: 0, previous: "waitlist", paid: "checkout" }).action, "checkout");
+  eq("pay link and return path are the thread page", threadPathOf({ section: null, slug: "x" }), "/");
+  await run(mk({ ok: true }));
+  eq("hold pay link: thread page", started[0].threadPath, "/events/evening");
+}
 
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -40,7 +40,7 @@ export function RsvpForm({ meetingId, meetingTitle, apiPath = '/api/rsvp' }: Rsv
         radius="md"
         style={{ background: 'rgba(40, 167, 69, 0.08)', border: '1px solid rgba(40, 167, 69, 0.3)' }}
       >
-        <Text fw={600} size="sm" mb={4}>You're on the list — Waheguru!</Text>
+        <Text fw={600} size="sm" mb={4}>Check your email to confirm your place.</Text>
         <Text size="sm" c="dimmed">
           Want to stay connected?{' '}
           <Anchor href="https://eac.elkdonis-arts.org" target="_blank" rel="noopener noreferrer" size="sm">

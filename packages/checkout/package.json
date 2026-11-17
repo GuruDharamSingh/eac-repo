@@ -11,6 +11,8 @@
     "./server": "./src/server/index.ts",
     "./stripe": "./src/server/stripe.ts",
     "./booking": "./src/server/thread-checkout.ts",
+    "./rsvp": "./src/rsvp-paid.ts",
+    "./rsvp-core": "./src/rsvp-paid-core.ts",
     "./booking.css": "./src/booking.css"
   },
   "scripts": {
