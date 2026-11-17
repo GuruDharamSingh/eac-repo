@@ -215,3 +215,11 @@ All ten apps rebuilt, one at a time (`~/eac-backups/rebuild-2026-11-16c.sh`, log
 - **Coordination:** the peer session "Landing page mobile UI canvas editing" held its elktours build for ours. Cross-session messages work through `SendMessage` to its bridge address.
 - **Atlas:** another session is editing `areas/orgapps.commerce.shop.ts` and has an unclaimed `sql:apps/katie-the-potter/src/lib/shop.ts#dropPaidOrderFromCart`. That is theirs to claim, so `check-atlas --strict` fails until they do. Only our lines of `fingerprints.json` were committed.
 - **Open (liaison item 15):** "organiser" wording, innergathering on the shared paid callback, and the price on the RSVP button.
+
+### 2026-11-17 evening: Turnstile kept off RSVP
+
+- Another session added a Turnstile check to the guest RSVP routes and panels, and built sunjay, amrit-canada, elktours and innergathering at 13:37 to 14:18.
+- Justin: no Turnstile on RSVP. The lead restored rsvp-handler.ts and the four rsvp-panel.tsx files to HEAD; the other session's versions are in ~/eac-backups/turnstile-on-rsvp-2026-11-17/.
+- The four apps were rebuilt 18:43 to 18:45. Their builds no longer contain raw.turnstileToken. tenant-smoke 9/9.
+- Turnstile still guards sign-up (auth-server api-routes), live on arts-collective, sunjay and elktours through TURNSTILE_SECRET_KEY_PENDING.
+- Google login works.
