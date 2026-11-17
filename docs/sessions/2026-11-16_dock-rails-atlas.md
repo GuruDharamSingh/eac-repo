@@ -194,3 +194,24 @@ All ten apps rebuilt, one at a time (`~/eac-backups/rebuild-2026-11-16c.sh`, log
 - **arts-collective rebuilt at 21:49:** approved wording and course areas are live.
   - RSVP lane files were held out of the build with `~/eac-backups/build-hold2.sh hold|restore <lane backup dir> [new files]`.
   - tenant-smoke 9/9.
+
+### 2026-11-17: RSVP live
+
+- **Justin's RSVP answers:**
+  1. There are no private orgs; orgs are public by default.
+  2. Guests are refused when an event is full.
+  3. The guest wording changes.
+  4. "you can wire checkout there using our business practices".
+  5. Automatic emails are on.
+  6. 278 applied.
+- **Migration 278 applied** 11:40 (holds, attended, refund records, `organizations.join_policy`). 263 is still pending (another session's).
+- **Committed:**
+  - `fb951dcb`: RSVP step 1 (`booking/src/core/rsvp.ts`, `services/src/rsvp-handler.ts`, shims), with the atlas;
+  - `b9e9e9e9`: paid RSVP checkout through `checkout/src/rsvp-paid*.ts` on sunjay and elktours; a dry refusal on amrit-canada and fourthway (no checkout dependency, 0 priced threads); the guest panel wording.
+- **Rebuilt 11:51 to 11:57:** sunjay (canary), amrit-canada, fourthway, innergathering, ifac, arts-collective, elktours. tenant-smoke 9/9, no log errors, signed-out RSVP 401 everywhere.
+- **Also shipped in these builds:**
+  - another session's commerce and checkout edits (orders, stock, shipping, stripe), already live in katie (10:59) and elktours (11:35) by their owner;
+  - the peer session's elktours phone pages (cover, 3D player, Street View).
+- **Coordination:** the peer session "Landing page mobile UI canvas editing" held its elktours build for ours. Cross-session messages work through `SendMessage` to its bridge address.
+- **Atlas:** another session is editing `areas/orgapps.commerce.shop.ts` and has an unclaimed `sql:apps/katie-the-potter/src/lib/shop.ts#dropPaidOrderFromCart`. That is theirs to claim, so `check-atlas --strict` fails until they do. Only our lines of `fingerprints.json` were committed.
+- **Open (liaison item 15):** "organiser" wording, innergathering on the shared paid callback, and the price on the RSVP button.
