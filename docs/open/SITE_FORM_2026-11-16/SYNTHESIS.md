@@ -69,6 +69,23 @@ Moves 1–7 are the core: after them, one site runs on the kit, and one action i
 | D10 | MCP: one endpoint with tool groups by family, not a server per domain? | Yes |
 | D11 | katie gets the canvas editor door: now, or after the shell extraction? | After |
 
+## Justin's answers (2026-11-16, evening)
+
+"Ignore 9 (the gpu can come later). Ignore arr directs ui for editing for now. That's not part of a shipped package that originates in art direct anyways. Other wise yes."
+
+| # | Outcome |
+|---|---|
+| D1 | Open; it waits until Justin names the elktours headers |
+| D2 | Dropped for now: artdirect's editing UI is out of scope (it is not a shipped package) |
+| D3, D5, D6, D7, D8, D10, D11 | Accepted as recommended |
+| D4 | Accepted, without "artdirect takes the sidebar pattern": artdirect stays out of the house-editor work for now |
+| D9 | Deferred: the GPU tier comes later; move 14 is parked |
+
+Effect on the order of moves:
+- Move 7 (the join) no longer draws on artdirect's `DossierSidebar`. The sidebar renderer is built from `studio-forms` fields (`ContentFieldSpec`), as §"The join" already recommends. artdirect's field registry is only a precedent.
+- Move 13 (artdirect on top of the families) stays a package move (profiles, business, directory). It does not touch artdirect's editor.
+- Typed slots in confirm cards (entity search, presets, values, context) are added to `DOCK_RAILS_PLAN.md` §5b. They come from the same field declaration as move 7.
+
 ## Pros and cons of the whole plan
 
 - **For:** a fix lands once instead of in 7 or 18 places; new sites cost a config file; every declared action is usable by the editor, the dock and an AI without extra work; build memory and exposed server actions shrink on lean sites.

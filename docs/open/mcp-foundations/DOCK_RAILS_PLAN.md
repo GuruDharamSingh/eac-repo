@@ -265,6 +265,23 @@ Architecture only. Course and tutorial content is out of scope until its own pas
 - **Confirm-card wording should be drier.** The naming conventions are fine. House-style change for the next waves: state the action and its effect plainly, with no warmth or reassurance.
 - **Stripe refunds** are automatic but triggered by hand: a cancel records the refund as due, and one press issues it through Stripe. In the dock this is a money entry, so it links to the refund control and never runs it.
 
+- **Typed slots in confirm cards** (Justin, 2026-11-16, on wording batch 1: "surprised to see soo little different types of {brackets}. These suggestions will likely come with a template structure at some point and a degree of search should be allowed for title or choosen preset if relevant.").
+  A placeholder is a slot with a kind, not a plain string substitution:
+
+  | Slot | Example | How the dock fills it |
+  |---|---|---|
+  | entity | `{entity:post}` (shows the title) | from context when the person came from that item; otherwise a search-and-pick over that entity type, limited to what the person may act on |
+  | preset | `{preset:outlet}`, `{preset:template}` | picked from a list of presets; a template is a named set of slot values (later also structure, e.g. a post with sections) and can fill several slots at once |
+  | value | `{value:when}`, `{value:price}` | typed in, checked by the entry's input schema |
+  | context | `{context:org}` | filled from where the person is; shown, not editable |
+
+  - Slot kinds come from the entry's input schema. That is the same field declaration that draws the dock module form and the MCP tool input (`docs/open/SITE_FORM_2026-11-16/SYNTHESIS.md`, "one declaration, three renderings"). The wording names the slots; the schema says how to fill them.
+  - Approved wording keeps its sentence. The slot markup is added when the schema lands, and the sentence needs no new approval unless it changes.
+  - Not built yet:
+    - a slot resolver and a picker in `packages/dock`;
+    - one search read per entity type, reusing the existing list reads and scoped to the actor's own items or org;
+    - a `presets` list per entry.
+
 ## 6. Risks
 
 - **Size**: 120–180 entries is weeks of curation. P0–P2 on arts-collective prove the loop before the
