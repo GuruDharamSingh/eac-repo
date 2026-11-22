@@ -1,13 +1,15 @@
 /* Channel's meeting sheet on Para Theater (2026-11-14): the frame around the shared Quick-Form, in the
-   site's own tokens (globals.css :root). The form inside keeps the Quick-Form theme (ledger-quick). */
+   site's own tokens (globals.css :root). The form inside is drawn in the site look (site-forms look "site"). */
 .sj-chform { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px 18px; }
 .sj-chform-eb {
   margin: 0; font-size: 10.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase;
   color: hsl(var(--muted-foreground));
 }
-/* The Quick-Form's own paper and ink (ledger.css --frm-bg / --frm-text): the form is light on every site. */
-.sj-chform-panel { padding: 16px; border-radius: 12px; background: #fdfcf9; color: #1c2128; color-scheme: light; }
+/* The form draws in the site look (look "site"): it takes the site's palette, so no paper panel of its own. */
+.sj-chform-panel { padding: 0; }
 .sj-chform-more { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid hsl(var(--border)); font-size: 13px; }
 .sj-chform-more a { align-self: flex-start; font-weight: 500; color: hsl(var(--primary)); }
 .sj-chform-more a:hover { text-decoration: underline; }
 .sj-chform-more p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 12.5px; line-height: 1.45; }
+/* The page panel (site-look.css .frm-site-page) is for /manage/content; in the sheet the sheet is the panel. */
+.sj-chform-panel .frm-site-page[data-look='site'] { max-width: none; margin: 0; padding: 0; border: 0; background: transparent; }

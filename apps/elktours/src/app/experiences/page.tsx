@@ -4,6 +4,12 @@ import { toExperienceView } from "@/components/experiences/view";
 import { getViewer } from "@/lib/auth";
 import { listExperiences } from "@/lib/experiences";
 import { siteConfig } from "@/config/site";
+import { Render, resolveAllData } from "@puckeditor/core/rsc";
+import type { Data } from "@puckeditor/core";
+import { Split } from "@/components/mobile/split";
+import { loadMobileDoc } from "@/lib/puck/mobile";
+import { mobileServerConfig } from "@/lib/puck/config.mobile.server";
+import { readMobileContent } from "@/lib/puck/mobile-content";
 
 export const metadata: Metadata = {
   title: "Experiences",
@@ -21,7 +27,12 @@ export default async function ExperiencesPage() {
   });
   const views = experiences.map((e) => toExperienceView(e));
 
-  return (
+  // Phone tree (G4): the m-experiences document.
+  const [{ data }, mobileContent] = await Promise.all([loadMobileDoc("m-experiences"), readMobileContent()]);
+  const meta = { orgId: siteConfig.orgId, slug: "m-experiences", mobileContent };
+  const filled = await resolveAllData(data, mobileServerConfig, meta);
+
+  const desktop = (
     <div className="mx-auto max-w-6xl px-5 py-12">
       <header className="max-w-2xl">
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</p>
@@ -43,4 +54,6 @@ export default async function ExperiencesPage() {
       )}
     </div>
   );
+
+  return <Split mobile={<Render config={mobileServerConfig} data={filled as Data} metadata={meta} />} desktop={desktop} />;
 }

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useRouter } from "next/navigation";
 import type { TourDeparture, TourStop } from "@elkdonis/commerce/server";
 import type { Tour, TourFilm } from "@/lib/tours";
+import type { TourStageData } from "@/components/tours/stage/types";
 import { patchTourAction, type TourPatch } from "@/lib/tour-live-actions";
 
 /**
@@ -21,6 +22,15 @@ export interface TourPageData {
   signedInEmail: string | null;
   googleMapsKey: string | null;
   others: { tour: Tour; next: TourDeparture | null }[];
+  /** Where "ask about a date / a price" mails go when the booking box cannot sell (siteConfig.fallbackNotifyEmail). */
+  contactEmail?: string | null;
+  /** What the tour-page hero stage draws (lib/tour-stage-data.ts); absent where it was not computed (layout editor samples). */
+  stage?: TourStageData;
+  /**
+   * The tour's id when THIS viewer may change its words from the page (its guide or an owner, a published tour), decided on the
+   * server (lib/tour-fields.ts editableTourId); null or absent for everyone else. The page draws its edit marks only when set.
+   */
+  fieldEditId?: string | null;
 }
 
 /** The fields an editor can change in place; the same names patchTourAction takes. */

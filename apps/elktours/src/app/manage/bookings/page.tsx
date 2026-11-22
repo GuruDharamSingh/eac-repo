@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listOrgDepartures, listOrgTourBookings } from "@elkdonis/commerce/server";
+import { listOrgDepartures, listOrgTourBookings } from "@/lib/departures";
 import { formatDeparture, formatPrice } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";

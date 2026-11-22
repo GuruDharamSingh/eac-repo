@@ -14,6 +14,10 @@ import {
   type TourTextProps,
 } from "./blocks";
 import type { TourLayoutData } from "./layout-data";
+import { TourStageBlock, type TourStageBlockProps } from "./stage-block";
+import { STAGE_HEIGHT, STAGE_LEAD, STAGE_MEDIA, STAGE_NARRATIVE, STAGE_START } from "./stage-options";
+import { StopSquaresField } from "./stop-squares-field";
+import { DEFAULT_TOUR_STAGE } from "@/components/tours/stage/types";
 
 /**
  * The tour page's block catalogue in Puck's `Config` shape (fields,
@@ -29,7 +33,8 @@ import type { TourLayoutData } from "./layout-data";
 type Field =
   | { type: "text" | "textarea"; label: string }
   | { type: "number"; label: string; min?: number; max?: number }
-  | { type: "radio"; label: string; options: { label: string; value: string | boolean }[] };
+  | { type: "radio"; label: string; options: { label: string; value: string | boolean }[] }
+  | { type: "custom"; label?: string; render: ComponentType<{ value?: unknown; onChange: (v: unknown) => void; readOnly?: boolean }> };
 
 interface BlockConfig<P> {
   label: string;
@@ -41,8 +46,22 @@ interface BlockConfig<P> {
 const yesNo = (label: string): Field => ({ type: "radio", label, options: [{ label: "Show", value: true }, { label: "Hide", value: false }] });
 
 export const tourConfig = {
-  categories: { tour: { title: "Tour", components: ["TourFilm", "TourIntro", "TourMain", "TourMore", "TourText"] } },
+  categories: { tour: { title: "Tour", components: ["TourStage", "TourFilm", "TourIntro", "TourMain", "TourMore", "TourText"] } },
   components: {
+    TourStage: {
+      label: "Hero stage",
+      fields: {
+        startAt: { type: "radio", label: "Opens on", options: STAGE_START.map((o) => ({ label: o.label, value: o.value })) },
+        lead: { type: "radio", label: "First tab", options: STAGE_LEAD.map((o) => ({ label: o.label, value: o.value })) },
+        media: { type: "radio", label: "Pictures for a stop come from", options: STAGE_MEDIA.map((o) => ({ label: o.label, value: o.value })) },
+        showStrip: yesNo("Strip of stops under the stage"),
+        height: { type: "number", label: "Stage height (px)", min: STAGE_HEIGHT.min, max: STAGE_HEIGHT.max },
+        narrativeMax: { type: "number", label: "Longest stop line shown (characters)", min: STAGE_NARRATIVE.min, max: STAGE_NARRATIVE.max },
+        perStop: { type: "custom", label: "Stops", render: StopSquaresField },
+      },
+      defaultProps: { ...DEFAULT_TOUR_STAGE },
+      render: TourStageBlock,
+    } satisfies BlockConfig<TourStageBlockProps>,
     TourFilm: {
       label: "Film",
       fields: {

@@ -13,6 +13,8 @@
     "./booking": "./src/server/thread-checkout.ts",
     "./rsvp": "./src/rsvp-paid.ts",
     "./rsvp-core": "./src/rsvp-paid-core.ts",
+    "./booking-core": "./src/booking-core.ts",
+    "./booking-server": "./src/booking-server.ts",
     "./booking.css": "./src/booking.css"
   },
   "scripts": {

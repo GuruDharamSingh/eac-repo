@@ -23,6 +23,8 @@ export const EASES = ["linear", "smooth", "in", "out", "steps"] as const;
 export const SHADERS = [
   "none", "mineral", "aurora", "halo", "silk",
   "mesh-flow", "grain-wave", "grain-sphere", "grain-ripple", "warp", "swirl", "smoke-ring",
+  // 2026-11-21: more Paper Shaders
+  "metaballs", "voronoi", "god-rays", "spiral", "dot-orbit", "color-panels", "simplex-noise", "perlin-noise", "neuro-noise",
 ] as const;
 export const OWN_SHADERS = ["mineral", "aurora", "halo", "silk"] as const;
 export type ShaderKind = (typeof SHADERS)[number];
@@ -188,4 +190,11 @@ export const PRESETS: readonly Preset[] = [
   P("ember-wave", "Ember wave", { kind: "linear", stops: ramp("ember"), shader: "grain-wave", motion: 20, grain: 35, base: "#1A1210" }),
   P("smoke-ring", "Smoke ring", { kind: "halo", stops: ramp("night-ring"), shader: "smoke-ring", motion: 30, scale: 55, base: "#0B0B0D" }),
   P("tsakli-paper", "Tsakli paper", { kind: "mesh", stops: combo("tsakli-card").stops, base: "#2A5A83", count: 3, seed: 3, scale: 55, mute: 5, paper: 60 }),
+  // 2026-11-21: the new Paper shaders
+  P("god-rays", "God rays", { kind: "radial", stops: ramp("ember"), shader: "god-rays", motion: 30, cy: 20, base: "#0B0B0D", softness: 60 }),
+  P("metaballs", "Metaballs", { kind: "mesh", stops: ramp("spectrum"), shader: "metaballs", motion: 35, count: 4, scale: 55, base: "#0B0B0D" }),
+  P("voronoi", "Voronoi cells", { kind: "linear", stops: ramp("tide"), shader: "voronoi", motion: 25, softness: 50, base: "#14202A" }),
+  P("spiral", "Mandala spiral", { kind: "conic", stops: ramp("spectrum"), shader: "spiral", motion: 30, scale: 45, base: "#0B0B0D" }),
+  P("neuro", "Neuro glow", { kind: "linear", stops: ramp("night-ring"), shader: "neuro-noise", motion: 40, base: "#0B0B0D" }),
+  P("panels", "Colour panels", { kind: "linear", stops: ramp("elements"), shader: "color-panels", motion: 30, count: 4, softness: 30, base: "#0B0B0D" }),
 ];

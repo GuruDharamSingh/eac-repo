@@ -17,6 +17,8 @@
     "./puck/morph": "./src/puck/morph-mark.tsx",
     "./direct-edit.css": "./src/direct-edit.css",
     "./site": "./src/site/index.ts",
+    "./site/shared-accents": "./src/site/shared-accents.ts",
+    "./site/shared-accents.css": "./src/site/shared-accents.css",
     "./site/editor": "./src/site/SiteStyleEditor.tsx"
   },
   "scripts": {

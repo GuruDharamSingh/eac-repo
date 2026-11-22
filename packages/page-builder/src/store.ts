@@ -72,14 +72,64 @@ export async function loadPage(
   }
 }
 
+/**
+ * A page and the version it was read at, for an editor that wants to refuse a
+ * stale save (see savePage's `expectedUpdatedAt`). `updatedAt` is the row's
+ * timestamp as Postgres prints it (`updated_at::text`, microseconds and zone
+ * included): an opaque token to hand back, not something to parse. A JS Date
+ * would cut it to milliseconds and the comparison would never match.
+ *
+ * Same validation as loadPage; null for a missing or unrenderable page.
+ */
+export async function loadPageWithVersion(
+  orgId: string,
+  slug: string,
+  knownTypes?: Set<string>
+): Promise<{ data: unknown; updatedAt: string } | null> {
+  if (!isValidPagePath(slug)) return null;
+  try {
+    // Version FIRST, then the data: a save landing between the two leaves a
+    // version older than the data, which only ever errs towards "stale".
+    const [row] = await db<Array<{ version: string }>>`
+      SELECT updated_at::text AS version FROM site_config
+      WHERE org_id = ${orgId} AND key = ${keyFor(slug)}
+      LIMIT 1
+    `;
+    if (!row) return null;
+    const page = await loadPage(orgId, slug, knownTypes);
+    if (!page) return null;
+    return { data: page.data, updatedAt: row.version };
+  } catch (err) {
+    console.error(`[puck] loadPageWithVersion(${slug}):`, err);
+    return null;
+  }
+}
+
+export interface SavePageResult {
+  ok: boolean;
+  error?: string;
+  /** True when `expectedUpdatedAt` no longer matched: nothing was written. */
+  stale?: boolean;
+  /** The row's new version, to pass as the next `expectedUpdatedAt`. */
+  updatedAt?: string;
+}
+
 /** Refuse anything that would not survive being read back. */
 const MAX_PAGE_BYTES = 512 * 1024;
 
 export async function savePage(
   orgId: string,
   slug: string,
-  data: unknown
-): Promise<{ ok: boolean; error?: string }> {
+  data: unknown,
+  /**
+   * The `updatedAt` from loadPageWithVersion. When given, the write happens
+   * only if the row still has that version (one UPDATE ... WHERE, so two tabs
+   * cannot both pass the check); otherwise nothing is written and the result
+   * has `stale: true`. A page deleted since it was read is stale too. Omitted:
+   * the unconditional upsert, exactly as before.
+   */
+  expectedUpdatedAt?: string
+): Promise<SavePageResult> {
   if (!isValidPagePath(slug)) return { ok: false, error: "That page name is not usable in a URL." };
 
   // Rich text is cut down to what a page's text may hold before it is
@@ -96,13 +146,30 @@ export async function savePage(
     return { ok: false, error: "That page is too large to save." };
   }
   try {
-    await db`
+    if (expectedUpdatedAt) {
+      // `::text::timestamptz`, not a bare `::timestamptz`: postgres.js sends a timestamptz parameter through a JS
+      // Date (milliseconds), and the version is `updated_at::text` with microseconds, so the bare cast never
+      // matched and every guarded save answered stale (found 2026-11-20, 0 of 35 live rows matched).
+      const rows = await db<Array<{ version: string }>>`
+        UPDATE site_config
+        SET value = ${db.json(data as never)}, updated_at = NOW()
+        WHERE org_id = ${orgId} AND key = ${keyFor(slug)}
+          AND updated_at = ${expectedUpdatedAt}::text::timestamptz
+        RETURNING updated_at::text AS version
+      `;
+      if (rows.length === 0) {
+        return { ok: false, stale: true, error: "This page changed since you opened it." };
+      }
+      return { ok: true, updatedAt: rows[0]!.version };
+    }
+    const rows = await db<Array<{ version: string }>>`
       INSERT INTO site_config (org_id, key, value, updated_at)
       VALUES (${orgId}, ${keyFor(slug)}, ${db.json(data as never)}, NOW())
       ON CONFLICT (org_id, key)
       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      RETURNING updated_at::text AS version
     `;
-    return { ok: true };
+    return { ok: true, updatedAt: rows[0]?.version };
   } catch (err) {
     console.error(`[puck] savePage(${slug}):`, err);
     return { ok: false, error: "Could not save this page." };

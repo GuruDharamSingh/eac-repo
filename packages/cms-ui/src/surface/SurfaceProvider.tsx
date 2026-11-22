@@ -98,7 +98,7 @@ function rectOf(origin: SurfaceOrigin | undefined): DOMRect | null {
 }
 
 
-function initialMeta(d: SurfaceDescriptor): LayerMeta {
+export function initialMeta(d: SurfaceDescriptor): LayerMeta {
   switch (d.type) {
     case "thread":
       return {
@@ -164,7 +164,7 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
   }
 }
 
-function makeLayer(d: SurfaceDescriptor): SurfaceLayer {
+export function makeLayer(d: SurfaceDescriptor): SurfaceLayer {
   return { id: nextId++, descriptor: d, meta: initialMeta(d) };
 }
 

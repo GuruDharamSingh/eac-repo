@@ -1,4 +1,5 @@
 import type { PageTemplate, TemplateNode } from "@elkdonis/blocks";
+import { SHARED_ACCENTS } from "@elkdonis/direct-edit/site/shared-accents";
 
 // ============================================================================
 // The home page, as blocks.
@@ -162,7 +163,7 @@ export function homeTemplate(seed: HomeSeed): PageTemplate {
     name: "Para Theater home",
     description:
       "The landing page as it was: banner, next gathering, profile beside the calendar, materials beside sign-up, about, forum.",
-    swatch: { ground: "#1B1E20", ink: "#E9E5DD", accent: "#C9AE79" },
+    swatch: { ground: "#1B1E20", ink: "#E9E5DD", accent: SHARED_ACCENTS.bronze.hex.toUpperCase() },
     cards: "Site cards",
     content: homeContent(seed),
   };
@@ -174,7 +175,7 @@ export function blankTemplate(orgName: string): PageTemplate {
     id: "para-theater-page",
     name: "Plain page",
     description: "A heading band and one text band, for a page of words.",
-    swatch: { ground: "#1B1E20", ink: "#E9E5DD", accent: "#C9AE79" },
+    swatch: { ground: "#1B1E20", ink: "#E9E5DD", accent: SHARED_ACCENTS.bronze.hex.toUpperCase() },
     cards: "None",
     content: [
       {

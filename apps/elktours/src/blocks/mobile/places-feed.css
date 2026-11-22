@@ -1,0 +1,6 @@
+/* Places catalogue and Feed blocks (G5/G6). Shared row styles (.m-row ...) live in components/mobile/mobile.css. */
+.blk-mpc .m-chip-row { padding: 18px 20px 4px; }
+.blk-mpc-list, .blk-mfl { display: flex; flex-direction: column; gap: 10px; padding: 14px 20px 0; }
+.blk-mfl { padding-top: 22px; }
+.blk-mpc-empty, .blk-mfl-empty { margin: 20px 4px; color: hsl(var(--muted-foreground)); font-size: 14px; line-height: 1.5; }
+.blk-mfl-initial { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-size: 22px; color: hsl(var(--brass-light)); background: var(--m-well); }

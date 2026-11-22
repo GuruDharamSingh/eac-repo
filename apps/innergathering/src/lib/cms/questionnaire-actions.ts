@@ -29,7 +29,7 @@ export async function createQuestionnaireAction(input: {
   kind: QuestionnaireKind;
   closesAt?: string | null;
 }): Promise<CreateQuestionnaireResult> {
-  const viewer = await requireOrgEditor("/manage/compose");
+  const viewer = await requireOrgEditor("/hub/compose");
 
   if (!(await canManageQuestionnaires(viewer.userId, siteConfig.orgId))) {
     return { ok: false, error: "Not authorized" };

@@ -19,6 +19,10 @@ interface TourMapProps {
   onSelect?: (index: number) => void;
   className?: string;
   interactive?: boolean;
+  /** Space kept round the fitted points, px (default 48). */
+  padding?: number;
+  /** Include the meeting point when fitting the overview (default true); false frames the stops alone, as tight as they allow. */
+  fitMeeting?: boolean;
 }
 
 /** Free vector tiles, no key (OpenFreeMap, OpenMapTiles schema). */
@@ -41,7 +45,7 @@ function pin(label: string | number, active: boolean): HTMLElement {
  * flat fit of every point. The style is loaded once; everything else is
  * updated in place so the camera never resets.
  */
-export function TourMap({ stops, meetingPoint, activeIndex, onSelect, className, interactive = true }: TourMapProps) {
+export function TourMap({ stops, meetingPoint, activeIndex, onSelect, className, interactive = true, padding = 48, fitMeeting = true }: TourMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
   const markers = useRef<Marker[]>([]);
@@ -145,7 +149,7 @@ export function TourMap({ stops, meetingPoint, activeIndex, onSelect, className,
     const first = { current: true };
     const move = () => {
       const points: [number, number][] = [
-        ...(meetingPoint ? [[meetingPoint.lng, meetingPoint.lat] as [number, number]] : []),
+        ...(meetingPoint && (fitMeeting || stops.length === 0) ? [[meetingPoint.lng, meetingPoint.lat] as [number, number]] : []),
         ...stops.map((s) => [s.lng, s.lat] as [number, number]),
       ];
       if (points.length === 0) return;
@@ -157,14 +161,14 @@ export function TourMap({ stops, meetingPoint, activeIndex, onSelect, className,
         m.flyTo({ center: [s.lng, s.lat], zoom: STOP_ZOOM, pitch: STOP_PITCH, bearing, duration: 1800, essential: true, curve: 1.4 });
       } else {
         const b = points.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(points[0], points[0]));
-        if (first.current && !m.isMoving() && m.getZoom() === 14) m.fitBounds(b, { padding: 48, pitch: 0, bearing: 0, duration: 0 });
-        else m.fitBounds(b, { padding: 48, pitch: 0, bearing: 0, duration: 1600 });
+        if (first.current && !m.isMoving() && m.getZoom() === 14) m.fitBounds(b, { padding, pitch: 0, bearing: 0, duration: 0 });
+        else m.fitBounds(b, { padding, pitch: 0, bearing: 0, duration: 1600 });
       }
       first.current = false;
     };
     if (ready.current) move();
     else m.once("eac:ready", move);
-  }, [stops, meetingPoint, activeIndex]);
+  }, [stops, meetingPoint, activeIndex, padding, fitMeeting]);
 
   return <div ref={box} className={className} style={{ width: "100%", height: "100%" }} />;
 }

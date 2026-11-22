@@ -8,6 +8,13 @@ import { listAssets } from "@/lib/assets";
 import { getViewer } from "@/lib/auth";
 import { getExperienceBySlug, listExperiences } from "@/lib/experiences";
 import { resolveExperienceLayout } from "@/lib/experience-layout";
+import { Render, resolveAllData } from "@puckeditor/core/rsc";
+import type { Data } from "@puckeditor/core";
+import { Split } from "@/components/mobile/split";
+import { loadMobileDoc } from "@/lib/puck/mobile";
+import { mobileServerConfig } from "@/lib/puck/config.mobile.server";
+import { buildMobileExp } from "@/lib/puck/mobile-content";
+import { siteConfig } from "@/config/site";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -60,14 +67,23 @@ export default async function ExperiencePage({ params }: Props) {
     others: all.filter((o) => o.id !== e.id && o.status === "published").slice(0, 6).map((o) => toExperienceView(o)),
   };
 
-  return (
-    <ExperiencePageProvider data={data}>
+  // Phone tree (G4): the m-experience-detail template over this experience (the record loaded above).
+  const [{ data: mobileDoc }, mobileExp] = await Promise.all([loadMobileDoc("m-experience-detail"), buildMobileExp(e, viewer?.email ?? null)]);
+  const meta = { orgId: siteConfig.orgId, slug: "m-experience-detail", mobileExp };
+  const mobileFilled = await resolveAllData(mobileDoc, mobileServerConfig, meta);
+
+  const desktop = (
       <article className="pb-16">
         <ExperienceLayout data={layout} />
         <div className="mx-auto mt-16 max-w-6xl px-5">
           <ReviewsSection target={{ type: "experience", id: e.id }} />
         </div>
       </article>
+  );
+
+  return (
+    <ExperiencePageProvider data={data}>
+      <Split mobile={<Render config={mobileServerConfig} data={mobileFilled as Data} metadata={meta} />} desktop={desktop} />
     </ExperiencePageProvider>
   );
 }

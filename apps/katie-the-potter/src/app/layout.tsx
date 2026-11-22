@@ -13,6 +13,7 @@ import { fontVariables } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
 import { getCartCount } from "@/lib/shop";
+import { loadNav } from "@/lib/nav";
 import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
 import { loadSiteStyle } from "@/lib/site-style";
 import { SITE_STYLE } from "@/lib/site-style-schema";
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [viewer, cartCount, siteStyle] = await Promise.all([getViewer().catch(() => null), getCartCount(), loadSiteStyle().catch(() => null)]);
+  const [viewer, cartCount, siteStyle, nav] = await Promise.all([getViewer().catch(() => null), getCartCount(), loadSiteStyle().catch(() => null), loadNav()]);
   // The site style (elktours' pattern): stored values over SITE_STYLE's
   // defaults, as one <style>. Nothing stored = nothing emitted. A <style> (not
   // inline attributes) so Puck's canvas mirrors it; `data-site-style` lets the
@@ -48,7 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             it by that attribute. Unlayered, after globals.css: it wins. */}
         {styleFonts ? <link rel="stylesheet" href={styleFonts} /> : null}
         {styleCss ? <style data-site-style="" dangerouslySetInnerHTML={{ __html: styleCss }} /> : null}
-        <SiteHeader signedIn={Boolean(viewer)} canEdit={Boolean(viewer?.canEdit)} email={viewer?.email ?? null} cartCount={cartCount} />
+        <SiteHeader signedIn={Boolean(viewer)} canEdit={Boolean(viewer?.canEdit)} email={viewer?.email ?? null} cartCount={cartCount} nav={nav} />
         <main className="flex-1">{children}</main>
         <SiteFooter />
         {viewer?.canEdit ? <SiteStyleButton initial={siteStyle} /> : null}

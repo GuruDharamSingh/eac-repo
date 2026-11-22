@@ -1,0 +1,452 @@
+/* The development app's own chrome: dark, quiet, nearly nothing between you and the work.
+   Everything is prefixed dev- so it cannot touch a block's own styles. */
+
+:root {
+  --dev-bg: #0f1115;
+  --dev-panel: #171a21;
+  --dev-line: #262b36;
+  --dev-ink: #e8eaf0;
+  --dev-muted: #8b93a7;
+  --dev-accent: #7aa2ff;
+  --dev-warn: #f0b35a;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--dev-bg);
+  color: var(--dev-ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.dev-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Top bar: a name, three views, who you are. */
+.dev-top {
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--dev-line);
+  background: var(--dev-panel);
+  position: relative;
+  z-index: 60;
+}
+.dev-top .dev-brand {
+  font-weight: 600;
+  margin-right: 16px;
+  letter-spacing: 0.02em;
+}
+.dev-top a.dev-tab {
+  color: var(--dev-muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.dev-top a.dev-tab:hover {
+  color: var(--dev-ink);
+}
+.dev-top a.dev-tab[aria-current="page"] {
+  color: var(--dev-ink);
+  background: #232838;
+}
+.dev-top .dev-who {
+  margin-left: auto;
+  color: var(--dev-muted);
+  font-size: 12px;
+}
+
+.dev-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Blocks view */
+.dev-bench {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dev-toolbar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--dev-line);
+  flex-wrap: wrap;
+}
+.dev-toolbar input,
+.dev-toolbar select {
+  background: #11141a;
+  color: var(--dev-ink);
+  border: 1px solid var(--dev-line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+.dev-toolbar input {
+  width: 200px;
+}
+.dev-theme-pick {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--dev-muted);
+  font-size: 12px;
+}
+.dev-count {
+  margin-left: auto;
+  color: var(--dev-muted);
+  font-size: 12px;
+}
+.dev-error {
+  margin: 0;
+  padding: 6px 16px;
+  color: var(--dev-warn);
+  font-size: 12px;
+}
+
+/* The canvas: one wide surface, columns laid across it, scroll or drag to move. */
+.dev-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  cursor: grab;
+  background-image: radial-gradient(#1b2030 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.dev-canvas.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+.dev-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 24px 32px 120px;
+  width: max-content;
+  min-height: 100%;
+}
+.dev-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 400px;
+  flex: none;
+}
+.dev-column h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dev-muted);
+}
+.dev-column h2 small {
+  margin-left: 6px;
+  font-weight: 400;
+}
+
+.dev-tile {
+  background: var(--dev-panel);
+  border: 1px solid var(--dev-line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: default;
+}
+.dev-tile.is-selected {
+  border-color: var(--dev-accent);
+}
+.dev-tile > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  padding: 8px 12px 6px;
+}
+.dev-tile-name {
+  font-weight: 600;
+}
+.dev-tile-id {
+  color: var(--dev-muted);
+  font: 11px ui-monospace, Menlo, monospace;
+}
+.dev-chip {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  border: 1px solid var(--dev-line);
+  color: var(--dev-muted);
+}
+.dev-chip-edit {
+  color: var(--dev-warn);
+  border-color: var(--dev-warn);
+}
+.dev-tile-body {
+  background: #fff;
+  color: #111;
+}
+.dev-tile.is-off .dev-tile-body {
+  background: transparent;
+}
+.dev-frame {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+.dev-frame-idle {
+  background: repeating-linear-gradient(45deg, #1a1e27, #1a1e27 8px, #171a21 8px, #171a21 16px);
+}
+.dev-inner {
+  transform-origin: top left;
+  pointer-events: none;
+}
+.dev-tile-desc {
+  margin: 0;
+  padding: 8px 12px 0;
+  color: var(--dev-muted);
+  font-size: 12px;
+}
+.dev-tile > footer {
+  padding: 8px 12px 10px;
+}
+.dev-tile button {
+  background: #232838;
+  color: var(--dev-ink);
+  border: 1px solid var(--dev-line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.dev-tile button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dev-needs {
+  padding: 12px;
+  background: repeating-linear-gradient(135deg, #1d2029, #1d2029 10px, #191c24 10px, #191c24 20px);
+  color: var(--dev-ink);
+  font-size: 12px;
+}
+.dev-needs strong {
+  color: var(--dev-warn);
+}
+.dev-needs p {
+  margin: 4px 0;
+  color: var(--dev-muted);
+}
+.dev-needs code {
+  display: block;
+  word-break: break-all;
+  color: var(--dev-accent);
+  font-size: 11px;
+}
+.dev-needs ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  color: var(--dev-muted);
+}
+.dev-loading,
+.dev-empty {
+  padding: 24px;
+  color: var(--dev-muted);
+}
+
+/* Document views: design systems, ideas */
+.dev-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 32px 80px;
+}
+.dev-page h1 {
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+.dev-page h2 {
+  font-size: 15px;
+  margin: 28px 0 10px;
+}
+.dev-lede {
+  color: var(--dev-muted);
+  max-width: 70ch;
+  margin: 0 0 16px;
+}
+.dev-cards {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+.dev-card {
+  flex: none;
+  width: 300px;
+  background: var(--dev-panel);
+  border: 1px solid var(--dev-line);
+  border-radius: 10px;
+  padding: 14px;
+}
+.dev-card h3 {
+  margin: 0 0 2px;
+  font-size: 15px;
+}
+.dev-card .dev-src {
+  color: var(--dev-muted);
+  font: 11px ui-monospace, Menlo, monospace;
+  word-break: break-all;
+}
+.dev-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.dev-kv dt {
+  color: var(--dev-muted);
+}
+.dev-kv dd {
+  margin: 0;
+}
+.dev-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+.dev-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.dev-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 100%;
+}
+.dev-table th,
+.dev-table td {
+  text-align: left;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--dev-line);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.dev-table th {
+  color: var(--dev-muted);
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  background: var(--dev-bg);
+}
+.dev-table code {
+  font: 11px ui-monospace, Menlo, monospace;
+}
+.dev-cell {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.dev-cell i {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+.dev-scroll {
+  overflow: auto;
+  max-height: 60vh;
+  border: 1px solid var(--dev-line);
+  border-radius: 8px;
+}
+.dev-status {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--dev-line);
+  color: var(--dev-muted);
+}
+.dev-idea-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.dev-idea-link:hover {
+  border-color: var(--dev-accent);
+}
+.dev-ideas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.dev-ideas-grid .dev-card {
+  width: auto;
+}
+.dev-back {
+  color: var(--dev-muted);
+  text-decoration: none;
+  font-size: 12px;
+}
+.dev-note {
+  color: var(--dev-warn);
+  font-size: 12px;
+}
+
+/* Mock tiles (app-local blocks drawn with invented data) */
+.dev-chip-mock {
+  color: #0b0d12;
+  background: var(--dev-warn);
+  border-color: var(--dev-warn);
+  font-weight: 600;
+}
+.dev-frame-mock {
+  background: #fff;
+}
+.dev-mock-note {
+  margin: 0;
+  padding: 6px 12px 0;
+  color: var(--dev-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+.dev-props {
+  margin-top: 8px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  color: var(--dev-muted);
+}
+.dev-props th,
+.dev-props td {
+  text-align: left;
+  padding: 2px 6px 2px 0;
+  border-bottom: 1px solid var(--dev-line);
+  vertical-align: top;
+  word-break: break-word;
+}
+.dev-props td:first-child {
+  color: var(--dev-ink);
+  font-family: ui-monospace, Menlo, monospace;
+}
+.dev-props-empty {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--dev-muted);
+}

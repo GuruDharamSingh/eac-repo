@@ -48,9 +48,9 @@ export async function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur" data-chrome="header">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <Link href="/" className="shrink-0 font-serif text-xl tracking-tight">
+        <Link href="/" className="shrink-0 font-serif text-xl tracking-tight" data-part="brand">
           {siteConfig.name}
         </Link>
 
@@ -60,6 +60,7 @@ export async function SiteHeader() {
           {user && (
             <Link
               href="/messages"
+              data-part="messages"
               className="relative hidden items-center underline-offset-4 hover:underline md:inline-flex"
             >
               Messages
@@ -79,19 +80,20 @@ export async function SiteHeader() {
             variant="outline"
             className="hidden border-primary font-medium text-primary hover:bg-primary hover:text-primary-foreground lg:inline-flex"
           >
-            <Link href={studioHref}>{seller ? "Studio" : "Sell your work"}</Link>
+            <Link href={studioHref} data-part="cta">{seller ? "Studio" : "Sell your work"}</Link>
           </Button>
 
           {user ? (
             <Link
               href="/account"
+              data-part="account"
               className="hidden underline-offset-4 hover:underline sm:inline"
               title={user.email ?? undefined}
             >
               {user.displayName?.trim() || "Account"}
             </Link>
           ) : (
-            <Link href="/login" className="underline-offset-4 hover:underline">
+            <Link href="/login" className="underline-offset-4 hover:underline" data-part="account">
               Sign in
             </Link>
           )}
@@ -99,6 +101,7 @@ export async function SiteHeader() {
           <Button asChild variant="outline" className="gap-1.5">
             <Link
               href="/cart"
+              data-part="cart"
               aria-label={count > 0 ? `Cart, ${count} item${count === 1 ? "" : "s"}` : "Cart"}
             >
               Cart

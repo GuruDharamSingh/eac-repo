@@ -4,8 +4,9 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TourStop } from "@elkdonis/commerce/server";
 import { StreetView } from "@/components/tours/street-view";
+import { StopMedia, type StopMediaImage } from "@/components/tours/stop-media";
 import { BusinessCard } from "@/components/places/business-card";
-import type { PlaceBusinessSummary } from "@/lib/catalogue-types";
+import type { PlaceBusinessSummary, PublicTourAssets } from "@/lib/catalogue-types";
 import "./tour-story.css";
 
 const TourMap = dynamic(() => import("@/components/tours/tour-map").then((m) => m.TourMap), {
@@ -19,6 +20,18 @@ interface TourStoryProps {
   googleMapsKey: string | null;
   /** Per stop id: the place's primary business (TourFull.stopExtras). */
   businesses?: Record<string, PlaceBusinessSummary | null>;
+  /** The tour's asset switches (TourFull.assets): per-stop images, Street View switches, stills. */
+  assets?: Pick<PublicTourAssets, "streetview" | "stills" | "stopImages"> | null;
+}
+
+/** A stop's own media: its photo, then its visible images (never the Street View still). */
+function mediaOf(s: TourStop, assets: TourStoryProps["assets"]): StopMediaImage[] {
+  const out: StopMediaImage[] = [];
+  if (s.imageUrl) out.push({ url: s.imageUrl, caption: null, altText: null, attribution: null });
+  for (const im of assets?.stopImages?.[s.id] ?? []) {
+    if (!out.some((o) => o.url === im.url)) out.push(im);
+  }
+  return out;
 }
 
 /** How long the active line must hold one stop before the map moves (smooths fast scrolling). */
@@ -40,7 +53,7 @@ const SETTLE_MS = 140;
  *     never re-picks a stop. The lock lifts on the next real user scroll:
  *     wheel, touch or a scrolling key, never on programmatic scroll events.
  */
-export function TourStory({ stops, meetingPoint, googleMapsKey, businesses }: TourStoryProps) {
+export function TourStory({ stops, meetingPoint, googleMapsKey, businesses, assets }: TourStoryProps) {
   const [active, setActive] = useState(-1);
   // The side panel is display:none below 900px; the map cannot fit bounds in
   // a zero-size box, so it is not mounted there.
@@ -129,9 +142,21 @@ export function TourStory({ stops, meetingPoint, googleMapsKey, businesses }: To
   }, [placed, stops, choose]);
 
   const current = active >= 0 ? stops[active] : null;
-  const pose = current && current.lat != null && current.lng != null
-    ? { lat: current.lat, lng: current.lng, heading: current.heading, pitch: current.pitch, fov: current.fov }
-    : null;
+  const poseOf = (s: TourStop) =>
+    s.lat != null && s.lng != null ? { lat: s.lat, lng: s.lng, heading: s.heading, pitch: s.pitch, fov: s.fov } : null;
+  /** The media slot for one stop: its own media first, Street View on a button (or directly when it has none). */
+  const slot = (s: TourStop, className: string) => (
+    <StopMedia
+      stopId={s.id}
+      title={s.title}
+      pose={poseOf(s)}
+      images={mediaOf(s, assets)}
+      streetViewOn={assets?.streetview?.[s.id] !== false}
+      stillUrl={assets?.stills?.[s.id] ?? s.stillUrl}
+      apiKey={googleMapsKey}
+      className={className}
+    />
+  );
 
   return (
     <div className="tour-story">
@@ -170,20 +195,12 @@ export function TourStory({ stops, meetingPoint, googleMapsKey, businesses }: To
                 s.title
               )}
             </h3>
-            {/* On narrow screens each stop carries its own picture. */}
-            <div className="tour-stop__media">
-              <StreetView
-                pose={s.lat != null && s.lng != null ? { lat: s.lat, lng: s.lng, heading: s.heading, pitch: s.pitch, fov: s.fov } : null}
-                imageUrl={s.imageUrl}
-                title={s.title}
-                apiKey={googleMapsKey}
-                className="tour-stop__media-slot"
-              />
-            </div>
+            {/* Below 900px (no side panel) each stop carries its own picture. */}
+            {!wide && <div className="tour-stop__media">{slot(s, "tour-stop__media-slot")}</div>}
             {s.body && <div className="tour-stop__body" dangerouslySetInnerHTML={{ __html: s.body }} />}
             {businesses?.[s.id] ? (
               <div className="mt-4">
-                <BusinessCard business={businesses[s.id]!} compact />
+                <BusinessCard business={businesses[s.id]!} compact line />
               </div>
             ) : null}
           </section>
@@ -196,13 +213,11 @@ export function TourStory({ stops, meetingPoint, googleMapsKey, businesses }: To
           <TourMap stops={mapStops} meetingPoint={meetingPoint} activeIndex={current ? mapIndexOf(active) : -1} onSelect={jump} />
         </div>
         <div className="tour-story__view">
-          <StreetView
-            pose={pose}
-            imageUrl={current?.imageUrl ?? null}
-            title={current?.title ?? "Overview"}
-            apiKey={googleMapsKey}
-            className="h-full w-full"
-          />
+          {current ? (
+            slot(current, "h-full w-full")
+          ) : (
+            <StreetView pose={null} imageUrl={null} title="Overview" apiKey={googleMapsKey} className="h-full w-full" />
+          )}
           <p className="tour-story__caption">
             {current ? `${active + 1}. ${current.title}` : meetingPoint?.label ? `Meeting point · ${meetingPoint.label}` : "The route"}
           </p>

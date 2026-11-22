@@ -7,7 +7,7 @@ import type { Data } from "@puckeditor/core";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { serverPuckConfig } from "./config.server";
+import { markedPuckConfig, serverPuckConfig } from "./config.server";
 import { loadPage } from "./store";
 import { TEMPLATE_SLUGS } from "./reserved";
 
@@ -69,7 +69,9 @@ export async function renderPuckPage(
   if (!page) return null;
 
   const viewer = await getViewer().catch(() => null);
-  const resolved = await resolveAllData(page.data as Data, serverPuckConfig, {
+  // Someone who may edit gets the same page with an inert marker before each block (the Fields lens reads them).
+  const config = viewer?.canEdit ? markedPuckConfig : serverPuckConfig;
+  const resolved = await resolveAllData(page.data as Data, config, {
     orgId: siteConfig.orgId,
     slug,
     canEdit: Boolean(viewer?.canEdit),
@@ -78,7 +80,8 @@ export async function renderPuckPage(
 
   return (
     <>
-      <Render config={serverPuckConfig} data={resolved as Data} />
+      {viewer?.canEdit ? <template data-blk-page={slug} /> : null}
+      <Render config={config} data={resolved as Data} />
       {viewer?.canEdit ? (
         <a
           href={editHref(slug, opts)}

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { cleanGradient, DEFAULT_GRADIENT, PRESETS, type GradientSpec } from "@elkdonis/gradients";
+import { cleanTimeline, type Timeline } from "./timeline";
 
 export type MarkSource =
   | { kind: "eac"; id: string; groups: string[] }
@@ -14,6 +15,14 @@ export type MarkSource =
 
 export type Frame = "1:1" | "16:9" | "9:16" | "4:5";
 export const FRAMES: Record<Frame, [number, number]> = { "1:1": [1080, 1080], "16:9": [1920, 1080], "9:16": [1080, 1920], "4:5": [1080, 1350] };
+
+/**
+ * The stage box at the frame's aspect. width:100% + max-height alone squashes it when the window
+ * is short (the height clamps, the width doesn't follow), so the width is capped to match.
+ */
+export function stageStyle(W: number, H: number): { aspectRatio: string; maxWidth: string } {
+  return { aspectRatio: `${W} / ${H}`, maxWidth: `min(100%, calc((100vh - 180px) * ${(W / H).toFixed(4)}))` };
+}
 
 export interface WordArtDoc {
   v: 1;
@@ -42,6 +51,8 @@ export interface WordArtDoc {
   tilt: number;
   /** Small PNG for the list. */
   thumb?: string;
+  /** Record mode's keyframes (timeline.ts); absent = a still design. */
+  timeline?: Timeline;
 }
 
 const preset = (id: string) => PRESETS.find((p) => p.id === id)?.spec ?? DEFAULT_GRADIENT;
@@ -92,13 +103,7 @@ const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "nu
 export function cleanDoc(raw: unknown): WordArtDoc | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  const s = r.source as Record<string, unknown> | undefined;
-  let source: MarkSource | null = null;
-  if (s?.kind === "eac" && typeof s.id === "string") source = { kind: "eac", id: s.id, groups: Array.isArray(s.groups) ? s.groups.filter((g): g is string => typeof g === "string") : [] };
-  else if (s?.kind === "text" && typeof s.text === "string" && typeof s.font === "string")
-    source = { kind: "text", text: s.text.slice(0, 400), font: s.font, tracking: num(s.tracking, -200, 800, 0), leading: num(s.leading, 0.6, 3, 1.05), align: s.align === "left" || s.align === "right" ? s.align : "center" };
-  else if (s?.kind === "svg" && typeof s.svg === "string") source = { kind: "svg", name: String(s.name ?? "SVG"), svg: s.svg };
-  else if (s?.kind === "image" && typeof s.src === "string" && /^data:image\/(png|jpeg|webp);/.test(s.src)) source = { kind: "image", name: String(s.name ?? "Image"), src: s.src };
+  const source = cleanSource(r.source);
   const fill = cleanGradient(r.fill);
   if (!source || !fill || typeof r.id !== "string") return null;
   const d = newDoc(source, "x");
@@ -122,7 +127,30 @@ export function cleanDoc(raw: unknown): WordArtDoc | null {
     spin: num(r.spin, 0, 100, d.spin),
     tilt: num(r.tilt, -60, 60, d.tilt),
     thumb: typeof r.thumb === "string" && r.thumb.startsWith("data:image/") ? r.thumb : undefined,
+    timeline: cleanTimeline(r.timeline),
+    // timelines from before 2026-11-18 18:00 keyed the mark; it now belongs to the design: take the first key's
+    ...markFromOldTimeline(r.timeline),
   };
+}
+
+function markFromOldTimeline(raw: unknown): { source?: MarkSource } {
+  const keys = (raw as { tracks?: { source?: Array<{ t?: number; value?: unknown }> } } | null)?.tracks?.source;
+  if (!Array.isArray(keys) || !keys.length) return {};
+  const first = [...keys].filter((k) => k && typeof k.t === "number").sort((a, b) => (a.t as number) - (b.t as number))[0];
+  const source = first ? cleanSource(first.value) : null;
+  return source ? { source } : {};
+}
+
+/** A stored mark source, cleaned; null when unusable. (Also used by timeline keys.) */
+export function cleanSource(raw: unknown): MarkSource | null {
+  const s = raw as Record<string, unknown> | undefined;
+  if (!s || typeof s !== "object") return null;
+  if (s.kind === "eac" && typeof s.id === "string") return { kind: "eac", id: s.id, groups: Array.isArray(s.groups) ? s.groups.filter((g): g is string => typeof g === "string") : [] };
+  if (s.kind === "text" && typeof s.text === "string" && typeof s.font === "string")
+    return { kind: "text", text: s.text.slice(0, 400), font: s.font, tracking: num(s.tracking, -200, 800, 0), leading: num(s.leading, 0.6, 3, 1.05), align: s.align === "left" || s.align === "right" ? s.align : "center" };
+  if (s.kind === "svg" && typeof s.svg === "string") return { kind: "svg", name: String(s.name ?? "SVG"), svg: s.svg };
+  if (s.kind === "image" && typeof s.src === "string" && /^data:image\/(png|jpeg|webp);/.test(s.src)) return { kind: "image", name: String(s.name ?? "Image"), src: s.src };
+  return null;
 }
 
 // ── this browser's drafts ────────────────────────────────────────────────────
@@ -144,5 +172,27 @@ export function saveDocs(docs: WordArtDoc[]): string | null {
     return null;
   } catch {
     return "This browser's storage is full or blocked; download the PNG to keep this design.";
+  }
+}
+
+// ── the working draft (2026-11-18) ───────────────────────────────────────────
+// The design on screen, kept so a refresh or a closed tab doesn't lose it. Separate from the
+// saved list: Save still decides what is kept there. Best effort: a design with a big uploaded
+// logo can be over the quota, and then only the saved list holds it.
+const DRAFT_KEY = "eac-studio-wordart:draft:v1";
+
+export function loadDraft(): WordArtDoc | null {
+  try {
+    return cleanDoc(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null"));
+  } catch {
+    return null;
+  }
+}
+
+export function saveDraft(doc: WordArtDoc): void {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...doc, thumb: undefined }));
+  } catch {
+    /* over quota or blocked: the draft is a convenience */
   }
 }

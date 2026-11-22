@@ -26,6 +26,8 @@ export interface Thread {
   description: string | null;
   excerpt: string | null;
   coverImageUrl: string | null;
+  /** Row notes shown as "More details" (metadata.sectionNotes; services section-notes.ts). */
+  sectionNotes?: Array<{ section: string; label: string; text: string }>;
   /** IANA zone the author entered the time in (metadata.timeZone). Null means the site's. */
   timeZone: string | null;
   location: string | null;

@@ -64,6 +64,15 @@ export interface FormSection {
    * and beside an Essentials heading when given (Sessions: "8 sessions · 19 Nov to 21 Jan").
    */
   summary?: (a: Answers, ctx: FormContext) => string;
+  /**
+   * The value a row shows in the quick form's rows layout (shell/SheetRow), "Thu 19 Nov · 18:30 · 2h".
+   * Empty or undefined: the row falls back to `summary`, then `rowPlaceholder`. Read only by that layout.
+   */
+  rowSummary?: (a: Answers, ctx: FormContext) => string | undefined;
+  /** What an empty row says in the rows layout, as an action ("Pick a date"). Default: "Add <label>". */
+  rowPlaceholder?: string;
+  /** The section's dropdown offers "Add a note" (answers.section_notes, one entry per section). Rows layout only. */
+  notes?: true;
   /** Shown only when this holds (series-only sections; Hosts only with hostCandidates). */
   when?: (a: Answers, ctx: FormContext) => boolean;
   /** Drawn in quick compose too. */

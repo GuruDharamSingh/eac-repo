@@ -1,0 +1,45 @@
+/* Pickers in Puck idea (ideas/pickers-in-puck.tsx). Everything is under .pkr, so no rule here reaches another idea or the workbench. */
+
+.pkr {
+  margin-top: 20px;
+  color: var(--dev-ink, #e8eaf0);
+  font: 14px/1.55 system-ui, sans-serif;
+}
+.pkr h2 {
+  margin: 28px 0 8px;
+}
+.pkr-quote {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--dev-accent, #7aa2ff);
+  background: var(--dev-panel, #171a21);
+  color: var(--dev-ink, #e8eaf0);
+}
+.pkr-scroll {
+  overflow-x: auto;
+}
+.pkr-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pkr-table th,
+.pkr-table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--dev-line, #262b36);
+}
+.pkr-table th {
+  color: var(--dev-muted, #8b93a7);
+  font-weight: 600;
+}
+.pkr-table code {
+  font-size: 12px;
+  word-break: break-word;
+}
+.pkr li {
+  margin-bottom: 8px;
+}
+.pkr-open {
+  padding-left: 20px;
+}

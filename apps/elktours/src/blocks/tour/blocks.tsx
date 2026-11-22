@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Play } from "lucide-react";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { BookingForm } from "@/components/tours/booking-form";
 import { RoutePreviewLauncher } from "@/components/tours/route-preview-launcher";
@@ -99,16 +100,23 @@ export interface TourFilmProps { size: "wide" | "narrow"; interactive: boolean }
  * The film as the page's hero; without one, the interactive route preview or the cover image (the earlier hero).
  * Always the whole 16:9 frame, never cropped: Google's attribution and "For promotional purposes only" are
  * burned into its edges and must stay visible (Map Tiles terms).
+ *
+ * Play on demand (2026-11-19, Justin: the films are large): the page shows the poster and a "Watch the fly-over"
+ * button; the <video> (720p) mounts only on click. The frame is capped at 60vh tall, so its width is capped at
+ * 60vh * 16/9 and it stays whole, and the title shows on the first screen.
  */
 export function TourFilmBlock({ size, interactive }: TourFilmProps) {
   const page = useTourPage();
   const { editing, draft, set } = useTourEdit();
   const film = draft?.film ?? null;
-  const [src, setSrc] = useState<string | null>(film ? film.url720 ?? film.url : null);
-  useEffect(() => {
-    if (!film) { setSrc(null); return; }
-    setSrc(window.matchMedia("(min-width: 900px)").matches ? film.url : film.url720 ?? film.url);
-  }, [film]);
+  const filmUrl = film ? film.url720 ?? film.url : null;
+  const [playing, setPlaying] = useState(false);
+  const [playingFor, setPlayingFor] = useState(filmUrl);
+  if (playingFor !== filmUrl) {
+    // Another film (replaced in the editor): back to the poster.
+    setPlayingFor(filmUrl);
+    setPlaying(false);
+  }
   if (!page) return null;
   const { tour } = page;
   const placed = tour.stops.some((s) => s.lat != null);
@@ -151,13 +159,25 @@ export function TourFilmBlock({ size, interactive }: TourFilmProps) {
     );
   }
 
+  const poster = film.poster ?? tour.coverImageUrl ?? tour.stops.find((s) => s.stillUrl)?.stillUrl ?? null;
   return (
     <header className="relative">
       <div className={`mx-auto px-0 sm:px-5 sm:pt-6 ${size === "narrow" ? "max-w-4xl" : "max-w-6xl"}`}>
-        <div className="tour-film relative aspect-video w-full overflow-hidden bg-black">
+        <div className="tour-film relative mx-auto aspect-video w-full overflow-hidden bg-black" style={{ maxWidth: "calc(60vh * 16 / 9)" }}>
           {controls}
-          {src && (
-            <video key={src} className="h-full w-full object-contain" src={src} poster={film.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" aria-label={`A flight along the route of ${tour.title}`} />
+          {playing && filmUrl ? (
+            <video key={filmUrl} className="h-full w-full object-contain" src={filmUrl} poster={film.poster ?? undefined} autoPlay controls playsInline preload="auto" aria-label={`A flight along the route of ${tour.title}`} />
+          ) : (
+            <button type="button" className="tour-film__poster group absolute inset-0 block h-full w-full" onClick={() => setPlaying(true)}>
+              {poster && (
+                // The film's own poster is a whole frame (contain); a cover or still stands in for it (cover).
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={poster} alt="" className={`h-full w-full ${film.poster ? "object-contain" : "object-cover opacity-80"}`} />
+              )}
+              <span className="tour-film__play absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-primary px-5 py-3 font-semibold text-primary-foreground shadow-lg transition-transform group-hover:scale-105">
+                <Play className="size-5" aria-hidden /> Watch the fly-over
+              </span>
+            </button>
           )}
         </div>
       </div>
@@ -279,6 +299,7 @@ export function TourMainBlock({ showHighlights, showRoute, routeHeading, showBoo
                 stops={tour.stops.map((s) => ({ ...s, guideNotes: null }))}
                 meetingPoint={meetingPoint}
                 googleMapsKey={page.googleMapsKey}
+                assets={(tour as { assets?: import("@/lib/catalogue-types").PublicTourAssets }).assets}
                 businesses={Object.fromEntries(
                   Object.entries((tour as { stopExtras?: Record<string, { business?: import("@/lib/catalogue-types").PlaceBusinessSummary | null }> }).stopExtras ?? {}).map(([id, x]) => [id, x.business ?? null])
                 )}
@@ -295,7 +316,7 @@ export function TourMainBlock({ showHighlights, showRoute, routeHeading, showBoo
             {editing ? (
               <p className="mt-1 font-serif text-2xl"><NumberField label="Price per person" value={draft.price} onChange={(v) => set("price", v)} suffix={`${tour.currency} per person`} /></p>
             ) : (
-              <p className="mt-1 font-serif text-2xl">{priceLabel} <span className="text-base text-muted-foreground">per person</span></p>
+              <p className="mt-1 font-serif text-2xl">{priceLabel}{draft.price != null && draft.price > 0 && <> <span className="text-base text-muted-foreground">per person</span></>}</p>
             )}
             <div className="mt-5">
               <Suspense>

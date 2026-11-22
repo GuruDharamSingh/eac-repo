@@ -28,6 +28,7 @@ const capabilities: Capability[] = [
     canonical: 'page-builder savePage (already the single writer)',
     open: 'GOOD: slug check (isValidPagePath), sanitizeRichValues, validatePage and a size cap before the write (store.ts:68-90). The record keeps no author or revision: the row is overwritten (updated_at only).',
     verified: V,
+    updated: '2026-11-21',
   },
   {
     id: 'pkg-page-builder-user-page-save',

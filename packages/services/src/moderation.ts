@@ -83,9 +83,24 @@ export async function setOrgReview(
 export async function statusForNewThread(
   userId: string,
   orgId: string,
-  intent: 'draft' | 'published'
+  intent: 'draft' | 'published',
+  /**
+   * Roles held for review even though they could moderate (2026-11-15: guides'
+   * posts wait for the office). Default empty: owners and guides publish
+   * outright, as before. A held role still needs the org to run a queue, so
+   * the thread is 'pending' regardless of `member_posts_review`. The network
+   * admin is never held.
+   */
+  opts: { holdRoles?: Array<'owner' | 'guide'> } = {}
 ): Promise<'draft' | 'pending' | 'published'> {
   if (intent === 'draft') return 'draft';
+  if (opts.holdRoles?.length) {
+    const [admin] = await db<Array<{ is_admin: boolean }>>`SELECT is_admin FROM users WHERE id = ${userId}`;
+    if (!admin?.is_admin) {
+      const role = await getOrgRole(userId, orgId);
+      if (role && (opts.holdRoles as string[]).includes(role)) return 'pending';
+    }
+  }
   if (await canModerateOrg(userId, orgId)) return 'published';
   return (await orgRequiresReview(orgId)) ? 'pending' : 'published';
 }
@@ -144,7 +159,13 @@ export async function countPendingThreads(orgId: string): Promise<number> {
 export async function reviewThread(
   userId: string,
   threadId: string,
-  decision: ReviewDecision
+  decision: ReviewDecision,
+  /**
+   * Who may decide. Default: owner or guide (canModerateOrg). Pass
+   * `['owner']` for a queue only the office clears; the network admin may
+   * always decide.
+   */
+  opts: { approverRoles?: Array<'owner' | 'guide'> } = {}
 ): Promise<{ ok: true; status: string; orgId: string } | { ok: false; error: string }> {
   const [thread] = await db<Array<{ org_id: string; status: string; author_id: string }>>`
     SELECT org_id, status, author_id FROM threads WHERE id = ${threadId}
@@ -152,6 +173,13 @@ export async function reviewThread(
   if (!thread) return { ok: false, error: 'No such submission.' };
   if (!(await canModerateOrg(userId, thread.org_id))) {
     return { ok: false, error: 'Only an owner or guide can review this.' };
+  }
+  if (opts.approverRoles?.length) {
+    const [admin] = await db<Array<{ is_admin: boolean }>>`SELECT is_admin FROM users WHERE id = ${userId}`;
+    const role = await getOrgRole(userId, thread.org_id);
+    if (!admin?.is_admin && !(role && (opts.approverRoles as string[]).includes(role))) {
+      return { ok: false, error: 'Only the office can review this.' };
+    }
   }
   if (thread.status !== 'pending') {
     return { ok: false, error: 'That submission has already been decided.' };

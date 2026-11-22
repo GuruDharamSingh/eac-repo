@@ -6,6 +6,7 @@ import { OrgIdentityPanel } from "@/components/hub/OrgIdentityPanel";
 import { AppearancePanel } from "@/components/hub/AppearancePanel";
 import { MyAppearancePanel } from "@/components/hub/MyAppearancePanel";
 import { MembersPanel } from "@/components/hub/MembersPanel";
+import { SILEX_EDITOR_ENABLED } from "@/lib/silex-flag";
 import { SilexSurfaceControls } from "@/components/hub/SilexSurfaceControls";
 
 /**
@@ -184,6 +185,7 @@ export function ConsoleSettings({
             ))}
           </p>
           <LandingPageControls props={props} />
+          {SILEX_EDITOR_ENABLED && (
           <div className="mt-4">
             <SilexSurfaceControls
               slug={props.orgSlug}
@@ -191,6 +193,7 @@ export function ConsoleSettings({
               hasPublished={props.hasPublishedSilex}
             />
           </div>
+          )}
         </SurfaceSection>
       )}
     </SurfaceFrame>

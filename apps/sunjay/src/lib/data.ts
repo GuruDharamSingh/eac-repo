@@ -16,6 +16,7 @@ import {
 import { siteConfig } from "@/config/site";
 import { isAdmin } from "@elkdonis/auth-server";
 import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
+import { readSectionNotes } from "@elkdonis/services/section-notes";
 import { getViewer } from "@/lib/auth";
 import type {
   Attendee,
@@ -50,6 +51,7 @@ const THREAD_COLUMNS = db`
   t.body AS description, t.excerpt,
   t.metadata->>'coverImageUrl' AS cover_image_url,
   t.metadata->>'timeZone' AS time_zone,
+  t.metadata->'sectionNotes' AS section_notes,
   t.location, t.is_online, t.meeting_url, t.video_link,
   t.document_url, t.nextcloud_talk_token,
   t.scheduled_at, t.duration_minutes,
@@ -85,6 +87,7 @@ interface ThreadRow {
   excerpt: string | null;
   cover_image_url: string | null;
   time_zone: string | null;
+  section_notes: unknown;
   location: string | null;
   is_online: boolean | null;
   meeting_url: string | null;
@@ -125,6 +128,7 @@ function mapThread(row: ThreadRow): Thread {
     excerpt: row.excerpt,
     coverImageUrl: row.cover_image_url,
     timeZone: row.time_zone,
+    sectionNotes: readSectionNotes(row.section_notes),
     // A join link pasted as the place is not a place, and it can carry the
     // meeting's password. It makes the thread online and is not printed.
     location: JOIN_LINK.test(row.location ?? "") ? null : row.location,

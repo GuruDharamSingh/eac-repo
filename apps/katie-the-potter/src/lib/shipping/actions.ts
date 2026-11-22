@@ -6,6 +6,8 @@ import { db } from "@elkdonis/db";
 import { getOrderById } from "@elkdonis/commerce/queries";
 import { canActForOrder, markOrderFulfilled } from "@elkdonis/commerce/server";
 import type { Address, Order } from "@elkdonis/commerce/types";
+import { setShipFrom as setCheckoutShipFrom } from "@elkdonis/commerce/shipping";
+import { getSiteArtistUserId } from "@/lib/auth";
 import { guardStore } from "@/lib/manage";
 import { siteOrigin } from "@/lib/origin";
 import { loadOrderForViewer, UUID_RE } from "@/lib/shop";
@@ -69,6 +71,24 @@ export async function saveShipFromAction(raw: Record<string, unknown>): Promise<
   const before = await getShipFrom();
   // Keep the "checked" stamp only if the address itself did not change.
   await saveShipFrom({ ...v, checkedAt: before?.checkedAt ?? null, checkedHash: before?.checkedHash ?? null });
+  // Shipping in checkout (2026-11-17) uses the shared engine, which reads the
+  // maker's ship-from from users.ship_from. Same address, kept in step.
+  const owner = await getSiteArtistUserId().catch(() => null);
+  if (owner) {
+    const r = await setCheckoutShipFrom(owner, {
+      recipientName: v.name,
+      company: v.company,
+      line1: v.line1,
+      line2: v.line2,
+      city: v.city,
+      region: v.region,
+      postalCode: v.postalCode,
+      country: v.country,
+      phone: v.phone,
+      email: v.email,
+    }).catch((err) => ({ ok: false, error: String(err) }));
+    if (!r.ok) console.warn("[katie-the-potter] checkout ship-from not saved:", r.error);
+  }
   revalidatePath("/manage/shipping");
   return ok("Ship-from address saved. Press Try it to check it with a quote.");
 }
@@ -81,6 +101,8 @@ export async function clearShipFromAction(): Promise<ActionResult> {
     return fail("Switch shipping to Off or Test before clearing the ship-from address.");
   }
   await saveShipFrom(null);
+  const owner = await getSiteArtistUserId().catch(() => null);
+  if (owner) await setCheckoutShipFrom(owner, null).catch((err) => console.warn("[katie-the-potter] checkout ship-from not cleared:", err));
   revalidatePath("/manage/shipping");
   return ok("Ship-from address cleared.");
 }

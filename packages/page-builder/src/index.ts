@@ -41,12 +41,22 @@ export type { SizeFieldProps } from "./fields/size-field";
 export { ColorField } from "./fields/color-field";
 export type { ColorFieldProps } from "./fields/color-field";
 
+// Pickers for bound props, fed by one SiteSources per app (2026-11-19).
+export { ArtworkPickerField, GalleryPickerField, RecordPickerField, PageLinkField, TileKeyField, siteBindsFields } from "./fields/record-fields";
+export { itemsFromEndpoint } from "./fields/site-sources";
+export type { SiteSources, PickerCopy, PickerArtwork, PickerGallery, PickerPage, PickerArtworkStatus } from "./fields/site-sources";
+export { recordSourcesFrom } from "./fields/record-sources";
+export type { RecordSourcesLike, RecordSourcesOptions } from "./fields/record-sources";
+
 export { CanvasDrag } from "./drag/canvas-drag";
 // For a block's own control that lists items (a gallery's pictures): which
 // one was clicked on the canvas. See drag/item-focus.tsx.
 export { useFocusedItem } from "./drag/item-focus";
 
 export { templatesPlugin } from "./templates/templates-plugin";
+// Add a section between blocks (beside Templates, which replaces the page) (2026-11-21).
+export { sectionsPlugin } from "./templates/sections-plugin";
+export { placeSection, SECTION_MARK } from "./templates/insert";
 
 // Click into a block and change the look of its parts (2026-11-06). See parts/plugin.tsx.
 export { partsPlugin } from "./parts/plugin";
@@ -83,3 +93,9 @@ export {
   contrastRatio,
 } from "./style/schema";
 export type { StyleSettings, StylePreset } from "./style/schema";
+export { pagesPlugin, PagesPanel } from "./pages/pages-plugin";
+export type { PanelPage, PagesPanelProps, PagesPanelSlot, PagesPluginOptions } from "./pages/pages-plugin";
+
+// The shared site Menu: NavEditor UI + the Puck left-rail Menu tab (2026-11-20).
+export { NavEditor, menuPlugin, MenuPanel } from "./menu";
+export type { MenuItem, MenuSlot, NavEditorProps, MenuLoad, MenuSave, MenuPluginOptions } from "./menu";

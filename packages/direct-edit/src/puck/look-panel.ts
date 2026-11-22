@@ -20,6 +20,8 @@ import { codeText, dropCss, FONT_GROUPS, firstFamily, kindOfRole, quoted, setCod
 import { layerRole } from "../canvas/layers";
 import { partKind } from "../canvas/parts";
 import { partLookOf, partSafeDecls, setPartLook, setToken, tokenOf } from "../block/morph";
+import { readLook, type BlkStyleDecls } from "../block/read-look";
+import { Forcer, cleanWhere, clashLine, editLookAt, lookAtWhere, panelWhere, rememberWhere, selectionWhere, type LookWhere } from "../panel/where";
 import { ROOT_PART, tokenKey, tokenNameOf, tokenSlotId } from "../block/contract";
 import type { PartStyle } from "../block/style";
 
@@ -93,11 +95,11 @@ function layerRows(ctx: LookPanelContext): LayerRow[] {
 }
 
 /** The panel's view of the selection. */
-function contextOf(ctx: LookPanelContext, probeHost: HTMLElement): PanelContext | null {
+function contextOf(ctx: LookPanelContext, probeHost: HTMLElement, where: LookWhere = {}, blkStyleDecls?: BlkStyleDecls): PanelContext | null {
   const drawn = ctx.parts.find((p) => p.part === ctx.part);
   const el = drawn?.els[0];
   if (!drawn || !el) return null;
-  const look = partLookOf(ctx.props, ctx.part);
+  const look = lookAtWhere(ctx.props, ctx.part, where);
   const computed = readBox(el);
   const tokens = ctx.block.tokens ?? [];
   const groups = new Map<Element, { kind: string; tag: string; rows: Array<{ prop: string; value: string }> }>();
@@ -110,6 +112,8 @@ function contextOf(ctx: LookPanelContext, probeHost: HTMLElement): PanelContext 
   }
   const count = drawn.els.length;
   const words = partKind(el) === "text";
+  // Style (Puck's panel) and this look both set the same thing at the block's root: say so, and who wins.
+  const clash = ctx.part === ROOT_PART && blkStyleDecls ? clashLine(readLook({ props: ctx.props }, undefined, blkStyleDecls).conflicts) : undefined;
   return {
     tabs: ["props", ...(ctx.developer ? (["code"] as const) : []), ...(tokens.length ? (["tweaks"] as const) : [])],
     layersOnCode: true,
@@ -117,6 +121,8 @@ function contextOf(ctx: LookPanelContext, probeHost: HTMLElement): PanelContext 
     heading: drawn.label,
     sub: ctx.part === ROOT_PART ? "The whole block, this page only" : `Part of ${ctx.blockLabel}, this page only`,
     stickHead: true,
+    where: panelWhere(ctx.props, ctx.part, where),
+    clash,
     freedom: 2,
     slots: boxSlots(el, look).map((s) =>
       // Puck wraps inline-editable words in a span of its own, so boxSlots reads a title as a box holding a box and puts
@@ -182,18 +188,17 @@ function tweaksOf(ctx: LookPanelContext, probeHost: HTMLElement): PanelContext["
 const openTab = new Map<string, string>();
 const shownTab = (host: HTMLElement) => host.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.dataset.tab;
 
-export function mountLookPanel(host: HTMLElement): { render(ctx: LookPanelContext): void; destroy(): void } {
+export function mountLookPanel(host: HTMLElement, o: { blkStyleDecls?: BlkStyleDecls } = {}): { render(ctx: LookPanelContext): void; destroy(): void } {
   let ctx: LookPanelContext | null = null;
   const elOf = (part: string) => ctx?.parts.find((p) => p.part === part)?.els[0];
-  /** Write one part's look: while typing (live) or as a finished step. */
-  const writeLook = (part: string, live: boolean, fn: (s: PartStyle, el: HTMLElement) => void) => {
+  // Which look the switches name (always, one state, or one screen size). Back to always when another part is picked.
+  let where: LookWhere = {};
+  const forcer = new Forcer();
+  /** Write one part's look at the place the switches name: while typing (live) or as a finished step. */
+  const writeLook = (part: string, live: boolean, fn: (s: PartStyle, el: HTMLElement) => void, at: LookWhere = where) => {
     const el = elOf(part);
     if (!ctx || !el) return;
-    (live ? ctx.live : ctx.commit)((props) => {
-      const s = clone(partLookOf(props, part)) as PartStyle;
-      fn(s, el);
-      setPartLook(props, part, s);
-    });
+    (live ? ctx.live : ctx.commit)((props) => { editLookAt(props, part, at, (s) => fn(s, el)); });
   };
   const changeToken = (name: string, value: unknown, live: boolean) => {
     const t = ctx?.block.tokens?.find((x) => x.name === name);
@@ -229,7 +234,16 @@ export function mountLookPanel(host: HTMLElement): { render(ctx: LookPanelContex
     },
     select(ref) { ctx?.select(ref); },
     hover(ref) { ctx?.hover(ref); },
-    toggleHidden(ref) { writeLook(ref, false, (s) => { if (s.hide) delete s.hide; else s.hide = true; }); },
+    toggleHidden(ref) { writeLook(ref, false, (s) => { if (s.hide) delete s.hide; else s.hide = true; }, {}); },
+    where(next) {
+      if (!ctx) return;
+      where = cleanWhere(next);
+      rememberWhere(`${ctx.id}~p:${ctx.part}`, where);
+      const view = contextOf(ctx, host, where, o.blkStyleDecls);
+      if (!view) return;
+      forcer.apply(ctx.parts.find((p) => p.part === ctx!.part)?.els ?? [], where);
+      panel.render(view, true);
+    },
   });
 
   // A spell of typing ends when the field is left; Ctrl+Z inside a field while typing puts back only the spell.
@@ -253,9 +267,12 @@ export function mountLookPanel(host: HTMLElement): { render(ctx: LookPanelContex
   return {
     render(next) {
       const fresh = !ctx || ctx.id !== next.id || ctx.part !== next.part;
+      // From the module, not this mount: Puck remounts the panel after a props change (every look edit is one).
+      where = selectionWhere(`${next.id}~p:${next.part}`);
       ctx = next;
-      const view = contextOf(next, host);
-      if (!view) return;
+      const view = contextOf(next, host, where, o.blkStyleDecls);
+      if (!view) { forcer.clear(); return; }
+      forcer.apply(next.parts.find((p) => p.part === next.part)?.els ?? [], where);
       panel.render(view, fresh);
       const want = openTab.get(view.key);
       if (want && want !== shownTab(host) && view.tabs?.includes(want as never)) panel.setTab(want as never);
@@ -264,6 +281,7 @@ export function mountLookPanel(host: HTMLElement): { render(ctx: LookPanelContex
       host.removeEventListener("focusout", onFocusOut);
       host.removeEventListener("keydown", onKey, true);
       host.removeEventListener("click", onTabClick);
+      forcer.clear();
       panel.destroy();
       ctx = null;
     },

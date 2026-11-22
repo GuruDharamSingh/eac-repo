@@ -43,11 +43,21 @@ export function ReviewsSection({
   target,
   title = "Reviews",
   compact = false,
+  hideWhenEmpty = false,
+  className,
 }: {
   target: ReviewTarget;
   title?: string;
   /** Smaller type and no heading rule, for popups and catalogue rows. */
   compact?: boolean;
+  /**
+   * Draw nothing (no "No reviews yet", no loading line) until there is a
+   * review, for selling pages. A viewer who may write one still gets the
+   * write box, so the first review can be posted.
+   */
+  hideWhenEmpty?: boolean;
+  /** Classes for a wrapper around the section; the wrapper goes too when the section is hidden. */
+  className?: string;
 }) {
   const [list, setList] = React.useState<ReviewList | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -66,14 +76,17 @@ export function ReviewsSection({
   }, [load]);
 
   const headingCls = compact ? "text-sm font-medium" : "font-serif text-2xl";
-  if (error) return <p className="text-sm text-muted-foreground">{error}</p>;
-  if (!list) return <p className="text-sm text-muted-foreground">Loading reviews…</p>;
+  const wrap = (node: React.ReactNode) => (className ? <div className={className}>{node}</div> : node);
+  if (error) return hideWhenEmpty ? null : wrap(<p className="text-sm text-muted-foreground">{error}</p>);
+  if (!list) return hideWhenEmpty ? null : wrap(<p className="text-sm text-muted-foreground">Loading reviews…</p>);
 
   const { summary, viewer, reviews } = list;
   const mine = reviews.find((r) => r.mine) ?? null;
   const others = reviews.filter((r) => !r.mine);
+  const empty = summary.count === 0;
+  if (hideWhenEmpty && empty && !viewer.canReview) return null;
 
-  return (
+  return wrap(
     <section className={compact ? "space-y-3" : "space-y-5"} aria-label={title}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className={headingCls}>{title}</h2>
@@ -85,9 +98,11 @@ export function ReviewsSection({
             </span>
           </span>
         ) : null}
-        <span className="text-sm text-muted-foreground">
-          {summary.count === 0 ? "No reviews yet" : `${summary.count} review${summary.count === 1 ? "" : "s"}`}
-        </span>
+        {!(hideWhenEmpty && empty) && (
+          <span className="text-sm text-muted-foreground">
+            {empty ? "No reviews yet" : `${summary.count} review${summary.count === 1 ? "" : "s"}`}
+          </span>
+        )}
       </div>
 
       {viewer.canReview ? (

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { FormHost, FormKindId } from "@elkdonis/studio-forms";
 import { SurfaceFrame, SurfaceSkeleton, useLayer, useSurface, type SurfaceAction, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import { makeFormHost, type SiteFormSite } from "./host";
-import { SiteFormInner, schemaOf, useSiteFormBoot } from "./SiteForm";
+import { SiteFormInner, canFocusInStudio, schemaOf, useSiteFormBoot } from "./SiteForm";
 
 /**
  * A site's compose popup, drawn from the shared studio-forms forms (2026-11-14).
@@ -47,6 +47,7 @@ export function SiteFormSurface({ kind, site, descriptor }: { kind: FormKindId; 
       schema={schema}
       host={host}
       boot={boot}
+      look={site.look}
       onPublished={() => connectors.onMutated?.()}
       frame={(c, form) => {
         // The surface tells its shell the width: compact for the quick tier.
@@ -56,6 +57,11 @@ export function SiteFormSurface({ kind, site, descriptor }: { kind: FormKindId; 
           c.stage === "published"
             ? [{ label: "Done", primary: true, onClick: pop }]
             : [
+                // Site look, focus tier: "Focus" opens the Studio's form for this item. The frame has no head slot,
+                // so it is the first (leftmost) action in the foot's button group.
+                ...(site.look === "site" && c.tier === "focus" && canFocusInStudio(kind, c.state.id)
+                  ? [{ label: "Focus", quiet: true, href: host.studioHref({ kind, id: c.state.id ?? undefined, focus: true }) } satisfies SurfaceAction]
+                  : []),
                 { label: c.tier === "quick" ? "Open full form" : "Fewer options", quiet: true, onClick: c.toggleTier },
                 { label: "Cancel", quiet: true, onClick: pop, disabled: c.busy },
                 ...(c.published || !c.canDraft ? [] : [{ label: c.pending === "draft" ? "Saving…" : "Save draft", onClick: c.saveDraft, disabled: c.busy } satisfies SurfaceAction]),

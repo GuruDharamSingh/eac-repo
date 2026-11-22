@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { bookingAvailability, BOOKING_UNAVAILABLE } from "@elkdonis/checkout/booking";
-import { MAX_PARTY_SIZE } from "@elkdonis/commerce/server";
-import { TourPageProvider, type TourPageData } from "@/blocks/tour/context";
+import { TourPageProvider } from "@/blocks/tour/context";
 import { TourLayout } from "@/blocks/tour/config";
 import { TourEditBar } from "@/blocks/tour/edit-bar";
 import { ReviewsSection } from "@/components/reviews/reviews-section";
 import { getViewer } from "@/lib/auth";
 import { loadTourLayout } from "@/lib/tour-layout";
-import { getTourBySlug, listTours, loadTourFull, nextDepartures } from "@/lib/tours";
-import { siteConfig } from "@/config/site";
+import { getTourBySlug } from "@/lib/tours";
+import { Split } from "@/components/mobile/split";
+import { TourPhoneProvider, TourStagePhone } from "@/components/tours/stage/phone/tour-stage-phone";
+import { TourPhoneIndex } from "@/components/tours/stage/phone/index/tour-phone-index";
+import { GuideTakes } from "@/components/tours/guide-takes";
+import { loadTourPageData } from "@/lib/tour-page-data";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -47,40 +49,35 @@ export default async function TourPage({ params }: Props) {
   // Editors may preview a draft; everyone else sees published tours only.
   const base = await getTourBySlug(slug, { includeDrafts: Boolean(viewer?.canEdit) });
   if (!base) notFound();
-  const [full, layout, all] = await Promise.all([loadTourFull(base, { upcomingOnly: true }), loadTourLayout(), listTours()]);
-  // Guide notes never leave the server on a public page.
-  const tour = { ...full, stops: full.stops.map((s) => ({ ...s, guideNotes: null })) };
+  // The page data (guide notes stripped, booking state, takes, the stage's data) is shared with the tour popup's
+  // stage route: lib/tour-page-data.ts.
+  const [{ data, takes }, layout] = await Promise.all([loadTourPageData(base, viewer), loadTourLayout()]);
+  const tour = data.tour;
 
-  let unavailable: string | null = null;
-  if (!(tour.price && tour.price > 0)) {
-    unavailable = "This tour is not priced yet; ask about it by email.";
-  } else {
-    const availability = await bookingAvailability(tour.authorId);
-    if (availability.ok === false) unavailable = BOOKING_UNAVAILABLE[availability.reason];
-  }
+  // Phone tree (2026-11-20, developer: "completely ignore Puck", "full page swipe to index … replacing full mobile
+  // detail page"): the design's v2 flow in code — stage (TourStagePhone, on the cms-ui SurfaceStage phone layout)
+  // → snap → index → the seven sections and reviews (TourPhoneIndex). The m-tour-detail phone document (Puck) is
+  // no longer drawn here; it stays in the database. No overflow/transform on these wrappers (scroll snap, fixed dock).
+  const phone = (
+    <TourPhoneProvider>
+      <TourStagePhone />
+      <TourPhoneIndex />
+    </TourPhoneProvider>
+  );
 
-  const others = all.filter((t) => t.id !== tour.id).slice(0, 6);
-  const next = await nextDepartures(others.map((t) => t.id));
+  const desktop = (
+      <article className="pb-16">
+        <TourLayout data={layout} />
+        <GuideTakes takes={takes} stops={tour.stops} className="mx-auto mt-16 max-w-6xl px-5" />
+        {/* Reviews sit under the layout, on every tour (not a Puck block yet); hidden until there is one. */}
+        <ReviewsSection target={{ type: "tour", id: tour.id }} hideWhenEmpty className="mx-auto mt-16 max-w-6xl px-5" />
 
-  const data: TourPageData = {
-    tour,
-    canEdit: Boolean(viewer?.canEdit),
-    unavailable,
-    maxParty: Math.min(MAX_PARTY_SIZE, tour.details.maxParty ?? MAX_PARTY_SIZE),
-    signedInEmail: viewer?.email ?? null,
-    googleMapsKey: siteConfig.googleMapsKey,
-    others: others.map((t) => ({ tour: t, next: next.get(t.id) ?? null })),
-  };
+      </article>
+  );
 
   return (
     <TourPageProvider data={data}>
-      <article className="pb-16">
-        <TourLayout data={layout} />
-        {/* Reviews sit under the layout, on every tour (not a Puck block yet). */}
-        <div className="mx-auto mt-16 max-w-6xl px-5">
-          <ReviewsSection target={{ type: "tour", id: tour.id }} />
-        </div>
-      </article>
+      <Split mobile={phone} desktop={desktop} />
       <TourEditBar />
     </TourPageProvider>
   );

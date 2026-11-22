@@ -13,7 +13,7 @@ export interface TourLayoutData {
   content: TourLayoutItem[];
 }
 
-export const TOUR_BLOCK_TYPES = ["TourFilm", "TourIntro", "TourMain", "TourMore", "TourText"] as const;
+export const TOUR_BLOCK_TYPES = ["TourStage", "TourFilm", "TourIntro", "TourMain", "TourMore", "TourText"] as const;
 
 /** Today's page, as blocks: what every tour shows until someone designs the layout. */
 export const DEFAULT_TOUR_LAYOUT: TourLayoutData = {

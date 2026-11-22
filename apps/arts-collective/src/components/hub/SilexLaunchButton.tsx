@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { SILEX_EDITOR_ENABLED } from "@/lib/silex-flag";
 import { Button } from "@/components/ui/button";
 
 export function SilexLaunchButton({ slug }: { slug: string }) {
+  if (!SILEX_EDITOR_ENABLED) return null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

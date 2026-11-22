@@ -3,7 +3,7 @@
 import { createElement, type ReactNode } from "react";
 import type { PropDef } from "@elkdonis/blocks";
 import { contractOf } from "@elkdonis/blocks/contract";
-import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
+import { buildEditorConfig, siteBindsFields, type BlockResolvers } from "@elkdonis/page-builder";
 import { buildPuckConfig } from "@elkdonis/page-builder/config";
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
 import { fontVariables } from "@/lib/fonts";
@@ -13,7 +13,7 @@ import { samplePieces, type Piece } from "@/blocks/artwork-data";
 import { layoutFromPlacement } from "@/blocks/piece-layout";
 import { navFor } from "@/blocks/piece-details";
 import { studioFeed } from "@/blocks/studio-feed";
-import { ArtworkPickerField } from "@/components/studio/artwork-picker";
+import { katiePickerCopy, katieSources } from "@/lib/puck/site-sources";
 
 // ============================================================================
 // The catalogue as the EDITOR sees it. Resolvers run in the browser, inside
@@ -131,6 +131,8 @@ export const canvasContract = contractOf(CATALOGUE);
  */
 export const canvasConfig = buildPuckConfig({ resolvers: clientResolvers, blocks: CATALOGUE, morph: MorphMark, root: { props: [], wrap: CanvasFonts } });
 
+const sharedBinds = siteBindsFields(katieSources, katiePickerCopy);
+
 export const puckConfig = buildEditorConfig({
   resolvers: clientResolvers,
   blocks: CATALOGUE,
@@ -139,18 +141,13 @@ export const puckConfig = buildEditorConfig({
   fields: {
     // A string that BINDS to an artwork gets the picker; every other string
     // keeps Puck's own box (null = leave it alone).
-    string: (prop: PropDef) =>
-      prop.binds === "artwork"
-        ? function ArtworkProp(props: Record<string, unknown>) {
-            return createElement(ArtworkPickerField, props as never);
-          }
-        : null,
+    string: (prop: PropDef) => (prop.binds === "artwork" ? sharedBinds(prop) : null),
   },
   media: {
     uploadEndpoint: "/api/media/upload",
     libraries: [
-      { key: "site", label: "Site images", endpoint: "/api/media/library" },
-      { key: "mine", label: "Katie's images", endpoint: "/api/media/library/mine" },
+      { key: "site", label: "This site", endpoint: "/api/media/library" },
+      { key: "mine", label: "My files", endpoint: "/api/media/library/mine" },
     ],
   },
 });

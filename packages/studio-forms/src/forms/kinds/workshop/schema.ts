@@ -9,6 +9,7 @@
 import { emptyContentAnswers, knownTimeZone, type ContentFieldContext } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormKindSchema } from '../../contract';
 import { WORKSHOP_RULES } from '../../rules/workshop';
+import { workshopWhenLine, workshopWhereLine } from '../../rules/answers';
 
 export function emptyWorkshopAnswers(ctx: FormContext): Answers {
   return emptyContentAnswers('workshop', { ...(ctx.fields as ContentFieldContext), defaultTimeZone: knownTimeZone(ctx.timeZone) ?? undefined });
@@ -23,8 +24,8 @@ export const workshopKind: FormKindSchema = {
     // ── Essentials ──
     { id: 'title', label: 'Title', tier: 'essentials', fields: ['title'], quick: true },
     { id: 'why', label: 'Why', tier: 'essentials', fields: ['excerpt'], quick: true },
-    { id: 'when', label: 'When', tier: 'essentials', fields: ['scheduled_at', 'duration_minutes'], quick: true },
-    { id: 'where', label: 'Where', tier: 'essentials', fields: ['format', 'location'], quick: true },
+    { id: 'when', label: 'When', tier: 'essentials', fields: ['scheduled_at', 'duration_minutes'], quick: true, rowSummary: (a) => workshopWhenLine(a), rowPlaceholder: 'Pick a date' },
+    { id: 'where', label: 'Where', tier: 'essentials', fields: ['format', 'location'], quick: true, rowSummary: (a) => workshopWhereLine(a), rowPlaceholder: 'Add a place or link' },
     { id: 'price', label: 'Price', tier: 'essentials', fields: ['price', 'currency'] },
     { id: 'description', label: 'What', tier: 'essentials', fields: ['body'], quick: true },
     // ── More ──

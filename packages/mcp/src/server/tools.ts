@@ -8,8 +8,14 @@
  *   org_summary     one org: identity, people by role, its setup entries' status
  *   entry_status    any agent-readable registry entry's status (generated from
  *                   the catalogue's `agent` field: default deny, never appOnly)
+ *   list_pages, read_page, list_blocks, describe_block, find_fields, list_surfaces
+ *                   the site tools (2026-11-20), registered from ./site-tools.ts
+ *   propose_page_patch, set_field
+ *                   the draft tools (2026-11-20, lane ASSIST), registered from ./draft-tools.ts: steps become a draft
+ *                   for a person to publish; scope mcp:draft; never the live page
  *
- * Writes come in pass 2 and only through performAction with via 'mcp'. This file
+ * Writes through the registry come later and only through performAction with via 'mcp'. The draft tools write one thing,
+ * a page draft, through the host's draft store; they never publish. This file
  * never calls runAction or uses via 'app'.
  */
 import { fromJsonSchema, type McpServer } from '@modelcontextprotocol/server';
@@ -19,9 +25,11 @@ import { actionStatus, actionStatuses, dockStep } from '@elkdonis/actions/server
 import type { McpGrant } from './grants';
 import type { McpHostOptions } from './types';
 import type { AuditSink } from './audit';
-import { CALL_LIMIT, HEAVY_LIMIT, type Limiter } from './limit';
+import { CALL_LIMIT, HEAVY_LIMIT, WRITE_LIMIT, type Limiter } from './limit';
 import { boundOrg, managedOrgs, settleChannel, settleOrg } from './org';
 import { UNTRUSTED_NOTICE, plain, platformHref } from './sanitize';
+import { registerSiteTools } from './site-tools';
+import { registerDraftTools } from './draft-tools';
 
 export interface ToolContext {
   grant: McpGrant;
@@ -32,43 +40,68 @@ export interface ToolContext {
   linkHosts: string[];
 }
 
-type Json = Record<string, unknown>;
-type Refusal = { refuse: string; code: 'input' | 'forbidden' | 'unknown' | 'limit' | 'auth' };
-type ToolOut = { data: Json; untrusted?: string[]; orgId?: string | null } | Refusal;
+export type Json = Record<string, unknown>;
+/** A refusal. `data` (draft tools) is what the assistant also gets: each step's result, a `stale` flag. `orgId` is the settled org, for the audit row. */
+type Refusal = { refuse: string; code: 'input' | 'forbidden' | 'unknown' | 'limit' | 'auth'; data?: Json; orgId?: string | null };
+export type ToolOut = { data: Json; untrusted?: string[]; orgId?: string | null } | Refusal;
 
 const READ_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
+/** A draft tool changes something (a draft) but destroys nothing and never reaches the live page. */
+const DRAFT_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } as const;
 
-const refuse = (refuse: string, code: Refusal['code'] = 'forbidden'): Refusal => ({ refuse, code });
+/** Said in every tool's description (the honest line): a proposal is not a publication. */
+export const NOT_LIVE = 'Nothing an assistant does through this door goes live until a person publishes it.';
+
+export const refuse = (refuse: string, code: Refusal['code'] = 'forbidden'): Refusal => ({ refuse, code });
+/** A refusal that also hands back data (each step's result), and names the settled org for the audit row. */
+export const refuseWith = (message: string, code: Refusal['code'], data?: Json, orgId?: string | null): Refusal => ({ refuse: message, code, ...(data ? { data } : {}), ...(orgId !== undefined ? { orgId } : {}) });
 const isRefusal = (o: ToolOut): o is Refusal => 'refuse' in o;
 
-/** Register one read tool: scope check, limits, audit, error containment. */
-function readTool(
-  server: McpServer,
-  ctx: ToolContext,
-  name: string,
-  config: { title: string; description: string; input: Json; heavy?: boolean },
-  fn: (args: Json) => Promise<ToolOut>,
-) {
+interface ToolConfig {
+  title: string;
+  description: string;
+  input: Json;
+  heavy?: boolean;
+}
+interface ToolKind {
+  /** The grant scope the tool needs. */
+  scope: 'mcp:read' | 'mcp:draft';
+  /** What a key without it is told. */
+  denied: string;
+  /** What a failure inside the tool says (never the error itself). */
+  failed: string;
+  annotations: typeof READ_ANNOTATIONS | typeof DRAFT_ANNOTATIONS;
+  /** A write tool: the tighter per-grant window applies as well. */
+  write: boolean;
+}
+
+/** Register one tool: scope check, limits, audit, error containment. The same path for reads and drafts. */
+function registerChecked(server: McpServer, ctx: ToolContext, name: string, config: ToolConfig, kind: ToolKind, fn: (args: Json) => Promise<ToolOut>) {
   const inputSchema = fromJsonSchema<Json>({ type: 'object', additionalProperties: false, ...config.input } as never);
-  server.registerTool(name, { title: config.title, description: config.description, inputSchema, annotations: { title: config.title, ...READ_ANNOTATIONS } }, async (args: Json) => {
+  server.registerTool(name, { title: config.title, description: `${config.description} ${NOT_LIVE}`, inputSchema, annotations: { title: config.title, ...kind.annotations } }, async (args: Json) => {
     const started = Date.now();
     let out: ToolOut;
     try {
-      if (!ctx.grant.scopes.includes('mcp:read')) out = refuse('This key cannot read.', 'auth');
+      if (!ctx.grant.scopes.includes(kind.scope)) out = refuse(kind.denied, 'auth');
       else {
-        const wait = ctx.limiter.take(`call:${ctx.grant.id}`, CALL_LIMIT) ?? (config.heavy ? ctx.limiter.take(`heavy:${ctx.grant.id}`, HEAVY_LIMIT) : null);
+        const wait =
+          ctx.limiter.take(`call:${ctx.grant.id}`, CALL_LIMIT) ??
+          (config.heavy ? ctx.limiter.take(`heavy:${ctx.grant.id}`, HEAVY_LIMIT) : null) ??
+          (kind.write ? ctx.limiter.take(`write:${ctx.grant.id}`, WRITE_LIMIT) : null);
         out = wait ? refuse(`Too many calls; try again in ${wait} s.`, 'limit') : await fn(args ?? {});
       }
     } catch (err) {
       console.error('[mcp] tool', name, err);
-      out = refuse('That could not be read just now. Try again.', 'unknown');
+      out = refuse(kind.failed, 'unknown');
       await ctx.audit.record({ tool: name, userId: ctx.grant.userId, agentId: ctx.grant.id, orgId: boundOrg(ctx.grant), input: args, ok: false, code: 'failed', error: String((err as Error)?.message ?? err).slice(0, 300), ms: Date.now() - started });
       return { isError: true, content: [{ type: 'text' as const, text: (out as Refusal).refuse }] };
     }
     const ms = Date.now() - started;
     if (isRefusal(out)) {
-      await ctx.audit.record({ tool: name, userId: ctx.grant.userId, agentId: ctx.grant.id, orgId: boundOrg(ctx.grant), input: args, ok: false, code: out.code, error: out.refuse, ms });
-      return { isError: true, content: [{ type: 'text' as const, text: out.refuse }] };
+      await ctx.audit.record({ tool: name, userId: ctx.grant.userId, agentId: ctx.grant.id, orgId: out.orgId ?? boundOrg(ctx.grant), input: args, ok: false, code: out.code, error: out.refuse, ms });
+      if (!out.data) return { isError: true, content: [{ type: 'text' as const, text: out.refuse }] };
+      const body: Json = { refused: out.refuse, ...out.data };
+      return { isError: true, content: [{ type: 'text' as const, text: JSON.stringify(body) }], structuredContent: body };
     }
     await ctx.audit.record({ tool: name, userId: ctx.grant.userId, agentId: ctx.grant.id, orgId: out.orgId ?? boundOrg(ctx.grant), input: args, ok: true, code: null, error: null, ms });
     const body: Json = { ...out.data };
@@ -78,6 +111,19 @@ function readTool(
     }
     return { content: [{ type: 'text' as const, text: JSON.stringify(body) }], structuredContent: body };
   });
+}
+
+/** Register one read tool: scope check, limits, audit, error containment. */
+export function readTool(server: McpServer, ctx: ToolContext, name: string, config: ToolConfig, fn: (args: Json) => Promise<ToolOut>) {
+  registerChecked(server, ctx, name, config, { scope: 'mcp:read', denied: 'This key cannot read.', failed: 'That could not be read just now. Try again.', annotations: READ_ANNOTATIONS, write: false }, fn);
+}
+
+/**
+ * Register one draft tool (2026-11-20): needs the grant scope `mcp:draft`, runs under the tighter write window, is not
+ * read-only (it saves a draft) and destroys nothing. A key with only `mcp:read` is told so, in plain words, and is audited.
+ */
+export function draftTool(server: McpServer, ctx: ToolContext, name: string, config: ToolConfig, fn: (args: Json) => Promise<ToolOut>) {
+  registerChecked(server, ctx, name, config, { scope: 'mcp:draft', denied: 'This key cannot propose changes. It can read only; a key with the draft scope is needed.', failed: 'That could not be saved just now. Nothing was changed. Try again.', annotations: DRAFT_ANNOTATIONS, write: true }, fn);
 }
 
 /** A status, trimmed for an agent: links checked, author-written text marked. */
@@ -327,6 +373,10 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     const s = await actionStatus(id, { userId: grant.userId, orgId, subjectId, links, sources: host.sources });
     return { data: { id, label: meta.label, scope: meta.scope, org: orgId, status: shapeStatus(ctx, s, 'status', untrusted) }, untrusted, orgId };
   });
+
+  // The six site tools (pages, blocks, fields, surfaces): ./site-tools.ts
+  registerSiteTools(server, ctx);
+  registerDraftTools(server, ctx);
 
   // ---------------------------------------------------------------- resource: the catalogue
   server.registerResource('catalogue', 'eac://catalogue', {

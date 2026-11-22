@@ -81,6 +81,85 @@
   background: hsl(var(--muted));
 }
 
+/* A stop's picture slot (stop-media.tsx): its own photos first, Street View on a button.
+   Designer polish (2026-11-19): overlays on the picture are dark glass with ivory text and a
+   brass accent (phone tokens: ivory #f1ece2, brass #c9a25c, brass-light #dcc08a, ink #1b1e23),
+   so they read the same on any photo and in either site theme. The container keeps its size. */
+.stop-media { overflow: hidden; isolation: isolate; background: hsl(var(--secondary)); }
+.stop-media__figure { position: relative; width: 100%; height: 100%; margin: 0; }
+.stop-media__img { width: 100%; height: 100%; object-fit: cover; display: block; animation: stop-media-in 0.35s ease both; }
+@keyframes stop-media-in { from { opacity: 0; } to { opacity: 1; } }
+.stop-media__caption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.7rem; align-items: baseline;
+  padding: 2rem 0.9rem 0.65rem;
+  font-size: 0.8rem; line-height: 1.35;
+  color: #f1ece2;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.66) 0%, rgb(0 0 0 / 0.32) 55%, transparent 100%);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+.stop-media__count {
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 0.7rem; letter-spacing: 0.12em;
+  color: #dcc08a;
+}
+.stop-media__credit { margin-left: auto; font-size: 0.68rem; opacity: 0.72; }
+.stop-media__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.25rem; height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid rgb(241 236 226 / 0.28);
+  background: rgb(27 30 35 / 0.55);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: #f1ece2;
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.stop-media__nav:hover { background: rgb(27 30 35 / 0.8); border-color: #c9a25c; }
+.stop-media__nav--prev { left: 0.7rem; }
+.stop-media__nav--next { right: 0.7rem; }
+/* Arrows wait for the pointer on mouse screens; always shown on touch. */
+@media (hover: hover) {
+  .stop-media__nav { opacity: 0; }
+  .stop-media:hover .stop-media__nav,
+  .stop-media__nav:focus-visible { opacity: 1; }
+}
+/* Top right, clear of the panorama's own fullscreen control (right: 3.6rem). A brass-ringed pill,
+   the phone chip language; filled brass while Street View is showing. */
+.stop-media__toggle {
+  position: absolute; top: 0.75rem; right: 3.6rem; z-index: 2;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  height: 2rem; padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #c9a25c;
+  background: rgb(27 30 35 / 0.6);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: #f1ece2;
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 0.72rem; font-weight: 400; line-height: 1;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -6px rgb(0 0 0 / 0.5);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.stop-media__toggle:hover { background: rgb(27 30 35 / 0.82); }
+.stop-media__toggle[aria-pressed="true"] { background: #c9a25c; color: #1b1e23; }
+.stop-media__toggle[aria-pressed="true"]:hover { background: #dcc08a; }
+.stop-media__toggle:focus-visible,
+.stop-media__nav:focus-visible { outline: 2px solid #dcc08a; outline-offset: 2px; }
+.stop-media__empty {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+@media (prefers-reduced-motion: reduce) {
+  .stop-media__img { animation: none; }
+  .stop-media__nav, .stop-media__toggle { transition: none; }
+}
+
 .tour-stop__body {
   margin-top: 1rem;
   line-height: 1.6;

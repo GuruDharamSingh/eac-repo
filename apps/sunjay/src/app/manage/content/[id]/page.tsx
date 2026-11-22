@@ -62,7 +62,8 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
     return (
       <>
         <h2 className="sr-only">Edit {thread.kind}</h2>
-        <div className="mt-6 max-w-3xl">
+        {/* 940px: the site-form look draws the full form in two columns (main + rail) from about 890px. */}
+        <div className="mt-6 max-w-[940px]">
           <MeetingFormPage kind={thread.kind} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} threadId={thread.id} />
         </div>
       </>

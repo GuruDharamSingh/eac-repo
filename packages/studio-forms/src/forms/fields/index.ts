@@ -32,3 +32,7 @@ export type { FieldRenderContext, ShellFieldOverride, BlocksSlot, BodySlot } fro
 export { fieldId, fieldAnchor, sectionAnchor, describedBy } from './ids';
 export { MaterialsRow, materialsSummary, readMaterials } from './MaterialsRow';
 export type { MaterialItem, MaterialsSlot } from './MaterialsRow';
+export { SheetRow } from './SheetRow';
+export type { SheetRowProps } from './SheetRow';
+export { SectionNote, sectionNotesOf, noteOf, withNote, SECTION_NOTE_MAX } from './SectionNote';
+export type { SectionNoteEntry } from './SectionNote';

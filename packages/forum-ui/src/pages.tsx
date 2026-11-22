@@ -2,7 +2,7 @@ import * as React from "react";
 import type { ForumBoard, ForumReply, ForumSort, ForumViewer, ForumVoters } from "@elkdonis/services";
 import type { ForumConnectors } from "./connectors";
 import {
-  Agenda, BoardTable, Breadcrumb, Empty, Flash, HappeningBlock, LatestBlock, Layout, NewTopicLink, OrgMasthead, PageHead, Pagination,
+  Agenda, BoardTable, Breadcrumb, ComposeExtras, Empty, Flash, HappeningBlock, LatestBlock, Layout, NewTopicLink, OrgMasthead, PageHead, Pagination,
   PulseStrip, ReadAllForm, SectionTitle, SortTabs, TopicList, TopicsBlock, plural,
 } from "./parts";
 import { ThreadPageView, canModerate } from "./thread";
@@ -12,7 +12,8 @@ import { ConstellationSvg, DrawLineForm, EraseLineForm, MapEdgeList, MapLegend, 
 import { ModLog, SearchResults } from "./search";
 import { getAuthorInsights } from "@elkdonis/analytics/server";
 import { AuthorInsightsView } from "@elkdonis/analytics/insights";
-import { parseRangeKey } from "@elkdonis/analytics";
+import { isBotUserAgent, parseRangeKey } from "@elkdonis/analytics";
+import { headers } from "next/headers";
 import "@elkdonis/analytics/dashboard.css";
 
 // ============================================================================
@@ -369,6 +370,7 @@ async function NewTopicForm({ connectors, viewer, board, feed, back }: {
           <span className="gf-field-label">Body</span>
           <textarea name="text" className="gf-textarea" rows={7} required placeholder="Blank lines make paragraphs; lines starting with > quote." />
         </label>
+        <ComposeExtras options={connectors.composeOptions} />
         {nc && (
           <label className="gf-field gf-field--check gf-nc-sync">
             <input type="checkbox" name="nc_sync" value="1" />
@@ -653,7 +655,14 @@ export async function ThreadPage({ boxes, connectors, viewer, searchParams, path
     scope.kind === "network" ? connectors.getBoardBySlug(thread.org.slug, viewer)
       : (async () => (await connectors.listBoards(scope, viewer))[0] ?? null)(),
   ]);
-  void connectors.recordView?.(thread.id);
+  // Crawlers render this page too; only people count as views.
+  let ua: string | null = null;
+  try {
+    ua = (await headers()).get("user-agent");
+  } catch {
+    /* outside a request: not a visitor */
+  }
+  if (!isBotUserAgent(ua)) void connectors.recordView?.(thread.id);
 
   const rows = await Promise.all(
     replies.rows.map(async (r) => ({ ...r, children: r.childCount > 0 ? await connectors.listReplyChildren(r.id, viewer) : [] }))
@@ -681,6 +690,21 @@ export async function ThreadPage({ boxes, connectors, viewer, searchParams, path
     connectors.constellation?.(thread.id, viewer, { limit: 14 }) ?? Promise.resolve(null),
   ]);
 
+  // Extra role chips (artist), only for a host that supplies roleBadges.
+  const badges: Record<string, string> | undefined = connectors.roleBadges
+    ? await connectors.roleBadges([...new Set(all.map((r) => r.author.id))]).catch(() => ({} as Record<string, string>))
+    : undefined;
+
+  // Photos, videos and link cards, only for a host that opted in (composeOptions.attachments).
+  let attachments: Record<string, import("@elkdonis/services").ForumAttachment[]> | undefined;
+  if (connectors.composeOptions?.attachments && connectors.listAttachments) {
+    attachments = {};
+    for (const a of await connectors.listAttachments(thread.id).catch(() => [])) {
+      const key = a.replyId ?? "op";
+      (attachments[key] ??= []).push(a);
+    }
+  }
+
   const view = (
     <ThreadPageView
       boxes={boxes}
@@ -697,6 +721,8 @@ export async function ThreadPage({ boxes, connectors, viewer, searchParams, path
       quote={quote}
       cards={cards}
       constellation={constellation}
+      attachments={attachments}
+      badges={badges}
       {...flash(searchParams)}
     />
   );

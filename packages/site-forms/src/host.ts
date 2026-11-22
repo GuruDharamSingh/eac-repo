@@ -46,6 +46,12 @@ export interface SiteFormSite {
    * Set, the post form shows a Materials row; the save attaches them (services attachMaterials).
    */
   materials?: MaterialsSlot;
+  /**
+   * The look the forms are drawn in (2026-11-15). Unset: the Ledger quick look (`ledger-quick`, Newsreader and
+   * IBM Plex Sans, light). "site": the form follows the site's own surface tokens and fonts
+   * (`--sf-*`, site-look.css), sections as rows. Per site; the other sites keep the default.
+   */
+  look?: "site";
   /** Meeting-form rows only some sites have. `cycleBadge`: innergathering's "Confirmed / Not yet confirmed" badge. */
   meetingOptions?: { cycleBadge?: boolean };
 }

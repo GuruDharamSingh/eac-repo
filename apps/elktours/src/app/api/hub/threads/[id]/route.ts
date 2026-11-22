@@ -12,6 +12,8 @@ import {
   getThreadRsvpForUser,
 } from "@/lib/data";
 import { toSurfaceThread } from "@/lib/surface-thread";
+import { topicAttachments } from "@/lib/forum-data";
+import { db } from "@elkdonis/db";
 
 /**
  * One thread, in the shape the shared surface renders.
@@ -42,6 +44,8 @@ export async function GET(
     (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isAffiliate)) ||
     // A minimum role (INVITE_ONLY, e.g. "members only") reads for that role and above.
     (published && thread.visibility === "INVITE_ONLY" && Boolean(thread.minRole) && meetsMinRole((viewer?.role as ThreadRole | null) ?? null, thread.minRole)) ||
+    // An author-only topic (INVITE_ONLY, no minimum role) reads for its own author: the forum's Private choice.
+    (published && thread.visibility === "INVITE_ONLY" && !thread.minRole && Boolean(viewer) && viewer?.userId === thread.authorId) ||
     Boolean(viewer?.canEdit);
   // 404 rather than 403: an unpublished item should not confirm it exists.
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -65,8 +69,15 @@ export async function GET(
     }),
   ]);
 
-  return NextResponse.json(
-    toSurfaceThread(thread, {
+  // A forum post's link card (threads.metadata.link) and the opening post's photos and videos (forum_attachments).
+  const [linkRow, attachments] = await Promise.all([
+    db`SELECT metadata->'link' AS link FROM threads WHERE id = ${thread.id}`.then((r) => (r as unknown as Array<{ link: unknown }>)[0]?.link ?? null).catch(() => null),
+    topicAttachments(thread.id),
+  ]);
+  const link = linkRow && typeof linkRow === "object" && typeof (linkRow as { url?: unknown }).url === "string" ? (linkRow as { url: string }) : null;
+
+  return NextResponse.json({
+    ...toSurfaceThread(thread, {
       // The org's featured meeting — so the popup can offer to feature/unfeature.
       standing: (thread.kind === "meeting" || thread.kind === "event") && (await getStandingMeetingId(siteConfig.orgId)) === thread.id,
       feed: feed ? { slug: feed.slug, name: feed.name } : null,
@@ -74,8 +85,10 @@ export async function GET(
       viewerAttending,
       cycleStatus,
       ...gathering,
-    })
-  );
+    }),
+    ...(link ? { link } : {}),
+    ...(attachments.length > 0 ? { attachments } : {}),
+  });
 }
 
 /**

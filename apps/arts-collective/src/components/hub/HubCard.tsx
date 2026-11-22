@@ -26,8 +26,7 @@ export function HubCard({
 }) {
   const locked = !card.available;
   const href = card.href ?? "#";
-  const lockedLabel =
-    card.id === "webpage_design" ? "Coming soon — Silex" : "Coming soon";
+  const lockedLabel = "Coming soon";
 
   return (
     <article

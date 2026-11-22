@@ -176,8 +176,8 @@
      reads as a rubric rather than body copy, because the sentence beside it
      is --muted-foreground at 8.16:1. */
   --eac-hub-rubric: hsl(var(--foreground));
-  --eac-font-title: "Venture", Georgia, serif;
-  --eac-font-body: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  --eac-font-title: var(--site-font-heading);
+  --eac-font-body: var(--site-font-body);
   --eac-kind-meeting: hsl(var(--gold));
   --eac-kind-event: hsl(var(--gold));
   --eac-kind-workshop: hsl(var(--moss));
@@ -199,6 +199,164 @@
   --eac-color-ink-muted: hsl(var(--muted-foreground));
   --eac-color-border: hsl(var(--border));
   --eac-accent: hsl(var(--gold));
+}
+
+/* ==========================================================================
+   Colours and faces that landing.css, offering-call.css, this file and a few
+   components used to write as literals. Each default is the literal it
+   replaced, character for character in value, so nothing changes until a Site
+   style is saved (saved values sit on html:root and win). The schema is
+   src/lib/site-style-ig-vars.ts; --ig-a-* are translucent colours with their
+   exact rgba value and are not in the editor (it has no alpha colour kind).
+   ========================================================================== */
+:root {
+  /* Faces. The first two are the Site style Body and Headings variables. */
+  --site-font-heading: "Venture", Georgia, serif;
+  --site-font-body: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  --ig-font-text: "Basteleur", Georgia, serif;
+  --ig-font-brothers: "Brothers", sans-serif;
+  --ig-font-display: "Brothers", "Venture", sans-serif;
+  --ig-font-crimson: 'Crimson Text', Georgia, serif;
+  --ig-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --ig-font-x-basteleur-serif: "Basteleur", serif;
+  --ig-font-x-venture-serif: "Venture", serif;
+  /* Palette · Navy and ink */
+  --ig-c-navy-deep: #01124e;
+  --ig-c-navy: #022278;
+  --ig-c-navy-soft: #063179;
+  --ig-c-blue: #104b8c;
+  --ig-c-slate: #4b5f85;
+  --ig-c-mist: #c9d2e8;
+  --ig-c-slate-3: #2c3d61;
+  --ig-c-slate-2: #33456b;
+  --ig-c-slate-4: #22325c;
+  /* Palette · Gold */
+  --ig-c-gold: #b79a55;
+  --ig-c-gold-light: #d6c38e;
+  --ig-c-gold-dark: #8f763c;
+  --ig-c-gold-deep: #7a6431;
+  --ig-c-gold-pale: #f0db9d;
+  --ig-c-gold-bright: #c9a962;
+  /* Palette · Parchment and paper */
+  --ig-c-paper: #fffdf8;
+  --ig-c-parchment: #fbf7ef;
+  --ig-c-section: #f3eadc;
+  --ig-c-oxblood: #6e5f4d;
+  /* Palette · Violet, red and green */
+  --ig-c-red-dark: #8b2e2e;
+  --ig-c-violet-light: #a78bfa;
+  --ig-c-moss: #64726a;
+  --ig-c-violet: #7c3aed;
+  /* Palette · Greys */
+  --ig-c-grey-500: #6b7280;
+  --ig-c-grey-300: #d1d5db;
+  --ig-c-grey-100: #f3f4f6;
+  --ig-c-grey-400: #9ca3af;
+  /* Palette · Dark grounds and white */
+  --ig-c-black-soft: #050505;
+  --ig-c-black-warm: #0a0a08;
+  --ig-c-black: #000;
+  --ig-c-white-short: #fff;
+  /* Palette · Other shades */
+  --ig-c-x-f6efe2: #f6efe2;
+  --ig-c-x-e8dcc8: #e8dcc8;
+  --ig-c-x-e9dfcc: #e9dfcc;
+  --ig-c-x-e3d3a6: #e3d3a6;
+  --ig-c-x-b9e0b0: #b9e0b0;
+  --ig-c-x-ffb4a8: #ffb4a8;
+  --ig-c-x-5a5240: #5a5240;
+  --ig-c-x-2a5a2a: #2a5a2a;
+  --ig-c-x-dde8d0: #dde8d0;
+  --ig-c-x-f4c430: #f4c430;
+  /* Translucent colours, exact rgba values */
+  --ig-a-000000-4: rgba(0,0,0,0.4);
+  --ig-a-000000-5: rgba(0,0,0,0.5);
+  --ig-a-000000-6: rgba(0,0,0,0.6);
+  --ig-a-01124e-06: rgba(1, 18, 78, 0.06);
+  --ig-a-01124e-08: rgba(1, 18, 78, 0.08);
+  --ig-a-01124e-1: rgba(1, 18, 78, 0.1);
+  --ig-a-01124e-12: rgba(1,18,78,0.12);
+  --ig-a-01124e-18: rgba(1, 18, 78, 0.18);
+  --ig-a-01124e-24: rgba(1,18,78,0.24);
+  --ig-a-01124e-28: rgba(1, 18, 78, 0.28);
+  --ig-a-01124e-35: rgba(1, 18, 78, 0.35);
+  --ig-a-01124e-65: rgba(1,18,78,0.65);
+  --ig-a-01124e-78: rgba(1,18,78,0.78);
+  --ig-a-01124e-82: rgba(1,18,78,0.82);
+  --ig-a-01124e-97: rgba(1,18,78,0.97);
+  --ig-a-022278-95: rgba(2,34,120,0.95);
+  --ig-a-050505-58: rgba(5, 5, 5, 0.58);
+  --ig-a-050505-82: rgba(5, 5, 5, 0.82);
+  --ig-a-063179-18: rgba(6, 49, 121, 0.18);
+  --ig-a-063179-22: rgba(6, 49, 121, 0.22);
+  --ig-a-063179-3: rgba(6, 49, 121, 0.3);
+  --ig-a-063179-5: rgba(6, 49, 121, 0.5);
+  --ig-a-063179-7: rgba(6, 49, 121, 0.7);
+  --ig-a-063179-85: rgba(6, 49, 121, 0.85);
+  --ig-a-063179-94: rgba(6,49,121,0.94);
+  --ig-a-0c0b0a-62: rgba(12, 11, 10, 0.62);
+  --ig-a-0e0d0c-86: rgba(14, 13, 12, 0.86);
+  --ig-a-111118-8: rgba(17, 17, 24, 0.8);
+  --ig-a-5078c8-18: rgba(80,120,200,0.18);
+  --ig-a-6d4b8f-15: rgba(109, 75, 143, 0.15);
+  --ig-a-7c3aed-08: rgba(124, 58, 237, 0.08);
+  --ig-a-7c3aed-15: rgba(124, 58, 237, 0.15);
+  --ig-a-7c3aed-2: rgba(124, 58, 237, 0.2);
+  --ig-a-7c3aed-3: rgba(124, 58, 237, 0.3);
+  --ig-a-7c3aed-6: rgba(124, 58, 237, 0.6);
+  --ig-a-8b2e2e-5: rgba(139,46,46,0.5);
+  --ig-a-8f763c-35: rgba(143, 118, 60, 0.35);
+  --ig-a-b48c3c-15: rgba(180, 140, 60, 0.15);
+  --ig-a-b48c3c-22: rgba(180, 140, 60, 0.22);
+  --ig-a-b79a55-12: rgba(183, 154, 85, 0.12);
+  --ig-a-b79a55-14: rgba(183,154,85,0.14);
+  --ig-a-b79a55-16: rgba(183, 154, 85, 0.16);
+  --ig-a-b79a55-18: rgba(183,154,85,0.18);
+  --ig-a-b79a55-25: rgba(183,154,85,0.25);
+  --ig-a-b79a55-28: rgba(183, 154, 85, 0.28);
+  --ig-a-b79a55-3: rgba(183, 154, 85, 0.3);
+  --ig-a-b79a55-32: rgba(183, 154, 85, 0.32);
+  --ig-a-b79a55-35: rgba(183, 154, 85, 0.35);
+  --ig-a-b79a55-4: rgba(183, 154, 85, 0.4);
+  --ig-a-b79a55-42: rgba(183, 154, 85, 0.42);
+  --ig-a-b79a55-45: rgba(183,154,85,0.45);
+  --ig-a-b79a55-48: rgba(183, 154, 85, 0.48);
+  --ig-a-b79a55-5: rgba(183, 154, 85, 0.5);
+  --ig-a-b79a55-52: rgba(183,154,85,0.52);
+  --ig-a-b79a55-55: rgba(183, 154, 85, 0.55);
+  --ig-a-b79a55-6: rgba(183, 154, 85, 0.6);
+  --ig-a-b79a55-7: rgba(183, 154, 85, 0.7);
+  --ig-a-c6a45a-13: rgba(198, 164, 90, 0.13);
+  --ig-a-c6a45a-18: rgba(198,164,90,0.18);
+  --ig-a-c6a45a-2: rgba(198, 164, 90, 0.2);
+  --ig-a-c6a45a-22: rgba(198,164,90,0.22);
+  --ig-a-c6ddff-78: rgba(198,221,255,0.78);
+  --ig-a-c9a962-08: rgba(201, 169, 98, 0.08);
+  --ig-a-c9a962-16: rgba(201, 169, 98, 0.16);
+  --ig-a-c9a962-25: rgba(201,169,98,0.25);
+  --ig-a-c9a962-3: rgba(201, 169, 98, 0.3);
+  --ig-a-c9a962-5: rgba(201, 169, 98, 0.5);
+  --ig-a-c9a962-72: rgba(201, 169, 98, 0.72);
+  --ig-a-d6c38e-55: rgba(214, 195, 142, 0.55);
+  --ig-a-dde8d0-15: rgba(221,232,208,0.15);
+  --ig-a-dde8d0-4: rgba(221,232,208,0.4);
+  --ig-a-e8dcc8-28: rgba(232, 220, 200, 0.28);
+  --ig-a-fbf7ef-84: rgba(251, 247, 239, 0.84);
+  --ig-a-fbf7ef-9: rgba(251, 247, 239, 0.9);
+  --ig-a-fffdf8-06: rgba(255,253,248,0.06);
+  --ig-a-fffdf8-55: rgba(255,253,248,0.55);
+  --ig-a-fffdf8-6: rgba(255, 253, 248, 0.6);
+  --ig-a-fffdf8-7: rgba(255,253,248,0.7);
+  --ig-a-fffdf8-74: rgba(255, 253, 248, 0.74);
+  --ig-a-fffdf8-75: rgba(255,253,248,0.75);
+  --ig-a-fffdf8-76: rgba(255, 253, 248, 0.76);
+  --ig-a-fffdf8-78: rgba(255, 253, 248, 0.78);
+  --ig-a-fffdf8-82: rgba(255, 253, 248, 0.82);
+  --ig-a-fffdf8-85: rgba(255,253,248,0.85);
+  --ig-a-fffdf8-96: rgba(255, 253, 248, 0.96);
+  --ig-a-fffdf8-98: rgba(255, 253, 248, 0.98);
+  --ig-a-ffffff-56: rgba(255, 255, 255, 0.56);
+  --ig-a-ffffff-66: rgba(255, 255, 255, 0.66);
 }
 
 .dark {
@@ -275,11 +433,11 @@ html { scroll-behavior: smooth; }
 
 body {
   background:
-    radial-gradient(circle at 12% -10%, rgba(183, 154, 85, 0.12), transparent 30rem),
-    linear-gradient(180deg, #fffdf8 0%, #fbf7ef 48%, #f3eadc 100%);
+    radial-gradient(circle at 12% -10%, var(--ig-a-b79a55-12), transparent 30rem),
+    linear-gradient(180deg, var(--ig-c-paper) 0%, var(--ig-c-parchment) 48%, var(--ig-c-section) 100%);
   background-attachment: fixed;
   color: hsl(var(--foreground));
-  font-family: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  font-family: var(--site-font-body);
   font-size: 17px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -291,7 +449,7 @@ body {
 }
 
 h1, h2, h3, h4 {
-  font-family: "Venture", Georgia, serif;
+  font-family: var(--site-font-heading);
   letter-spacing: 0.04em;
 }
 
@@ -303,45 +461,45 @@ h1, h2, h3, h4 {
 
 /* Header and footer: the navy gradient with a gold rule — the archive topbar. */
 .bg-header-footer {
-  background: linear-gradient(90deg, #01124E 0%, #022278 54%, #063179 100%);
-  color: #fffdf8;
+  background: linear-gradient(90deg, var(--ig-c-navy-deep) 0%, var(--ig-c-navy) 54%, var(--ig-c-navy-soft) 100%);
+  color: var(--ig-c-paper);
 }
 
 /* The parchment card: a gold hairline and a soft navy glow. */
 .card-natural {
-  border: 1px solid rgba(183, 154, 85, 0.55);
+  border: 1px solid var(--ig-a-b79a55-55);
   border-radius: var(--radius);
-  background: linear-gradient(160deg, #fffdf8 0%, #fbf7ef 100%);
-  box-shadow: 0 2px 8px rgba(1, 18, 78, 0.08);
+  background: linear-gradient(160deg, var(--ig-c-paper) 0%, var(--ig-c-parchment) 100%);
+  box-shadow: 0 2px 8px var(--ig-a-01124e-08);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
-.card-natural:hover { box-shadow: 0 10px 28px -12px rgba(1, 18, 78, 0.28); }
+.card-natural:hover { box-shadow: 0 10px 28px -12px var(--ig-a-01124e-28); }
 
 /* A gold rule between sections. Named as the template names it. */
 .saffron-divider {
   border: 0;
   height: 2px;
   margin: 1.75rem 0;
-  background: linear-gradient(90deg, transparent, #b79a55, transparent);
+  background: linear-gradient(90deg, transparent, var(--ig-c-gold), transparent);
 }
 
 /* Prose on a detail page. */
-.prose-amrit { font-family: "Basteleur", Georgia, serif; font-size: 1.08rem; line-height: 1.75; }
+.prose-amrit { font-family: var(--ig-font-text); font-size: 1.08rem; line-height: 1.75; }
 .prose-amrit :where(p) { margin: 0 0 1em; }
-.prose-amrit :where(h2, h3) { font-family: "Venture", Georgia, serif; margin: 1.6em 0 0.6em; line-height: 1.2; }
+.prose-amrit :where(h2, h3) { font-family: var(--site-font-heading); margin: 1.6em 0 0.6em; line-height: 1.2; }
 .prose-amrit :where(ul, ol) { padding-left: 1.4em; margin: 0 0 1em; }
 .prose-amrit :where(a) { color: hsl(var(--ember)); text-decoration: underline; text-underline-offset: 3px; }
-.prose-amrit :where(blockquote) { border-left: 3px solid #b79a55; padding-left: 1rem; color: hsl(var(--muted-foreground)); font-style: italic; }
+.prose-amrit :where(blockquote) { border-left: 3px solid var(--ig-c-gold); padding-left: 1rem; color: hsl(var(--muted-foreground)); font-style: italic; }
 .prose-amrit :where(img) { max-width: 100%; border-radius: var(--radius); }
 
 /* The dark portal tiles on the front page. */
 .portal-tile {
   transition: transform 180ms ease, box-shadow 180ms ease;
-  box-shadow: 0 8px 24px rgba(1, 18, 78, 0.18);
+  box-shadow: 0 8px 24px var(--ig-a-01124e-18);
 }
 .portal-tile:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 40px var(--feed-glow, rgba(183, 154, 85, 0.3));
+  box-shadow: 0 16px 40px var(--feed-glow, var(--ig-a-b79a55-3));
 }
 
 /* The landing page sets its own body font through .marketing-root; the site
@@ -353,135 +511,135 @@ h1, h2, h3, h4 {
    ========================================================================== */
 .ig-topbar {
   position: sticky; top: 0; z-index: 40;
-  background: linear-gradient(90deg, rgba(1,18,78,0.97), rgba(2,34,120,0.95) 48%, rgba(6,49,121,0.94)), #01124E;
-  border-bottom: 1px solid rgba(183,154,85,0.52);
-  box-shadow: 0 10px 30px rgba(1,18,78,0.24);
+  background: linear-gradient(90deg, var(--ig-a-01124e-97), var(--ig-a-022278-95) 48%, var(--ig-a-063179-94)), var(--ig-c-navy-deep);
+  border-bottom: 1px solid var(--ig-a-b79a55-52);
+  box-shadow: 0 10px 30px var(--ig-a-01124e-24);
   backdrop-filter: blur(14px);
-  color: #fffdf8;
+  color: var(--ig-c-paper);
 }
 .ig-topbar-inner {
   max-width: 72rem; margin: 0 auto; padding: 0.85rem clamp(1rem, 4vw, 2rem);
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
 }
 .ig-wordmark { display: flex; flex-direction: column; line-height: 1.05; text-decoration: none; }
-.ig-wordmark-main { font-family: "Venture", Georgia, serif; font-size: clamp(1.2rem, 3vw, 1.55rem); color: #d6c38e; letter-spacing: 0.1em; text-shadow: 0 0 18px rgba(198,164,90,0.22); }
-.ig-wordmark-sub { font-family: "Venture", Georgia, serif; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,253,248,0.55); margin-top: 3px; }
+.ig-wordmark-main { font-family: var(--site-font-heading); font-size: clamp(1.2rem, 3vw, 1.55rem); color: var(--ig-c-gold-light); letter-spacing: 0.1em; text-shadow: 0 0 18px var(--ig-a-c6a45a-22); }
+.ig-wordmark-sub { font-family: var(--site-font-heading); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ig-a-fffdf8-55); margin-top: 3px; }
 .ig-nav { display: none; align-items: center; gap: clamp(0.85rem, 2.5vw, 2rem); }
-.ig-nav-toggle { background: none; border: 0; color: #d6c38e; padding: 0.4rem; cursor: pointer; }
+.ig-nav-toggle { background: none; border: 0; color: var(--ig-c-gold-light); padding: 0.4rem; cursor: pointer; }
 @media (min-width: 820px) { .ig-nav { display: flex; } .ig-nav-toggle { display: none; } }
 .ig-nav-link {
-  position: relative; font-family: "Venture", Georgia, serif; font-size: 0.86rem; font-weight: 500;
-  letter-spacing: 0.12em; text-transform: uppercase; color: #fffdf8; text-decoration: none; transition: color 0.2s ease;
+  position: relative; font-family: var(--site-font-heading); font-size: 0.86rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ig-c-paper); text-decoration: none; transition: color 0.2s ease;
 }
-.ig-nav-link::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: #b79a55; transition: width 0.3s ease; }
-.ig-nav-link:hover, .ig-nav-link.is-active { color: #d6c38e; }
+.ig-nav-link::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--ig-c-gold); transition: width 0.3s ease; }
+.ig-nav-link:hover, .ig-nav-link.is-active { color: var(--ig-c-gold-light); }
 .ig-nav-link:hover::after, .ig-nav-link.is-active::after { width: 100%; }
-.ig-nav-link--door { padding: 0.45rem 0.95rem; border: 1px solid rgba(183,154,85,0.55); border-radius: 2px; background: rgba(183,154,85,0.14); color: #f0db9d; }
+.ig-nav-link--door { padding: 0.45rem 0.95rem; border: 1px solid var(--ig-a-b79a55-55); border-radius: 2px; background: var(--ig-a-b79a55-14); color: var(--ig-c-gold-pale); }
 .ig-nav-link--door::after { display: none; }
-.ig-nav-sheet { display: grid; gap: 0.2rem; padding: 0.5rem 1rem 1rem; border-top: 1px solid rgba(183,154,85,0.3); }
+.ig-nav-sheet { display: grid; gap: 0.2rem; padding: 0.5rem 1rem 1rem; border-top: 1px solid var(--ig-a-b79a55-3); }
 @media (min-width: 820px) { .ig-nav-sheet { display: none; } }
-.ig-nav-sheet a { padding: 0.7rem 0.25rem; font-family: "Venture", Georgia, serif; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.85rem; color: rgba(255,253,248,0.85); text-decoration: none; border-bottom: 1px solid rgba(255,253,248,0.06); }
-.ig-nav-sheet a.is-door { color: #f0db9d; }
+.ig-nav-sheet a { padding: 0.7rem 0.25rem; font-family: var(--site-font-heading); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.85rem; color: var(--ig-a-fffdf8-85); text-decoration: none; border-bottom: 1px solid var(--ig-a-fffdf8-06); }
+.ig-nav-sheet a.is-door { color: var(--ig-c-gold-pale); }
 
 /* ==========================================================================
    Page furniture shared by the about, member and feed pages.
    ========================================================================== */
 .ig-page { max-width: 64rem; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) 1.25rem 4rem; }
-.ig-kicker { margin: 0; font-family: "Venture", Georgia, serif; font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: #8f763c; }
-.ig-page h1 { margin: 0.35rem 0 0; font-family: "Venture", Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: #01124E; }
-.ig-lead { font-family: "Basteleur", Georgia, serif; font-size: 1.15rem; line-height: 1.75; color: #022278; max-width: 66ch; }
-.ig-prose { font-family: "Basteleur", Georgia, serif; font-size: 1.08rem; line-height: 1.8; color: #022278; max-width: 68ch; }
+.ig-kicker { margin: 0; font-family: var(--site-font-heading); font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ig-c-gold-dark); }
+.ig-page h1 { margin: 0.35rem 0 0; font-family: var(--site-font-heading); font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: var(--ig-c-navy-deep); }
+.ig-lead { font-family: var(--ig-font-text); font-size: 1.15rem; line-height: 1.75; color: var(--ig-c-navy); max-width: 66ch; }
+.ig-prose { font-family: var(--ig-font-text); font-size: 1.08rem; line-height: 1.8; color: var(--ig-c-navy); max-width: 68ch; }
 .ig-prose p { margin: 0 0 1em; }
-.ig-h2 { margin: 0 0 0.75rem; font-family: "Brothers", "Venture", sans-serif; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: 0.02em; color: #01124E; }
-.ig-quality { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1.25rem; padding: 2rem 0; border-top: 1px solid rgba(183,154,85,0.4); }
-.ig-quality-num { font-family: "Venture", Georgia, serif; font-size: 2.2rem; color: #b79a55; line-height: 1; }
-.ig-quality h3 { margin: 0 0 0.6rem; font-family: "Venture", Georgia, serif; font-size: 1.5rem; color: #01124E; }
+.ig-h2 { margin: 0 0 0.75rem; font-family: var(--ig-font-display); font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: 0.02em; color: var(--ig-c-navy-deep); }
+.ig-quality { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1.25rem; padding: 2rem 0; border-top: 1px solid var(--ig-a-b79a55-4); }
+.ig-quality-num { font-family: var(--site-font-heading); font-size: 2.2rem; color: var(--ig-c-gold); line-height: 1; }
+.ig-quality h3 { margin: 0 0 0.6rem; font-family: var(--site-font-heading); font-size: 1.5rem; color: var(--ig-c-navy-deep); }
 .ig-commitments { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
-.ig-commitment { padding: 1.5rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.7); }
-.ig-commitment .glyph { color: #b79a55; font-size: 1.4rem; }
-.ig-commitment h3 { margin: 0.5rem 0; font-family: "Venture", Georgia, serif; font-size: 1.2rem; color: #01124E; }
-.ig-commitment p { margin: 0; font-family: "Basteleur", Georgia, serif; line-height: 1.65; color: #022278; }
+.ig-commitment { padding: 1.5rem; border: 1px solid var(--ig-a-b79a55-45); background: var(--ig-a-fffdf8-7); }
+.ig-commitment .glyph { color: var(--ig-c-gold); font-size: 1.4rem; }
+.ig-commitment h3 { margin: 0.5rem 0; font-family: var(--site-font-heading); font-size: 1.2rem; color: var(--ig-c-navy-deep); }
+.ig-commitment p { margin: 0; font-family: var(--ig-font-text); line-height: 1.65; color: var(--ig-c-navy); }
 .ig-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
-.ig-member { display: grid; gap: 0.6rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); text-align: center; }
-.ig-member-photo { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid #b79a55; box-shadow: 0 0 0 4px rgba(183,154,85,0.18); }
-.ig-member-initials { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: #01124E; color: #d6c38e; font-family: "Venture", Georgia, serif; font-size: 1.6rem; }
-.ig-member-name { margin: 0; font-family: "Venture", Georgia, serif; font-size: 1.15rem; color: #01124E; }
+.ig-member { display: grid; gap: 0.6rem; padding: 1.25rem; border: 1px solid var(--ig-a-b79a55-45); background: var(--ig-a-fffdf8-75); text-align: center; }
+.ig-member-photo { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid var(--ig-c-gold); box-shadow: 0 0 0 4px var(--ig-a-b79a55-18); }
+.ig-member-initials { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--ig-c-navy-deep); color: var(--ig-c-gold-light); font-family: var(--site-font-heading); font-size: 1.6rem; }
+.ig-member-name { margin: 0; font-family: var(--site-font-heading); font-size: 1.15rem; color: var(--ig-c-navy-deep); }
 .ig-member-name a { color: inherit; text-decoration: none; }
 .ig-member-name a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.ig-member-title { margin: 0; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #8f763c; font-family: "Venture", Georgia, serif; }
-.ig-member-bio { margin: 0; font-family: "Basteleur", Georgia, serif; font-size: 0.95rem; line-height: 1.6; color: #022278; }
+.ig-member-title { margin: 0; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ig-c-gold-dark); font-family: var(--site-font-heading); }
+.ig-member-bio { margin: 0; font-family: var(--ig-font-text); font-size: 0.95rem; line-height: 1.6; color: var(--ig-c-navy); }
 .ig-member-hero { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 2rem; align-items: start; }
 @media (max-width: 640px) { .ig-member-hero { grid-template-columns: 1fr; } }
-.ig-member-hero img { width: 100%; aspect-ratio: 1; object-fit: cover; object-position: top; border-radius: 6px; border: 2px solid #b79a55; }
-.ig-edit-link { display: inline-block; margin-top: 0.75rem; font-family: "Venture", Georgia, serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8f763c; text-decoration: none; border-bottom: 1px solid rgba(183,154,85,0.5); }
+.ig-member-hero img { width: 100%; aspect-ratio: 1; object-fit: cover; object-position: top; border-radius: 6px; border: 2px solid var(--ig-c-gold); }
+.ig-edit-link { display: inline-block; margin-top: 0.75rem; font-family: var(--site-font-heading); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ig-c-gold-dark); text-decoration: none; border-bottom: 1px solid var(--ig-a-b79a55-5); }
 
 /* ==========================================================================
    Workshop page — see components/workshop-view.tsx for what each slot is.
    ========================================================================== */
-.ws { --ws-ink: #01124E; }
+.ws { --ws-ink: var(--ig-c-navy-deep); }
 .ws-banner { position: relative; height: clamp(260px, 42vw, 460px); overflow: hidden; }
 .ws-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ws-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(1,18,78,0.78), rgba(1,18,78,0.1) 55%, transparent); }
-.ws-banner-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: clamp(1.25rem, 4vw, 2.5rem); color: #fffdf8; max-width: 64rem; margin: 0 auto; }
-.ws-banner-text h1 { margin: 0; font-family: "Venture", Georgia, serif; font-size: clamp(1.8rem, 5vw, 3.2rem); line-height: 1.05; color: #fffdf8; text-shadow: 0 2px 14px rgba(0,0,0,0.5); }
-.ws-eyebrow { margin: 0 0 0.5rem; font-family: "Venture", Georgia, serif; font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: #d6c38e; }
-.ws-subtitle { margin: 0.5rem 0 0; font-family: "Basteleur", Georgia, serif; font-size: 1.15rem; line-height: 1.5; color: inherit; opacity: 0.9; }
-.ws-title { margin: 0.35rem 0 0; font-family: "Venture", Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: var(--ws-ink); }
+.ws-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, var(--ig-a-01124e-78), var(--ig-a-01124e-1) 55%, transparent); }
+.ws-banner-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: clamp(1.25rem, 4vw, 2.5rem); color: var(--ig-c-paper); max-width: 64rem; margin: 0 auto; }
+.ws-banner-text h1 { margin: 0; font-family: var(--site-font-heading); font-size: clamp(1.8rem, 5vw, 3.2rem); line-height: 1.05; color: var(--ig-c-paper); text-shadow: 0 2px 14px var(--ig-a-000000-5); }
+.ws-eyebrow { margin: 0 0 0.5rem; font-family: var(--site-font-heading); font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ig-c-gold-light); }
+.ws-subtitle { margin: 0.5rem 0 0; font-family: var(--ig-font-text); font-size: 1.15rem; line-height: 1.5; color: inherit; opacity: 0.9; }
+.ws-title { margin: 0.35rem 0 0; font-family: var(--site-font-heading); font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: var(--ws-ink); }
 .ws-body { max-width: 64rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 2.5rem) 1.25rem 4rem; display: grid; gap: 1.75rem; }
-.ws-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid rgba(183,154,85,0.45); border-bottom: 1px solid rgba(183,154,85,0.45); }
+.ws-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--ig-a-b79a55-45); border-bottom: 1px solid var(--ig-a-b79a55-45); }
 .ws-meta-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; }
 .ws-meta-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.ws-guide { display: inline-flex; align-items: center; gap: 0.5rem; font-family: "Basteleur", Georgia, serif; }
-.ws-guide img, .ws-guide-initial { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #b79a55; display: grid; place-items: center; background: #01124E; color: #d6c38e; font-family: "Venture", serif; }
+.ws-guide { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--ig-font-text); }
+.ws-guide img, .ws-guide-initial { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--ig-c-gold); display: grid; place-items: center; background: var(--ig-c-navy-deep); color: var(--ig-c-gold-light); font-family: var(--ig-font-x-venture-serif); }
 .ws-guide a { color: var(--ws-ink); text-decoration: none; }
 .ws-guide a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.ws-chip { padding: 3px 10px; border: 1px solid rgba(183,154,85,0.6); border-radius: 2px; font-family: "Venture", Georgia, serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ws-ink); background: rgba(255,253,248,0.7); }
-.ws-chip--price { background: #01124E; color: #d6c38e; border-color: #01124E; }
-.ws-chip--warn { color: #8b2e2e; border-color: rgba(139,46,46,0.5); }
-.ws-hero { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid rgba(183,154,85,0.45); }
+.ws-chip { padding: 3px 10px; border: 1px solid var(--ig-a-b79a55-6); border-radius: 2px; font-family: var(--site-font-heading); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ws-ink); background: var(--ig-a-fffdf8-7); }
+.ws-chip--price { background: var(--ig-c-navy-deep); color: var(--ig-c-gold-light); border-color: var(--ig-c-navy-deep); }
+.ws-chip--warn { color: var(--ig-c-red-dark); border-color: var(--ig-a-8b2e2e-5); }
+.ws-hero { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--ig-a-b79a55-45); }
 .ws-hero img, .ws-hero video { width: 100%; display: block; }
-.ws-hero-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem; background: linear-gradient(to top, rgba(1,18,78,0.65), transparent 55%); pointer-events: none; }
-.ws-hero-text h2 { margin: 0; color: #fffdf8; font-family: "Venture", Georgia, serif; font-size: clamp(1.1rem, 3vw, 1.8rem); text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+.ws-hero-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem; background: linear-gradient(to top, var(--ig-a-01124e-65), transparent 55%); pointer-events: none; }
+.ws-hero-text h2 { margin: 0; color: var(--ig-c-paper); font-family: var(--site-font-heading); font-size: clamp(1.1rem, 3vw, 1.8rem); text-shadow: 0 2px 10px var(--ig-a-000000-6); }
 .ws-facts { max-width: 40rem; }
 .ws-session-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; counter-reset: session; }
-.ws-session { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 1rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); border-radius: 6px; }
-.ws-session-num { font-family: "Venture", Georgia, serif; font-size: 1.6rem; color: #b79a55; line-height: 1; }
+.ws-session { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 1rem; padding: 1.25rem; border: 1px solid var(--ig-a-b79a55-45); background: var(--ig-a-fffdf8-75); border-radius: 6px; }
+.ws-session-num { font-family: var(--site-font-heading); font-size: 1.6rem; color: var(--ig-c-gold); line-height: 1; }
 .ws-session-body { display: grid; gap: 0.5rem; min-width: 0; }
-.ws-session-body h3 { margin: 0; font-family: "Venture", Georgia, serif; font-size: 1.25rem; color: var(--ws-ink); }
-.ws-session-meta { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.72rem; letter-spacing: 0.04em; color: #104b8C; }
-.ws-session-media { width: 100%; max-height: 380px; object-fit: contain; border-radius: 4px; background: rgba(1,18,78,0.06); }
-.ws-session-desc { margin: 0; font-family: "Basteleur", Georgia, serif; line-height: 1.7; color: #022278; white-space: pre-wrap; }
+.ws-session-body h3 { margin: 0; font-family: var(--site-font-heading); font-size: 1.25rem; color: var(--ws-ink); }
+.ws-session-meta { margin: 0; font-family: var(--ig-font-mono); font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ig-c-blue); }
+.ws-session-media { width: 100%; max-height: 380px; object-fit: contain; border-radius: 4px; background: var(--ig-a-01124e-06); }
+.ws-session-desc { margin: 0; font-family: var(--ig-font-text); line-height: 1.7; color: var(--ig-c-navy); white-space: pre-wrap; }
 .ws-resources { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.92rem; }
-.ws-resources a { color: #8f763c; text-decoration: underline; text-underline-offset: 3px; }
-.ws-resources span { color: #104b8C; font-size: 0.8rem; }
-.ws-resource-desc { margin: 0.15rem 0 0; font-size: 0.85rem; color: #022278; }
-.ws-resources-held { margin: 0; font-size: 0.8rem; color: #104b8C; font-style: italic; }
-.ws-materials { display: grid; gap: 0.75rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); border-radius: 6px; }
+.ws-resources a { color: var(--ig-c-gold-dark); text-decoration: underline; text-underline-offset: 3px; }
+.ws-resources span { color: var(--ig-c-blue); font-size: 0.8rem; }
+.ws-resource-desc { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--ig-c-navy); }
+.ws-resources-held { margin: 0; font-size: 0.8rem; color: var(--ig-c-blue); font-style: italic; }
+.ws-materials { display: grid; gap: 0.75rem; padding: 1.25rem; border: 1px solid var(--ig-a-b79a55-45); background: var(--ig-a-fffdf8-75); border-radius: 6px; }
 .ws-materials-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .ws-materials-head .ws-chip { display: inline-flex; align-items: center; gap: 0.35rem; }
-.ws-materials-locked { margin: 0; font-family: "Basteleur", Georgia, serif; color: #022278; line-height: 1.6; }
+.ws-materials-locked { margin: 0; font-family: var(--ig-font-text); color: var(--ig-c-navy); line-height: 1.6; }
 .ws-materials-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
-.ws-material { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.25rem; border-bottom: 1px solid rgba(183,154,85,0.25); color: #01124E; }
+.ws-material { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.25rem; border-bottom: 1px solid var(--ig-a-b79a55-25); color: var(--ig-c-navy-deep); }
 .ws-material:last-child { border-bottom: 0; }
-.ws-material-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #01124E; text-decoration: none; }
+.ws-material-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ig-c-navy-deep); text-decoration: none; }
 .ws-material-name:hover { text-decoration: underline; text-underline-offset: 3px; }
-.ws-material-size { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.7rem; color: #104b8C; }
-.ws-material-dl, .ws-material-rm { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; color: #8f763c; background: transparent; border: 1px solid transparent; cursor: pointer; }
-.ws-material-dl:hover, .ws-material-rm:hover { border-color: rgba(183,154,85,0.6); }
-.ws-material-rm { color: #8b2e2e; }
+.ws-material-size { font-family: var(--ig-font-mono); font-size: 0.7rem; color: var(--ig-c-blue); }
+.ws-material-dl, .ws-material-rm { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; color: var(--ig-c-gold-dark); background: transparent; border: 1px solid transparent; cursor: pointer; }
+.ws-material-dl:hover, .ws-material-rm:hover { border-color: var(--ig-a-b79a55-6); }
+.ws-material-rm { color: var(--ig-c-red-dark); }
 .ws-material-rm:disabled { opacity: 0.4; cursor: default; }
 .ws-materials-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding-top: 0.5rem; }
 .ws-materials-upload .eac-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
-.ws-materials-hint { font-size: 0.78rem; color: #104b8C; }
-.ws-materials-hint code { font-size: 0.72rem; background: rgba(1,18,78,0.06); padding: 1px 5px; border-radius: 3px; }
-.ws-materials-error { margin: 0; color: #8b2e2e; font-size: 0.9rem; }
+.ws-materials-hint { font-size: 0.78rem; color: var(--ig-c-blue); }
+.ws-materials-hint code { font-size: 0.72rem; background: var(--ig-a-01124e-06); padding: 1px 5px; border-radius: 3px; }
+.ws-materials-error { margin: 0; color: var(--ig-c-red-dark); font-size: 0.9rem; }
 .ws-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
 .ws-gallery figure { margin: 0; }
-.ws-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; border: 1px solid rgba(183,154,85,0.45); }
-.ws-gallery figcaption { font-size: 0.8rem; color: #104b8C; margin-top: 0.3rem; }
+.ws-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; border: 1px solid var(--ig-a-b79a55-45); }
+.ws-gallery figcaption { font-size: 0.8rem; color: var(--ig-c-blue); margin-top: 0.3rem; }
 
 /* Person pages (/about/<slug>): headings in the site face and navy, as .ig-page h1. */
 .eac-person-page {
-  --eac-person-heading-font: "Venture", Georgia, serif;
-  --eac-person-heading: #01124E;
+  --eac-person-heading-font: var(--site-font-heading);
+  --eac-person-heading: var(--ig-c-navy-deep);
 }

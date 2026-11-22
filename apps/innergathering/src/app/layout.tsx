@@ -11,11 +11,16 @@ import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { FieldsLensGate } from "@/components/fields/FieldsLensGate";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { siteConfig } from "@/config/site";
 import { ArrivalNotice } from "@elkdonis/cms-ui/network";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
+import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
+import { loadSiteStyle } from "@/lib/site-style";
+import { SITE_STYLE } from "@/lib/site-style-schema";
+import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
 
 export const metadata: Metadata = {
   title: {
@@ -41,11 +46,16 @@ export const viewport: Viewport = {
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [viewer, feeds] = await Promise.all([
+  const [viewer, feeds, siteStyle] = await Promise.all([
     getViewer().catch(() => null),
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }).catch(() => []),
+    // Site style: stored values over SITE_STYLE's defaults, as one <style>. Nothing stored
+    // (today): null, and nothing extra is drawn.
+    loadSiteStyle().catch(() => null),
   ]);
   const canEdit = Boolean(viewer?.canEdit);
+  const styleCss = siteStyleCss(siteStyle, SITE_STYLE);
+  const styleFonts = siteStyleFontsHref(siteStyle, SITE_STYLE);
   const profile = viewer ? await getProfile(viewer.userId).catch(() => null) : null;
   const talkBaseUrl =
     process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
@@ -53,6 +63,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className="flex min-h-screen flex-col">
+        {/* In <body> (as katie): a plain <style> keeps its data attribute. Loads after the
+            site stylesheet, so a saved value wins. Absent until a style is saved. */}
+        {styleFonts ? <link rel="stylesheet" href={styleFonts} /> : null}
+        {styleCss ? <style data-site-style="" dangerouslySetInnerHTML={{ __html: styleCss }} /> : null}
         {/* One surface system for the whole site: a landing row, a feed row,
             a hub tile and a calendar day all open into the same dialog. */}
         <HubSurfaces
@@ -71,8 +85,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
           <main className="flex-1">{children}</main>
           <SiteFooter />
+          <FieldsLensGate />
           <Toaster position="top-right" />
           <ArrivalNotice endpoint="/api/network/arrival" />
+          {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
         </HubSurfaces>
         <AnalyticsBeacon />
       </body>

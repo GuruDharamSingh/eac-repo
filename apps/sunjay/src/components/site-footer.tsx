@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { FieldsLensGate } from "@/components/fields/FieldsLensGate";
 
 interface SiteFooterProps {
   /** org_site_sections['footer'] — editable from /manage/pages. */
@@ -8,9 +9,10 @@ interface SiteFooterProps {
 
 export function SiteFooter({ content }: SiteFooterProps) {
   return (
+    <>
     <footer className="pts-footer" data-chrome="footer" data-edit-section="footer" data-edit-name="Footer">
       <div className="pts-footer__row">
-        <p className="pts-footer__line" data-part="title">{content?.body ?? siteConfig.orgName}</p>
+        <p className="pts-footer__line" data-part="title" data-field="section:footer:body">{content?.body ?? siteConfig.orgName}</p>
         <nav aria-label="Footer">
           <Link href="/about" data-part="links">About</Link>
           <Link href="/publications" data-part="links">Publications</Link>
@@ -20,8 +22,10 @@ export function SiteFooter({ content }: SiteFooterProps) {
         </nav>
       </div>
       <p className="pts-footer__note" data-part="note">
-        {content?.note ?? "Made possible with the support of Elkdonis Arts Collective"} · © {new Date().getFullYear()} {siteConfig.orgName}
+        <span data-field="section:footer:note">{content?.note ?? "Made possible with the support of Elkdonis Arts Collective"}</span> · © {new Date().getFullYear()} {siteConfig.orgName}
       </p>
     </footer>
+    <FieldsLensGate />
+    </>
   );
 }

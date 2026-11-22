@@ -16,6 +16,8 @@
 import { emptyContentAnswers, knownTimeZone, type ContentFieldContext } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormKindSchema } from '../../contract';
 import { MEETING_RULES } from '../../rules/meeting';
+import { meetingWhenLine } from '../../rules/answers';
+import { whereLine } from './Where';
 import type { KindLayout } from '../post/parts';
 import {
   MeetingEmails,
@@ -83,18 +85,22 @@ export const meetingKind: FormKindSchema & { layout: KindLayout } = {
     { id: 'why', label: 'Why', tier: 'essentials', fields: ['excerpt'], render: 'meetingWhy', quick: true },
     {
       id: 'when',
+      notes: true,
       label: 'When',
       tier: 'essentials',
       fields: ['scheduled_at', 'start_time', 'recurrence_until', 'forms.repeat_count'],
       render: 'meetingWhen',
       quick: true,
+      rowSummary: (a, ctx) => meetingWhenLine(a, ctx),
+      rowPlaceholder: 'Pick a date',
     },
-    { id: 'where', label: 'Where', tier: 'essentials', fields: ['location', 'meeting_url', 'create_talk_room'], render: 'meetingWhere', quick: true },
+    { id: 'where', label: 'Where', tier: 'essentials', fields: ['location', 'meeting_url', 'create_talk_room'], render: 'meetingWhere', quick: true, notes: true, rowSummary: (a) => whereLine(a) || undefined, rowPlaceholder: 'Add a place or link' },
     // "What", as the developer's sketch names the row (2026-11-11).
     { id: 'description', label: 'What', tier: 'essentials', fields: ['body'], quick: true },
     // ── More ──
     {
       id: 'hosts',
+      notes: true,
       label: 'Hosts',
       tier: 'more',
       fields: ['host_user_id', 'co_host_user_id'],
@@ -104,6 +110,7 @@ export const meetingKind: FormKindSchema & { layout: KindLayout } = {
     },
     {
       id: 'rsvp',
+      notes: true,
       label: 'Places and RSVP',
       tier: 'more',
       fields: ['is_rsvp_enabled', 'attendee_limit', 'min_attendees', 'rsvp_deadline', 'notify_on_min_attendees'],

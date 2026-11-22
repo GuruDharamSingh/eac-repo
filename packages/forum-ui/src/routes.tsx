@@ -37,7 +37,7 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
   const viewer = await connectors.viewer();
   const root = connectors.hrefs.root().replace(/\/$/, "");
   const path = `${root}/${segments.map(encodeURIComponent).join("/")}`.replace(/\/$/, "") || "/";
-  const shell = await loadShell(connectors, viewer, path);
+  const shell = await loadShell(connectors, viewer, path, searchParams);
   const props = { connectors, viewer, searchParams, path, boxes: shell.boxes };
   const [a, b, c, d] = segments;
   const wiki = connectors.wiki;

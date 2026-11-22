@@ -14,7 +14,7 @@
  */
 
 import { randomBytes, randomUUID } from 'node:crypto';
-import { davChunkAbort, davChunkFinish, davChunkPut, davChunkStart, davDelete, davList, davMkcol, davMove, type DavEntry } from './dav';
+import { davChunkAbort, davChunkFinish, davChunkPut, davChunkStart, davDelete, davList, davMkcol, davMove, davPut, type DavEntry } from './dav';
 import { getStorageSlug, userStorageRoot } from './user-storage';
 import { archiveFileItem, ensureFileItem, moveFileItem } from './studio-items';
 
@@ -159,6 +159,8 @@ interface Capture {
   created: number;
   status: CaptureStatus;
   uploadId?: string;
+  /** Shot-director edit JSON from the phone, written as <name>.edit.json when the recording is stored. */
+  edit?: Record<string, unknown>;
   result?: { path: string; name: string; seconds: number | null };
   error?: string;
 }
@@ -233,10 +235,25 @@ export async function captureUploadPart(code: string, index: number, body: Array
   await recordingUploadPart(c.userId, c.uploadId, index, body);
 }
 
+/** The phone's edit JSON (shot director): kept until finish, then stored beside the video. */
+export function captureEdit(code: string, edit: unknown): void {
+  const c = liveCapture(code);
+  const e = edit as { preset?: unknown; clip?: { segments?: unknown } } | null;
+  if (!e || typeof e !== 'object' || typeof e.preset !== 'string' || !Array.isArray(e.clip?.segments)) throw new Error('Not an edit');
+  c.edit = e as Record<string, unknown>;
+}
+
 export async function captureUploadFinish(code: string, seconds: number | null): Promise<{ path: string }> {
   const c = liveCapture(code);
   if (!c.uploadId) throw new Error('Start the upload first');
   const { path } = await recordingUploadFinish(c.userId, c.uploadId);
+  if (c.edit) {
+    // Sidecar next to the video (the Recordings list only shows video files). Best effort.
+    const clip = { ...((c.edit.clip as object) ?? {}), path };
+    const body = new TextEncoder().encode(JSON.stringify({ ...c.edit, clip }, null, 2));
+    const side = path.replace(VIDEO_EXT, '.edit.json');
+    if (side !== path) await davPut(side, body, 'application/json').catch(() => false); // never overwrite the video
+  }
   c.status = 'done';
   c.result = { path, name: path.split('/').pop() ?? path, seconds };
   return { path };

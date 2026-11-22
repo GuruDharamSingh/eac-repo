@@ -15,6 +15,15 @@ const COMPONENTS: Record<PaperComponent | "PaperTexture", ReturnType<typeof load
   Warp: load("Warp"),
   Swirl: load("Swirl"),
   SmokeRing: load("SmokeRing"),
+  Metaballs: load("Metaballs"),
+  Voronoi: load("Voronoi"),
+  GodRays: load("GodRays"),
+  Spiral: load("Spiral"),
+  DotOrbit: load("DotOrbit"),
+  ColorPanels: load("ColorPanels"),
+  SimplexNoise: load("SimplexNoise"),
+  PerlinNoise: load("PerlinNoise"),
+  NeuroNoise: load("NeuroNoise"),
   PaperTexture: load("PaperTexture"),
 };
 
@@ -35,12 +44,12 @@ function useReducedMotion(): boolean {
 }
 
 /** A Paper Shaders background for the spec's shader (behind content, above the CSS fallback). */
-export function PaperLayer({ spec, frame, style }: { spec: GradientSpec; frame?: number; style?: CSSProperties }) {
+export function PaperLayer({ spec, frame, clock, capture, style }: { spec: GradientSpec; frame?: number; clock?: number; capture?: boolean; style?: CSSProperties }) {
   const reduced = useReducedMotion();
-  const r = paperRender(spec, frame);
+  const r = paperRender(spec, frame, clock, capture);
   if (!r) return null;
   const C = COMPONENTS[r.component];
-  const props = reduced && frame === undefined ? { ...r.props, speed: 0 } : r.props;
+  const props = reduced && frame === undefined && clock === undefined ? { ...r.props, speed: 0 } : r.props;
   return (
     <Suspense fallback={null}>
       <C {...props} aria-hidden="true" style={{ ...fill, ...style }} />
@@ -49,8 +58,8 @@ export function PaperLayer({ spec, frame, style }: { spec: GradientSpec; frame?:
 }
 
 /** The paper surface, multiplied over everything below it. */
-export function PaperSurface({ spec, frame, style }: { spec: GradientSpec; frame?: number; style?: CSSProperties }) {
-  const props = paperTextureProps(spec, frame);
+export function PaperSurface({ spec, frame, clock, capture, style }: { spec: GradientSpec; frame?: number; clock?: number; capture?: boolean; style?: CSSProperties }) {
+  const props = paperTextureProps(spec, frame, clock, capture);
   if (!props) return null;
   const C = COMPONENTS.PaperTexture;
   return (

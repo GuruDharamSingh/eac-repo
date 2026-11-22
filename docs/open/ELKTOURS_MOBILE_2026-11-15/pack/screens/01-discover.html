@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01-discover</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 23-141. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.discover }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:62px 0 124px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px">
+<div style="display:flex;flex-direction:column;gap:0">
+<span style="font-family:Brothers,Georgia,serif;font-size:22px;line-height:1;color:#dcc08a">Elkdonis</span>
+<span style="font-family:Brothers,Georgia,serif;font-size:22px;line-height:1">Experiences</span>
+</div>
+<button onClick="{{ openSheet }}" style="display:flex;align-items:center;gap:9px;height:44px;padding:0 16px 0 6px;border-radius:22px;background:#343941;border:1px solid rgba(241,236,226,.14);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px;cursor:pointer">
+<span style="width:32px;height:32px;border-radius:16px;border:1px solid #c9a25c;background:repeating-linear-gradient(135deg,rgba(201,162,92,.14) 0 1px,transparent 1px 6px),#3d424a"></span>
+<span>Paris</span>
+<span style="width:7px;height:7px;border-right:1.5px solid #c9a25c;border-bottom:1.5px solid #c9a25c;transform:rotate(45deg);margin:-4px 0 0 2px"></span>
+</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:24px 20px 0">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#b9b2a5">Autumn · No. VII</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.7),rgba(201,162,92,.15))"></div>
+<div style="width:6px;height:6px;background:#c9a25c;transform:rotate(45deg)"></div>
+</div>
+<h1 style="margin:14px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:46px;line-height:1;letter-spacing:.01em;text-wrap:balance">Paris, with Local Artists</h1>
+<p style="margin:12px 20px 0;font-size:15px;line-height:1.5;color:#b9b2a5;text-wrap:pretty">Tours and experiences led by people who live and work here. <button onClick="{{ toAbout }}" style="padding:0;border:0;background:transparent;color:#dcc08a;font-family:inherit;font-size:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Read more</button></p>
+<div style="display:flex;gap:10px;margin:20px 20px 0">
+<div onClick="{{ goSearch }}" style="flex:1;height:50px;border-radius:25px;background:#31353c;border:1px solid rgba(241,236,226,.12);display:flex;align-items:center;gap:11px;padding:0 18px;color:#8f8a82;font-size:14.5px;cursor:text">
+<span style="flex:none;width:14px;height:14px;border:1.5px solid #b9b2a5;border-radius:50%"></span>Search walks, ateliers, museums</div>
+<button onClick="{{ goSearch }}" style="flex:none;width:50px;height:50px;border-radius:25px;background:#31353c;border:1px solid rgba(241,236,226,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:0"><span style="width:18px;height:1.5px;background:#f1ece2"></span><span style="width:12px;height:1.5px;background:#f1ece2"></span><span style="width:6px;height:1.5px;background:#f1ece2"></span></button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:30px 20px 12px">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">This week's walk</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div>
+</div>
+<div onClick="{{ featured.open }}" style="margin:0 20px;padding:10px 10px 16px;border-radius:30px 30px 24px 24px;background:#343941;border:1px solid rgba(201,162,92,.45);outline:1px solid rgba(201,162,92,.18);outline-offset:4px;cursor:pointer">
+<div style="position:relative;height:250px;border-radius:150px 150px 16px 16px;overflow:hidden;background:repeating-linear-gradient(135deg,rgba(201,162,92,.08) 0 1px,transparent 1px 11px),linear-gradient(165deg,#474c56 0%,#2e3238 100%);display:flex;align-items:flex-end;justify-content:center;padding:16px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,236,226,.5)">photo · {{ featured.img }}</span>
+<span style="position:absolute;top:58px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:14px;background:rgba(27,30,35,.6);border:1px solid rgba(241,236,226,.2);font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap">{{ featured.placesLabel }}</span>
+</div>
+<div style="display:flex;align-items:flex-end;gap:12px;padding:14px 6px 0">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5">{{ featured.typeLabel }} · {{ featured.duration }}</span>
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:23px;line-height:1.1">{{ featured.title }}</span>
+<span style="font-size:13.5px;color:#b9b2a5">with {{ featured.guideName }} · {{ featured.nextLabel }}</span>
+</div>
+<span style="flex:none;width:48px;height:48px;border-radius:24px;background:#c9a25c;color:#1b1e23;display:flex;align-items:center;justify-content:center;font-size:20px">→</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:34px 20px 14px">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Favourite places</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div>
+<button onClick="{{ toPlaces }}" style="flex:none;padding:0;border:0;background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:13px;cursor:pointer">All ›</button>
+</div>
+<div style="display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:0 20px">
+<sc-for list="{{ favPlaces }}" as="t" hint-placeholder-count="3">
+<div onClick="{{ t.open }}" style="flex:none;width:168px;display:flex;flex-direction:column;gap:5px;cursor:pointer">
+<div style="height:196px;border-radius:84px 84px 18px 18px;background:repeating-linear-gradient(135deg,rgba(201,162,92,.08) 0 1px,transparent 1px 11px),linear-gradient(165deg,#474c56 0%,#2e3238 100%);display:flex;align-items:flex-end;padding:12px;border:1px solid rgba(241,236,226,.08)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:rgba(241,236,226,.5);line-height:1.4">photo · {{ t.img }}</span>
+</div>
+<span style="margin-top:6px;font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#b9b2a5">{{ t.kindLabel }}</span>
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:17px;line-height:1.2">{{ t.name }}</span>
+<span style="font-size:13px;color:#8f8a82">{{ t.area }}</span>
+</div>
+</sc-for>
+<button onClick="{{ toPlaces }}" style="flex:none;width:120px;height:196px;border-radius:60px 60px 18px 18px;border:1px dashed rgba(201,162,92,.55);background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:14px;line-height:1.35;cursor:pointer;padding:0 14px">See all {{ placesCount }}</button>
+</div>
+<div style="margin:34px 16px 0;padding:20px 18px 18px;border-radius:26px;background:linear-gradient(180deg,rgba(134,185,171,.1),rgba(134,185,171,.02));border:1px solid rgba(134,185,171,.35)">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">Experiences coming</span>
+<h2 style="margin:10px 0 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:31px;line-height:1.02">Something strange on the way</h2>
+<p style="margin:8px 0 0;font-size:14px;line-height:1.5;color:#b9b2a5;text-wrap:pretty">Local artists and residents waiting at a stop, or open to you by request.</p>
+<div style="display:flex;flex-direction:column;gap:14px;margin-top:18px">
+<sc-for list="{{ curios }}" as="c" hint-placeholder-count="3">
+<div onClick="{{ c.open }}" style="display:flex;align-items:center;gap:14px;cursor:pointer">
+<div style="flex:none;width:72px;height:72px;border-radius:50%;border:1px solid #86b9ab;outline:1px solid rgba(134,185,171,.25);outline-offset:3px;background:repeating-linear-gradient(135deg,rgba(134,185,171,.12) 0 1px,transparent 1px 7px),radial-gradient(circle at 40% 35%,#4f585e,#2c3036)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;line-height:1.2">{{ c.title }}</span><span style="font-size:13px;color:#b9b2a5">{{ c.artistName }} · {{ c.craft }}</span><span style="font-size:12.5px;color:#86b9ab">{{ c.where }}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:34px 20px 14px">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Your guides</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div>
+<button onClick="{{ lc.go }}" style="flex:none;padding:0;border:0;background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:13px;cursor:pointer">Local Artists ›</button>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:0 20px">
+<sc-for list="{{ guidesX }}" as="g" hint-placeholder-count="2">
+<div style="border-radius:20px;background:#31353c;border:1px solid rgba(241,236,226,.08);overflow:hidden">
+<div onClick="{{ g.toggle }}" style="display:flex;gap:14px;align-items:flex-start;padding:14px;cursor:pointer">
+<div style="flex:none;width:52px;height:52px;border-radius:26px;border:1px solid #c9a25c;background:repeating-linear-gradient(135deg,rgba(201,162,92,.12) 0 1px,transparent 1px 7px),#3d424a;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:22px;color:#dcc08a">{{ g.initial }}</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px">{{ g.name }} <span style="font-weight:400;color:#b9b2a5">· {{ g.craft }}</span></span>
+<span style="font-size:13.5px;line-height:1.45;color:#b9b2a5">{{ g.bio }}</span>
+</div>
+<span style="flex:none;width:28px;height:28px;border-radius:14px;border:1px solid rgba(201,162,92,.55);color:#dcc08a;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1">{{ g.mark }}</span>
+</div>
+<sc-if value="{{ g.open }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:2px;padding:0 14px 14px 80px;animation:elkFade .25s ease both">
+<span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c9a25c;margin-bottom:4px">Leading now</span>
+<sc-for list="{{ g.tours }}" as="x" hint-placeholder-count="2"><button onClick="{{ x.open }}" style="display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 0;border:0;border-bottom:1px solid rgba(241,236,226,.07);background:transparent;color:#f1ece2;text-align:left;cursor:pointer"><span style="font-size:14.5px;line-height:1.3">{{ x.title }}</span><span style="font-size:12px;color:#dcc08a">{{ x.sub }}</span></button></sc-for>
+<button onClick="{{ g.profile }}" style="align-self:flex-start;margin-top:10px;height:38px;padding:0 16px;border-radius:19px;border:1px solid #c9a25c;background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:14px;cursor:pointer">Full profile →</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;margin:34px 16px 0">
+<sc-if value="{{ fdr.has }}" hint-placeholder-val="{{ true }}"><button onClick="{{ fdr.go }}" style="display:flex;flex-direction:column;gap:10px;width:100%;padding:16px 16px 14px;border-radius:24px;background:#31353c;border:1px solid rgba(201,162,92,.45);outline:1px solid rgba(201,162,92,.14);outline-offset:4px;color:#f1ece2;text-align:left;cursor:pointer">
+<span style="display:flex;align-items:center;gap:8px;width:100%"><span style="flex:1;font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c9a25c">From the guides · Feed</span><span style="font-size:12.5px;color:#b9b2a5">{{ fdr.count }}</span><span style="color:#c9a25c;font-size:18px">›</span></span>
+<span style="display:flex;gap:12px;align-items:flex-start;width:100%"><span style="flex:none;width:52px;height:60px;border-radius:26px 26px 8px 8px;border:1px solid #c9a25c;background:repeating-linear-gradient(135deg,rgba(201,162,92,.12) 0 1px,transparent 1px 7px),#3d424a;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:20px;color:#dcc08a">{{ fdr.initial }}</span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:17px;line-height:1.25">{{ fdr.title }}</span><span style="font-size:13.5px;line-height:1.45;color:#b9b2a5">{{ fdr.excerpt }}</span><span style="font-size:12px;color:#dcc08a">{{ fdr.by }}</span></span></span>
+</button></sc-if>
+<button onClick="{{ toPlaces }}" style="display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px 12px 14px;border-radius:22px;background:#31353c;border:1px solid rgba(201,162,92,.45);outline:1px solid rgba(201,162,92,.14);outline-offset:4px;color:#f1ece2;text-align:left;cursor:pointer">
+<span style="flex:none;width:44px;height:52px;border-radius:22px 22px 7px 7px;background:repeating-linear-gradient(135deg,rgba(201,162,92,.12) 0 1px,transparent 1px 7px),#3d424a;border:1px solid #c9a25c"></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c9a25c">The places catalogue</span><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15.5px">Every stop, gallery and table</span><span style="font-size:12.5px;color:#b9b2a5">{{ placesCount }} the guides know well</span></span>
+<span style="color:#c9a25c;font-size:20px">›</span>
+</button>
+<button onClick="{{ fm.go }}" style="display:flex;align-items:center;gap:12px;width:100%;height:54px;padding:0 16px 0 14px;border-radius:27px;background:#31353c;border:1px solid rgba(201,162,92,.45);outline:1px solid rgba(201,162,92,.14);outline-offset:4px;color:#f1ece2;text-align:left;cursor:pointer">
+<span style="flex:none;width:30px;height:30px;border-radius:15px;border:1px solid #c9a25c;display:flex;align-items:center;justify-content:center;color:#dcc08a;font-size:14px">☰</span>
+<span style="flex:1;min-width:0;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Elkdonis Forum</span>
+<sc-if value="{{ fm.hasUnread }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:11px;background:#c9a25c;color:#1b1e23;font-size:12px;font-weight:700">{{ fm.tileTitle }}</span></sc-if>
+<span style="color:#c9a25c;font-size:20px">›</span>
+</button>
+</div>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

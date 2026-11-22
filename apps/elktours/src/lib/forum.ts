@@ -2,6 +2,7 @@ import { forumSnapshot, orgHrefs, serviceConnectors, type ForumConnectors } from
 import { getViewerRoles, getIdentityIds, FORUM_ANONYMOUS } from "@elkdonis/services";
 import { cookies } from "next/headers";
 import { getViewer } from "@/lib/auth";
+import { artistBadges } from "@/lib/forum-badges";
 import { siteConfig } from "@/config/site";
 
 /**
@@ -30,14 +31,18 @@ export async function getForumConnectors(): Promise<ForumConnectors> {
   const jar = await cookies();
   const pref = jar.get("forum_theme")?.value;
   const theme = pref === "classic" || pref === "modern" ? pref : "classic";
-  return serviceConnectors({
+  const connectors = await serviceConnectors({
     scope: { kind: "org", orgId: siteConfig.orgId },
     siteName: siteConfig.orgName,
     viewer: getForumViewer,
     hrefs: forumHrefs,
     actionBase: "/api/forum",
     theme,
+    // Mobile Start a topic (design 21): kind chips, Public/Members/Private (author-only in v1), a link.
+    composeOptions: { kinds: true, audiences: ["everyone", "followers", "author"], link: true, attachments: true },
   });
+  // Verdigris ring for artists on reply bylines (experience_people role=artist).
+  return { ...connectors, roleBadges: artistBadges };
 }
 
 /**

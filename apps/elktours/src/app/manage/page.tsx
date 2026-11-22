@@ -7,6 +7,8 @@ import { formatShortDate, formatTime } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { Button, Badge } from "@elkdonis/primitives";
 import { requireOrgEditor } from "@/lib/auth";
+import { Split } from "@/components/mobile/split";
+import { ManageIndexMobile } from "@/components/mobile/board-server";
 
 /**
  * The editorial dashboard.
@@ -16,7 +18,7 @@ import { requireOrgEditor } from "@/lib/auth";
  * wrong for a site with an owner: the person running Elkdonis Tours & Experiences needs to see
  * everything on it, including what a guide posted.
  */
-export default async function ManageDashboard() {
+async function DesktopDashboard() {
   // Gate in the page as well as the layout: Next renders the two in parallel, and
   // the layout's redirect did not stop this page's data from streaming to a
   // signed-out visitor (verified on the live sites, 2026-11-06).
@@ -143,4 +145,15 @@ export default async function ManageDashboard() {
       )}
     </>
   );
+}
+
+/**
+ * Phone: the way into the Hub (the office since 2026-11-19) and the manage pages. Desktop: the dashboard above. `?journal=1` shows the dashboard alone, with the
+ * desktop chrome, so the journal list stays reachable on a phone.
+ */
+export default async function ManageDashboard({ searchParams }: { searchParams: Promise<{ journal?: string }> }) {
+  await requireOrgEditor();
+  const { journal } = await searchParams;
+  if (journal) return <DesktopDashboard />;
+  return <Split mobile={<ManageIndexMobile />} desktop={<DesktopDashboard />} />;
 }

@@ -45,6 +45,9 @@ export interface Place {
   heading: number | null;
   pitch: number | null;
   fov: number | null;
+  /** Where the Street View opens when the editor walked the panorama away from the place (migration 279). */
+  viewLat?: number | null;
+  viewLng?: number | null;
   address: string | null;
   tags: string[];
   source: PlaceSource;
@@ -115,6 +118,8 @@ export interface PlaceInput {
   heading?: number | null;
   pitch?: number | null;
   fov?: number | null;
+  viewLat?: number | null;
+  viewLng?: number | null;
   address?: string | null;
   tags?: string[];
   source?: PlaceSource;
@@ -488,7 +493,8 @@ export type CommissionStatus = "proposed" | "accepted" | "declined" | "cancelled
 
 export interface ServiceCommission {
   id: string;
-  serviceThreadId: string;
+  /** Null for an experience invitation with no ArtDirect service (migration 272). */
+  serviceThreadId: string | null;
   serviceTitle: string;
   sellerUserId: string;
   sellerName: string | null;

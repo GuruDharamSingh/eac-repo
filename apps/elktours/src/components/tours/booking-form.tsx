@@ -6,6 +6,7 @@ import type { TourDeparture } from "@elkdonis/commerce/server";
 import { bookTourAction } from "@/lib/tour-actions";
 import { formatDeparture } from "@/lib/tour-format";
 import { Button, Input, Label, Textarea } from "@elkdonis/primitives";
+import { useTourPage } from "@/blocks/tour/context";
 
 interface BookingFormProps {
   tourSlug: string;
@@ -18,9 +19,40 @@ interface BookingFormProps {
   unavailable: string | null;
   signedInEmail?: string | null;
   signedInName?: string | null;
+  /** For the "ask us" mail when the tour cannot be booked; default: the tour page's title and contact address. */
+  tourTitle?: string;
+  contactEmail?: string | null;
+  /** Departure to preselect (the phone page's index sets it); ignored when it has no seats left. */
+  initialDepartureId?: string | null;
+}
+
+/**
+ * What the booking box says when it cannot sell: one plain sentence and a
+ * mail link with the subject filled in, so the visitor still has a next step.
+ */
+function AskInstead(p: { text: string; action: string; subject: string; body?: string; email: string | null }) {
+  const href = p.email
+    ? `mailto:${p.email}?subject=${encodeURIComponent(p.subject)}${p.body ? `&body=${encodeURIComponent(p.body)}` : ""}`
+    : null;
+  return (
+    <div className="space-y-2 text-sm">
+      <p className="text-muted-foreground">{p.text}</p>
+      {href && (
+        <>
+          <p>
+            <a href={href} className="font-medium text-foreground underline underline-offset-4">{p.action}</a>
+          </p>
+          <p className="break-all text-xs text-muted-foreground">or write to {p.email}</p>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function BookingForm(p: BookingFormProps) {
+  const page = useTourPage();
+  const tourTitle = p.tourTitle ?? page?.tour.title ?? "a tour";
+  const contactEmail = p.contactEmail ?? page?.contactEmail ?? null;
   const params = useSearchParams();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(
@@ -28,7 +60,7 @@ export function BookingForm(p: BookingFormProps) {
     params.get("payment") === "pending" ? "Your payment is being confirmed; the booking email will follow in a moment." : null
   );
   const open = p.departures.filter((d) => d.seatsLeft > 0);
-  const [departureId, setDepartureId] = useState(open[0]?.id ?? "");
+  const [departureId, setDepartureId] = useState(open.find((d) => d.id === p.initialDepartureId)?.id ?? open[0]?.id ?? "");
   const [party, setParty] = useState(2);
   const [name, setName] = useState(p.signedInName ?? "");
   const [email, setEmail] = useState(p.signedInEmail ?? "");
@@ -38,11 +70,15 @@ export function BookingForm(p: BookingFormProps) {
   const maxHere = Math.max(1, Math.min(p.maxParty, chosen?.seatsLeft ?? p.maxParty));
   const total = p.pricePerPerson != null ? p.pricePerPerson * party : null;
 
+  const dateBody = "Preferred date(s):\nNumber of people:\n";
+  if (!(p.pricePerPerson != null && p.pricePerPerson > 0)) {
+    return <AskInstead email={contactEmail} text={p.unavailable ?? "This tour is not priced yet."} action="Email us for a price" subject={`Price: ${tourTitle}`} body={dateBody} />;
+  }
   if (p.unavailable) {
-    return <p className="rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">{p.unavailable}</p>;
+    return <AskInstead email={contactEmail} text={p.unavailable} action="Ask about a date by email" subject={`Private date: ${tourTitle}`} body={dateBody} />;
   }
   if (open.length === 0) {
-    return <p className="rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">No dates are open for booking right now. Check back soon, or ask about a private date.</p>;
+    return <AskInstead email={contactEmail} text="No dates are open for booking right now." action="Ask about a private date" subject={`Private date: ${tourTitle}`} body={dateBody} />;
   }
 
   function submit(e: React.FormEvent) {

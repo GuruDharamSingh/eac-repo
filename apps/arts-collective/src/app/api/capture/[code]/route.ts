@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { captureMark, captureUploadFinish, captureUploadPart, captureUploadStart } from "@elkdonis/services/recordings";
+import { captureEdit, captureMark, captureUploadFinish, captureUploadPart, captureUploadStart } from "@elkdonis/services/recordings";
 
 /**
  * Phone capture, the phone's side (/c/<code>, PhoneCapture). No session: the
@@ -8,6 +8,7 @@ import { captureMark, captureUploadFinish, captureUploadPart, captureUploadStart
  *   POST ?op=recording | failed         status for the computer
  *   POST ?op=start&ext=webm|mp4
  *   POST ?op=part&index=  (bytes)
+ *   POST ?op=edit   (JSON body: the shot director's edit; send before finish, stored beside the video as <name>.edit.json)
  *   POST ?op=finish&seconds=
  */
 const MAX_PART = 64_000_000;
@@ -31,6 +32,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const bytes = await request.arrayBuffer();
         if (bytes.byteLength > MAX_PART) return NextResponse.json({ error: "Part too large" }, { status: 413 });
         await captureUploadPart(code, index, bytes);
+        return NextResponse.json({ ok: true });
+      }
+      case "edit": {
+        const text = await request.text();
+        if (text.length > 100_000) return NextResponse.json({ error: "Edit too large" }, { status: 413 });
+        captureEdit(code, JSON.parse(text));
         return NextResponse.json({ ok: true });
       }
       case "finish": {

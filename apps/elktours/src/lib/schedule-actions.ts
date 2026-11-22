@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@elkdonis/db";
-import { createDeparture } from "@elkdonis/commerce/server";
+import { createDeparture, departuresSql } from "@/lib/departures";
 import { requireOrgEditor } from "@/lib/auth";
 import { getTourById } from "@/lib/tours";
 import type { ActionResult } from "@/lib/tour-actions";
@@ -52,7 +52,7 @@ async function prepare(input: RepeatScheduleValues): Promise<Prepared> {
   const from = parisInstant(d.from)!;
   const to = parisInstant(d.to, "23:59")!;
   const rows = await db<{ starts_at: Date }[]>`
-    SELECT starts_at FROM tour_departures
+    SELECT starts_at FROM ${departuresSql()} d
     WHERE org_id = ${ORG} AND thread_id = ${tour.id} AND status = 'scheduled'
       AND starts_at >= ${from.toISOString()}::timestamptz AND starts_at <= ${to.toISOString()}::timestamptz
   `;

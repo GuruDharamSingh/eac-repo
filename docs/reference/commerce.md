@@ -398,6 +398,31 @@ store, the buyer picks a rate on the order page before paying.
   committed held accrual, the studio and admin UI signed in, and anything in
   production Easyship.
 
+#### katie-the-potter: shipping in checkout (2026-11-17, source only)
+
+Developer's decisions (2026-11-17): shipping is optional in checkout, the collective's Easyship
+account buys the label once the order is paid, the engine is `@elkdonis/commerce/shipping`
+(store `shipping_mode = platform`), and Buy now / Pay now go through the order page first.
+
+- Order page (`apps/katie-the-potter/src/app/orders/[id]/page.tsx`): while `getOrderShippingState(...).required`
+  the buyer sees `CheckoutShippingPicker` (address, live rates, "Arrange shipping or pickup with Katie instead")
+  and no pay buttons; the chosen price goes into `commerce_order.shipping_minor` and the total. Actions:
+  `lib/checkout-shipping-actions.ts`. `placeOrder`, `buyPieceNow`, `expressCheckoutCart`, `payOrderByCard` and
+  `payOrderByEtransfer` (`lib/shop-actions.ts`) send the buyer to the order page instead of Stripe while a choice is owed.
+- Label: `confirmOrderPaid` calls `ensurePlatformLabel` after commit (`packages/commerce/src/shipping/index.ts`);
+  it is a no-op unless the store is in platform mode and the buyer chose a courier. Katie sees "Print label (PDF)",
+  tracking and a "Buy label" retry on `/manage/orders` (`components/manage/platform-label.tsx`, `buyLabelAction`).
+- Ship-from: saving `/manage/shipping`'s address also writes `users.ship_from` of the site artist (the engine reads it).
+- Not live: no store is in platform mode (all 10 were `quote` on 2026-11-17) and Katie has no ship-from. The picker is
+  active only when the order can be quoted (ship-from set, every piece has height and width; else "arranged").
+  Katie's older after-the-sale flow (`lib/shipping/*`, `shipping:mode` off) stays for stores not quoting at checkout.
+- Verified 2026-11-17: `check-types` in commerce; read-only probe on live orders (no picker, no label attempted).
+  Not verified: the picker and label panel rendered, a sandbox quote and label through katie, a card payment with a
+  shipping line, an eTransfer order after its amount changes. Rebuild katie before any of it is live; production
+  `EASYSHIP_ENV` would spend real money on labels (unset = sandbox).
+- To turn on: Katie's ship-from at `/manage/shipping`, `store.shipping_mode = platform` for her store (`/admin/stores`),
+  then a sandbox rehearsal order before switching `EASYSHIP_ENV`.
+
 ### Stripe
 
 - Hosted Checkout only; card data never touches an app.

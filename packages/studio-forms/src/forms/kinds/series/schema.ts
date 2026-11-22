@@ -10,6 +10,7 @@
 import { knownTimeZone } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormKindSchema, SectionProps } from '../../contract';
 import { SERIES_KIND_RULES } from '../../rules/series-kind';
+import { seriesWhenLine } from '../../rules/answers';
 import { SeriesWhen } from './When';
 
 function SeriesWhy({ field }: SectionProps) {
@@ -42,7 +43,7 @@ export const seriesKind: FormKindSchema = {
   sections: [
     { id: 'title', label: 'Title', tier: 'essentials', fields: ['title'], quick: true },
     { id: 'why', label: 'Why', tier: 'essentials', fields: ['excerpt'], render: 'seriesWhy', quick: true },
-    { id: 'when', label: 'When', tier: 'essentials', fields: ['series_mode', 'scheduled_at', 'start_time', 'duration_minutes', 'series_dates'], render: 'seriesWhen', quick: true },
+    { id: 'when', label: 'When', tier: 'essentials', fields: ['series_mode', 'scheduled_at', 'start_time', 'duration_minutes', 'series_dates'], render: 'seriesWhen', quick: true, rowSummary: (a) => seriesWhenLine(a), rowPlaceholder: 'Pick the dates' },
   ],
   components: { seriesWhy: SeriesWhy, seriesWhen: SeriesWhen },
   rules: SERIES_KIND_RULES,

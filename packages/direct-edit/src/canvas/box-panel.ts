@@ -38,7 +38,7 @@ const isGrid = (d: string) => d.includes("grid");
 const MEDIA = new Set(["IMG", "PICTURE", "VIDEO", "SVG", "CANVAS", "IFRAME", "AUDIO"]);
 
 /** The sections and fields for one box, given its stored style. */
-export function boxSlots(el: Element, stored: PartStyle): ResolvedSlot[] {
+export function boxSlots(el: Element, stored: PartStyle, opts: { freeMove?: boolean } = {}): ResolvedSlot[] {
   const parent = el.parentElement ? getComputedStyle(el.parentElement).display : "block";
   const media = MEDIA.has(el.tagName.toUpperCase());
   const treeType = (el as HTMLElement).dataset?.treeType;
@@ -58,6 +58,12 @@ export function boxSlots(el: Element, stored: PartStyle): ResolvedSlot[] {
   if (isGrid(parent)) out.push(num("cspan", "size", "Column span", undefined, 1));
   if (isFlex(parent)) out.push(num("grow", "size", "Grow", undefined, 1, { optional: true }));
   if (stored.order !== undefined) out.push(num("order", "size", "Order", undefined, 1));
+  // Free placement: where the box is moved to from the place the layout gives it. Drawn from 768px wide up only.
+  if (opts.freeMove) {
+    out.push(num("fx", "size", "Free X", "px", 1));
+    out.push(num("fy", "size", "Free Y", "px", 1));
+    if (stored.fx || stored.fy) out.push(slot("freereset", "size", "Position", "chips", list("reset"), { labels: { reset: "Reset position" } }));
+  }
 
   // Layout.
   if (container) {

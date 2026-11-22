@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
-import { createUserFolder, uploadFile, getProxyFileUrl, getStorageSlug, resolveUserPath, uploadFilename } from "@elkdonis/services";
+import { createOrgFolder, createUserFolder, uploadFile, getProxyFileUrl, getStorageSlug, resolveOrgPath, resolveUserPath, uploadFilename } from "@elkdonis/services";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
@@ -24,12 +24,15 @@ const HEIC_MESSAGE = "HEIC photo: please send a JPEG.";
  * amrit-canada's meeting attachments need. Gated the same way as every
  * write here: getViewer().canEdit (owner/guide on org `katie-the-potter`).
  *
- * WHERE files go. This is Katie's own site, so everything uploaded here
- * is hers, whoever at the keyboard did the uploading (`media.uploaded_by`
- * still records that): EAC_Network/users/<her storage slug>/…
+ * WHERE files go (changed 2026-11-17):
  *
- *   no `gallery`      → Media/Images/        (what "My images" lists)
- *   `gallery=<slug>`  → Galleries/<slug>/    (that gallery's own folder)
+ *   no `gallery`      → EAC_Network/<org>/Media/Images/   (the site's own folder, what the
+ *                        picker's "This site" tab lists; `media.uploaded_by` records who)
+ *   `gallery=<slug>`  → EAC_Network/users/<artist slug>/Galleries/<slug>/
+ *                        (the site artist's folder, where user_galleries expects it)
+ *
+ * Before 2026-11-17 every upload went to the artist's folder, so a guide's upload was
+ * filed under Katie.
  *
  * Fixed 2026-09-18: this used to write to users/<uploader's account id>/ —
  * a folder named by a UUID that no library ever listed, so an upload from the
@@ -71,27 +74,33 @@ export async function POST(request: NextRequest) {
     // page, a gallery item and every <img src> carries. See uploadFilename.
     const title = String(formData.get("title") ?? "").trim().slice(0, 200);
     const filename = uploadFilename(file.name, title || null);
-    const ownerId = await getSiteArtistUserId();
-    if (!ownerId) return NextResponse.json({ error: "This site has no owner yet, so there is nowhere to keep pictures." }, { status: 500 });
-    let slug = await getStorageSlug(ownerId);
-    if (!slug && (await ensurePictureFolder(ownerId))) slug = await getStorageSlug(ownerId);
-    if (!slug) {
-      return NextResponse.json({ error: "Picture folder not ready: see Overview." }, { status: 500 });
-    }
-
     const gallery = String(formData.get("gallery") ?? "").trim();
     if (gallery && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(gallery)) {
       return NextResponse.json({ error: "Unknown gallery" }, { status: 400 });
     }
-    // A gallery's folder may not exist yet — WebDAV PUT into a missing
-    // folder fails (409), so make it first. Idempotent.
-    if (gallery && !(await createUserFolder(slug, `Galleries/${gallery}`))) {
-      return NextResponse.json({ error: "Could not create the gallery folder" }, { status: 500 });
+
+    // No gallery: the picture belongs to the SITE (EAC_Network/<org>/Media/Images, what the
+    // picker's "This site" tab lists), whoever uploaded it. A gallery's pictures stay in the
+    // artist's own folder, where user_galleries expects them.
+    let ownerId: string | null = null;
+    let relativePath: string;
+    if (!gallery) {
+      relativePath = resolveOrgPath(ORG_ID, `Media/Images/${filename}`);
+    } else {
+      ownerId = await getSiteArtistUserId();
+      if (!ownerId) return NextResponse.json({ error: "This site has no owner yet, so there is nowhere to keep pictures." }, { status: 500 });
+      let slug = await getStorageSlug(ownerId);
+      if (!slug && (await ensurePictureFolder(ownerId))) slug = await getStorageSlug(ownerId);
+      if (!slug) {
+        return NextResponse.json({ error: "Picture folder not ready: see Overview." }, { status: 500 });
+      }
+      // A gallery's folder may not exist yet — WebDAV PUT into a missing
+      // folder fails (409), so make it first. Idempotent.
+      if (!(await createUserFolder(slug, `Galleries/${gallery}`))) {
+        return NextResponse.json({ error: "Could not create the gallery folder" }, { status: 500 });
+      }
+      relativePath = resolveUserPath(slug, `Galleries/${gallery}/${filename}`);
     }
-    const relativePath = resolveUserPath(
-      slug,
-      gallery ? `Galleries/${gallery}/${filename}` : `Media/Images/${filename}`
-    );
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -110,9 +119,12 @@ export async function POST(request: NextRequest) {
 
     let uploadSuccess = await uploadFile(relativePath, buffer, file.type);
     if (!uploadSuccess) {
-      // Most often the folder isn't there yet (a new account): make it, then once more.
-      await ensurePictureFolder(ownerId);
-      if (!gallery) await createUserFolder(slug, "Media/Images");
+      // Most often the folder isn't there yet: make it, then once more.
+      if (ownerId) await ensurePictureFolder(ownerId);
+      else {
+        await createOrgFolder(ORG_ID, "Media");
+        await createOrgFolder(ORG_ID, "Media/Images");
+      }
       uploadSuccess = await uploadFile(relativePath, buffer, file.type);
     }
     if (!uploadSuccess) {

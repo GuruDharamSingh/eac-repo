@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@elkdonis/db';
-import { davListDeep, getStorageSlug } from '@elkdonis/services';
+import { davListDeep, getStorageSlug, listSitePages } from '@elkdonis/services';
 import { getSiteOwnerUserId, getViewer } from './auth';
 import { siteConfig } from '@/config/site';
 
@@ -49,27 +49,15 @@ export interface HudPage {
 export async function listPagesForHud(): Promise<Result<{ pages: HudPage[] }>> {
   if (!(await editor())) return { ok: false, error: NOT_ALLOWED };
   const owner = await getSiteOwnerUserId();
-  const rows = await db<
-    Array<{ slug: string; title: string | null; updated_at: string; g_id: string | null; g_title: string | null; g_n: number | null }>
-  >`
-    SELECT substr(c.key, 6) AS slug,
-           c.value->'root'->'props'->>'title' AS title,
-           c.updated_at,
-           g.id AS g_id, g.title AS g_title, jsonb_array_length(g.items) AS g_n
-    FROM site_config c
-    LEFT JOIN user_galleries g
-      ON g.user_id = ${owner} AND g.page_path = substr(c.key, 6)
-    WHERE c.org_id = ${siteConfig.orgId} AND c.key LIKE 'puck:%'
-    ORDER BY substr(c.key, 6)
-  `;
+  const pages = await listSitePages(siteConfig.orgId, { galleriesOfUserId: owner });
   return {
     ok: true,
-    pages: rows.map((r) => ({
-      slug: r.slug,
-      title: r.title?.trim() || r.slug.split('/').pop()!.replace(/-/g, ' '),
-      href: r.slug === 'home' ? '/' : `/${r.slug}`,
-      updatedAt: String(r.updated_at),
-      gallery: r.g_id ? { id: r.g_id, title: r.g_title ?? '', itemCount: Number(r.g_n) || 0 } : null,
+    pages: pages.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      href: p.href,
+      updatedAt: p.updatedAt,
+      gallery: p.gallery ?? null,
     })),
   };
 }

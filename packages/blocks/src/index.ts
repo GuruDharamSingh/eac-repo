@@ -25,6 +25,7 @@ export type {
   PartDef,
   PartMap,
   TokenDef,
+  BlockRead,
 } from "./types";
 
 export { Region } from "./slot";

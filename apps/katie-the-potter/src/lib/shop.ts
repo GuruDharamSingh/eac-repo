@@ -25,6 +25,28 @@ export async function getCartCount(): Promise<number> {
   }
 }
 
+/**
+ * After a PAID order: take its pieces out of this visitor's cart (2026-11-17).
+ * The cart is no longer emptied when a card checkout starts, so a buyer who
+ * backs out of Stripe still has everything in it; only a confirmed payment
+ * removes the pieces. Matches by variant, within this visitor's own cart
+ * token. Never throws.
+ */
+export async function dropPaidOrderFromCart(orderId: string): Promise<void> {
+  try {
+    const token = await readCartToken();
+    if (!token || !UUID_RE.test(orderId)) return;
+    await db`
+      DELETE FROM cart_line cl
+      USING cart c, commerce_order_line l
+      WHERE cl.cart_id = c.id AND c.token = ${token}
+        AND l.order_id = ${orderId} AND l.artwork_variant_id = cl.artwork_variant_id
+    `;
+  } catch (err) {
+    console.error("[katie-the-potter] dropPaidOrderFromCart:", err);
+  }
+}
+
 /** Whether this cart token owns this cart line (a line id alone is not a capability). */
 export async function cartOwnsLine(cartToken: string, lineId: string): Promise<boolean> {
   if (!UUID_RE.test(lineId)) return false;

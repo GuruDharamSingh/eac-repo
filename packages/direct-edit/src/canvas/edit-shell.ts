@@ -55,7 +55,8 @@ export interface ShellOptions<D> {
   /** The tool in use. */
   activeTool?(): string | null;
   panel?: { open(): boolean; toggle(): void };
-  zoom?: { value(): number; set(z: number | "fit"): void };
+  /** `fit`: the choice that follows the panel (its label, and whether it is the one in use). Absent: "Fit to window". */
+  zoom?: { value(): number; set(z: number | "fit"): void; fit?: { label: string; on(): boolean } };
   present?: { on(): boolean; toggle(): void };
   choosePicture?: PictureChooser;
 }
@@ -151,7 +152,7 @@ export function mountEditShell<D>(o: ShellOptions<D>): EditShell {
     openMenu({
       x: r.left, y: r.bottom + 6,
       host: o.host,
-      items: [...levels.map((z) => ({ id: String(z), label: `${z * 100}%`, hint: Math.abs(o.zoom!.value() - z) < 0.01 ? "✓" : undefined })), { id: "fit", label: "Fit to window", sep: true }],
+      items: [...levels.map((z) => ({ id: String(z), label: `${z * 100}%`, hint: Math.abs(o.zoom!.value() - z) < 0.01 && !o.zoom!.fit?.on() ? "✓" : undefined })), { id: "fit", label: o.zoom!.fit?.label ?? "Fit to window", hint: o.zoom!.fit?.on() ? "✓" : undefined, sep: true }],
       onPick(id) { o.zoom!.set(id === "fit" ? "fit" : Number(id)); drawTop(); },
     });
   }

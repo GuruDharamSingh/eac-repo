@@ -2513,3 +2513,191 @@
   font-size: calc(12px * var(--frm-text-scale, 1));
   color: var(--frm-muted);
 }
+
+/* ── Rows layout (2026-11-15): FormSections layout="rows", quick tier only ──
+   SheetRow (fields/SheetRow.tsx). A group is one boxed list; each row is a button
+   (label left, value right, chevron) with its dropdown under it. Themes set the
+   --frm-row-* tokens; the defaults read the base tokens. Nothing else uses these classes. */
+.frm-srows {
+  --frm-row-line: var(--frm-divider);
+  border: 1px solid var(--frm-row-line);
+  border-radius: 2px;
+  margin: 6px 0;
+}
+.frm-srow {
+  position: relative;
+}
+.frm-srow + .frm-srow {
+  border-top: 1px solid var(--frm-row-line);
+}
+.frm-srow-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--frm-text);
+  font: inherit;
+  font-family: var(--frm-font-body, inherit);
+  font-size: calc(15px * var(--frm-text-scale, 1));
+  text-align: left;
+  cursor: pointer;
+}
+.frm-srow-btn:hover {
+  background: var(--frm-hover-soft);
+}
+.frm-srow-btn:focus-visible {
+  outline: 2px solid var(--frm-focus);
+  outline-offset: -2px;
+}
+.frm-srow[data-open] .frm-srow-btn {
+  background: var(--frm-row-press-bg, var(--frm-hover));
+  box-shadow: inset 3px 0 0 var(--frm-accent);
+}
+.frm-srow-name {
+  flex: 0 0 auto;
+}
+.frm-srow-val {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--frm-text);
+}
+.frm-srow-val[data-state='empty'] {
+  color: var(--frm-muted);
+}
+.frm-srow-val[data-state='problem'] {
+  color: var(--frm-danger-ink);
+}
+.frm-srow-chev {
+  flex: 0 0 auto;
+  width: 1ch;
+  color: var(--frm-muted);
+  text-align: center;
+}
+.frm-srow-panel {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  right: 6px;
+  width: min(calc(100% - 12px), var(--frm-row-panel-w, 22rem));
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: var(--frm-row-panel-bg, var(--frm-bg));
+  border: 1px solid var(--frm-row-panel-line, var(--frm-divider));
+  border-radius: 2px;
+  box-shadow: var(--frm-row-panel-shadow, var(--frm-shadow-pop));
+  font-size: calc(14.5px * var(--frm-text-scale, 1));
+  text-align: left;
+}
+.frm-srow-panel[hidden] {
+  display: none;
+}
+
+/* Rows layout, wide (focus tier): main column + rail of rows. The wrapper is the size container, so the
+   collapse follows the form's own width (popup, page or sheet), not the viewport. */
+.frm-colswrap {
+  container-type: inline-size;
+  container-name: frm-cols;
+}
+.frm-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--frm-rail-w, 300px);
+  align-items: start;
+}
+.frm-wmain {
+  min-width: 0;
+  padding-right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.frm-wrail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 14px;
+  background: var(--frm-rail-bg, var(--frm-surface));
+  border-left: 1px solid var(--frm-divider);
+}
+.frm-wrail-label {
+  padding: 0 4px;
+  color: var(--frm-muted);
+  font-size: calc(14px * var(--frm-text-scale, 1));
+}
+.frm-wrail .frm-srows {
+  margin: 0;
+  background: var(--frm-bg);
+}
+/* the rail's dropdowns keep their own width and may reach left over the main column */
+.frm-wrail .frm-srow-panel {
+  width: var(--frm-row-panel-w, 22rem);
+  max-width: calc(100cqw - 12px);
+}
+@container frm-cols (max-width: 720px) {
+  .frm-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .frm-wmain {
+    padding-right: 0;
+  }
+  .frm-wrail {
+    margin-top: 18px;
+    border-left: 0;
+    border-top: 1px solid var(--frm-divider);
+  }
+  .frm-wrail .frm-srow-panel {
+    width: min(calc(100% - 12px), var(--frm-row-panel-w, 22rem));
+    max-width: none;
+  }
+}
+
+/* a dropdown with no room below opens above its row (SheetRow sets data-up) */
+.frm-srow[data-up] > .frm-srow-panel {
+  top: auto;
+  bottom: 100%;
+}
+
+/* the value's note mark and the dropdown's note control */
+.frm-srow-note {
+  margin-left: 6px;
+  color: var(--frm-accent-ink, var(--frm-accent));
+  font-size: 0.9em;
+}
+.frm-srow-foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--frm-divider);
+}
+.frm-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.frm-note-label,
+.frm-note-hint {
+  color: var(--frm-muted);
+  font-size: calc(13px * var(--frm-text-scale, 1));
+}
+.frm-note-add,
+.frm-note-remove {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--frm-muted);
+  font: inherit;
+  font-size: calc(13.5px * var(--frm-text-scale, 1));
+  cursor: pointer;
+}
+.frm-note-add:hover,
+.frm-note-remove:hover {
+  color: var(--frm-text);
+  text-decoration: underline;
+}

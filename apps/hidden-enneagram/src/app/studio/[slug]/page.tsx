@@ -4,7 +4,7 @@ import type { PuckDoc } from "@elkdonis/direct-edit/block";
 // Server-safe entry only: the package's main entry carries editor hooks.
 import { isValidSlug } from "@elkdonis/page-builder/server";
 import { requireOrgEditor } from "@/lib/auth";
-import { loadPage, ROUTE_SLUGS } from "@/lib/puck/store";
+import { loadPageWithVersion, ROUTE_SLUGS } from "@/lib/puck/store";
 import { startingPoint } from "@/lib/puck/starting-point";
 import { CanvasEditor } from "@/components/studio/CanvasEditor";
 import { siteConfig } from "@/config/site";
@@ -34,9 +34,9 @@ export default async function CanvasPage({
 
   await requireOrgEditor(`/studio/${slug}${template ? `?template=${encodeURIComponent(template)}` : ""}`);
 
-  const page = await loadPage(slug);
+  const page = await loadPageWithVersion(slug);
   const initial = ((page?.data as unknown) ?? startingPoint(slug, template)) as PuckDoc;
   // Puck's editor opens the same starting document when nothing is saved yet.
   const blocks = `/studio/${slug}/blocks${!page && template ? `?template=${encodeURIComponent(template)}` : ""}`;
-  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={initial} blockEditorHref={blocks} />;
+  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={initial} version={page?.updatedAt} blockEditorHref={blocks} />;
 }

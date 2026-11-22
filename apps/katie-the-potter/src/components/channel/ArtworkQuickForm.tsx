@@ -41,8 +41,8 @@ const mediaSlot: MediaSlot = ({ onChange, label, hint, accept }) => (
     onChange={(url) => onChange(url)}
     uploadEndpoint="/api/media/upload"
     libraries={[
-      { key: "mine", label: "Katie's images", endpoint: "/api/media/library/mine" },
       { key: "site", label: "This site", endpoint: "/api/media/library" },
+      { key: "mine", label: "My files", endpoint: "/api/media/library/mine" },
     ]}
     label={label ?? "Picture"}
     hint={hint}

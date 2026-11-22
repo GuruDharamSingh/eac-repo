@@ -13,7 +13,7 @@ import { siteConfig } from "@/config/site";
  * apps/admin by design.
  */
 
-export const EDITOR_ROLES: OrgRole[] = ["owner", "guide"];
+const EDITOR_ROLES: OrgRole[] = ["owner", "guide"];
 
 export interface Viewer {
   /** Database user id — what threads.author_id and thread_rsvps.user_id hold. */

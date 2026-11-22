@@ -40,6 +40,8 @@ export function mapPlace(r: Row): Place {
     heading: num(r.heading),
     pitch: num(r.pitch),
     fov: num(r.fov),
+    viewLat: num(r.view_lat),
+    viewLng: num(r.view_lng),
     address: (r.address as string | null) ?? null,
     tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
     source: r.source as PlaceSource,

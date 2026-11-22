@@ -1,6 +1,7 @@
 import type { Block } from "@elkdonis/blocks";
 import { loadThreadFeed } from "@elkdonis/blocks/server";
 import { BOX_BLOCKS } from "@elkdonis/direct-edit/puck/blocks";
+import { recordMarks } from "@elkdonis/house-editor/fields/marks";
 import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
 import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { BLOCK_DATA_IDS, loadBlockData } from "./block-data";
@@ -39,10 +40,33 @@ const serverResolvers: BlockResolvers = {
   }),
 };
 
+/** Every block a page of this site may hold: the catalogue, then the canvas editor's boxes (ordinary blocks to a published page). */
+export const serverBlocks = [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])];
+
 export const serverPuckConfig = buildPuckConfig({
   resolvers: serverResolvers,
   // The canvas editor's boxes are ordinary blocks to a published page, and a page's look for one block is `morph`.
-  blocks: [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])],
+  blocks: serverBlocks,
   root: { props: [], wrap: PublishedRoot },
   morph: MorphMark,
+});
+
+/**
+ * The same page drawn for someone who may edit it (live editor, 2026-11-20): an inert marker before each block, so the
+ * Fields lens can offer a block's own words for typing on the page, and, where a card shows a post's title because
+ * its own was left empty, the post's title (a change that reaches the post itself). Never used for a visitor: their
+ * markup is `serverPuckConfig`'s, unchanged. Source only until the site is rebuilt.
+ */
+export const markedPuckConfig = buildPuckConfig({
+  resolvers: serverResolvers,
+  blocks: serverBlocks,
+  root: { props: [], wrap: PublishedRoot },
+  morph: MorphMark,
+  marks: {
+    from: recordMarks({
+      // feature-card.tsx: "typed first; the record fills only what was left blank". `record` is `thread:<id>`, `bound` what
+      // cardRecord read for it; the card's body is the record's excerpt.
+      "feature-card": { ref: "record", kinds: ["thread"], resolved: "bound", fills: { title: "title", body: "excerpt", meta: "meta" } },
+    }),
+  },
 });

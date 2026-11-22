@@ -12,6 +12,8 @@ import { payOrderByCard, payOrderByEtransfer } from "@/lib/shop-actions";
 import { shippingAccessFor } from "@/lib/shipping/access";
 import { currentShipment, isQuoteFlow, LABEL_STATES } from "@/lib/shipping/shipments";
 import { daysLabel } from "@/lib/shipping/rates";
+import { getOrderShipment, getOrderShippingState } from "@elkdonis/commerce/shipping";
+import { CheckoutShippingPicker } from "@/components/checkout-shipping-picker";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your order", robots: { index: false, follow: false } };
@@ -33,7 +35,7 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ paid?: string; cancelled?: string; card?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string; card?: string; shipping?: string }>;
 }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
 
@@ -57,8 +59,18 @@ export default async function OrderPage({
   const ship = formatAddress(order.shippingAddress);
   // eTransfer is settled by hand: offered only when we can reach the buyer.
   const etransferOffered = Boolean(email);
-  // Shipping after the sale (docs/SHIPPING_PLAN.md). Off = null = as before.
-  const shipAccess = await shippingAccessFor(order).catch(() => null);
+  // Shipping in checkout (2026-11-17, the shared engine): the buyer picks a
+  // courier, or arranges it with Katie, before paying; the price is part of
+  // the total. Active only when the store can quote (ship-from, sized pieces).
+  const shippingState = await getOrderShippingState(order.id).catch(() => null);
+  const engineOn = Boolean(shippingState?.canQuote);
+  const chosenShipping = shippingState?.chosen ?? null;
+  const pickShipping =
+    unpaid && order.status !== "payment_received" && engineOn && (Boolean(shippingState?.required) || sp.shipping === "change");
+  const engineShipment = engineOn ? await getOrderShipment(order.id).catch(() => null) : null;
+  // The older after-the-sale flow (docs/SHIPPING_PLAN.md) stays for stores not
+  // quoting at checkout. Off = null = as before.
+  const shipAccess = engineOn ? null : await shippingAccessFor(order).catch(() => null);
   const shipment = shipAccess ? await currentShipment(order.id, shipAccess.mode).catch(() => null) : null;
   const hasLabel = Boolean(shipment && (LABEL_STATES as string[]).includes(shipment.status));
   // Quote-only: the buyer paid Katie for shipping; she buys the label and sends tracking.
@@ -81,7 +93,7 @@ export default async function OrderPage({
       </p>
 
       {sp.cancelled && unpaid ? (
-        <p className="ktp-shop-note">You left the card payment page before paying. Nothing was charged; the piece is still held for you for a short while.</p>
+        <p className="ktp-shop-note">You left the card payment page before paying. Nothing was charged. The piece is not held while you pay, so it goes to whoever pays first.</p>
       ) : null}
       {sp.card === "over_ceiling" && unpaid ? (
         <p className="ktp-shop-note">This order is more than a card can carry in a single payment. Nothing was charged. You can pay by eTransfer below.</p>
@@ -111,7 +123,35 @@ export default async function OrderPage({
             ) : null}
             .{order.paymentMethod === "stripe" ? " Your card receipt comes from Stripe." : null}
           </p>
-          {!shipAccess ? (
+          {engineOn ? (
+            <div className="ktp-shop-shipping">
+              {chosenShipping?.option ? (
+                <p>
+                  <b>Shipping:</b> {chosenShipping.option.name}, paid with your order.{" "}
+                  {engineShipment?.trackingNumber ? (
+                    <>
+                      Tracking <span className="ktp-shop-mono">{engineShipment.trackingNumber}</span>.
+                    </>
+                  ) : engineShipment?.labelUrl ? (
+                    <>The label is made; {payeeName} sends it with the courier and the tracking appears here.</>
+                  ) : (
+                    <>{payeeName} will send it and the tracking appears here.</>
+                  )}
+                </p>
+              ) : (
+                <p>
+                  <b>Shipping:</b> {payeeName} will be in touch to arrange it.
+                </p>
+              )}
+              {engineShipment?.trackingUrl ? (
+                <p className="ktp-shop-actions">
+                  <a className="ktp-btn" href={engineShipment.trackingUrl} target="_blank" rel="noopener noreferrer">
+                    Track your parcel
+                  </a>
+                </p>
+              ) : null}
+            </div>
+          ) : !shipAccess ? (
             <p>
               <b>Shipping:</b> you&rsquo;ll get a link to choose a carrier and pay for the label. Until that link is ready, {payeeName} will be in touch to arrange it.
             </p>
@@ -191,7 +231,21 @@ export default async function OrderPage({
         </div>
       ) : null}
 
-      {unpaid ? (
+      {pickShipping ? (
+        <section className="ktp-shop-card">
+          <h2>Shipping</h2>
+          <CheckoutShippingPicker
+            orderId={order.id}
+            initialAddress={chosenShipping?.address ?? order.shippingAddress ?? null}
+            originCountry={shippingState?.originCountry ?? null}
+            canQuote={Boolean(shippingState?.canQuote)}
+            reason={shippingState?.reason ?? null}
+            payeeName={payeeName}
+          />
+        </section>
+      ) : null}
+
+      {unpaid && !pickShipping ? (
         <section className="ktp-shop-card ktp-shop-pay">
           <h2>Complete your payment</h2>
           <dl className="ktp-shop-facts">
@@ -275,11 +329,25 @@ export default async function OrderPage({
             <dd>{formatMoney(order.subtotalMinor, order.currency)}</dd>
           </div>
           <div data-muted="true">
-            <dt>Shipping</dt>
+            <dt>
+              Shipping{chosenShipping?.option ? ` · ${chosenShipping.option.name}` : ""}
+              {unpaid && !pickShipping && engineOn && order.status !== "payment_received" ? (
+                <>
+                  {" "}
+                  <Link href={`/orders/${order.id}?shipping=change`} className="ktp-linkbtn">
+                    change
+                  </Link>
+                </>
+              ) : null}
+            </dt>
             <dd>
               {order.shippingMinor > 0
                 ? formatMoney(order.shippingMinor, order.currency)
-                : shipment?.paidMinor && shipment.currency && (hasLabel || shipPaid)
+                : engineOn && chosenShipping
+                  ? `Arranged with ${payeeName}`
+                  : engineOn && pickShipping
+                    ? "Choose above"
+                    : shipment?.paidMinor && shipment.currency && (hasLabel || shipPaid)
                   ? `${formatMoney(shipment.paidMinor, shipment.currency)}, paid separately`
                   : shipAccess
                     ? "Chosen after payment"
@@ -303,10 +371,10 @@ export default async function OrderPage({
             </>
           ) : email ? (
             <>
-              The piece is held for you until the time shown above. Confirmation goes to <b>{email}</b> as soon as payment clears.
+              Pay by the time shown above to complete the order. Confirmation goes to <b>{email}</b> as soon as payment clears.
             </>
           ) : (
-            <>The piece is held for you until the time shown above. Stripe&rsquo;s page asks for your email and shipping address, and your receipt goes there.</>
+            <>Pay by the time shown above to complete the order. Stripe&rsquo;s page asks for your email{shippingState?.chosen ? "" : " and shipping address"}, and your receipt goes there.</>
           )
         ) : null}
       </p>

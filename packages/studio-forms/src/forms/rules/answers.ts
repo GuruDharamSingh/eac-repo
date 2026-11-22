@@ -326,3 +326,50 @@ export function whereOf(a: Answers): WhereChoice {
   const talk = a.create_talk_room === true || (a.format === 'online' && !url);
   return { place: a.format !== 'online', link: url && !talk, talk };
 }
+
+// ── row values (rows layout, 2026-11-15) ─────────────────────────────────────
+//
+// The one-line values a SheetRow shows for a quick section (FormSection.rowSummary).
+// Each returns undefined while the section holds nothing, so the row shows its placeholder.
+
+/** "Thu 19 Nov · 18:30 · 2h", then ", every week on Thursday, 8 sessions" when it repeats. */
+export function meetingWhenLine(a: Answers, ctx: Pick<FormContext, 'timeZone'>): string | undefined {
+  const date = datePart(a.scheduled_at);
+  if (!date) return undefined;
+  const bits = [dayLabel(date, { weekday: true }), startTime(a), durationLabel(num(a.duration_minutes))].filter(Boolean);
+  const line = bits.join(' · ');
+  if (!isRepeating(a)) return line;
+  const rep = repeatSummary(a, ctx);
+  return `${line}, ${rep.charAt(0).toLowerCase()}${rep.slice(1)}`;
+}
+
+/** Series: "Every week on Thursday · 19:00 · 1½h" | "Every 2 weeks, Thu 19 Nov at 19:00 · 1½h" | "3 dates, from Thu 26 Nov". */
+export function seriesWhenLine(a: Answers): string | undefined {
+  const len = durationLabel(num(a.duration_minutes));
+  if (text(a.series_mode) === 'dates') {
+    const dates = list(a.series_dates).map(datePart).filter(Boolean).sort();
+    if (!dates.length) return undefined;
+    return `${dates.length} ${dates.length === 1 ? 'date' : 'dates'}, from ${dayLabel(dates[0]!, { weekday: true })}`;
+  }
+  const date = datePart(a.scheduled_at);
+  if (!date) return undefined;
+  const every = Math.max(1, Math.min(4, num(a.series_every_weeks) ?? 1));
+  const head = every === 1 ? `Every week on ${weekdayOf(date)}` : `Every ${every} weeks from ${dayLabel(date, { weekday: true })}`;
+  return [head, startTime(a), len].filter(Boolean).join(' · ');
+}
+
+/** Workshop: "Sat 5 Dec · 10:00 · 6h". */
+export function workshopWhenLine(a: Answers): string | undefined {
+  const date = datePart(a.scheduled_at);
+  if (!date) return undefined;
+  return [dayLabel(date, { weekday: true }), startTime(a), durationLabel(num(a.duration_minutes))].filter(Boolean).join(' · ');
+}
+
+/** Workshop: "Studio 4" | "Online" | "Studio 4, and online". */
+export function workshopWhereLine(a: Answers): string | undefined {
+  const format = text(a.format);
+  const place = trimmed(a.location);
+  if (format === 'online') return 'Online';
+  if (format === 'hybrid') return place ? `${place}, and online` : 'In person and online';
+  return place || undefined;
+}

@@ -6,6 +6,7 @@ import {
   type GradientKind, type GradientSpec, type GradientStop,
 } from "../spec";
 import { gradientCss } from "../css";
+import { cssColorToHex } from "../color";
 import { generate, harmony, HARMONIES, type Harmony } from "../generate";
 import { BON_MINERAL, ELEMENTAL, LOGO_INK } from "../palettes";
 import { GradientBackground } from "./GradientBackground";
@@ -17,6 +18,8 @@ const SHADER_LABEL: Record<string, string> = {
   mineral: "Mineral (pigment wash)", aurora: "Aurora", halo: "Halo rings", silk: "Silk",
   "mesh-flow": "Mesh flow", "grain-wave": "Grain wave", "grain-sphere": "Grain sphere", "grain-ripple": "Grain ripple",
   warp: "Warp", swirl: "Swirl", "smoke-ring": "Smoke ring",
+  metaballs: "Metaballs", voronoi: "Voronoi cells", "god-rays": "God rays", spiral: "Spiral", "dot-orbit": "Dot orbit",
+  "color-panels": "Colour panels", "simplex-noise": "Simplex noise", "perlin-noise": "Perlin noise", "neuro-noise": "Neuro glow",
 };
 
 // ============================================================================
@@ -59,6 +62,10 @@ const USES: Record<string, GradientKind[]> = {
   scale: ["mesh", "halo"],
 };
 const uses = (k: string, kind: GradientKind) => USES[k]?.includes(kind) ?? true;
+// every shader sizes itself by scale and seeds (or starts) from seed; these also take a count (2026-11-21)
+const COUNT_SHADERS = new Set(["halo", "swirl", "metaballs", "color-panels", "god-rays"]);
+const shows = (k: "scale" | "seed" | "count", spec: GradientSpec) =>
+  uses(k, spec.kind) || (spec.shader !== "none" && (k !== "count" || COUNT_SHADERS.has(spec.shader)));
 
 export function GradientControl({ value, onChange, shaders = true, clearable = true, label }: GradientControlProps) {
   const spec = cleanGradient(value);
@@ -92,7 +99,7 @@ export function GradientControl({ value, onChange, shaders = true, clearable = t
       <GradientBackground value={{ ...spec, shader: "none", paper: 0 }} style={{ height: 84, borderRadius: 6, border: `1px solid ${line}`, overflow: "hidden" }} />
       {(spec.shader !== "none" || spec.paper > 0) && <div style={{ color: faint, fontSize: 11, marginTop: -4 }}>Shows the CSS fallback; {spec.shader !== "none" ? `the ${SHADER_LABEL[spec.shader] ?? spec.shader} shader` : "the paper surface"} draws on the block.</div>}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <button type="button" style={btn} onClick={() => set({ ...generate(Math.floor(Math.random() * 9999)), shader: spec.shader })} title="A new gradient from the logo ink">Surprise</button>
+        <button type="button" style={btn} onClick={() => set({ ...generate(Math.floor(Math.random() * 201)), shader: spec.shader, motion: spec.motion, paper: spec.paper, grain: spec.grain })} title="A new gradient from the logo ink (keeps your shader, motion, paper and grain)">Surprise</button>
         <button type="button" style={btn} onClick={() => setStops([...spec.stops].reverse().map((s) => ({ ...s, at: 100 - s.at })))}>Reverse</button>
         <button
           type="button"
@@ -125,7 +132,11 @@ export function GradientControl({ value, onChange, shaders = true, clearable = t
               <input type="color" aria-label={`Colour ${i + 1}`} value={s.color.toLowerCase()} onChange={(e) => setStops(spec.stops.map((x, j) => (j === i ? { ...x, color: e.target.value } : x)))}
                 style={{ width: 28, height: 24, padding: 0, border: `1px solid ${line}`, borderRadius: 4, background: paper }} />
               <input style={{ ...box, fontFamily: "ui-monospace, monospace" }} aria-label={`Hex ${i + 1}`} defaultValue={s.color} key={s.color}
-                onBlur={(e) => setStops(spec.stops.map((x, j) => (j === i ? { ...x, color: e.target.value } : x)))} />
+                onBlur={(e) => {
+                  const hex = cssColorToHex(e.target.value.trim());
+                  if (!hex) { e.target.value = s.color; return; } // not a colour: put the old one back (it used to drop the stop)
+                  if (hex !== s.color) setStops(spec.stops.map((x, j) => (j === i ? { ...x, color: hex } : x)));
+                }} />
               <input type="range" min={0} max={100} value={s.at} aria-label={`Position ${i + 1}`} onChange={(e) => setStops(spec.stops.map((x, j) => (j === i ? { ...x, at: +e.target.value } : x)))} />
               <button type="button" aria-label={`Remove colour ${i + 1}`} disabled={spec.stops.length <= 2} onClick={() => setStops(spec.stops.filter((_, j) => j !== i))}
                 style={{ ...btn, padding: "2px 0", width: 22, opacity: spec.stops.length <= 2 ? 0.4 : 1 }}>×</button>
@@ -153,9 +164,9 @@ export function GradientControl({ value, onChange, shaders = true, clearable = t
           </Row>
           <Row label="From">
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              <button type="button" style={btn} onClick={() => set({ ...generate(spec.seed + 1), kind: spec.kind, shader: spec.shader })}>Logo ink</button>
-              <button type="button" style={btn} onClick={() => set({ ...generate(spec.seed + 1, { pigments: ELEMENTAL.slice(0, 7).map((p) => p.hex) }), kind: spec.kind, shader: spec.shader })}>Elements</button>
-              <button type="button" style={btn} onClick={() => set({ ...generate(spec.seed + 1, { pigments: BON_MINERAL.flatMap((c) => [c.ground, c.light, c.mark]) }), kind: spec.kind, shader: spec.shader })}>Bon mineral</button>
+              <button type="button" style={btn} onClick={() => setStops(generate(Math.floor(Math.random() * 9999)).stops)} title="New colours; everything else stays">Logo ink</button>
+              <button type="button" style={btn} onClick={() => setStops(generate(Math.floor(Math.random() * 9999), { pigments: ELEMENTAL.slice(0, 7).map((p) => p.hex) }).stops)} title="New colours; everything else stays">Elements</button>
+              <button type="button" style={btn} onClick={() => setStops(generate(Math.floor(Math.random() * 9999), { pigments: BON_MINERAL.flatMap((c) => [c.ground, c.light, c.mark]) }).stops)} title="New colours; everything else stays">Bon mineral</button>
             </div>
           </Row>
         </div>
@@ -166,9 +177,9 @@ export function GradientControl({ value, onChange, shaders = true, clearable = t
           {uses("angle", spec.kind) && <Slider label="Angle" unit="°" min={0} max={359} value={spec.angle} onChange={(angle) => set({ angle })} />}
           {uses("center", spec.kind) && <Slider label="Centre x" unit="%" min={0} max={100} value={spec.cx} onChange={(cx) => set({ cx })} />}
           {uses("center", spec.kind) && <Slider label="Centre y" unit="%" min={0} max={100} value={spec.cy} onChange={(cy) => set({ cy })} />}
-          {uses("count", spec.kind) && <Slider label={spec.kind === "halo" ? "Rings" : "Blobs"} min={spec.kind === "halo" ? 1 : 2} max={spec.kind === "halo" ? 8 : 7} value={spec.count} onChange={(count) => set({ count })} />}
-          {uses("scale", spec.kind) && <Slider label="Scale" min={0} max={100} value={spec.scale} onChange={(scale) => set({ scale })} />}
-          {uses("seed", spec.kind) && <Slider label="Seed" min={0} max={200} value={Math.min(200, spec.seed)} onChange={(seed) => set({ seed })} />}
+          {shows("count", spec) && <Slider label={uses("count", spec.kind) ? (spec.kind === "halo" ? "Rings" : "Blobs") : "Count"} min={spec.kind === "halo" ? 1 : 2} max={spec.kind === "halo" ? 8 : 7} value={spec.count} onChange={(count) => set({ count })} />}
+          {shows("scale", spec) && <Slider label="Scale" min={0} max={100} value={spec.scale} onChange={(scale) => set({ scale })} />}
+          {shows("seed", spec) && <Slider label="Seed" min={0} max={200} value={Math.min(200, spec.seed)} onChange={(seed) => set({ seed })} />}
           {(uses("steps", spec.kind) || spec.ease === "steps") && <Slider label="Bands" min={2} max={24} value={spec.steps} onChange={(steps) => set({ steps })} />}
           <Slider label="Softness" min={0} max={100} value={spec.softness} onChange={(softness) => set({ softness })} />
           {(spec.kind === "mesh" || spec.kind === "halo") && (
@@ -272,7 +283,7 @@ function PresetRow({ onPick }: { onPick: (s: GradientSpec) => void }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))", gap: 6 }}>
       {PRESETS.map((p) => (
-        <button key={p.id} type="button" onClick={() => onPick(p.spec)} title={p.label}
+        <button key={p.id} type="button" onClick={() => onPick(cleanGradient(p.spec) ?? p.spec)} title={p.label}
           style={{ all: "unset", cursor: "pointer", display: "grid", gap: 3, fontSize: 11, color: ink }}>
           <span style={{ height: 34, borderRadius: 4, border: `1px solid ${line}`, background: gradientCss(p.spec) }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.label}</span>

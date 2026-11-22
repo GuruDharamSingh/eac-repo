@@ -1,0 +1,78 @@
+/* Experiences, people, About, profiles, Suggest (G4). Variables only. */
+
+/* experience list */
+.blk-mxl { display: flex; flex-direction: column; gap: 12px; padding: 20px 16px 0; }
+.blk-mxl-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--radius-card); background: var(--m-card); border: 1px solid hsl(var(--verdigris) / 0.25); color: inherit; text-decoration: none; }
+.blk-mxl-head { display: flex; align-items: center; gap: 14px; }
+.blk-mxl-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.blk-mxl-meta { font-size: 10px; letter-spacing: 0.14em; color: hsl(var(--muted-foreground)); }
+.blk-mxl-title { font-weight: 700; font-size: 17px; line-height: 1.2; }
+.blk-mxl-by { font-size: 13px; color: hsl(var(--muted-foreground)); }
+.blk-mxl-pitch { font-size: 14px; line-height: 1.5; color: var(--foreground-soft); text-wrap: pretty; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.blk-mxl-where { font-size: 12.5px; color: hsl(var(--verdigris)); }
+.blk-mxl-empty { margin: 4px; font-size: 14px; color: hsl(var(--muted-foreground)); }
+
+/* artists row, people slider, suggest pill */
+.blk-mar-row, .blk-mpsl-row { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; padding: 0 20px; }
+.blk-mpsl-row { scroll-snap-type: x mandatory; }
+.blk-mar-card { flex: none; width: 104px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: inherit; text-decoration: none; }
+.blk-mar-name { margin-top: 4px; font-weight: 700; font-size: 14.5px; }
+.blk-mar-craft { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.blk-mar-status { font-size: 11px; color: hsl(var(--verdigris)); }
+.blk-msp { display: flex; align-items: center; justify-content: center; width: calc(100% - 32px); height: 50px; margin: 18px 16px 0; border-radius: 25px; border: 1px dashed hsl(var(--verdigris) / 0.7); color: hsl(var(--verdigris)); font-size: 14.5px; text-decoration: none; }
+
+/* people grid */
+.blk-mpg .m-chip-row { padding: 16px 20px 4px; }
+.blk-mpg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 0; }
+.blk-mpg-name { margin-top: 0; font-weight: 700; font-size: 15px; }
+.blk-mpg-sub { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.blk-mpg-status { font-size: 11px; color: hsl(var(--verdigris)); }
+
+/* About */
+.blk-map { display: flex; justify-content: center; padding-top: 62px; }
+.blk-mpr { padding: 22px 20px 0; }
+.blk-mpr-intro { margin: 0; font-size: 16px; line-height: 1.6; color: var(--foreground-soft); }
+.blk-mpr-sec { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+.blk-mpr-sec p { margin: 0; font-size: 14.5px; line-height: 1.55; color: hsl(var(--muted-foreground)); }
+
+/* experience template */
+.blk-mxh { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 62px 20px 0; text-align: center; }
+.blk-mxh-title { margin: 6px 0 0; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-weight: 400; font-size: 36px; line-height: 1.05; }
+.blk-mxh-pitch { margin: 0; font-size: 15px; line-height: 1.5; color: hsl(var(--muted-foreground)); text-wrap: pretty; }
+.blk-mxh-host { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 700; font-size: 14px; }
+.blk-mxt-list { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+.blk-mxd-list { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 20px; }
+.blk-mxe { margin: 28px 16px 0; padding: 18px; border-radius: 22px; border: 1px dashed hsl(var(--verdigris) / 0.6); display: flex; flex-direction: column; gap: 12px; }
+.blk-mxe-note { margin: 0; font-size: 14px; line-height: 1.5; color: hsl(var(--muted-foreground)); }
+.blk-mxe-cta { height: 50px; border-radius: 25px; border: 1px solid hsl(var(--verdigris)); background: transparent; color: hsl(var(--verdigris)); font-family: inherit; font-size: 15px; cursor: pointer; }
+.blk-mxe-sheet { padding: 8px 20px 28px; overflow-y: auto; }
+
+/* profile and Suggest (code screens) */
+.m-col { max-width: 480px; margin: 0 auto; padding-bottom: calc(40px + var(--shell-nav-h, 0px)); }
+@media (min-width: 768px) { .m-col { margin: 32px auto; border-radius: 30px; min-height: 0; overflow: hidden; border: 1px solid var(--hair-1); } }
+.m-prof { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 14px 20px 0; gap: 8px; }
+.m-prof-name { margin: 10px 0 0; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-weight: 400; font-size: 40px; line-height: 1.02; }
+.m-prof-sub { font-size: 14px; color: hsl(var(--muted-foreground)); }
+.m-prof.is-artist .m-kicker { color: hsl(var(--verdigris)); }
+.m-prof-bio { margin: 18px 20px 0; font-size: 15.5px; line-height: 1.6; color: var(--foreground-soft); text-align: left; }
+.m-prof-list { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+.m-prof-link { display: block; margin: 22px 16px 0; text-align: center; height: 50px; line-height: 48px; border-radius: 25px; border: 1px solid var(--brass-line); color: hsl(var(--brass-light)); text-decoration: none; font-size: 14.5px; }
+.m-prof.is-artist ~ .m-prof-link { border-color: hsl(var(--verdigris) / 0.6); color: hsl(var(--verdigris)); }
+.m-suggest-types { display: flex; gap: 8px; padding: 18px 16px 0; }
+.m-suggest-fields { display: flex; flex-direction: column; gap: 10px; margin: 16px 16px 0; }
+.blk-mmast-suggest { align-self: flex-start; display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid hsl(var(--verdigris) / 0.7); color: hsl(var(--verdigris)); text-decoration: none; font-size: 14.5px; }
+
+/* people card: square picture on top, blurred copy of it as the card colour */
+.blk-mpc { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; border: 1px solid var(--hair-1); background: var(--m-card); text-align: center; color: inherit; text-decoration: none; isolation: isolate; min-width: 0; }
+.blk-mpc-slide { flex: none; width: 136px; scroll-snap-align: start; }
+.blk-mpc.is-guide { background: hsl(var(--primary) / 0.16); }
+.blk-mpc.is-artist { background: hsl(var(--verdigris) / 0.16); }
+.blk-mpc-back { position: absolute; inset: 0; z-index: -3; overflow: hidden; }
+.blk-mpc-back img { width: 100%; height: 100%; object-fit: cover; filter: blur(30px) saturate(1.2); transform: scale(1.4); opacity: 0.55; display: block; }
+.blk-mpc-wash { position: absolute; inset: 0; z-index: -2; background: linear-gradient(180deg, rgba(27, 29, 34, 0.1) 0%, rgba(27, 29, 34, 0.5) 100%); }
+.blk-mpc-pic { display: block; position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; background: hsl(var(--primary) / 0.12); }
+.blk-mpc.is-artist .blk-mpc-pic { background: hsl(var(--verdigris) / 0.12); }
+.blk-mpc-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.blk-mpc-initial { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-size: 44px; color: hsl(var(--brass-light)); }
+.blk-mpc.is-artist .blk-mpc-initial { color: hsl(var(--verdigris)); }
+.blk-mpc-text { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 10px 14px; }

@@ -4,7 +4,7 @@ import type { Data } from "@puckeditor/core";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { templateDocument } from "@elkdonis/blocks";
 import { requireOrgEditor } from "@/lib/auth";
-import { loadPage, HOME_SLUG } from "@/lib/puck/store";
+import { loadPageWithVersion, HOME_SLUG } from "@/lib/puck/store";
 import { LANDING_SLUG } from "@/lib/puck/landing";
 import { slugProblem } from "@/lib/puck/actions";
 import { allTemplates, startingTemplate } from "@/lib/puck/templates";
@@ -61,7 +61,7 @@ export default async function StudioBlocksPage({
   const seed = await loadHomeSeed();
   const templates = allTemplates(seed);
 
-  const stored = await loadPage(slug);
+  const stored = await loadPageWithVersion(slug);
   // A page that does not exist yet opens as a starting document rather than a
   // 404. Nothing is saved until Publish.
   const initial = stored
@@ -73,6 +73,7 @@ export default async function StudioBlocksPage({
       slug={slug}
       orgId={siteConfig.orgId}
       initial={initial}
+      version={stored?.updatedAt}
       templates={templates}
       metadata={{ ...record }}
     />

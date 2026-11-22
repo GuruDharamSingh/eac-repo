@@ -12,6 +12,7 @@
     "./edit-item": "./src/edit-item.ts",
     "./contract": "./src/contract.ts",
     "./opens": "./src/opens.ts",
+    "./sections": "./src/templates/sections.ts",
     "./record": "./src/record/index.ts",
     "./record.css": "./src/record/record.css",
     "./blocks.css": "./src/blocks.css"

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { FormRoot, quickFormTheme, type FormHost, type FormKindId } from "@elkdonis/studio-forms";
+import { FormRoot, type FormHost, type FormKindId } from "@elkdonis/studio-forms";
 import { makeFormHost, type SiteFormSite } from "./host";
-import { SiteFormInner, schemaOf, useSiteFormBoot } from "./SiteForm";
+import { SiteFormInner, formThemeOf, schemaOf, useSiteFormBoot } from "./SiteForm";
 
 /**
  * The same form on a plain page (2026-11-14): a site's compose or edit route. Same sections, actions and
@@ -16,6 +16,7 @@ export function SiteFormPage({
   threadId = null,
   closeHref,
   initialAnswers = null,
+  tier,
 }: {
   kind: FormKindId;
   site: SiteFormSite;
@@ -23,6 +24,8 @@ export function SiteFormPage({
   closeHref: string;
   /** A new item's starting answers, e.g. `{ section: feed }` from `?feed=`; `section` means the feed. Ignored when editing. */
   initialAnswers?: Record<string, unknown> | null;
+  /** The tier the page opens at. Default: focus under the site look (the page is the full edit), quick otherwise. */
+  tier?: "quick" | "focus";
 }) {
   const schema = schemaOf(kind);
   const { boot, error } = useSiteFormBoot(kind, site, threadId, initialAnswers);
@@ -48,11 +51,24 @@ export function SiteFormPage({
       schema={schema}
       host={host}
       boot={boot}
+      look={site.look}
+      initialTier={tier ?? (site.look === "site" ? "focus" : "quick")}
       frame={(c, form) => (
-        <div className="frm-site-page">
-          <h2 className="frm-site-page-title" style={{ margin: "0 0 12px", fontFamily: "Newsreader, Georgia, serif", fontSize: "1.5rem", fontWeight: 500, lineHeight: 1.2 }}>{c.title}</h2>
+        // Under the site look one panel wraps the title, the form and the foot (site-look.css, .frm-site-page).
+        <div className="frm-site-page" data-look={site.look}>
+          <h2
+            className="frm-site-page-title"
+            style={{
+              margin: "0 0 12px",
+              // The site look draws the title in the site's own title face (--sf-font-title); the default keeps Newsreader.
+              fontFamily: site.look === "site" ? "var(--sf-font-title, inherit)" : "Newsreader, Georgia, serif",
+              fontSize: "1.5rem",
+              fontWeight: 500,
+              lineHeight: 1.2,
+            }}
+          >{c.title}</h2>
           {form}
-          <FormRoot theme={quickFormTheme} className="frm-site-page-foot" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 16, background: "transparent" }}>
+          <FormRoot theme={formThemeOf(site.look)} className="frm-site-page-foot" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 16, background: "transparent" }}>
             {c.stage === "published" ? (
               <button type="button" className="frm-btn frm-btn--primary" onClick={go}>
                 Done

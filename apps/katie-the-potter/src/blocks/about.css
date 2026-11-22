@@ -1,0 +1,359 @@
+/*
+  About blocks (ktp-about-hero, ktp-studio-strip) — tokens only (no Tailwind),
+  so they draw the same on the published page and inside the editor's iframe
+  (globals.css imports this file; the modules import it too).
+
+  Colours come from --blk-* tokens or --ktp-ah-* / --ktp-ss-* variables the
+  blocks set from their fields. Change the look in the studio, not here.
+*/
+
+/* ── ktp-about-hero ──────────────────────────────────────────────────────── */
+
+.ktp-ah {
+  --ktp-ah-ink: var(--blk-fg);
+  --ktp-ah-ground: transparent;
+  position: relative;
+  isolation: isolate;
+  background: var(--ktp-ah-ground);
+  color: var(--ktp-ah-ink);
+  font-family: var(--blk-font-body);
+}
+.ktp-ah-inner {
+  /* Same measure and gutter as a content block given the site column (lib/puck/templates.ts), so edges line up. */
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: clamp(2rem, 6vw, 5rem) 24px;
+  display: grid;
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: center;
+}
+.ktp-ah[data-place="right"] .ktp-ah-inner,
+.ktp-ah[data-place="left"] .ktp-ah-inner {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+}
+.ktp-ah[data-place="left"] .ktp-ah-art {
+  order: -1;
+}
+.ktp-ah[data-place="left"] .ktp-ah-inner {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+@media (max-width: 760px) {
+  .ktp-ah[data-place] .ktp-ah-inner {
+    grid-template-columns: 1fr;
+  }
+  .ktp-ah[data-place="left"] .ktp-ah-art {
+    order: 0;
+  }
+}
+
+.ktp-ah-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  max-width: 38rem;
+}
+.ktp-ah-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blk-accent-ink);
+}
+.ktp-ah-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-weight: 400;
+  font-size: var(--ktp-ah-title-size, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.ktp-ah[data-title="italic"] .ktp-ah-title {
+  font-style: italic;
+}
+@media (max-width: 760px) {
+  .ktp-ah-title {
+    font-size: min(var(--ktp-ah-title-size, 60px), 11vw);
+  }
+}
+.ktp-ah-story {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--ktp-ah-ink);
+}
+.ktp-ah-story p {
+  margin: 0 0 1em;
+}
+.ktp-ah-story p:last-child {
+  margin-bottom: 0;
+}
+/* A drop of ceremony: the first paragraph a size up, as in a printed foreword. */
+.ktp-ah-story > p:first-child {
+  font-size: 1.2em;
+  line-height: 1.55;
+}
+.ktp-ah-signature {
+  margin: 0.4rem 0 0;
+  padding-top: 1rem;
+  border-top: 2px solid var(--blk-accent);
+  width: fit-content;
+  font-family: var(--blk-font-title);
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+/* The portrait: a shape, an offset outline behind it, an optional round inset. */
+.ktp-ah-art {
+  position: relative;
+  margin: 0;
+  min-width: 0;
+  /* Room for the inset and the outline to overhang without leaving the block. */
+  padding: 0 0 2.2rem 2.2rem;
+}
+.ktp-ah[data-place="left"] .ktp-ah-art {
+  padding: 0 2.2rem 2.2rem 0;
+}
+.ktp-ah-frame {
+  position: relative;
+}
+.ktp-ah[data-frame="on"] .ktp-ah-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate(1.1rem, 1.1rem);
+  border: 1.5px solid var(--blk-accent);
+  border-radius: var(--ktp-ah-shape-radius);
+  z-index: -1;
+}
+.ktp-ah[data-place="left"][data-frame="on"] .ktp-ah-frame::before {
+  transform: translate(-1.1rem, 1.1rem);
+}
+.ktp-ah[data-shape="arch"] {
+  --ktp-ah-shape-radius: 999px 999px 14px 14px;
+}
+.ktp-ah[data-shape="oval"] {
+  --ktp-ah-shape-radius: 50%;
+}
+.ktp-ah[data-shape="rounded"] {
+  --ktp-ah-shape-radius: 18px;
+}
+.ktp-ah[data-shape="square"] {
+  --ktp-ah-shape-radius: 0;
+}
+.ktp-ah-portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  max-height: min(78vh, 720px);
+  object-fit: cover;
+  border-radius: var(--ktp-ah-shape-radius);
+  /* A ground behind a cut-out picture; an opaque photo covers it. */
+  background: linear-gradient(180deg, color-mix(in srgb, #d9c8b0 78%, var(--blk-bg-soft)), color-mix(in srgb, #8a6a50 85%, var(--blk-fg)));
+}
+.ktp-ah[data-shape="oval"] .ktp-ah-portrait {
+  aspect-ratio: 4 / 5;
+}
+.ktp-ah-inset {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: clamp(5.5rem, 34%, 11rem);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 5px solid var(--ktp-ah-ground-solid, var(--blk-bg));
+  box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--blk-fg) 55%, transparent);
+  background: var(--blk-bg-soft);
+}
+.ktp-ah[data-place="left"] .ktp-ah-inset {
+  left: auto;
+  right: 0;
+}
+
+/* ── ktp-studio-strip ────────────────────────────────────────────────────── */
+
+.ktp-ss {
+  --ktp-ss-band: var(--blk-bg-soft);
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+}
+.ktp-ss-head {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 40rem;
+}
+.ktp-ss-eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blk-accent-ink);
+}
+.ktp-ss-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.ktp-ss-intro {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.86;
+}
+
+.ktp-ss-pictures {
+  display: grid;
+  gap: clamp(0.6rem, 1.6vw, 1rem);
+}
+.ktp-ss-pic {
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+}
+.ktp-ss-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--ktp-ss-radius, 12px);
+  background: var(--blk-bg-soft);
+}
+.ktp-ss-cap {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--blk-muted);
+}
+
+/* Even row: every picture the same shape, as many across as fit. */
+.ktp-ss[data-layout="row"] .ktp-ss-pictures {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.ktp-ss[data-layout="row"] .ktp-ss-img {
+  aspect-ratio: 4 / 3;
+}
+.ktp-ss[data-layout="row"][data-ratio="square"] .ktp-ss-img {
+  aspect-ratio: 1;
+}
+.ktp-ss[data-layout="row"][data-ratio="tall"] .ktp-ss-img {
+  aspect-ratio: 3 / 4;
+}
+
+/* Mosaic: the first picture is large on the left; the others stack beside it.
+   data-count is the number of pictures (capped at 6), which sets how many rows
+   the large one spans so the right column ends level with it. */
+.ktp-ss[data-layout="mosaic"] .ktp-ss-pictures {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: dense;
+}
+.ktp-ss[data-layout="mosaic"] .ktp-ss-pic {
+  grid-column: span 2;
+}
+.ktp-ss[data-layout="mosaic"] .ktp-ss-img {
+  aspect-ratio: 4 / 3;
+}
+.ktp-ss[data-layout="mosaic"] .ktp-ss-pic:first-child {
+  grid-column: span 4;
+  grid-row: span 2;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.ktp-ss[data-layout="mosaic"] .ktp-ss-pic:first-child .ktp-ss-img {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 0;
+}
+.ktp-ss[data-layout="mosaic"][data-count="4"] .ktp-ss-pic:first-child {
+  grid-row: span 3;
+}
+.ktp-ss[data-layout="mosaic"][data-count="5"] .ktp-ss-pic:first-child {
+  grid-row: span 4;
+}
+/* One or two pictures: no mosaic to make; share the width. */
+.ktp-ss[data-layout="mosaic"][data-count="1"] .ktp-ss-pic:first-child {
+  grid-column: span 6;
+  grid-row: auto;
+}
+.ktp-ss[data-layout="mosaic"][data-count="1"] .ktp-ss-pic:first-child .ktp-ss-img {
+  aspect-ratio: 16 / 9;
+  height: auto;
+}
+.ktp-ss[data-layout="mosaic"][data-count="2"] .ktp-ss-pic,
+.ktp-ss[data-layout="mosaic"][data-count="2"] .ktp-ss-pic:first-child {
+  grid-column: span 3;
+  grid-row: auto;
+}
+.ktp-ss[data-layout="mosaic"][data-count="2"] .ktp-ss-pic:first-child .ktp-ss-img {
+  aspect-ratio: 4 / 3;
+  height: auto;
+}
+@media (max-width: 760px) {
+  .ktp-ss[data-layout="mosaic"] .ktp-ss-pictures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ktp-ss[data-layout="mosaic"] .ktp-ss-pic,
+  .ktp-ss[data-layout="mosaic"][data-count] .ktp-ss-pic:first-child {
+    grid-column: span 1;
+    grid-row: auto;
+  }
+  .ktp-ss[data-layout="mosaic"][data-count] .ktp-ss-pic:first-child {
+    grid-column: span 2;
+  }
+  .ktp-ss[data-layout="mosaic"] .ktp-ss-pic:first-child .ktp-ss-img {
+    aspect-ratio: 4 / 3;
+    height: auto;
+  }
+  /* An even count after the first leaves a lone picture on the last row: let it take the width. */
+  .ktp-ss[data-layout="mosaic"] .ktp-ss-pic:last-child:nth-child(even) {
+    grid-column: span 2;
+  }
+  .ktp-ss-fact + .ktp-ss-fact {
+    border-left: 0;
+  }
+  .ktp-ss-fact {
+    padding-inline: 0 1rem;
+  }
+}
+
+/* The facts band: label over value, divided by hairlines. */
+.ktp-ss-facts {
+  margin: 0;
+  padding: clamp(1rem, 2.5vw, 1.6rem) clamp(1rem, 3vw, 2rem);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 1rem 0;
+  background: var(--ktp-ss-band);
+  border-radius: var(--ktp-ss-radius, 12px);
+}
+.ktp-ss-fact {
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+  padding-inline: 1.1rem;
+}
+.ktp-ss-fact + .ktp-ss-fact {
+  border-left: 1px solid var(--blk-line);
+}
+.ktp-ss-fact:first-child {
+  padding-left: 0;
+}
+.ktp-ss-fact-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--blk-accent-ink);
+}
+.ktp-ss-fact-value {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: 1.1rem;
+  line-height: 1.35;
+}

@@ -1181,3 +1181,22 @@ h1.gf-org-name { font-size: max(var(--gf-fs-min, 0px), calc(32px * var(--gf-fs, 
   .gf-root .eac-surface-prose, .gf-root .gf-reply-body { font-size: max(var(--gf-fs-min, 0px), calc(17px * var(--gf-fs, 1))); }
   .gf-context { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── attachment picker (opt-in: composeOptions.attachments) ───────────────── */
+.gf-attach { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.gf-attach--reply { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.gf-attach-file { display: none; }
+.gf-attach-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border: 1px dashed var(--sf-accent); border-radius: 2px; color: var(--sf-accent); cursor: pointer; }
+.gf-attach-add--round { width: 38px; height: 38px; padding: 0; border-style: solid; border-radius: 50%; font-size: 20px; }
+.gf-attach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.gf-attach-thumbs { display: flex; gap: 6px; overflow-x: auto; width: 100%; }
+.gf-attach-item { position: relative; overflow: hidden; background: var(--sf-bg-soft); border: 1px solid var(--sf-line); }
+.gf-attach-item--compose { height: 110px; }
+.gf-attach-item--reply { flex: none; width: 64px; height: 64px; }
+.gf-attach-item img, .gf-attach-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gf-attach-item.is-uploading img, .gf-attach-item.is-uploading video { opacity: 0.45; }
+.gf-attach-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.gf-attach-state { position: absolute; left: 4px; right: 4px; bottom: 4px; font-family: var(--sf-font-record); font-size: 10px; text-align: center; color: var(--sf-fg); }
+.gf-attach-state--error { color: var(--sf-accent); }
+.gf-attach-x { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: var(--sf-bg); color: var(--sf-fg); cursor: pointer; line-height: 1; }
+.gf-attach-note { width: 100%; font-size: 12.5px; color: var(--sf-muted); }

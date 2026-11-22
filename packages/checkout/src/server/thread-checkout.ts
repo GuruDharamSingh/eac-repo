@@ -27,7 +27,7 @@ import {
   type PurchasableThreadKind,
 } from "@elkdonis/commerce/server";
 import type { StripeCollectOptions } from "@elkdonis/payments";
-import { attachOrder, createBooking, releaseBooking } from "@elkdonis/booking";
+import { attachOrder, createBooking, getOfferById, releaseBooking } from "@elkdonis/booking";
 import { isCardPaymentAvailable, startStripeCheckout, syncStripeOrder } from "./stripe";
 
 /**
@@ -211,6 +211,8 @@ export async function startBookingCheckout(
     startsAt?: string | null;
     /** request_time: up to three proposed starts (ISO). */
     proposedTimes?: unknown;
+    /** set_dates: the booking_slots row (a tour departure). */
+    slotId?: string | null;
     timeZone?: string | null;
     answers?: unknown;
     partySize?: number;
@@ -225,6 +227,7 @@ export async function startBookingCheckout(
     offerId: input.offerId,
     startsAt: input.startsAt ?? null,
     proposedTimes: input.proposedTimes,
+    slotId: input.slotId ?? null,
     partySize: input.partySize,
     booker: {
       userId: input.customerId ?? null,
@@ -242,6 +245,9 @@ export async function startBookingCheckout(
   const base = input.baseUrl.replace(/\/$/, "");
   let orderId: string | null = null;
   try {
+    // Per-person offers (tour departures) price by the party: quantity = party size. Every other offer is one line.
+    const offer = await getOfferById(input.orgId, input.offerId);
+    const quantity = offer?.priceUnit === "per_person" ? Math.max(1, Math.floor(input.partySize ?? 1)) : 1;
     const order = await createThreadOrder({
       orgId: input.orgId,
       threadId: input.threadId,
@@ -252,7 +258,7 @@ export async function startBookingCheckout(
       customerId: input.customerId ?? null,
       notes: input.notes ?? null,
       amountMinor: input.amountMinor,
-      quantity: 1,
+      quantity,
       paymentMethod: "stripe",
     });
     orderId = order.id;

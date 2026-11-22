@@ -364,7 +364,9 @@ services:
       # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
       # the secret makes /api/auth/signup require a token. Set both or neither.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # 2026-11-17: live on this service ahead of the rest (rebuilt with the site key); falls back to
+      # the parked _PENDING secret until .env is renamed for every app.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-${TURNSTILE_SECRET_KEY_PENDING:-}}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${SUNJAY_URL:-http://localhost:3001}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
@@ -639,7 +641,9 @@ services:
       # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
       # the secret makes /api/auth/signup require a token. Set both or neither.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # 2026-11-17: live on this service ahead of the rest (rebuilt with the site key); falls back to
+      # the parked _PENDING secret until .env is renamed for every app.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-${TURNSTILE_SECRET_KEY_PENDING:-}}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # The network's own host (no scheme). Org subdomains hang off it, and the
@@ -888,7 +892,9 @@ services:
       # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
       # the secret makes /api/auth/signup require a token. Set both or neither.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # 2026-11-17: live on this service ahead of the rest (rebuilt with the site key); falls back to
+      # the parked _PENDING secret until .env is renamed for every app.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-${TURNSTILE_SECRET_KEY_PENDING:-}}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       # Network sign-out mark (packages/auth-server/src/sso-state.ts) and session cache.
       REDIS_URL: redis://redis:6379
@@ -1030,7 +1036,9 @@ services:
       # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
       # the secret makes /api/auth/signup require a token. Set both or neither.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # 2026-11-17: live on this service ahead of the rest (rebuilt with the site key); falls back to
+      # the parked _PENDING secret until .env is renamed for every app.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-${TURNSTILE_SECRET_KEY_PENDING:-}}
       NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET:?set NEXTCLOUD_OIDC_SECRET in .env — Nextcloud sociallogin client secret}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
@@ -1930,6 +1938,10 @@ services:
       # The site's own switch (site_config shipping:mode = off|test|live) picks the
       # token per call: test = sandbox only, live = production. Webhook secrets
       # (webh_...) come from the Easyship dashboard, for /api/shipping/webhook.
+      # Shipping in checkout (2026-11-17, @elkdonis/commerce/shipping, store
+      # shipping_mode platform) picks sandbox or production from EASYSHIP_ENV, the
+      # same value art-auction needs: art-auction's webhook buys the label after payment.
+      EASYSHIP_ENV: ${EASYSHIP_ENV:-sandbox}
       EASYSHIP_SANDBOX_TOKEN: ${EASYSHIP_SANDBOX_TOKEN:-}
       EASYSHIP_PRODUCTION_TOKEN: ${EASYSHIP_PRODUCTION_TOKEN:-}
       EASYSHIP_WEBHOOK_SECRET: ${EASYSHIP_WEBHOOK_SECRET:-}
@@ -1958,6 +1970,50 @@ services:
     networks:
       - eac-network
       - nextcloud-network
+
+  # Port 3031: Development (apps/development), network admins only, served at
+  # arts-collective.com/development. Same production shape as fourthway-bookreaders.
+  development:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-development
+    restart: unless-stopped
+    mem_limit: 5g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${DEVELOPMENT_URL:-https://arts-collective.com/development}
+      NEXT_PUBLIC_BASE_PATH: ${DEVELOPMENT_BASE_PATH-/development}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-https://arts-collective.com}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NODE_ENV: production
+      PORT: 3031
+      NODE_OPTIONS: --max-old-space-size=1024
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env}
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - .:/app
+      - /app/apps/development/.next
+    ports:
+      - "3031:3031"
+    command: sh -c "cd apps/development && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3072 NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    networks:
+      - eac-network
+
 
   # Fourth Way Book Readers — books.elkdonis-arts.org (org: fourth_way_book_readers).
   # Port 3019: 3010 (the old fourth-way-book-readers stub's port) is held on
@@ -2068,7 +2124,9 @@ services:
       # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
       # the secret makes /api/auth/signup require a token. Set both or neither.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # 2026-11-17: live on this service ahead of the rest (rebuilt with the site key); falls back to
+      # the parked _PENDING secret until .env is renamed for every app.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-${TURNSTILE_SECRET_KEY_PENDING:-}}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       REDIS_URL: redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${ELKTOURS_URL:-http://localhost:3021}

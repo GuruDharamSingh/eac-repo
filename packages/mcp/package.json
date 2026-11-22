@@ -21,6 +21,8 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "test": "pnpm --filter @elkdonis/lms exec tsx ../mcp/scripts/test.mts"
+    "test": "pnpm --filter @elkdonis/lms exec tsx ../mcp/scripts/test.mts",
+    "manifest": "pnpm --filter @elkdonis/lms exec tsx ../mcp/scripts/build-manifest.mts",
+    "check-manifest": "pnpm --filter @elkdonis/lms exec tsx ../mcp/scripts/build-manifest.mts --check"
   }
 }

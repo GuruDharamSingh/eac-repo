@@ -126,6 +126,9 @@ export type {
   ConfirmOrderPaidInput,
 } from "./orders";
 
+// Two buyers paying for the last copy (2026-11-17): confirmOrderPaid refuses the second.
+export { isOrderOversold, OrderOversoldError } from "./stock";
+
 // Auction lots — create, withdraw, settle.
 export { createLot, cancelLot, settleExpiredLots, marketplaceLadder } from "./auctions";
 export type { CreateLotInput, SettleResult } from "./auctions";
@@ -276,7 +279,7 @@ export async function addToCart(input: {
     );
   }
   if (num(variant.inventory_qty) <= 0) throw new Error("This piece is no longer available");
-  // An edition: copies held by unpaid orders are not for sale (./stock.ts).
+  // An edition: copies whose payment has arrived but is unconfirmed are not for sale (./stock.ts).
   // createOrder re-checks under a lock; this is the early, friendly answer.
   {
     const want = input.quantity ?? 1;

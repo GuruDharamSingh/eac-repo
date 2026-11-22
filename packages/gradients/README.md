@@ -168,3 +168,10 @@ node packages/gradients/playground/build.mjs .ds-sync/node_modules/esbuild     #
 
 The smoke test runs every preset, every kind and 300 generated gradients through `isSafeGradientCss`. It also runs
 them through page-builder's real `cleanCustomCss`, for those that fit its 200-character box.
+
+**Recording (2026-11-18):** `GradientBackground` (and `ShaderCanvas`, `PaperLayer`) also take `clock`, in *motion-seconds*:
+the integral of `motion/100` over time. A clocked layer draws exactly that moment, with no clock of its own. Our
+shader time is `clock × 2` and Paper's frame is `start + clock × 1200 ms`, the same factors as their live speeds. So a
+timeline that keys `motion` changes the speed without jumping the picture. `capture` gives pixel ratio 1 and
+`preserveDrawingBuffer`, so a recorder can `drawImage` the canvases. Word art's record mode uses both
+(`packages/studio/src/wordart/timeline.ts` `shaderClock`).

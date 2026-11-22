@@ -183,25 +183,6 @@ export async function getThreadsForFeed(feedSlug: string, limit = 30): Promise<T
   }
 }
 
-/** The next dated item in a feed — what the home page portal previews. */
-export async function getNextInFeed(feedSlug: string): Promise<Thread | null> {
-  try {
-    const [row] = await db<ThreadRow[]>`
-      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
-      WHERE ${PUBLIC_FILTER}
-        AND t.section = ${feedSlug}
-        AND t.scheduled_at IS NOT NULL
-        AND ${UPCOMING_FILTER}
-      ORDER BY t.scheduled_at ASC
-      LIMIT 1
-    `;
-    return row ? mapThread(row) : null;
-  } catch (err) {
-    console.error(`[innergathering] getNextInFeed(${feedSlug}):`, err);
-    return null;
-  }
-}
-
 /**
  * Fill in the definitions for any terms the body marks up.
  *
@@ -578,22 +559,6 @@ export async function getBoard(): Promise<Guide[]> {
 export async function getGuideBySlug(slug: string): Promise<Guide | null> {
   const row = await getOrgProfileBySlug(ORG, slug);
   return row ? mapGuide(row) : null;
-}
-
-/** What a guide has published here — the body of their profile page. */
-export async function getThreadsByAuthor(userId: string, limit = 20): Promise<Thread[]> {
-  try {
-    const rows = await db<ThreadRow[]>`
-      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
-      WHERE ${PUBLIC_FILTER} AND t.author_id = ${userId}
-      ORDER BY COALESCE(t.scheduled_at, t.published_at, t.created_at) DESC
-      LIMIT ${limit}
-    `;
-    return rows.map(mapThread);
-  } catch (err) {
-    console.error(`[innergathering] getThreadsByAuthor(${userId}):`, err);
-    return [];
-  }
 }
 
 // ---------------------------------------------------------------------------

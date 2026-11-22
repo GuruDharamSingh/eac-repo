@@ -23,7 +23,7 @@ import type { Address, Order } from "../types";
 import { jsonb, mapOrder, num, type Row } from "./map-order";
 import { HOST_PAYOUT_EMAIL, resolveSettlement, estimateProcessorFeeMinor, type LineSettlement } from "./settlement";
 import { writeEntry } from "./ledger";
-import { lockArtworks, syncArtworkStatus, variantStock } from "./stock";
+import { lockArtworks, OrderOversoldError, syncArtworkStatus, variantStock } from "./stock";
 
 /**
  * The buyer's choice of where the commission goes (ORG_STORE_BRIEF R3): one or
@@ -366,8 +366,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       `;
     }
 
-    // The piece is 'reserved' only once nothing is left to sell (a
-    // one-of-a-kind piece always: its one copy is now held).
+    // 2026-11-17: an unpaid order does not reserve the piece; this call is a
+    // no-op for the "order" event (stock.ts) and is kept for the call shape.
     for (const artworkId of new Set(items.map((it) => it.artworkId))) {
       await syncArtworkStatus(tx as unknown as typeof db, artworkId, "order");
     }
@@ -715,6 +715,22 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
       ...new Set(lineRows.filter((l) => l.artwork_variant_id).map((l) => l.artwork_id as string | null).filter(Boolean)),
     ] as string[];
     await lockArtworks(tx as unknown as typeof db, stockArtworkIds);
+    // Nothing is held while an order is unpaid (stock.ts, 2026-11-17), so
+    // another buyer's payment may have taken these copies first. Refuse here,
+    // before anything is written: the transaction rolls back and the order
+    // stays unpaid. The card paths refund it (checkout/stripe.ts); an
+    // eTransfer confirmation shows the seller this message.
+    {
+      const short: string[] = [];
+      for (const l of lineRows) {
+        if (!l.artwork_variant_id) continue;
+        const [v] = (await tx`
+          SELECT inventory_qty FROM artwork_variant WHERE id = ${l.artwork_variant_id as string}
+        `) as unknown as Row[];
+        if (num(v?.inventory_qty) < num(l.quantity)) short.push(String(l.description ?? "This piece"));
+      }
+      if (short.length > 0) throw new OrderOversoldError([...new Set(short)]);
+    }
     for (const l of lineRows) {
       if (!l.artwork_variant_id) continue;
       await tx`
@@ -984,6 +1000,17 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     void import("@elkdonis/booking")
       .then(({ markBookingPaid }) => markBookingPaid(input.orderId))
       .catch((err) => console.error("[commerce] markBookingPaid:", err));
+  }
+
+  // A store whose shipping mode is "platform" (the collective's Easyship
+  // account buys the label): buy it now that the order is paid, for the
+  // courier the buyer chose and paid for at checkout (2026-11-17). Never
+  // blocks or fails the payment; claimed once per order (buyPlatformLabel),
+  // a no-op for any other store or an order that arranged its own shipping.
+  if (result.lineRows.some((l) => l.artwork_variant_id != null)) {
+    void import("../shipping")
+      .then(({ ensurePlatformLabel }) => ensurePlatformLabel(input.orderId))
+      .catch((err) => console.error("[commerce] ensurePlatformLabel:", err));
   }
 
   return mapOrder(result.order);

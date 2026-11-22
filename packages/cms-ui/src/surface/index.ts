@@ -13,6 +13,9 @@
 export { SurfaceProvider } from "./SurfaceProvider";
 export type { SurfaceProviderProps } from "./SurfaceProvider";
 
+export { SurfaceStage, useSurfaceStage } from "./SurfaceStage";
+export type { StageFace, SurfaceStageProps, SurfaceStageApi } from "./SurfaceStage";
+
 export { useSurface, useSurfaceOptional, useLayer } from "./context";
 export type { SurfaceApi, SurfaceLayer, LayerApi, LayerMeta } from "./context";
 
@@ -39,7 +42,7 @@ export type { ThreadMapperInput, ThreadMapperExtras } from "./thread-mapper";
 export { threadViewParts } from "./ThreadView";
 export type { ThreadViewParts, ThreadViewOptions } from "./ThreadView";
 export { BoardMini } from "./surfaces/BoardSurface";
-export { ForumMini, ForumFace } from "./surfaces/ForumSurface";
+export { ForumMini, ForumFace, ForumBoardView, ForumFeedList, ForumThreadRows } from "./surfaces/ForumSurface";
 
 export { MonthGrid } from "./surfaces/CalendarSurface";
 export type { MonthGridProps } from "./surfaces/CalendarSurface";

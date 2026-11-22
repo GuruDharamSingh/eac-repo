@@ -48,7 +48,7 @@ export function openPageAsTree(o: OpenPageOptions) {
   host.className = root.className;
   root.after(host);
   root.style.display = "none";
-  const editor = mountTreePage({ ...rest, host, doc, metadata: { parts } });
+  const editor = mountTreePage({ ...rest, host, doc, metadata: { parts }, fitToPanel: true });
   return { ...editor, skipped };
 }
 
@@ -88,6 +88,6 @@ export async function openVisitorPage(o: VisitorPageOptions) {
   host.className = root.className;
   root.after(host);
   root.style.display = "none";
-  const editor = mountTreePage({ ...rest, host, doc, metadata: { parts } });
+  const editor = mountTreePage({ ...rest, host, doc, metadata: { parts }, fitToPanel: true });
   return { ...editor, skipped };
 }

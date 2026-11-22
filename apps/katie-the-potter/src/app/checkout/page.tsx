@@ -41,7 +41,7 @@ export default async function CheckoutPage() {
     {
       id: "etransfer" as const,
       label: "Interac eTransfer",
-      description: "Send Katie an Interac eTransfer after placing the order. The piece is held for you until it arrives.",
+      description: "Send Katie an Interac eTransfer after placing the order. Katie confirms it when it arrives, and the piece is then sold to you. It is not held for you meanwhile.",
     },
   ];
 

@@ -1,0 +1,557 @@
+/* One document, three hands (ideas/manjushri). Everything is under .mj or .mjf, so no rule
+   here can reach a block drawn in the stage, another idea, or the workbench.
+   The three hands take three tsakli pigments; a refusal takes cinnabar. */
+
+.mj,
+.mjf {
+  --mj-look: #e0b23c; /* orpiment */
+  --mj-words: #4fb694; /* malachite */
+  --mj-assistant: #7b9cf0; /* lapis, lifted for a dark ground */
+  --mj-refused: #e2654f; /* cinnabar */
+  --mj-ground: var(--dev-bg, #0f1115);
+  --mj-panel: var(--dev-panel, #171a21);
+  --mj-line: var(--dev-line, #262b36);
+  --mj-ink: var(--dev-ink, #e8eaf0);
+  --mj-muted: var(--dev-muted, #8b93a7);
+}
+.mj [data-hand="look"],
+.mj[data-hand="look"] {
+  --mj-hand: var(--mj-look);
+}
+.mj [data-hand="words"] {
+  --mj-hand: var(--mj-words);
+}
+.mj [data-hand="assistant"] {
+  --mj-hand: var(--mj-assistant);
+}
+
+.mj {
+  margin-top: 20px;
+  color: var(--mj-ink);
+  font: 14px/1.5 system-ui, sans-serif;
+}
+.mj button,
+.mj select,
+.mj input,
+.mj textarea {
+  font: inherit;
+  color: inherit;
+}
+.mj input,
+.mj textarea,
+.mj select {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.mj button {
+  cursor: pointer;
+}
+.mj :focus-visible {
+  outline: 2px solid var(--mj-hand, var(--mj-assistant));
+  outline-offset: 2px;
+}
+
+/* The bar above the stage. */
+.mj-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.mj-blockpick {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--mj-muted);
+}
+.mj-blockpick select {
+  background: var(--mj-panel);
+  border: 1px solid var(--mj-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.mj-hint {
+  color: var(--mj-muted);
+  flex: 1 1 240px;
+}
+.mj-quiet {
+  background: none;
+  border: 1px solid var(--mj-line);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--mj-muted);
+}
+.mj-quiet:hover {
+  color: var(--mj-ink);
+  border-color: var(--mj-muted);
+}
+
+/* Stage and hands. */
+.mj-work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  align-items: start;
+}
+.mj-stagewrap {
+  border: 1px solid var(--mj-line);
+  border-top: 3px solid var(--mj-hand);
+  border-radius: 4px 4px 10px 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 160ms;
+}
+.mj-stage {
+  position: relative;
+  color: #111;
+  cursor: pointer;
+  min-height: 160px;
+}
+.mj-outline {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid var(--mj-hand);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transition: left 120ms, top 120ms, width 120ms, height 120ms;
+}
+.mj-outline span {
+  position: absolute;
+  left: -2px;
+  bottom: 100%;
+  background: var(--mj-hand);
+  color: #14120b;
+  font: 600 11px/1 system-ui, sans-serif;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+.mj-fail {
+  margin: 0;
+  padding: 16px;
+  color: var(--mj-refused);
+  background: var(--mj-panel);
+}
+
+.mj-hands {
+  border: 1px solid var(--mj-line);
+  border-radius: 10px;
+  background: var(--mj-panel);
+  overflow: hidden;
+}
+.mj-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--mj-line);
+}
+.mj-tabs button {
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: 11px 6px 9px;
+  color: var(--mj-muted);
+  font-weight: 600;
+}
+.mj-tabs button:hover {
+  color: var(--mj-ink);
+}
+.mj-tabs button[aria-selected="true"] {
+  color: var(--mj-hand);
+  border-bottom-color: var(--mj-hand);
+}
+.mj-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+.mj-lead {
+  margin: 0;
+}
+.mj-lead strong {
+  color: var(--mj-hand);
+  font-weight: 600;
+}
+.mj-sub {
+  margin: 6px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--mj-line);
+  color: var(--mj-muted);
+}
+.mj-note {
+  margin: 0;
+  color: var(--mj-muted);
+  font-size: 13px;
+}
+
+.mj-chips,
+.mj-seg,
+.mj-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mj-chips button,
+.mj-seg button,
+.mj-presets button {
+  background: var(--mj-ground);
+  border: 1px solid var(--mj-line);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 13px;
+}
+.mj-chips button:hover,
+.mj-seg button:hover,
+.mj-presets button:hover {
+  border-color: var(--mj-muted);
+}
+.mj-chips button[aria-pressed="true"],
+.mj-seg button[aria-pressed="true"] {
+  border-color: var(--mj-hand);
+  color: var(--mj-hand);
+}
+.mj-presets {
+  flex-direction: column;
+}
+.mj-presets button {
+  text-align: left;
+}
+
+.mj-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.mj-rowlabel {
+  color: var(--mj-muted);
+  font-size: 13px;
+}
+.mj-swatches {
+  display: flex;
+  gap: 6px;
+}
+.mj-swatches button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 0;
+}
+.mj-swatches button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--mj-panel), 0 0 0 4px var(--mj-hand);
+}
+.mj-swatches .mj-none {
+  background: linear-gradient(135deg, transparent 46%, var(--mj-refused) 46%, var(--mj-refused) 54%, transparent 54%), var(--mj-ground);
+}
+.mj-stepper {
+  display: inline-grid;
+  grid-template-columns: 30px 76px 30px;
+  align-items: center;
+  border: 1px solid var(--mj-line);
+  border-radius: 6px;
+  overflow: hidden;
+  width: max-content;
+}
+.mj-stepper button {
+  background: var(--mj-ground);
+  border: 0;
+  height: 30px;
+  font-size: 16px;
+}
+.mj-stepper button:hover {
+  color: var(--mj-hand);
+}
+.mj-stepper output {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.mj-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mj-field span {
+  color: var(--mj-muted);
+  font-size: 13px;
+}
+.mj-field input,
+.mj-field textarea,
+.mj-script {
+  background: var(--mj-ground);
+  border: 1px solid var(--mj-line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 100%;
+  resize: vertical;
+}
+.mj-field[data-on] span {
+  color: var(--mj-hand);
+}
+.mj-field[data-on] input,
+.mj-field[data-on] textarea {
+  border-color: var(--mj-hand);
+}
+.mj-script {
+  font: 12.5px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+.mj-go {
+  align-self: flex-start;
+  background: var(--mj-hand);
+  color: #0d1220;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+.mj-go:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The document, in its two sides. */
+.mj-doc {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.mj-side {
+  --side: var(--mj-words);
+  border: 1px solid var(--mj-line);
+  border-left: 3px solid var(--side);
+  border-radius: 4px 10px 10px 4px;
+  background: var(--mj-panel);
+  min-width: 0;
+}
+.mj-side[data-side="look"] {
+  --side: var(--mj-look);
+}
+.mj-side header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 12px 14px 8px;
+}
+.mj-side h3,
+.mj-ledger h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.mj-side h3 {
+  color: var(--side);
+}
+.mj-print {
+  font: 12.5px/1 ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--mj-muted);
+  letter-spacing: 0.06em;
+}
+.mj-state {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--mj-muted);
+}
+.mj-side[data-hot] .mj-state,
+.mj-side[data-hot] .mj-print {
+  color: var(--side);
+}
+.mj-side pre {
+  margin: 0;
+  padding: 0 14px 14px;
+  max-height: 260px;
+  overflow: auto;
+  font: 12.5px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--mj-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mj-caption {
+  margin: 10px 0 0;
+  max-width: 76ch;
+  color: var(--mj-muted);
+}
+
+/* The ledger. */
+.mj-ledger {
+  margin-top: 24px;
+}
+.mj-ledger ol {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--mj-line);
+}
+.mj-ledger li {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mj-line);
+}
+.mj-who {
+  color: var(--mj-hand);
+  font-weight: 600;
+  font-size: 13px;
+}
+.mj-ledger code {
+  font: 12px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--mj-muted);
+  word-break: break-word;
+}
+.mj-say {
+  font-size: 13px;
+}
+.mj-ledger li[data-ok="false"] .mj-say {
+  color: var(--mj-refused);
+}
+
+@media (max-width: 900px) {
+  .mj-work,
+  .mj-doc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mj-ledger li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mj-outline,
+  .mj-stagewrap {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The findings under the demo (server-drawn from the three research files).
+   --------------------------------------------------------------------------- */
+.mjf {
+  margin-top: 48px;
+  color: var(--mj-ink);
+}
+.mjf h2 {
+  margin: 40px 0 6px;
+  font-size: 20px;
+}
+.mjf h3 {
+  margin: 24px 0 8px;
+  font-size: 15px;
+}
+.mjf p {
+  max-width: 76ch;
+  color: var(--mj-muted);
+  margin: 0 0 12px;
+}
+.mjf-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--mj-line);
+  border-radius: 10px;
+  background: var(--mj-panel);
+}
+.mjf table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.mjf th,
+.mjf td {
+  text-align: left;
+  vertical-align: top;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--mj-line);
+}
+.mjf tr:last-child td {
+  border-bottom: 0;
+}
+.mjf th {
+  color: var(--mj-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mjf td strong {
+  font-weight: 600;
+}
+.mjf code {
+  font: 12px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--mj-muted);
+  word-break: break-word;
+}
+.mjf-tag {
+  display: inline-block;
+  border: 1px solid var(--mj-line);
+  border-radius: 99px;
+  padding: 1px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mjf-tag[data-tone="good"] {
+  color: var(--mj-words);
+  border-color: color-mix(in srgb, var(--mj-words) 50%, transparent);
+}
+.mjf-tag[data-tone="mid"] {
+  color: var(--mj-look);
+  border-color: color-mix(in srgb, var(--mj-look) 50%, transparent);
+}
+.mjf-tag[data-tone="bad"] {
+  color: var(--mj-refused);
+  border-color: color-mix(in srgb, var(--mj-refused) 50%, transparent);
+}
+.mjf-meter {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 14px);
+  gap: 3px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.mjf-meter i {
+  height: 8px;
+  border-radius: 2px;
+  background: var(--mj-line);
+}
+.mjf-meter[data-have="partial"] i:first-child,
+.mjf-meter[data-have="full"] i {
+  background: var(--mj-look);
+}
+.mjf-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: mjf;
+  display: grid;
+  gap: 10px;
+  max-width: 86ch;
+}
+.mjf-steps li {
+  counter-increment: mjf;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--mj-line);
+  border-radius: 10px;
+  background: var(--mj-panel);
+}
+.mjf-steps li::before {
+  content: counter(mjf);
+  color: var(--mj-look);
+  font-weight: 700;
+  font-size: 16px;
+}
+.mjf-steps strong {
+  display: block;
+  font-weight: 600;
+}
+.mjf-steps span {
+  color: var(--mj-muted);
+  font-size: 13px;
+}
+.mjf-empty {
+  padding: 14px;
+  border: 1px dashed var(--mj-line);
+  border-radius: 10px;
+  color: var(--mj-muted);
+}

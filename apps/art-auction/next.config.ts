@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/cms-bindings",
     "@elkdonis/commerce",
     "@elkdonis/db",
+    "@elkdonis/direct-edit",
     "@elkdonis/email",
     "@elkdonis/messaging",
     "@elkdonis/nextcloud",

@@ -159,7 +159,10 @@
    the operating system instead, while leaving the class working for a toggle
    later. */
 @media (prefers-color-scheme: dark) {
-  :root:not(.light) {
+  /* `html:not(.light)`, not `:root:not(.light)`: the same element, one class
+     less specific, so a saved Site style (`html:root`, loaded after this file)
+     applies in dark mode too. Still beats the light `:root` defaults above. */
+  html:not(.light) {
     --background: 24 12% 8%;
     --foreground: 36 18% 93%;
     --card: 24 12% 11%;

@@ -6,4 +6,5 @@ export * from "./open-hours";
 export * from "./validate";
 export * from "./policy";
 export * from "./ics";
+export * from "./slots";
 export * from "./rsvp";

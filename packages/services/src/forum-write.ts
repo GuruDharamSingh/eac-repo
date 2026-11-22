@@ -1,10 +1,11 @@
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { sanitizeRichText } from '@elkdonis/utils';
+import { assertPublicUrl, unfurl } from '@elkdonis/utils/unfurl';
 import { createThread } from './posts';
 import { getOrgFeed, canViewFeed, canPostToFeed, upsertOrgFeed } from './org-feeds';
 import { viewerIdentityIds } from './forum';
-import { meetsMinRole, type ThreadRole } from './thread-access';
+import { meetsMinRole, audienceToStorage, isAudience, type Audience, type ThreadRole } from './thread-access';
 import { getIdentityIds, resolveActor } from './identities';
 import type { ForumPerson, ForumViewer } from './forum';
 import { getOrgNcForum, pushModerationToNextcloud, pushReplyToNextcloud, pushTopicToNextcloud, threadNcState } from './nc-forum';
@@ -146,11 +147,104 @@ export function isOrgMember(viewer: ForumViewer, orgId: string): boolean {
 
 // ── replies ─────────────────────────────────────────────────────────────────
 
+/** One attachment on a topic or reply (table forum_attachments, migrations-draft/forum_attachments.sql). */
+export interface ForumAttachmentInput {
+  kind: 'image' | 'video' | 'link';
+  /** image/video: a file this site stored (/api/media/...) or an https address. link: a public web address. */
+  url: string;
+  meta?: { width?: number; height?: number; seconds?: number; mime?: string };
+}
+
+export interface ForumAttachment {
+  id: string;
+  /** null = the topic's opening post. */
+  replyId: string | null;
+  kind: 'image' | 'video' | 'link';
+  url: string;
+  width: number | null;
+  height: number | null;
+  seconds: number | null;
+  mimeType: string | null;
+  /** link: { title, description, imageUrl, siteName } fetched at write time. */
+  card: { title?: string; description?: string | null; imageUrl?: string | null; siteName?: string | null };
+  position: number;
+}
+
+const MAX_ATTACHMENTS = 12;
+
+async function attachmentsTableExists(): Promise<boolean> {
+  try {
+    const [r] = await db<Array<{ t: string | null }>>`SELECT to_regclass('public.forum_attachments') AS t`;
+    return Boolean(r?.t);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Store attachments for a topic or reply. A no-op until the forum_attachments table exists, and it never
+ * fails the post: the topic or reply is already saved, so a bad attachment is dropped and logged.
+ * At most one link (unfurled here with assertPublicUrl) and 12 attachments in all.
+ */
+async function saveForumAttachments(args: { orgId: string; threadId: string; replyId: string | null; userId: string; items: ForumAttachmentInput[] | undefined }): Promise<void> {
+  const items = (args.items ?? []).slice(0, MAX_ATTACHMENTS);
+  if (!items.length || !(await attachmentsTableExists())) return;
+  let pos = 0;
+  let links = 0;
+  for (const it of items) {
+    try {
+      if (!it || !['image', 'video', 'link'].includes(it.kind) || typeof it.url !== 'string') continue;
+      const url = it.url.trim();
+      let card: Record<string, unknown> = {};
+      if (it.kind === 'link') {
+        if (links >= 1) continue;
+        const full = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+        await assertPublicUrl(full);
+        const u = await unfurl(full);
+        card = { title: u.title, description: u.description, imageUrl: u.imageUrl, siteName: u.siteName };
+        links++;
+        await db`
+          INSERT INTO forum_attachments (org_id, thread_id, reply_id, kind, url, card, position, created_by)
+          VALUES (${args.orgId}, ${args.threadId}, ${args.replyId}, 'link', ${u.url}, ${db.json(card as any)}, ${pos++}, ${args.userId})
+        `;
+        continue;
+      }
+      if (!url.startsWith('/api/media/') && !/^https:\/\//.test(url)) continue;
+      const m = it.meta ?? {};
+      const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
+      await db`
+        INSERT INTO forum_attachments (org_id, thread_id, reply_id, kind, url, mime_type, width, height, seconds, position, created_by)
+        VALUES (${args.orgId}, ${args.threadId}, ${args.replyId}, ${it.kind}, ${url}, ${typeof m.mime === 'string' ? m.mime.slice(0, 100) : null},
+                ${num(m.width)}, ${num(m.height)}, ${num(m.seconds)}, ${pos++}, ${args.userId})
+      `;
+    } catch (err) {
+      console.error('[forum] attachment dropped:', err);
+    }
+  }
+}
+
+/** The attachments of a topic and all its replies, in order. Empty until the table exists. */
+export async function listForumAttachments(threadId: string): Promise<ForumAttachment[]> {
+  if (!(await attachmentsTableExists())) return [];
+  const rows = await db<Array<Record<string, unknown>>>`
+    SELECT id, reply_id, kind, url, width, height, seconds, mime_type, card, position
+    FROM forum_attachments WHERE thread_id = ${threadId} ORDER BY reply_id NULLS FIRST, position, created_at
+  `;
+  return rows.map((r) => ({
+    id: String(r.id), replyId: (r.reply_id as string | null) ?? null, kind: r.kind as ForumAttachment['kind'], url: String(r.url),
+    width: r.width == null ? null : Number(r.width), height: r.height == null ? null : Number(r.height),
+    seconds: r.seconds == null ? null : Number(r.seconds), mimeType: (r.mime_type as string | null) ?? null,
+    card: (r.card ?? {}) as ForumAttachment['card'], position: Number(r.position),
+  }));
+}
+
 export interface PostReplyInput {
   threadId: string;
   text: string;
   /** Reply to a specific reply; null for a top-level reply to the thread. */
   parentId?: string | null;
+  /** Photos, videos or one link. Stored only when forum_attachments exists. */
+  attachments?: ForumAttachmentInput[];
 }
 
 /**
@@ -171,7 +265,12 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
   }
 
   const html = textToHtml(input.text ?? '');
-  if (!html.replace(/<[^>]+>/g, '').trim()) return { ok: false, error: 'Write something first.' };
+  const hasText = Boolean(html.replace(/<[^>]+>/g, '').trim());
+  // A reply is text or at least one attachment. Attachments alone need the table, or the reply would be empty.
+  if (!hasText) {
+    if (!(input.attachments && input.attachments.length > 0)) return { ok: false, error: 'Write something first.' };
+    if (!(await attachmentsTableExists())) return { ok: false, error: 'Photos and video are not available yet. Write something first.' };
+  }
   if (html.length > 40_000) return { ok: false, error: 'That reply is too long.' };
   if (await overRateLimit(viewer)) return { ok: false, error: 'Slow down — try again in a few minutes.' };
 
@@ -222,6 +321,8 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
 
   // Awaited so the reply's link exists by the time the page reloads; a
   // failure only marks it for the sync tick to retry — the reply stands.
+  await saveForumAttachments({ orgId: thread.orgId, threadId: thread.id, replyId, userId: uid, items: input.attachments });
+
   if (nc.synced) await pushReplyToNextcloud(replyId).catch((err) => console.error('[forum] nc reply push:', err));
 
   return { ok: true, replyId, page: await pageOfReply(thread.id, replyId) };
@@ -265,7 +366,31 @@ export interface CreateTopicInput {
    * public, matching who can read it on Nextcloud.
    */
   syncToNextcloud?: boolean;
+  /**
+   * Thread kind. Allow-list: post (default), idea, event. Anything else is
+   * refused rather than coerced, so a form cannot mint other kinds here.
+   */
+  kind?: TopicKind;
+  /**
+   * Who may read it (thread-audience.ts). Omitted keeps today's behaviour
+   * (PUBLIC, or ORGANIZATION for a private Nextcloud-synced topic). Guides-only
+   * and owners-only are for moderators; anyone may choose everyone, followers,
+   * members or author (private to them).
+   */
+  audience?: Audience;
+  /**
+   * One web address to attach. Checked with assertPublicUrl, then unfurled
+   * at write time; the card is stored on the thread as metadata.link
+   * ({ url, title, description, imageUrl, siteName }). A page that cannot be
+   * read still posts, titled by its host.
+   */
+  link?: string | null;
+  /** Photos, videos or one link. Stored only when forum_attachments exists. */
+  attachments?: ForumAttachmentInput[];
 }
+
+export const TOPIC_KINDS = ['post', 'idea', 'event'] as const;
+export type TopicKind = (typeof TOPIC_KINDS)[number];
 
 export async function createTopic(viewer: ForumViewer, input: CreateTopicInput): Promise<WriteResult<{ threadId: string; slug: string }>> {
   if (!viewer.userId) return { ok: false, error: 'Sign in to start a topic.' };
@@ -292,16 +417,47 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
     if (!ncForum) return { ok: false, error: 'This organisation has no Nextcloud forum category yet.' };
   }
 
+  const kind = input.kind ?? 'post';
+  if (!(TOPIC_KINDS as readonly string[]).includes(kind)) return { ok: false, error: 'Unknown kind of topic.' };
+  let audienceStorage: ReturnType<typeof audienceToStorage> | null = null;
+  if (input.audience !== undefined) {
+    if (!isAudience(input.audience)) return { ok: false, error: 'Unknown audience.' };
+    if ((input.audience === 'guides' || input.audience === 'owners') && !canModerate(viewer, input.orgId)) {
+      return { ok: false, error: 'Only owners and guides can pick that audience.' };
+    }
+    if (input.syncToNextcloud && input.audience !== 'everyone') {
+      return { ok: false, error: 'A topic shared with Nextcloud cannot also be restricted here.' };
+    }
+    audienceStorage = audienceToStorage(input.audience);
+  }
+
+  let linkCard: { url: string; title: string; description: string | null; imageUrl: string | null; siteName: string | null } | null = null;
+  const rawLink = (input.link ?? '').trim();
+  if (rawLink) {
+    const full = /^https?:\/\//i.test(rawLink) ? rawLink : `https://${rawLink}`;
+    if (!rawLink.includes('.')) return { ok: false, error: 'That does not look like a web address.' };
+    try {
+      await assertPublicUrl(full);
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'That link cannot be used.' };
+    }
+    linkCard = await unfurl(full);
+  }
+
   const post = await createThread({
-    kind: 'post',
+    kind,
     title,
     orgId: input.orgId,
     authorId: actor.identityId,
     body: html,
     status: 'published',
-    visibility: ncForum && !ncForum.isPublic ? 'ORGANIZATION' : 'PUBLIC',
+    visibility: audienceStorage ? audienceStorage.visibility : ncForum && !ncForum.isPublic ? 'ORGANIZATION' : 'PUBLIC',
     section: feed.slug,
+    ...(linkCard ? { metadata: { link: linkCard } } : {}),
   });
+  if (audienceStorage?.minRole) {
+    await db`UPDATE threads SET min_role = ${audienceStorage.minRole} WHERE id = ${post.id}`;
+  }
   if (ncForum) {
     const pushed = await pushTopicToNextcloud(post.id).catch((err) => ({ ok: false, error: String(err) }));
     if (!pushed.ok) console.error('[forum] nc topic push (will retry):', pushed.error);
@@ -316,12 +472,38 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
       ON CONFLICT DO NOTHING
     `;
   }
+  await saveForumAttachments({ orgId: input.orgId, threadId: post.id, replyId: null, userId: uid, items: input.attachments });
   await db`INSERT INTO watches (thread_id, user_id) VALUES (${post.id}, ${uid}) ON CONFLICT DO NOTHING`;
   await db`
     INSERT INTO thread_reads (user_id, thread_id, last_read_at) VALUES (${uid}, ${post.id}, NOW())
     ON CONFLICT (user_id, thread_id) DO UPDATE SET last_read_at = NOW()
   `;
   return { ok: true, threadId: post.id, slug: post.slug };
+}
+
+/**
+ * Change who may read a topic. The author (any of their identities) or a
+ * moderator only. Same audience rules and storage as createTopic; a topic
+ * shared with Nextcloud keeps its own rules and is refused here.
+ */
+export async function setTopicAudience(viewer: ForumViewer, threadId: string, audience: Audience): Promise<WriteResult<{ audience: Audience }>> {
+  if (!viewer.userId) return { ok: false, error: 'Sign in first.' };
+  if (!isAudience(audience)) return { ok: false, error: 'Unknown audience.' };
+  const [t] = await db<Array<{ org_id: string; author_id: string }>>`
+    SELECT org_id, author_id FROM threads WHERE id = ${threadId}
+  `;
+  if (!t) return { ok: false, error: 'No such topic.' };
+  const isAuthor = viewerIdentityIds(viewer).includes(t.author_id);
+  if (!isAuthor && !canModerate(viewer, t.org_id)) return { ok: false, error: 'Only the author can change who reads this.' };
+  if ((audience === 'guides' || audience === 'owners') && !canModerate(viewer, t.org_id)) {
+    return { ok: false, error: 'Only owners and guides can pick that audience.' };
+  }
+  if ((await threadNcState(threadId)).synced) return { ok: false, error: 'This topic is shared with Nextcloud; its audience follows that.' };
+  const st = audienceToStorage(audience);
+  await db`
+    UPDATE threads SET visibility = ${st.visibility}, min_role = ${st.minRole}, updated_at = NOW() WHERE id = ${threadId}
+  `;
+  return { ok: true, audience };
 }
 
 // ── votes and hearts ────────────────────────────────────────────────────────

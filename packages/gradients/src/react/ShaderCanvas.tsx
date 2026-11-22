@@ -16,7 +16,7 @@ import type { GradientSpec } from "../spec";
  * at 0.6 of that), the loop stops when the canvas is off screen or the tab is
  * hidden, and reduced-motion viewers (or motion 0) get one still frame.
  */
-export function ShaderCanvas({ spec, className, style, frame }: {
+export function ShaderCanvas({ spec, className, style, frame, clock, capture }: {
   spec: GradientSpec;
   className?: string;
   style?: React.CSSProperties;
@@ -25,20 +25,29 @@ export function ShaderCanvas({ spec, className, style, frame }: {
    * when given, the canvas draws that moment and never runs its own clock.
    */
   frame?: number;
+  /** Motion-seconds: shader time = clock × 2 (the same factor as `shaderUniforms().speed`). Wins over `frame`. */
+  clock?: number;
+  /** Pixel ratio 1 and preserveDrawingBuffer, so a recorder can drawImage it. Fixed for the canvas's life. */
+  capture?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const specRef = useRef(spec);
   specRef.current = spec;
   const frameRef = useRef(frame);
   frameRef.current = frame;
+  const clockRef = useRef(clock);
+  clockRef.current = clock;
+  // the fixed moment to draw (seconds of shader time), or undefined to run our own clock
+  const fixedTime = (speed: number) =>
+    clockRef.current !== undefined ? clockRef.current * 2 : frameRef.current !== undefined ? (frameRef.current / 1000) * speed : undefined;
   const redrawRef = useRef<(() => void) | null>(null);
   const kind = spec.shader;
-  useIsoLayoutEffect(() => { redrawRef.current?.(); }, [spec, frame]);
+  useIsoLayoutEffect(() => { redrawRef.current?.(); }, [spec, frame, clock]);
 
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas || !isOwnShader(kind)) return;
-    const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false, powerPreference: "low-power" });
+    const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false, powerPreference: "low-power", preserveDrawingBuffer: !!capture });
     if (!gl || gl.isContextLost()) { canvas.style.display = "none"; return; }
     // browsers cap live contexts (~16); a lost one hides itself so the CSS fallback shows
     const onLost = (e: Event) => { e.preventDefault(); cancelAnimationFrame(raf); raf = -1; canvas.style.display = "none"; };
@@ -75,11 +84,11 @@ export function ShaderCanvas({ spec, className, style, frame }: {
     };
 
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const quality = kind === "mineral" ? 0.6 : 1;
+    const quality = kind === "mineral" && !capture ? 0.6 : 1;
     let raf = 0, visible = true, t = 0, last = performance.now();
 
     const size = () => {
-      const dpr = Math.min(1.5, window.devicePixelRatio || 1) * quality;
+      const dpr = capture ? 1 : Math.min(1.5, window.devicePixelRatio || 1) * quality;
       const w = Math.max(1, Math.round(canvas.clientWidth * dpr)), h = Math.max(1, Math.round(canvas.clientHeight * dpr));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       gl.viewport(0, 0, w, h);
@@ -104,8 +113,8 @@ export function ShaderCanvas({ spec, className, style, frame }: {
     };
     const loop = (now: number) => {
       const speed = shaderUniforms(specRef.current).speed;
-      const fixed = frameRef.current;
-      if (fixed !== undefined) t = (fixed / 1000) * speed; // deterministic: the render's clock, not ours
+      const fixed = fixedTime(speed);
+      if (fixed !== undefined) t = fixed; // deterministic: the render's clock, not ours
       else t += ((now - last) / 1000) * speed;
       last = now;
       draw();
@@ -125,9 +134,9 @@ export function ShaderCanvas({ spec, className, style, frame }: {
     // editors change the spec without remounting: a still canvas redraws when the spec changes
     // frame mode draws synchronously, so a frame-by-frame renderer captures the finished frame
     redrawRef.current = () => {
-      const fixed = frameRef.current;
+      const fixed = fixedTime(shaderUniforms(specRef.current).speed);
       if (fixed === undefined) return kick();
-      t = (fixed / 1000) * shaderUniforms(specRef.current).speed;
+      t = fixed;
       draw();
     };
     kick();

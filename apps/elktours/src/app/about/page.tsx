@@ -5,6 +5,12 @@ import { getAssociatedBusinesses, getGuides, getSiteSections } from "@/lib/data"
 import { toPlainText } from "@/lib/format";
 import { listTours } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
+import { Render, resolveAllData } from "@puckeditor/core/rsc";
+import type { Data } from "@puckeditor/core";
+import { Split } from "@/components/mobile/split";
+import { loadMobileDoc } from "@/lib/puck/mobile";
+import { mobileServerConfig } from "@/lib/puck/config.mobile.server";
+import { readMobileContent } from "@/lib/puck/mobile-content";
 
 export const metadata: Metadata = {
   title: "About",
@@ -175,7 +181,12 @@ export default async function AboutPage() {
 
   const shown = rows.filter((r) => r.body || editor);
 
-  return (
+  // Phone tree (G4): the m-about document.
+  const [{ data }, mobileContent] = await Promise.all([loadMobileDoc("m-about"), readMobileContent()]);
+  const meta = { orgId: siteConfig.orgId, slug: "m-about", mobileContent };
+  const filled = await resolveAllData(data, mobileServerConfig, meta);
+
+  const desktop = (
     <main className="mx-auto max-w-5xl px-5 pb-24 pt-12">
       <h1 className="font-serif text-5xl italic leading-none sm:text-6xl">{about?.title ?? "About"}</h1>
       <p className="mt-4 max-w-[62ch] text-lg text-muted-foreground">
@@ -216,4 +227,6 @@ export default async function AboutPage() {
       </div>
     </main>
   );
+
+  return <Split mobile={<Render config={mobileServerConfig} data={filled as Data} metadata={meta} />} desktop={desktop} />;
 }

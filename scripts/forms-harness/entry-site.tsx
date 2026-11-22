@@ -15,6 +15,7 @@ import { POST_SAMPLE, POST_SAMPLE_CONTEXT, SAMPLE_PICTURE } from "/repo/packages
 declare global {
   interface Window {
     __PAGE__: string;
+    __LOOK__?: "site";
     __SAVES__: Array<{ kind: string; intent: string; id: string | null; answers: Answers }>;
   }
 }
@@ -85,7 +86,24 @@ const site: SiteFormSite = {
   // A materials upload that answers at once (no file leaves the page).
   materials: { upload: async (file) => ({ ok: true as const, item: { id: `m-${file.name}`, url: "#", filename: file.name, mimeType: file.type, size: file.size } }) },
   meetingOptions: { cycleBadge: true },
+  // Para Theater look pages (build.mjs "-pt"): the site look; every other page keeps the default.
+  look: window.__LOOK__,
 };
+
+/** "-focus" pages: press "Open full form" once the popup has drawn, so the screenshot is at the focus tier. */
+function OpenFull() {
+  React.useEffect(() => {
+    const t = setInterval(() => {
+      const b = [...document.querySelectorAll("button")].find((x) => x.textContent?.trim() === "Open full form") as HTMLButtonElement | undefined;
+      if (b) {
+        b.click();
+        clearInterval(t);
+      }
+    }, 100);
+    return () => clearInterval(t);
+  }, []);
+  return null;
+}
 
 function OpenOnLoad({ kind, edit }: { kind: FormKindId; edit: boolean }) {
   const { open } = useSurface();
@@ -123,18 +141,19 @@ function App() {
       </SurfaceProvider>
     );
   }
-  const m = /^sf-([a-z]+)-(surface|page)(-edit)?$/.exec(window.__PAGE__);
+  const m = /^sf-([a-z]+)-(surface|page)(-edit)?(-focus)?$/.exec(window.__PAGE__);
   if (!m) return <p>Unknown page {window.__PAGE__}</p>;
   const kind = m[1] as FormKindId;
   if (m[2] === "page") {
     return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+      <main style={{ maxWidth: window.__LOOK__ ? 940 : 720, margin: "0 auto", padding: "24px 16px" }}>
         <SiteFormPage kind={kind} site={site} threadId={m[3] ? "sample-1" : null} closeHref="#closed" />
       </main>
     );
   }
   return (
     <SurfaceProvider connectors={{ custom: siteFormConnectors(site, KINDS), onMutated: () => undefined } as never} syncUrl={false}>
+      {m[4] ? <OpenFull /> : null}
       <OpenOnLoad kind={kind} edit={Boolean(m[3])} />
     </SurfaceProvider>
   );

@@ -1,0 +1,213 @@
+/* Tour-page hero stage (STAGE, 2026-11-20). Values from the design hand-off "Design values for review"
+   (docs/open/ELKTOURS_SURFACE_HANDOFF_2026-11-20.md). The stage frame, head, foot and strip are drawn by
+   SurfaceStage in @elkdonis/cms-ui; this file styles only what the tour surfaces put in the body.
+
+   Colours come from the surface tokens, so the stage follows the site's saved style (dark zinc in globals.css, a
+   light palette on the live site since a Site style save). That saved palette keeps --muted dark and
+   --muted-foreground near-black (measured 2026-11-20: foot rgb(57,62,70) under hsl(40 8% 15%) ink), so the stage
+   derives its own soft ground and muted ink from --sf-fg/--sf-bg, which read in either palette:
+     light: muted = 68% black on white (#525252, 7.8:1; 7.0:1 on the soft ground); dark: 68% ivory on #343941 (5.6:1).
+   Controls drawn over photos (pills, arrows, captions) keep a fixed light ink on a dark scrim. */
+
+/* 2026-11-20 (design 1a rework): the desktop stage takes the phone page's light palette (docs/06 of the hand-off,
+   tour-stage-phone.css), so the tour reads the same at both widths and in the popup. Measured on #fff:
+   ink #14284b 14.7:1; muted #4f5d75 6.5:1 (5.8:1 on soft #eef2f8); accent #2350a0 7.9:1; place text #2f6f93 5.5:1;
+   route #c4532f 4.6:1; ink on yellow #f2c14e 9.0:1. Yellow is a fill only ("you are here", Book), never text on white. */
+.ts-root {
+  --sf-bg: #ffffff;
+  --sf-bg-soft: #eef2f8;
+  --sf-fg: #14284b;
+  --sf-muted: #4f5d75;
+  --sf-faint: #7d889c;
+  --sf-line: #c9d2e0;
+  --sf-rule: #8d9bb4;
+  --sf-accent: #2350a0;
+  --sf-on-accent: #ffffff;
+  --sf-kind-neutral: #2350a0;
+  --sf-kind-event: #2350a0;
+  --sf-kind-place: #3c7fa6;
+  --sf-radius: 0px;
+  --sf-radius-sm: 0px;
+  --eac-surface-on-accent: #ffffff;
+  --eac-kind-neutral-on: #ffffff;
+  --eac-kind-event-on: #ffffff;
+  --eac-stage-bg: rgba(255, 255, 255, .96);
+  --sf-font-title: "Basteleur", Georgia, serif;
+  --sf-font-body: "Basteleur", Georgia, serif;
+  --sf-font-record: "Venture", Georgia, serif;
+  --eac-font-title: "Basteleur", Georgia, serif;
+  --ts-ivory: var(--sf-fg);
+  --ts-muted: var(--sf-muted);
+  --ts-line: var(--sf-line);
+  --ts-brass: var(--sf-accent);
+  --ts-brass-light: var(--sf-accent);
+  --ts-place: #2f6f93;           /* place text */
+  --ts-place-mark: #3c7fa6;      /* place marks and borders */
+  --ts-route: #c4532f;
+  --ts-yellow: #f2c14e;
+  --ts-ink: #14284b;             /* on yellow */
+  /* Over photos only. */
+  --ts-on-media: #f1ece2;
+  --ts-on-media-muted: #cfc8bb;
+  /* The strip's cards at rest: 24 gap + 72 card + 16 (cms-ui puts the strip on the frame's lower edge). */
+  --eac-stage-strip-room: 112px;
+  color: var(--sf-fg);
+  font-family: var(--sf-font-body);
+}
+.ts-root .eac-surface-title { font-weight: 700; }
+.ts-narr { font-family: "Basteleur", Georgia, serif; font-weight: 400; }
+
+.ts-backdrop { position: absolute; inset: 0; overflow: hidden; background: #2a2e35; }
+.ts-backdrop__img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.55); }
+.ts-backdrop__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 22, 26, 0) 55%, rgba(20, 22, 26, .75) 100%); }
+.ts-backdrop__cap { font-family: var(--eac-font-record, "Venture", Georgia, serif); font-size: .7rem; letter-spacing: .08em; color: var(--ts-on-media); }
+
+.ts-status { font-size: .74rem; color: var(--ts-muted, #b9b2a5); }
+.ts-status strong { color: var(--ts-ivory, #f1ece2); font-weight: 400; }
+
+/* body: narrative | media */
+.ts-body { display: grid; grid-template-columns: 540px minmax(0, 1fr); height: 100%; min-height: 0; }
+.ts-left { position: relative; padding: 26px 30px 26px; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; min-height: 0; }
+.ts-left.has-panel { padding-bottom: 90px; }
+.ts-right { position: relative; border-left: 1px solid var(--ts-line, #727a86); overflow: hidden; min-height: 0; background: #2e3239; }
+
+.ts-narr { font-size: 1.5rem; line-height: 1.5; color: var(--sf-fg); text-wrap: pretty; margin: 0; }
+.ts-narr--quiet { color: var(--ts-muted, #b9b2a5); font-size: 1.1rem; }
+
+.ts-flow { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; color: var(--ts-muted, #b9b2a5); font-size: .74rem; text-align: left; cursor: pointer; }
+.ts-flow:hover { color: var(--ts-ivory, #f1ece2); }
+.ts-flow__rule { width: 18px; flex: none; border-top: 2px dashed var(--ts-route, #e8805c); }
+
+/* facts */
+.ts-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; margin: 18px 0 0; font-size: .88rem; }
+.ts-facts > div { display: contents; }
+.ts-facts dt { font-family: var(--eac-font-record, "Venture", Georgia, serif); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ts-muted, #b9b2a5); align-self: center; }
+.ts-facts dd { margin: 0; color: var(--ts-ivory, #f1ece2); }
+.ts-facts--overview { font-size: .84rem; }
+
+/* The grow panel (design 1a): a one-line face at the foot of the narrative column that grows up over the narrative
+   to its content's height (capped at the column), for the stop's place and the overview's "About this tour". */
+.ts-grow {
+  --ts-tone: var(--ts-place-mark); --ts-tone-ink: var(--ts-place);
+  position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2;
+  display: flex; flex-direction: column; max-height: calc(100% - 28px); overflow: hidden;
+  background: var(--sf-bg); border: 1px solid var(--sf-line);
+  box-shadow: 0 -18px 34px -18px rgba(20, 40, 75, .35);
+  transition: height .28s cubic-bezier(.2, .8, .2, 1), border-color .18s;
+}
+.ts-grow--tour { --ts-tone: var(--sf-accent); --ts-tone-ink: var(--sf-accent); }
+.ts-grow::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 1; background: linear-gradient(90deg, var(--ts-tone), color-mix(in srgb, var(--ts-tone) 34%, transparent) 40%, transparent 66%); }
+.ts-grow[data-open] { border-color: var(--sf-rule); }
+.ts-grow[data-open]::before { display: none; }
+.ts-grow:not([data-open]):hover { border-color: var(--sf-rule); }
+.ts-grow__line { flex: none; width: 100%; height: 60px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 0 14px; border: 0; text-align: left; cursor: pointer; color: var(--sf-fg); font: inherit; background: radial-gradient(124% 96% at 0 0, color-mix(in srgb, var(--ts-tone) 8%, transparent), transparent 64%), var(--sf-bg); }
+.ts-grow__medal { width: 32px; height: 32px; flex: none; display: grid; place-items: center; color: var(--ts-tone-ink); background: color-mix(in srgb, var(--ts-tone) 12%, var(--sf-bg)); border: 1px solid color-mix(in srgb, var(--ts-tone) 30%, transparent); }
+.ts-grow__text, .ts-grow__headings { display: grid; gap: 2px; min-width: 0; }
+.ts-grow__kicker, .ts-grow__crumb { font-family: var(--sf-font-record); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ts-tone-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-grow__crumb button { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--sf-fg); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--sf-fg) 35%, transparent); text-underline-offset: 3px; }
+.ts-grow__sub { font-size: .88rem; color: var(--sf-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-grow__cue { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--ts-tone-ink); border: 1px solid color-mix(in srgb, var(--ts-tone) 40%, transparent); background: color-mix(in srgb, var(--ts-tone) 9%, transparent); }
+.ts-grow__head { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-bottom: 2px solid var(--ts-tone); }
+.ts-grow__title { font-family: var(--sf-font-title); font-weight: 700; font-size: 1.1rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-grow__close { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--sf-line); background: var(--sf-bg); color: var(--sf-fg); cursor: pointer; font-size: 1.1rem; }
+.ts-grow__close:hover { border-color: var(--sf-fg); }
+.ts-grow__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 16px 18px 18px; display: grid; gap: 14px; align-content: start; }
+.ts-grow__foot { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--sf-rule); background: var(--sf-bg-soft); }
+.ts-grow__link { flex: none; padding: 7px 12px; border: 1px solid var(--sf-line); background: var(--sf-bg); color: var(--sf-fg); font-size: .85rem; text-decoration: none; white-space: nowrap; }
+.ts-grow__link:hover { border-color: var(--sf-fg); }
+.ts-facts--grid { grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr); column-gap: 14px; row-gap: 8px; margin: 0; }
+.ts-highlights { margin: 0; padding-left: 1.1em; font-size: .92rem; line-height: 1.5; }
+.ts-about { font-size: .95rem; line-height: 1.55; margin: 0; }
+.ts-about--quiet { color: var(--sf-muted); font-size: .9rem; }
+.ts-take { border: 1px dashed color-mix(in srgb, var(--ts-route) 55%, transparent); padding: 9px 12px; font-size: .88rem; color: var(--ts-muted, #b9b2a5); }
+.ts-take p { margin: 4px 0 0; }
+.ts-take__label { font-family: var(--eac-font-record, "Venture", Georgia, serif); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ts-route, #e8805c); }
+.ts-take__by { color: var(--ts-ivory, #f1ece2); }
+.ts-left > .ts-take { margin-top: 18px; max-width: 100%; }
+.ts-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ts-link { padding: 4px 11px; border-radius: 999px; border: 1px solid var(--ts-line, #727a86); font-size: .8rem; color: var(--ts-ivory, #f1ece2); text-decoration: none; }
+.ts-link:hover { border-color: var(--ts-ivory, #f1ece2); }
+
+/* media */
+.ts-pills { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; gap: 6px; }
+.ts-pill { padding: 6px 13px; border-radius: 999px; font-size: .8rem; cursor: pointer; color: var(--ts-on-media); background: rgba(27, 30, 35, .6); border: 1px solid rgba(241, 236, 226, .45); }
+.ts-pill.is-on { background: var(--ts-on-media); color: #343941; border-color: var(--ts-on-media); }
+.ts-photo { position: absolute; inset: 0; }
+.ts-photo__img, .ts-street, .ts-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ts-video { background: #000; }
+.ts-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; color: var(--ts-on-media); background: rgba(27, 30, 35, .55); border: 1px solid rgba(241, 236, 226, .35); }
+.ts-arrow--prev { left: 14px; }
+.ts-arrow--next { right: 14px; }
+.ts-cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 12px; padding: 28px 16px 12px; background: linear-gradient(180deg, transparent, rgba(27, 30, 35, .82)); }
+.ts-cap__text { font-size: .85rem; font-style: italic; color: var(--ts-on-media); }
+.ts-cap__credit { font-style: normal; color: var(--ts-on-media-muted); }
+.ts-cap__count { font-family: var(--eac-font-record, "Venture", Georgia, serif); font-size: .68rem; color: var(--ts-muted, #b9b2a5); white-space: nowrap; align-self: flex-end; }
+.ts-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ts-muted, #b9b2a5); font-size: .9rem; background: radial-gradient(ellipse at 50% 120%, #4a5160, #1d2026 70%); }
+.ts-load { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: radial-gradient(ellipse at 50% 120%, #4a5160, #1d2026 70%); }
+.ts-load__kicker { font-family: var(--eac-font-record, "Venture", Georgia, serif); font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ts-brass-light, #dcc08a); }
+.ts-load__btn { height: 46px; padding: 0 20px; font-size: .95rem; cursor: pointer; color: var(--ts-ivory, #f1ece2); background: rgba(27, 30, 35, .65); border: 1px solid var(--ts-brass, #c9a25c); }
+.ts-load__note { font-size: .66rem; color: var(--ts-muted, #b9b2a5); }
+
+/* book layer */
+.ts-book { display: flex; flex-direction: column; gap: 14px; }
+.ts-book__price { margin: 0; font-size: 2rem; line-height: 1.1; }
+.ts-book__price span { font-size: .9rem; color: var(--ts-muted, #b9b2a5); }
+
+@media (max-width: 768px) {
+  .ts-body { grid-template-columns: 1fr; grid-template-rows: auto 260px; height: auto; }
+  .ts-right { border-left: 0; border-top: 1px solid var(--ts-line, #727a86); }
+  .ts-narr { font-size: 1.2rem; }
+  .ts-left, .ts-left--stop { padding: 18px 16px 84px; }
+}
+
+/* Editors only: the way to write a stop's missing line (2026-11-20). */
+.ts-root .ts-edit-hint { display: inline-block; margin-top: 10px; font-family: var(--eac-font-record, inherit); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ts-muted, #b9b2a5); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── strip cards, desktop (developer, 2026-11-20): the cover fills the card with the stop's number centred, no text
+   at rest; hover (or focus) grows the card up over the stage's foot and shows the name, kind line and first clause.
+   The open card wears a 2px yellow border and a yellow number tile (ink on yellow 9.0:1). ── */
+.ts-root .eac-stage-strip .eac-stage-face { align-items: stretch; padding: 0; gap: 0; min-width: 0; background: var(--sf-bg); -webkit-backdrop-filter: none; backdrop-filter: none; border: 1px solid var(--sf-line); box-shadow: 0 6px 14px -8px rgba(20, 40, 75, .45); }
+.ts-root .eac-stage-strip .eac-stage-face::before { display: none; }
+.ts-root .eac-stage-strip .eac-stage-face:hover, .ts-root .eac-stage-strip .eac-stage-face:focus-visible { border-color: var(--sf-rule); box-shadow: 0 18px 36px -12px rgba(20, 40, 75, .55); }
+.ts-root .eac-stage-strip .eac-stage-face[data-open] { border: 2px solid var(--ts-yellow); }
+.ts-root .eac-stage-strip .eac-stage-face-cover { height: 72px; background-color: #3a3f47; background-size: cover; background-position: center; }
+.ts-root .eac-stage-strip .eac-stage-face:hover .eac-stage-face-cover, .ts-root .eac-stage-strip .eac-stage-face:focus-visible .eac-stage-face-cover { height: 112px; }
+.ts-root .eac-stage-strip .eac-stage-face-cover::after { content: ""; position: absolute; inset: 0; background: rgba(20, 40, 75, .32); pointer-events: none; }
+.ts-root .eac-stage-strip .eac-stage-face-numeral { top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; min-width: 0; height: auto; padding: 0; background: none; border: 0; color: #ffffff; font-family: var(--sf-font-record); font-size: 1.55rem; line-height: 1; letter-spacing: 0; text-shadow: 0 1px 6px rgba(0, 0, 0, .85); }
+.ts-root .eac-stage-strip .eac-stage-face[data-open] .eac-stage-face-numeral { background: var(--ts-yellow); border: 0; color: var(--ts-ink); padding: 4px 9px; text-shadow: none; }
+.ts-root .eac-stage-strip .eac-stage-face-cue { z-index: 1; color: #ffffff; border-color: rgba(255, 255, 255, .6); background: rgba(20, 40, 75, .55); }
+.ts-root .eac-stage-strip .eac-stage-face-title { display: none; min-height: 0; padding: 8px 8px 0; font-family: var(--sf-font-title); font-weight: 700; font-size: .84rem; line-height: 1.2; color: var(--sf-fg); }
+.ts-root .eac-stage-strip .eac-stage-face:hover .eac-stage-face-title, .ts-root .eac-stage-strip .eac-stage-face:focus-visible .eac-stage-face-title { display: -webkit-box; }
+.ts-root .eac-stage-strip .eac-stage-face-more { padding: 4px 8px 9px; }
+.ts-root .eac-stage-strip .eac-stage-face-kicker { color: var(--sf-accent); font-weight: 400; }
+.ts-root .eac-stage-strip .eac-stage-face-teaser { color: var(--sf-muted); font-size: .72rem; }
+/* Stops without a picture: the design's tones under the same scrim; white numbers about 6:1 on each (estimated from the tones' luminance). */
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+1) .eac-stage-face-cover { background-color: #6d6559; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+2) .eac-stage-face-cover { background-color: #5f6a6e; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+3) .eac-stage-face-cover { background-color: #5f5a6e; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+4) .eac-stage-face-cover { background-color: #5b5f66; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+5) .eac-stage-face-cover { background-color: #6e6150; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+6) .eac-stage-face-cover { background-color: #566259; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+7) .eac-stage-face-cover { background-color: #6a5d52; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+8) .eac-stage-face-cover { background-color: #5d6470; }
+.ts-root .eac-stage-strip .eac-stage-face:nth-child(9n+9) .eac-stage-face-cover { background-color: #6b6457; }
+/* Book: a yellow card with its word, always last. */
+.ts-root .eac-stage-strip .eac-stage-face[data-face-id="book"] .eac-stage-face-cover { background: linear-gradient(135deg, #f2c14e, #e0ac2f); }
+.ts-root .eac-stage-strip .eac-stage-face[data-face-id="book"] .eac-stage-face-cover::after { display: none; }
+.ts-root .eac-stage-strip .eac-stage-face[data-face-id="book"] .eac-stage-face-numeral { color: var(--ts-ink); text-shadow: none; font-family: var(--sf-font-title); font-weight: 700; font-size: 1.2rem; }
+.ts-root .eac-stage-strip .eac-stage-face[data-face-id="book"] .eac-stage-face-cue { color: var(--ts-ink); border-color: rgba(20, 40, 75, .5); background: rgba(255, 255, 255, .5); }
+
+/* Foot: Book is the one primary, yellow with ink (design 1a "Book as the one primary, always on screen"). */
+.ts-root .eac-surface-foot .eac-btn--primary { background: var(--ts-yellow); border-color: var(--ts-yellow); color: var(--ts-ink); }
+.ts-root .eac-surface-foot .eac-btn--primary:hover { filter: brightness(.95); }
+
+/* ── the popup (tour-stage-popup.tsx): the stage's frame is the window, over the stop's photo. ── */
+.ts-root--popup { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6); }
+.ts-popup-wait { position: relative; height: min(720px, calc(100dvh - 48px)); display: grid; place-items: center; background: #2a2e35 center / cover no-repeat; }
+.ts-popup-wait::before { content: ""; position: absolute; inset: 0; background: rgba(20, 22, 26, .45); }
+.ts-popup-wait__card { position: relative; display: grid; gap: 6px; min-width: min(420px, 90%); padding: 22px 56px 22px 24px; background: #ffffff; color: #14284b; border: 1px solid #8d9bb4; font-family: "Basteleur", Georgia, serif; }
+.ts-popup-wait__kicker { font-family: "Venture", Georgia, serif; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: #2350a0; }
+.ts-popup-wait__title { font-weight: 700; font-size: 1.3rem; line-height: 1.2; }
+.ts-popup-wait__line { font-size: .92rem; color: #4f5d75; }
+.ts-popup-wait__line a { color: #2350a0; }
+.ts-popup-wait__close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #c9d2e0; background: #ffffff; color: #14284b; cursor: pointer; }

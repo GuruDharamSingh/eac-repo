@@ -1,0 +1,5 @@
+/* The shared accents, declared once. TS twin: shared-accents.ts (check-shared-accents.mts keeps them equal). */
+:root {
+  --eac-accent-bronze: 40 50% 57%;      /* bare triplet, for hsl(var(--eac-accent-bronze)) and --primary */
+  --eac-accent-bronze-hex: #c8a45b;     /* the same colour where a hex is needed */
+}

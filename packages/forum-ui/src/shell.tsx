@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { ForumBoard, ForumHappeningRow, ForumPerson, ForumPersonCard, ForumViewer } from "@elkdonis/services";
 import type { ForumConnectors } from "./connectors";
-import { Avatar, HappeningBlock, plural } from "./parts";
+import { Avatar, ComposeExtras, HappeningBlock, plural } from "./parts";
 import { canAddCategory } from "./category";
 import { WhoIsHereBlock } from "./people";
 import { MatchLight } from "./match-light";
@@ -39,7 +39,7 @@ export interface ShellParts {
 }
 
 /** Everything the rail needs, fetched once, in parallel, per page. */
-export async function loadShell(connectors: ForumConnectors, viewer: ForumViewer, path: string): Promise<ShellParts> {
+export async function loadShell(connectors: ForumConnectors, viewer: ForumViewer, path: string, searchParams?: Record<string, string | string[] | undefined>): Promise<ShellParts> {
   const { scope } = connectors;
   const [boards, unread, cards, happening, present] = await Promise.all([
     connectors.listBoards(scope, viewer).catch(() => [] as ForumBoard[]),
@@ -55,7 +55,7 @@ export async function loadShell(connectors: ForumConnectors, viewer: ForumViewer
   return {
     side: (
       <SideNav
-        connectors={connectors} viewer={viewer} boards={boards} unread={unread} path={path} card={card}
+        connectors={connectors} viewer={viewer} boards={boards} unread={unread} path={path} card={card} section={sectionParam(searchParams)}
         happening={happening} present={present}
       />
     ),
@@ -79,8 +79,15 @@ function SideLink({ href, path, children, count, glyph }: { href: string | null;
   );
 }
 
-function SideNav({ connectors, viewer, boards, unread, path, card, happening, present }: {
-  connectors: ForumConnectors; viewer: ForumViewer; boards: ForumBoard[]; unread: number; path: string; card: ForumPersonCard | null;
+/** ?section=<feed slug>: preselects where a new topic goes. */
+function sectionParam(sp?: Record<string, string | string[] | undefined>): string | null {
+  const v = sp?.section;
+  const s = Array.isArray(v) ? v[0] : v;
+  return s && /^[a-z0-9_-]{1,50}$/i.test(s) ? s : null;
+}
+
+function SideNav({ connectors, viewer, boards, unread, path, card, section, happening, present }: {
+  connectors: ForumConnectors; viewer: ForumViewer; boards: ForumBoard[]; unread: number; path: string; card: ForumPersonCard | null; section?: string | null;
   happening: ForumHappeningRow[]; present: { count: number; people: ForumPerson[] } | null;
 }) {
   const { hrefs, scope, siteName } = connectors;
@@ -100,7 +107,7 @@ function SideNav({ connectors, viewer, boards, unread, path, card, happening, pr
       </div>
 
       <YouBlock connectors={connectors} viewer={viewer} card={card} />
-      <NewTopicFold connectors={connectors} viewer={viewer} boards={boards} back={path} />
+      <NewTopicFold connectors={connectors} viewer={viewer} boards={boards} back={path} section={section ?? null} />
 
       <nav className="gf-side-group" aria-label="Read">
         <ul>
@@ -223,7 +230,7 @@ function YouBlock({ connectors, viewer, card }: { connectors: ForumConnectors; v
  * on an org host that is just that org's categories, and the org name is left
  * off because it is the site you are standing on.
  */
-function NewTopicFold({ connectors, viewer, boards, back }: { connectors: ForumConnectors; viewer: ForumViewer; boards: ForumBoard[]; back: string }) {
+function NewTopicFold({ connectors, viewer, boards, back, section }: { connectors: ForumConnectors; viewer: ForumViewer; boards: ForumBoard[]; back: string; section?: string | null }) {
   const { write, actionBase, scope } = connectors;
   if (!write || !actionBase || !viewer.userId) return null;
   const network = scope.kind === "network";
@@ -233,8 +240,9 @@ function NewTopicFold({ connectors, viewer, boards, back }: { connectors: ForumC
   if (groups.length === 0) return null;
   const base = actionBase.replace(/\/$/, "");
   const single = groups.length === 1 && groups[0].feeds.length === 1;
+  const preselect = section ? groups.flatMap((g) => g.feeds.map((f) => ({ v: `${g.board.orgId}|${f.slug}`, slug: f.slug }))).find((x) => x.slug === section)?.v : undefined;
   return (
-    <details className="gf-side-post">
+    <details className="gf-side-post" open={preselect ? true : undefined}>
       <summary className="eac-btn eac-btn--primary gf-side-cta">＋ New topic</summary>
       <form method="post" action={`${base}/topic`} className="gf-quickpost">
         <input type="hidden" name="back" value={back} />
@@ -242,7 +250,7 @@ function NewTopicFold({ connectors, viewer, boards, back }: { connectors: ForumC
         {single ? (
           <input type="hidden" name="target" value={`${groups[0].board.orgId}|${groups[0].feeds[0].slug}`} />
         ) : (
-          <select name="target" className="gf-input gf-select" aria-label="Where" required>
+          <select name="target" className="gf-input gf-select" aria-label="Where" required defaultValue={preselect}>
             {groups.map((g) =>
               network ? (
                 <optgroup key={g.board.orgId} label={g.board.name}>
@@ -255,6 +263,7 @@ function NewTopicFold({ connectors, viewer, boards, back }: { connectors: ForumC
           </select>
         )}
         <textarea name="text" className="gf-textarea" rows={5} required placeholder="Say it. Blank lines make paragraphs; > quotes." aria-label="Body" />
+        <ComposeExtras options={connectors.composeOptions} />
         <div className="gf-box-foot">
           <small>{single ? `Posts in ${groups[0].feeds[0].name}` : "Pick where it belongs"}</small>
           <button type="submit" className="eac-btn eac-btn--primary">Post</button>

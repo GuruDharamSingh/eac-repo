@@ -1,6 +1,7 @@
 "use server";
 // CONTRACT: places server actions (editor-only). Types in lib/catalogue-types.ts.
 
+import { ensureFolderSoon } from "@/lib/media-folders";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@elkdonis/db";
@@ -28,6 +29,8 @@ const placeSchema = z.object({
   heading: optNum(0, 360),
   pitch: optNum(-90, 90),
   fov: optNum(10, 100),
+  viewLat: optNum(-90, 90),
+  viewLng: optNum(-180, 180),
   address: z.string().trim().max(300).nullable().optional(),
   tags: z.array(z.string().trim().toLowerCase().min(1).max(40)).max(30).optional(),
   source: z.enum(["stop_backfill", "manual", "photon", "overpass"]).optional(),
@@ -65,6 +68,8 @@ async function writePlace(input: z.infer<typeof placeSchema>, userId: string): P
         heading = ${input.heading === undefined ? current.heading : input.heading},
         pitch = ${input.pitch === undefined ? current.pitch : input.pitch},
         fov = ${input.fov === undefined ? current.fov : input.fov},
+        view_lat = ${input.viewLat === undefined ? current.viewLat ?? null : input.viewLat != null && input.viewLng != null ? input.viewLat : null},
+        view_lng = ${input.viewLng === undefined ? current.viewLng ?? null : input.viewLat != null && input.viewLng != null ? input.viewLng : null},
         address = ${input.address === undefined ? current.address : input.address || null},
         tags = ${tags ?? current.tags}::text[],
         excerpt = ${excerpt === undefined ? current.excerpt : excerpt},
@@ -83,6 +88,8 @@ async function writePlace(input: z.infer<typeof placeSchema>, userId: string): P
             ${input.address || null}, ${tags ?? []}::text[], ${input.source ?? "manual"}, ${input.sourceRef || null}, ${userId})
     RETURNING *
   `) as unknown as Row[];
+  // Places/<slug>/ in Nextcloud (2026-11-20); a storage failure does not fail the save.
+  ensureFolderSoon("place", r!.id as string);
   return mapPlace(r!);
 }
 

@@ -137,7 +137,7 @@ export default async function AboutPage() {
         </ul>
       )}
 
-      <blockquote style={{ margin: "3.5rem auto 0", maxWidth: 700, textAlign: "center", fontFamily: '"Basteleur", serif', fontSize: "1.15rem", lineHeight: 1.9, color: "#063179", border: 0, padding: 0 }}>
+      <blockquote style={{ margin: "3.5rem auto 0", maxWidth: 700, textAlign: "center", fontFamily: 'var(--ig-font-x-basteleur-serif)', fontSize: "1.15rem", lineHeight: 1.9, color: "var(--ig-c-navy-soft)", border: 0, padding: 0 }}>
         &ldquo;Our works are timeless, essential, reductionist — and often violate scale. We typically explore the vertical dimension of time, which contains the creative act itself, and by orienting everything toward the viewer, bring one into a relationship with it.&rdquo;
         <footer className="ig-kicker" style={{ marginTop: "1.25rem" }}>Toronto · Los Angeles · Paris</footer>
       </blockquote>

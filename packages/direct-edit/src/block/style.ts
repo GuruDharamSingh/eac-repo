@@ -39,6 +39,8 @@ export type PartStyle = {
   // Appearance:
   fill?: string; opacity?: number; radius?: number | Quad; bstyle?: string; bcolor?: string; bwidth?: number;
   // Effects:
+  // Free placement (freeMove): an offset from where the flow puts the box, px, drawn as `translate` from 768px wide up.
+  fx?: number; fy?: number;
   blur?: number; bblur?: number; tx?: number; ty?: number; rot?: number; sx?: number; sy?: number;
   // Hidden on the page (the layer eye):
   hide?: boolean;
@@ -54,6 +56,7 @@ export const BOUNDS = {
   size: [6, 240], padding: [0, 320], leading: [0.8, 2.4], tracking: [-0.1, 0.5], grow: [0, 4],
   x: [-400, 1200], y: [-400, 1200], gap: [0, 160], w: [8, 2400], h: [8, 2400], margin: [0, 320], opacity: [0, 1], radius: [0, 200], bwidth: [0, 12],
   blur: [0, 20], bblur: [0, 30], tx: [-300, 300], ty: [-300, 300], rot: [-180, 180], sx: [0.2, 3], sy: [0.2, 3],
+  fx: [-1200, 1200], fy: [-1200, 1200],
   gcols: [1, 12], cspan: [1, 12], order: [0, 999],
 } as const satisfies Record<string, readonly [number, number]>;
 export const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
@@ -134,6 +137,19 @@ export function layoutDecls(s: PartStyle, d: Decl[]): void {
   if (s.items && ITEMS_CSS[s.items]) d.push(["align-items", ITEMS_CSS[s.items]!]);
 }
 
+/** Free placement draws from this viewport width up; narrower, the flow layout is untouched. */
+export const FREE_MIN_WIDTH = 768;
+/**
+ * One axis of a free offset, 0 below FREE_MIN_WIDTH and `v` px from there up, in plain CSS (clamp over a huge multiple of the
+ * distance past the breakpoint), so it works as an inline style, in a scoped stylesheet and in a patch alike, with no media query.
+ */
+function freeAxis(v: number | undefined): string {
+  const n = Math.round((v ?? 0) * 100) / 100;
+  if (!n) return "0px";
+  const past = `(100vw - ${FREE_MIN_WIDTH - 1}px)`;
+  return n > 0 ? `clamp(0px, calc(${past} * 10000), ${n}px)` : `clamp(${n}px, calc(${past} * -10000), 0px)`;
+}
+
 /** Place, layout, appearance and effects: shared by every node and the block's root. */
 export function boxDecls(s: PartStyle, d: Decl[], skipPadding = false): void {
   if (s.self && SELF_CSS[s.self]) d.push(["align-self", SELF_CSS[s.self]!]);
@@ -164,6 +180,7 @@ export function boxDecls(s: PartStyle, d: Decl[], skipPadding = false): void {
   }
   if (s.blur) d.push(["filter", `blur(${s.blur}px)`]);
   if (s.bblur) d.push(["backdrop-filter", `blur(${s.bblur}px)`], ["-webkit-backdrop-filter", `blur(${s.bblur}px)`]);
+  if (s.fx || s.fy) d.push(["translate", `${freeAxis(s.fx)} ${freeAxis(s.fy)}`]);
   const t: string[] = [];
   if (s.tx || s.ty) t.push(`translate(${s.tx ?? 0}px, ${s.ty ?? 0}px)`);
   if (s.rot) t.push(`rotate(${s.rot}deg)`);
@@ -280,7 +297,7 @@ export function cleanStyle(v: unknown, headers: readonly string[] = []): PartSty
   pick("bstyle", oneOf(BORDER_STYLES, s.bstyle));
   pick("bcolor", hex(s.bcolor));
   pick("bwidth", bound("bwidth", s.bwidth));
-  for (const k of ["blur", "bblur", "tx", "ty", "rot", "sx", "sy"] as const) pick(k, bound(k, s[k]));
+  for (const k of ["fx", "fy", "blur", "bblur", "tx", "ty", "rot", "sx", "sy"] as const) pick(k, bound(k, s[k]));
   pick("hide", s.hide === true ? true : undefined);
   pick("css", s.css ? declsToString(safeDecls(str(s.css, 2400))) || undefined : undefined);
   return Object.keys(out).length ? out : undefined;

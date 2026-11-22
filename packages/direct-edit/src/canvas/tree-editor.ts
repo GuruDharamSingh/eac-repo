@@ -17,10 +17,12 @@
 // ============================================================================
 
 import { FONT_CATEGORIES, fontsIn, loadFont } from "@elkdonis/fonts";
-import { contractFor, hasOwn, parsePartRef, partRef, propKey, propNameOf, propSlotId, ROOT_PART, sampleHasRows, tokenKey, tokenNameOf, tokenSlotId, type BlockContract, type EditorContract } from "../block/contract";
-import { partLookOf, partSafeDecls, setPartLook, setToken, tokenOf } from "../block/morph";
+import { contractFor, hasOwn, keepLookKeys, parsePartRef, partRef, propKey, propNameOf, propSlotId, ROOT_PART, sampleHasRows, tokenKey, tokenNameOf, tokenSlotId, type BlockContract, type EditorContract } from "../block/contract";
+import { partLookOf, partSafeDecls, setToken, tokenOf } from "../block/morph";
+import { readLook as readLookAll, type BlkStyleDecls } from "../block/read-look";
+import { Forcer, cleanWhere, clashLine, editLookAt, lookAtWhere, panelWhere, type LookWhere } from "../panel/where";
 import { MAX_DEPTH, cleanBoxDoc, PART_TYPE, duplicatePuckNode, findPuckNode, insertPuckNode, isWithin, mayPlace, movePuckNode, nodeLevels, OWN_TYPES, removePuckNode, ROOT_ID, ROOT_SLOT, unwrapPuckNode, walkDoc, wrapPuckNode, BOX_TAGS, WORD_TAGS, type FoundNode, type PuckDoc, type PuckNode, type SlotMap, type Spot } from "../block/puck-tree";
-import { declsToString, safeDecls, type Decl, type PartStyle } from "../block/style";
+import { BOUNDS, declsToString, safeDecls, type Decl, type PartStyle } from "../block/style";
 import { normHex } from "../model/color";
 import { History } from "../model/history";
 import { setDecl } from "../model/css";
@@ -31,7 +33,9 @@ import { applyKey, backgroundOf, boxSlots, inheritedFrom, readBox, resetKey, rgb
 import { adoptElement } from "./adopt";
 import { applyShape, arrangeHtml, fullestOf, holdingOf, moved, noSwapWords, setInLine, setSequence, type Holding, type Shape } from "./arrange";
 import { blockSlots, blockValues, cleanPropValue, isTypedProp, resetProp } from "./block-fields";
+import { contentOf, dedupeLook, mergeExtra } from "./content-tab";
 import { startBoxMove, startBoxResize } from "./box-drag";
+import { startFreeMove } from "./free-move";
 import { mountClickThrough, type LayerSource } from "./clickthrough";
 import { mountEditShell, type PictureChooser } from "./edit-shell";
 import { Listeners, startGhostDrag, startInlineText, type InlineSession } from "./interact";
@@ -84,6 +88,17 @@ export interface TreeEditorOptions {
    */
   editSettings?(node: PuckNode): Promise<Record<string, unknown> | null>;
   /**
+   * What the panel says about a live part (a node of PART_TYPE) by its name (2026-11-21): plain words on what it is, and
+   * optionally a link to where it can really be changed. Absent or null for a name: the general note.
+   */
+  /**
+   * The page being edited is a live site page (openPageAsTree / openVisitorPage, 2026-11-21): with the panel open it keeps the
+   * window's width and is drawn scaled beside the panel (applyPageScale), so it reads as a visitor's page does. Absent: the older
+   * behaviour (the panel narrows the body; the zoom pill scales the editor's own page element).
+   */
+  fitToPanel?: boolean;
+  liveNote?(part: string): { text: string; href?: string; linkLabel?: string } | null;
+  /**
    * Inception (2026-11-14): "Settings…" also in the popup (a nested mount) and in a part's right-click menu. The
    * host's editor opens over whichever layer asked (canvas/stack.ts), and on closing the selection comes back where it
    * was, a part included. Needs `editSettings`. Absent: as before.
@@ -101,10 +116,31 @@ export interface TreeEditorOptions {
    * and sizes while resizing (Alt or Ctrl pulls free). Not in the popup. Absent: as before.
    */
   designTools?: boolean;
+  /**
+   * Free placement (2026-11-20): a Free move tool beside Select. Dragging a box with it moves the box in x and y from where
+   * the flow put it (look `fx`/`fy`), with guides, a light grid, arrow-key nudges and X / Y fields. Absent: as before.
+   */
+  freeMove?: boolean;
+  /**
+   * Style against look (2026-11-20): turns a stored `blkStyle` into declarations (page-builder's `styleToCss`), so the panel
+   * can say when Style and a block's look set the same thing at its root. direct-edit does not import page-builder, so the
+   * host passes it. Absent: no such line, as before.
+   */
+  blkStyleDecls?: BlkStyleDecls;
   /** The name on the left pill. Default: the page's title. */
   pageName?: string;
   /** Offer to go back to what the page was before it was a tree. */
   onRestore?(): void;
+  /**
+   * A page switcher in the page menu (the name pill): the site's pages, listed once when the editor opens. Picking one
+   * asks first if there are unsaved changes, then calls `open(slug)`, or goes to its `href`. Not in the popup. Absent: as before.
+   */
+  pages?: {
+    list(): Promise<Array<{ slug: string; title: string; href: string }>>;
+    /** The slug being edited. */
+    current: string;
+    open?(slug: string): void;
+  };
   /** What each sealed block declares. Absent: a sealed block offers no settings here, as before. */
   contract?: EditorContract;
   /** This node is drawn with sample rows. Anything that copies what it drew must refuse. */
@@ -116,6 +152,23 @@ export interface TreeEditorOptions {
   developer?: boolean;
   /** The host's sanitiser for a rich-text prop typed on the page (`sanitizePageText` via page-builder). Absent: the save path's sanitiser is the only one. */
   cleanRich?(html: string): string;
+  /**
+   * The Content tab (2026-11-21, PLAN 9 step A): a block's declared settings first in the side panel, then Look (the
+   * Properties tab, without the settings and without a look the block also declares). What the panel cannot draw opens the
+   * settings sheet (`editSettings`) as "Edit in settings…" / "More settings…". Absent: the panel is as it was.
+   */
+  contentTab?: boolean;
+  /**
+   * The host's door for a setting (house-editor passes its checked `set_prop`): given the block as it stands, the value it
+   * would keep, or why not. Pure; the canvas writes the answer as one undo step. Absent: the value is written as typed (the
+   * canvas's own check only), as before.
+   */
+  setProp?(node: PuckNode, name: string, value: unknown): { ok: true; value: unknown } | { ok: false; say: string };
+  /**
+   * The rows a data block's resolver draws with these props (`node` is the block as it now stands; `before` as it was).
+   * The canvas asks after a setting of a data block changed, then draws the page again. Needs `contentTab`. Absent: the rows stay as they were.
+   */
+  resolveRows?(node: PuckNode, before?: Record<string, unknown>): Promise<void>;
   /** Props that hold a reference to a record (`binds`): chosen in the drawer, drawn from what the host resolves (canvas/records.ts, 2026-11-06). Absent: such a prop is a text field, as before. */
   binding?: Binding;
   nested?: NestedEditor;
@@ -145,6 +198,8 @@ const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 const NODE = "[data-tree-node]";
 const SLOT = "[data-tree-slot]";
 const newId = (type: string) => `${type}-${Math.random().toString(36).slice(2, 10)}`;
+/** The Free move tool, beside Select (freeMove). */
+const FREE_TOOL = { id: "tool-move", label: "Free move: drag a box anywhere", icon: "tool-move", key: "M", toggle: true };
 const LOOK_ONLY = ["order", "cspan", "w", "h", "self", "grow", "hide"] as const;
 const BOX_KIND_LABELS: Record<string, string> = { div: "Box", section: "Section", header: "Header", footer: "Footer", nav: "Navigation", aside: "Aside", article: "Article", main: "Main", figure: "Figure", ul: "List", ol: "Numbered list", li: "Item", blockquote: "Quote", figcaption: "Caption", span: "Inline box" };
 const WORD_KIND_LABELS: Record<string, string> = { p: "Paragraph", h1: "Heading 1", h2: "Heading 2", h3: "Heading 3", h4: "Heading 4", h5: "Heading 5", h6: "Heading 6", div: "Text", span: "Label", li: "Item", blockquote: "Quote", figcaption: "Caption", hr: "Divider" };
@@ -219,7 +274,14 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   let busy = false;
   let inline: InlineSession | null = null;
   let styleClip: PartStyle | null = null;
-  let tool: "select" | "hand" = "select";
+  let tool: "select" | "hand" | "move" = "select";
+  const free = !!o.freeMove;
+  // Which look the panel edits on a part (2026-11-20): always, one state, or one screen size. Back to always for another selection.
+  let lookWhere: LookWhere = {};
+  let whereFor: string | null = null;
+  let forceTouched = false;
+  const forcer = new Forcer();
+  const whereNow = (): LookWhere => { if (whereFor !== selId) { whereFor = selId; lookWhere = {}; } return lookWhere; };
   let presenting = false;
   let zoom = 1;
   let scale: MiniBarStyle[] | null = null;
@@ -297,20 +359,73 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     refused = null;
     redraw(stale);
   });
+  // ----------------------------------------------------------- page scale
+  // The page the person edits must be the page a visitor gets, so it is never laid out narrower for the panel. It keeps its
+  // width (the window's) and is drawn smaller as a whole: the body is made `window width x scale` wide and each page-level
+  // element gets CSS `zoom: scale`, so it lays out at exactly the window's width. Beside the panel the scale is
+  // (window - panel) / window; at 100% it is 1 and nothing is touched (the panel floats over the page's edge). Editor
+  // elements (data-de-ui, de-*) are not scaled. Not for the block popup, which has its own stage zoom (applyZoom).
+  const PANEL_ROOM = 346; // the panel's 330px and its gutters; the number direct-edit.css used as the body's right margin
+  let zoomMode: "fit" | number = "fit";
+  const scaledKids = new Map<HTMLElement, { zoom: string; width: string | null }>();
+  let bodyWidth0: string | undefined;
+  const isPage = (e: Element): e is HTMLElement => e instanceof HTMLElement && !/^(SCRIPT|STYLE|LINK|NOSCRIPT|TEMPLATE)$/.test(e.tagName) && !e.tagName.includes("-") && !e.hasAttribute("data-de-ui") && !e.hasAttribute("data-de-menu") && !/(^|\s)de-/.test(e.getAttribute("class") ?? "");
+  const pageScale = () => {
+    if (presenting) return 1;
+    if (zoomMode !== "fit") return zoomMode;
+    const cw = document.documentElement.clientWidth, room = side.hidden || window.innerWidth <= 760 ? 0 : PANEL_ROOM;
+    return room ? Math.max(0.25, Math.min(1, (cw - room) / Math.max(1, cw))) : 1;
+  };
+  function restorePageScale() {
+    for (const [e, was] of scaledKids) { e.style.zoom = was.zoom; if (was.width !== null) e.style.width = was.width; }
+    scaledKids.clear();
+    if (bodyWidth0 !== undefined) { if (bodyWidth0) document.body.style.width = bodyWidth0; else document.body.style.removeProperty("width"); bodyWidth0 = undefined; }
+    document.documentElement.classList.remove("de-fit");
+  }
+  function applyPageScale() {
+    if (o.nested) return;
+    if (!o.fitToPanel) { ct.refresh(); renderBar(); return; }
+    const s = pageScale(), cw = document.documentElement.clientWidth;
+    zoom = s;
+    if (Math.abs(s - 1) < 0.001) restorePageScale();
+    else {
+      document.documentElement.classList.add("de-fit");
+      if (bodyWidth0 === undefined) bodyWidth0 = document.body.style.width;
+      document.body.style.width = `${cw * s}px`;
+      for (const e of Array.from(document.body.children).filter(isPage)) {
+        if (!scaledKids.has(e)) {
+          // A fixed element that spans the window (a site's top bar) would lay out at window / scale wide: it gets the window's width in page pixels.
+          const r = e.getBoundingClientRect(), spans = getComputedStyle(e).position === "fixed" && r.width >= cw - 2 && r.left <= 1;
+          scaledKids.set(e, { zoom: e.style.zoom, width: spans ? e.style.width : null });
+          if (spans) e.style.width = `${cw}px`;
+        }
+        e.style.zoom = String(s);
+        // The window may have been resized since: a spanning fixed element follows the window's new width.
+        if (scaledKids.get(e)!.width !== null) e.style.width = `${cw}px`;
+      }
+    }
+    ct.refresh();
+    renderBar();
+    shell.drawTop();
+  }
   function setZoom(z: number | "fit") {
-    if (o.nested) {
-      zoom = z === "fit" ? Math.max(0.25, Math.min(1, o.nested.fitWidth() / Math.max(1, scope.scrollWidth))) : z;
-      o.nested.applyZoom(zoom);
+    if (!o.nested && o.fitToPanel) { zoomMode = z; applyPageScale(); return; }
+    if (!o.nested) {
+      if (z === "fit") { (scope.style as CSSStyleDeclaration & { zoom: string }).zoom = "1"; zoom = Math.max(0.25, Math.min(1, (scope.parentElement?.clientWidth ?? scope.clientWidth) / Math.max(1, scope.scrollWidth))); }
+      else zoom = z;
+      (scope.style as CSSStyleDeclaration & { zoom: string }).zoom = String(zoom);
       ct.refresh();
       renderBar();
       return;
     }
-    if (z === "fit") { (scope.style as CSSStyleDeclaration & { zoom: string }).zoom = "1"; zoom = Math.max(0.25, Math.min(1, (scope.parentElement?.clientWidth ?? scope.clientWidth) / Math.max(1, scope.scrollWidth))); }
-    else zoom = z;
-    (scope.style as CSSStyleDeclaration & { zoom: string }).zoom = String(zoom);
+    zoom = z === "fit" ? Math.max(0.25, Math.min(1, o.nested.fitWidth() / Math.max(1, scope.scrollWidth))) : z;
+    o.nested.applyZoom(zoom);
     ct.refresh();
     renderBar();
   }
+  // The page switcher: listed once, then drawn from what came back. Not in the popup.
+  const switcher = o.pages && !o.nested ? { items: [] as Array<{ slug: string; title: string; href: string }>, failed: false, current: o.pages.current } : null;
+  if (switcher) o.pages!.list().then((l) => { switcher.items = l; }, () => { switcher.failed = true; });
   const shell = mountEditShell<PuckDoc>({
     host: o.nested?.chrome,
     saveLabel: o.nested ? "Use on this page" : undefined,
@@ -322,13 +437,26 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     saveNotice: o.saveNotice,
     onDone: () => { if (o.onDone) o.onDone(); else handle.dispose(); },
     pageName: () => o.pageName ?? ((doc.root as { props: { title?: string } }).props.title || "Page"),
-    pageMenu: o.onRestore ? () => [{ id: "restore", label: "Restore the original page", danger: true }] : undefined,
+    pageMenu: (o.onRestore || switcher) ? () => [
+      ...(switcher ? (switcher.items.length ? switcher.items.map((p) => ({ id: `page:${p.slug}`, label: p.title || p.slug, hint: p.slug === switcher.current ? "✓" : undefined })) : [{ id: "pages-loading", label: switcher.failed ? "Pages did not load" : "Loading pages…", disabled: true }]) : []),
+      ...(o.onRestore ? [{ id: "restore", label: "Restore the original page", danger: true, sep: Boolean(switcher) }] : []),
+    ] : undefined,
     onPageMenu(id) {
+      if (switcher && id.startsWith("page:")) {
+        const slug = id.slice(5);
+        const to = switcher.items.find((p) => p.slug === slug);
+        if (!to || slug === switcher.current) return;
+        if (history.dirty() && !confirm("Leave without saving your changes?")) return;
+        history.markSaved();
+        if (o.pages!.open) o.pages!.open(slug); else window.location.href = to.href;
+        return;
+      }
       if (id === "restore" && confirm("Go back to the page as it was before it became editable boxes? Changes made here are lost.")) { history.markSaved(); o.onRestore?.(); }
     },
-    tools: o.nested ? [{ id: "tool-select", label: "Select", icon: "tool-select", toggle: true }] : [
+    tools: o.nested ? [{ id: "tool-select", label: "Select", icon: "tool-select", key: free ? "V" : undefined, toggle: true }, ...(free ? [FREE_TOOL] : [])] : [
       { id: "tool-select", label: "Select", icon: "tool-select", key: "V", toggle: true },
-      { id: "tool-hand", label: "Hand", icon: "tool-hand", key: "H", toggle: true },
+      ...(free ? [FREE_TOOL] : []),
+      { id: "tool-hand", label: free ? "Hand (move around the page)" : "Hand", icon: "tool-hand", key: "H", toggle: true },
       { id: "add-words", label: "Add words", icon: "tool-text", key: "T" },
       { id: "add-box", label: "Add a box", icon: "hash", key: "F" },
       { id: "add-picture", label: "Add a picture", icon: "k-image" },
@@ -338,27 +466,29 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     ],
     onTool(a) {
       if (a.startsWith("add-")) addNew(a.slice(4));
-      else if (a === "tool-select" || a === "tool-hand") setTool(a === "tool-hand" ? "hand" : "select");
+      else if (a === "tool-select" || a === "tool-hand" || (free && a === "tool-move")) setTool(a === "tool-hand" ? "hand" : a === "tool-move" ? "move" : "select");
     },
     activeTool: () => `tool-${tool}`,
     panel: o.nested ? undefined : {
       open: () => !side.hidden,
-      toggle() { side.hidden = !side.hidden; document.documentElement.classList.toggle("de-vpanel-open", !side.hidden); ct.refresh(); renderBar(); },
+      toggle() { side.hidden = !side.hidden; document.documentElement.classList.toggle("de-vpanel-open", !side.hidden); applyPageScale(); },
     },
     zoom: {
       value: () => zoom,
       set: setZoom,
+      fit: o.nested || !o.fitToPanel ? undefined : { label: "Fit beside the panel", on: () => zoomMode === "fit" },
     },
     present: o.nested ? undefined : {
       on: () => presenting,
       toggle() {
         presenting = !presenting;
         document.documentElement.classList.toggle("de-present", presenting);
+        applyPageScale();
         ct.hold(presenting);
         renderBar();
       },
     },
-    hint: () => (heldNote && Date.now() < heldNote.until ? heldNote.text : o.nested ? (parsePartRef(selId) ? "A part of this block. Double-click its words to type them. Drag it to change its place. Esc goes back out." : "Click a part to go inside it. Drag a part to change its place. Esc closes.") : o.mountNested && !parsePartRef(selId) && selId !== ROOT_ID && (!selId || canOpenLarge(selId)) ? (selId ? "Double-click to open this block large. Click again to go inside." : "Double-click a block to open it large.") : parsePartRef(selId) ? "A part of this block. It stays where the block puts it. Esc goes back out." : selId === ROOT_ID ? "The page itself. Click a part of it to go inside." : selId ? "Click again to go inside. Drag it to move it into another box. Esc goes back out." : "Click a part of the page, or add a box."),
+    hint: () => (heldNote && Date.now() < heldNote.until ? heldNote.text : free && tool === "move" ? "Free move: drag a box or part anywhere. Arrow keys nudge (Shift: 10). Alt: no snapping. Esc puts it back." : o.nested ? (parsePartRef(selId) ? "A part of this block. Double-click its words to type them. Drag it to change its place. Esc goes back out." : "Click a part to go inside it. Drag a part to change its place. Esc closes.") : o.mountNested && !parsePartRef(selId) && selId !== ROOT_ID && (!selId || canOpenLarge(selId)) ? (selId ? "Double-click to open this block large. Click again to go inside." : "Double-click a block to open it large.") : parsePartRef(selId) ? "A part of this block. It stays where the block puts it. Esc goes back out." : selId === ROOT_ID ? "The page itself. Click a part of it to go inside." : selId ? "Click again to go inside. Drag it to move it into another box. Esc goes back out." : "Click a part of the page, or add a box."),
     choosePicture: o.choosePicture,
   });
 
@@ -526,21 +656,76 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     structural(() => {
       const g = found(id);
       if (!g) return id;
-      // A look set on the page stays with the block if the host's editor did not hand it back.
-      const keep = g.node.props.morph !== undefined && !("morph" in props) ? { morph: g.node.props.morph } : {};
+      // A look set on the page stays with the block if the host's editor did not hand it back (every LOOK_KEYS key).
+      const keep = keepLookKeys(g.node.props, props);
       g.node.props = { ...props, ...keep, id };
       return back;
     });
     ct.select(elOf(selId));
   }
 
-  function setTool(next: "select" | "hand") {
+  function setTool(next: "select" | "hand" | "move") {
     tool = next;
+    document.documentElement.classList.toggle("de-freemove", next === "move");
     document.documentElement.classList.toggle("de-pan", next === "hand");
     ct.hold(next === "hand");
     shell.drawTop();
     renderBar();
   }
+  // ------------------------------------------------------------ free move
+  /** The offset a box has now, as stored. */
+  const freeOf = (id: string) => { const l = readLook(id); return { fx: l?.fx ?? 0, fy: l?.fy ?? 0 }; };
+  const writeFree = (id: string, fx: number, fy: number) => writeLook(id, (s) => { if (fx) s.fx = fx; else delete s.fx; if (fy) s.fy = fy; else delete s.fy; });
+  /** Press with the Free move tool: select what is under the pointer (the deepest box or part, unless the selection already holds it), then pull it. */
+  L.on(document, "pointerdown", (ev: PointerEvent) => {
+    if (!free || tool !== "move" || ev.button !== 0 || busy || inline || (ev.target as Element).closest?.("[data-de-ui],[data-de-menu],[contenteditable='true']") || side.contains(ev.target as Node)) return;
+    const chain = source.chain(ev.target as HTMLElement);
+    let el = selId ? elOf(selId) : null;
+    // The selection stays what is moved when it holds the pointer and is a box the person chose; the page or the popup's block, selected from the start, gives way to what is under the pointer.
+    const whole = selId === ROOT_ID || (!!o.nested && selId === o.nested.blockId);
+    if (!el || whole || !chain.includes(el)) {
+      el = chain[chain.length - 1] ?? null;
+      if (!el) return;
+      ct.select(el);
+    }
+    const id = idOf(el);
+    if (!id || id === ROOT_ID || !found(id)) return;
+    ev.preventDefault();
+    const x0 = ev.clientX, y0 = ev.clientY, target = el;
+    let dragging = false;
+    const cancel = () => { document.removeEventListener("pointermove", probe, true); document.removeEventListener("pointerup", cancel, true); };
+    const probe = (m: PointerEvent) => {
+      if (Math.hypot(m.clientX - x0, m.clientY - y0) < 3) return;
+      cancel();
+      dragging = true;
+      history.remember(null);
+      const before = clone(doc);
+      busy = true;
+      bar.hide();
+      ct.hold(true);
+      startFreeMove({
+        start: { x: x0, y: y0 }, el: target, zoom, base: freeOf(id),
+        onChange(c) { writeFree(id, c.fx, c.fy); o.draw(doc); ct.adopt(elOf(id)); ct.hold(true, c.label); panel.render(context(), false); },
+        onEnd(commit) {
+          busy = false;
+          if (!commit) { doc = before; history.undo(); }
+          ct.hold(false);
+          redraw(true);
+        },
+      });
+    };
+    document.addEventListener("pointermove", probe, true);
+    document.addEventListener("pointerup", cancel, true);
+    // The release after a drag must not select again: the click is ours.
+    window.addEventListener("click", function once(c) { window.removeEventListener("click", once, true); if (dragging) { c.preventDefault(); c.stopPropagation(); } }, true);
+  }, true);
+  function nudge(dx: number, dy: number) {
+    const id = selId;
+    if (!id || id === ROOT_ID || !found(id)) return;
+    const c = freeOf(id), cl = (n: number) => Math.max(BOUNDS.fx[0], Math.min(BOUNDS.fx[1], n));
+    change(() => writeFree(id, cl(c.fx + dx), cl(c.fy + dy)), `${id}:nudge`);
+  }
+
   L.on(document, "pointerdown", (ev: PointerEvent) => {
     if (tool !== "hand" || ev.button !== 0 || (ev.target as Element).closest?.("[data-de-ui],[data-de-menu]")) return;
     ev.preventDefault();
@@ -716,7 +901,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
 
   // ----------------------------------------------------------------- panel
   /** The tabs for a selection in this block: a block with tokens has Tweaks too. */
-  const tabsOf = (def: BlockContract): PanelContext["tabs"] => devTabs(def.tokens?.length ? ["props", "code", "tweaks"] : ["props", "code"]);
+  const tabsOf = (def: BlockContract, content = false): PanelContext["tabs"] => devTabs([...(content ? ["content" as const] : []), ...(def.tokens?.length ? ["props" as const, "code" as const, "tweaks" as const] : ["props" as const, "code" as const])]);
 
   /** What a box's sections read from the page. */
   function styleContext(el: HTMLElement, look: PartStyle): Pick<PanelContext, "computed" | "fonts" | "contrast"> {
@@ -762,12 +947,15 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   function partContext(base: PanelContext, node: PuckNode, name: string, el: HTMLElement): PanelContext | null {
     const def = defOf(node), part = def?.parts && hasOwn(def.parts, name) ? def.parts[name] : undefined;
     if (!def || !part) return null;
-    const look = partLookOf(node.props, name);
+    const w = whereNow();
+    const look = lookAtWhere(node.props, name, w);
     // The part's own words or picture first, where the block draws them from a prop.
     const field = part.prop ? blockSlots(def, node.props).filter((s) => s.key === propKey(part.prop!)).map((s) => ({ ...s, section: "content" as const })) : [];
     const fields = blockValues(def, node.props);
     const at = nodeEl(node.props.id);
     const count = part.repeat && at ? partEls(at, part.sel).length : 0;
+    forceTouched = true;
+    forcer.apply(at ? partEls(at, part.sel) : [el], w);
     const groups = new Map<Element, { kind: string; tag: string; rows: Array<{ prop: string; value: string }> }>();
     for (const r of inheritedFrom(el)) {
       if (!groups.has(r.source)) groups.set(r.source, { kind: kindOfRole(layerRole(r.source), "frame"), tag: r.source.tagName.toLowerCase(), rows: [] });
@@ -781,7 +969,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       heading: part.label,
       sub: def.label,
       stickHead: true,
-      slots: [...field, ...boxSlots(el, look)],
+      where: panelWhere(node.props, name, w),
+      slots: [...field, ...boxSlots(el, look, { freeMove: free })],
       values: { ...styleValues(look), ...(part.prop ? { [propKey(part.prop)]: fields.values[propKey(part.prop)] } : {}) },
       overridden: { ...styleOverridden(look), ...(part.prop ? { [propKey(part.prop)]: !!fields.overridden[propKey(part.prop)] } : {}) },
       tweaks: tweaksOf(def, node),
@@ -895,7 +1084,14 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     ct.select(elOf(box.props.id));
   }
 
+  /** The panel's view of the selection. The elements a forced state is shown on are marked while it is built, and cleared when it is not a look panel. */
   function context(): PanelContext {
+    forceTouched = false;
+    const c = contextFor();
+    if (!forceTouched) forcer.clear();
+    return c;
+  }
+  function contextFor(): PanelContext {
     const f = found(selId), el = elOf(selId);
     const base: PanelContext = { tabs: devTabs(["props", "code"]), layersOnCode: true, key: "", heading: "", freedom: 2, slots: [], values: {}, overridden: {}, outside: [], theme: [], used: usedColoursIn(scope), layers: rows() };
     // In the popup, how the block is laid out comes first.
@@ -912,7 +1108,9 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     if (!own(node)) {
       const wrapped = `<button type="button" class="de-picture-btn" data-tree-act="wrap" data-f="wrap-block">Put it in a box</button>`;
       if (node.type === PART_TYPE) {
-        return { ...base, key: selId!, heading: (node.props.label as string | undefined) ?? "Live part", sub: "Stays connected to its data", bottom: `<p class="de-note">This part of the page stays live: its words and data come from the site. Drag it anywhere, or put it in a box to change what is around it.</p><p>${wrapped}</p>` };
+        const note = o.liveNote?.(String(node.props.part ?? ""));
+        const link = note?.href ? `<p><a class="de-picture-btn" href="${esc(note.href)}" data-f="live-link">${esc(note.linkLabel ?? "Open")}</a></p>` : "";
+        return { ...base, key: selId!, heading: (node.props.label as string | undefined) ?? "Live part", sub: "Stays connected to its data", bottom: `<p class="de-note" data-f="live-note">${esc(note?.text ?? "This part of the page stays live: its words and data come from the site.")} Drag it anywhere, or put it in a box to change what is around it.</p>${link}<p>${wrapped}</p>` };
       }
       const refusal = detachRefusal(node, el);
       const detach = `<button type="button" class="de-picture-btn" data-tree-act="detach" data-f="detach-block"${refusal ? " disabled" : ""}>Detach: edit its HTML and CSS</button>`;
@@ -931,26 +1129,35 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
         // An Opens this host cannot choose is no field at all: a box holding a reference nobody can write by hand (2026-11-06).
         const unclaimed = def.props.filter((p) => p.binds === "opens" && !o.binding?.records.handles("opens"));
         const isBound = (key: string) => bound.some((p) => propKey(p.name) === key) || unclaimed.some((p) => propKey(p.name) === key);
-        const look = partLookOf(node.props, ROOT_PART);
+        const w = whereNow();
+        const look = lookAtWhere(node.props, ROOT_PART, w);
+        forceTouched = true;
+        forcer.apply([el], w);
         const fields = blockValues(def, node.props);
+        // Content tab: the settings move there, and a look the block also declares is left out of Look.
+        const ct2 = o.contentTab ? contentOf(def, node.props, { settings: !!o.editSettings, picker: !!o.choosePicture, bound: (p) => (bound.some((x) => x.name === p.name) ? boundBodyHtml(node, p) : null), skip: (p) => unclaimed.some((x) => x.name === p.name) }) : null;
+        const home = ct2 ? dedupeLook(def, boxSlots(el, look, { freeMove: free }), styleOverridden(look)) : null;
         return {
           ...base,
           ...styleContext(el, look),
-          tabs: tabsOf(def),
+          tabs: tabsOf(def, !!ct2),
+          ...(ct2 ? { content: { slots: ct2.slots, values: ct2.values, overridden: ct2.overridden, top: def.props.some((p) => p.group && (p.kind === "rows" || p.kind === "list")) && Object.values(def.parts ?? {}).some((pt) => pt.prop?.includes(".")) ? `<p class="de-note" data-f="rows-note">Double-click a row's words on the block to type them. Rows are added, removed and reordered in the block's settings.</p>` : undefined, bottom: ct2.bottom }, propsLabel: "Look" } : {}),
           key: selId!,
           heading: def.label,
+          where: panelWhere(node.props, ROOT_PART, w),
+          clash: o.blkStyleDecls ? clashLine(readLookAll(node, def, o.blkStyleDecls).conflicts) : undefined,
           // The node is its root part: the block's own settings first, then what a box has.
           values: { ...styleValues(look), ...fields.values },
           overridden: { ...styleOverridden(look), ...fields.overridden },
-          slots: [...blockSlots(def, node.props).filter((x) => !isBound(x.key)), ...boxSlots(el, look)],
-          ...(bound.length ? { sectionTop: { ...base.sectionTop, content: bound.map((p) => boundFieldHtml(node, p)).join("") } } : {}),
+          slots: [...(ct2 ? [] : blockSlots(def, node.props).filter((x) => !isBound(x.key))), ...(home ? home.slots : boxSlots(el, look, { freeMove: free }))],
+          ...(bound.length && !ct2 ? { sectionTop: { ...base.sectionTop, content: bound.map((p) => boundFieldHtml(node, p)).join("") } } : {}),
           tweaks: tweaksOf(def, node),
           notice: o.drawsSample?.(node) && sampleHasRows(o.contract, node.type) ? "Sample rows. Not saved." : o.nested && !declared.some((n) => n !== ROOT_PART) ? "This block lists no parts yet, so only its settings and its own look can change here." : undefined,
-          extra: def.props.some((p) => p.group && (p.kind === "rows" || p.kind === "list"))
+          extra: mergeExtra(def.props.some((p) => p.group && (p.kind === "rows" || p.kind === "list")) && !ct2
             ? { content: Object.values(def.parts ?? {}).some((pt) => pt.prop?.includes("."))
               ? `<p class="de-note" data-f="rows-note">Double-click a row's words on the block to type them. Rows are added, removed and reordered in the block's settings.</p>`
               : `<p class="de-note">Rows cannot be changed here yet.</p>` }
-            : undefined,
+            : undefined, home?.notes),
           // data-sync: typing can make a block start or stop drawing while a field holds focus, and only synced elements are redrawn then.
           bottom: o.nested ? `<div class="de-bottom-sync" data-sync="block-actions">${actions}</div>` : `<p class="de-note">A block. Drag it into any box. Detach turns what it drew into boxes you can change one by one, and it then stops following these settings and its data.</p><div class="de-bottom-sync" data-sync="block-actions">${actions}</div>`,
           code: { written: [], css: "", editable: false, sanitize: safeDecls, config: { tag: node.type, hint: def.label, json: JSON.stringify(stored, null, 2) } },
@@ -962,7 +1169,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     const look = (node.props.look ?? {}) as PartStyle;
     const computed = readBox(el);
     const tagList = node.type === "words" ? WORD_TAGS : BOX_TAGS;
-    let slotsNow = boxSlots(el, look);
+    let slotsNow = boxSlots(el, look, { freeMove: free });
     // The page has no parent to align in or layout of its own: what is on it does.
     if (isRoot) slotsNow = slotsNow.filter((x) => x.section === "text" || x.section === "appearance" || x.key === "padding" || x.key === "wmode");
     else if (node.type !== "picture") {
@@ -1023,16 +1230,14 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     : `<div data-sync="row-imagefit" hidden></div>`);
 
   /** Where this selection's look is stored: a part's, or a sealed node's root part, in its morph; an own node's in `look`. */
-  function writeLook(id: string, fn: (s: PartStyle, el: HTMLElement) => void) {
+  function writeLook(id: string, fn: (s: PartStyle, el: HTMLElement) => void, at: LookWhere = {}) {
     const f = found(id), el = elOf(id);
     if (!f || !el) return;
     const pr = parsePartRef(id);
     if (pr || lookIsSetting(f.node)) {
       if (!defOf(f.node)) return;
       const name = pr?.part ?? ROOT_PART;
-      const s = clone(partLookOf(f.node.props, name));
-      fn(s, el);
-      setPartLook(f.node.props, name, s);
+      editLookAt(f.node.props, name, at, (s) => fn(s, el));
       return;
     }
     const s = (f.node.props.look ?? {}) as PartStyle;
@@ -1067,11 +1272,45 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     // The field keeps what was typed, which may be on its way to something valid; leaving the field settles it.
     if (clean.ok === false) { refused = { field: propSlotId(name), message: clean.message }; return; }
     if (refused?.field === propSlotId(name)) refused = null;
-    if (!isTypedProp(p)) return change(() => { node.props[name] = clean.value; }, live ? `${id}:p:${name}` : undefined);
+    // The host's door has the last word on what is kept (contentTab). A refusal says why, at once for a control with no focus to leave.
+    let kept = clean.value;
+    if (o.contentTab && o.setProp) {
+      const w = o.setProp(node, name, kept);
+      if (w.ok === false) {
+        if (isTypedProp(p)) refused = { field: propSlotId(name), message: w.say };
+        else { heldNote = { text: w.say, until: Date.now() + 6000 }; shell.drawTop(); }
+        return;
+      }
+      kept = w.value;
+    }
+    const before = o.contentTab && o.resolveRows ? clone(node.props) : undefined;
+    if (!isTypedProp(p)) { change(() => { node.props[name] = kept; }, live ? `${id}:p:${name}` : undefined); refreshRows(id, before); return; }
     const session = `${id}:${name}`;
     if (typing !== session) { history.remember(null); typing = session; }
-    node.props[name] = clean.value;
+    node.props[name] = kept;
     redraw();
+    refreshRows(id, before);
+  }
+  /** After a setting of a data block changed: its rows are resolved again with the new props (the host's resolver), then the page is drawn again. Typing waits for a pause; a later change supersedes an earlier one. */
+  let rowsTimer: ReturnType<typeof setTimeout> | undefined;
+  let rowsBefore: Record<string, unknown> | undefined;
+  function refreshRows(id: string, before?: Record<string, unknown>) {
+    if (!before || !o.resolveRows) return;
+    const f = found(id);
+    if (!f || !defOf(f.node)?.dataDriven) return;
+    rowsBefore ??= before;
+    clearTimeout(rowsTimer);
+    rowsTimer = setTimeout(async () => {
+      const first = rowsBefore; rowsBefore = undefined;
+      const g = found(id);
+      if (!g) return;
+      const snap = clone(g.node);
+      try { await o.resolveRows!(snap, first); } catch (err) { console.error("[canvas] rows:", err); return; }
+      const h = found(id);
+      // Changed again while the resolver ran: the later change asks for its own rows.
+      if (!h || JSON.stringify(h.node.props) !== JSON.stringify(snap.props)) return;
+      redraw();
+    }, 350);
   }
 
   const panel = new Panel(side, {
@@ -1083,8 +1322,9 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       const token = tokenNameOf(key);
       if (token) return changeToken(f.node, token, value);
       const field = live ? `${id}:${key}` : undefined;
-      if (key === "css") return change(() => writeLook(id, (s) => setCodeText(s, String(value ?? ""), parsePartRef(id) ? partSafeDecls : safeDecls)), field);
+      if (key === "css") return change(() => writeLook(id, (s) => setCodeText(s, String(value ?? ""), parsePartRef(id) ? partSafeDecls : safeDecls), whereNow()), field);
       if (key === "tag") return change(() => { f.node.props.tag = value; }, field, true); // The panel's heading names the kind.
+      if (key === "freereset") return change(() => writeFree(id, 0, 0), undefined, true);
       if (key === "imageFit") return change(() => { if (value === "contain") f.node.props.imageFit = "contain"; else delete f.node.props.imageFit; }, field);
       change(() => writeLook(id, (s, el) => {
         applyKey(s, key, value, el);
@@ -1092,7 +1332,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
         if (key === "gcols" && !s.layout) s.layout = "grid";
         if (key === "layout" && value === "block") dropCss(s, ["display", "flex-direction", "flex-wrap", "grid-template-columns"]);
         settleCss(s);
-      }), field, key === "layout" || key === "bstyle");
+      }, whereNow()), field, key === "layout" || key === "bstyle");
     },
     reset(key) {
       const id = selId;
@@ -1100,12 +1340,13 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       const token = tokenNameOf(key);
       if (token) { const n = found(id)?.node; if (n) changeToken(n, token, undefined); return; }
       const prop = propNameOf(key);
-      if (!prop) return change(() => writeLook(id, (s) => resetKey(s, key)));
+      if (!prop) return change(() => writeLook(id, (s) => resetKey(s, key), whereNow()));
       const f = found(id), p = f && propOf(f.node, prop);
       if (f && p) change(() => resetProp(p, f.node.props));
     },
     select(ref) { const id = baseOf(ref); selId = id; ct.select(elOf(id)); elOf(id)?.scrollIntoView({ block: "nearest", behavior: "instant" as ScrollBehavior }); },
     hover(ref) { ct.hover(ref && baseOf(ref) !== ROOT_ID ? elOf(baseOf(ref)) : null); },
+    where(next) { lookWhere = cleanWhere(next); whereFor = selId; panel.render(context(), true); },
     toggleHidden(ref) { change(() => writeLook(ref, (s) => { if (s.hide) delete s.hide; else s.hide = true; })); },
     dragLayer(ref, ev) { dragRow(ref, ev); },
   });
@@ -1203,6 +1444,8 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     else if (a === "settings") void editSettingsFor(selId);
     else if (a?.startsWith("multi:")) multiAct(a.slice(6));
     else if (a?.startsWith("bind:")) chooseRecordFor(selId, a.slice(5));
+    else if (a?.startsWith("propic:")) choosePropPictureFor(selId, a.slice(7));
+    else if (a?.startsWith("propclear:")) { const f = found(selId), n = a.slice(10), p = f && propOf(f.node, n); if (f && p) changeProp(selId!, f.node, n, "", false); }
   });
   /** A sealed block's props that hold a reference this host can choose. */
   function boundProps(node: PuckNode) {
@@ -1213,6 +1456,12 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     const b = o.binding!, v = typeof node.props[p.name] === "string" ? (node.props[p.name] as string) : "";
     const words = v ? b.records.describe(p.binds!, v, b.drawn(node.type, p.name, v)) : "Not chosen yet.";
     return `<div class="de-rec-field" data-f="bind-${esc(p.name)}"><span class="de-label"${p.description ? ` title="${esc(p.description)}"` : ""}>${esc(p.label)}</span><p class="de-rec-now">${esc(words)}</p><button type="button" class="de-picture-btn" data-tree-act="bind:${esc(p.name)}" data-f="bind-open-${esc(p.name)}">${v ? "Change…" : "Choose…"}</button></div>`;
+  }
+  /** What a bound prop is now and its Choose button, without the label (the Content tab draws the label). */
+  function boundBodyHtml(node: PuckNode, p: { name: string; binds?: string }) {
+    const b = o.binding!, v = typeof node.props[p.name] === "string" ? (node.props[p.name] as string) : "";
+    const words = v ? b.records.describe(p.binds!, v, b.drawn(node.type, p.name, v)) : "Not chosen yet.";
+    return `<div class="de-rec-field" data-f="bind-${esc(p.name)}"><p class="de-rec-now">${esc(words)}</p><button type="button" class="de-picture-btn" data-tree-act="bind:${esc(p.name)}" data-f="bind-open-${esc(p.name)}">${v ? "Change…" : "Choose…"}</button></div>`;
   }
   /** "From what?" in the drawer. What the value draws is fetched first, so the page shows it on the same redraw; undo brings back the earlier value and what it drew. */
   function chooseRecordFor(id: string | null, name: string) {
@@ -1236,6 +1485,13 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
         if (g) change(() => { if (value) g.node.props[name] = value; else resetProp(p, g.node.props); }, undefined, true);
       },
     }));
+  }
+  /** A block's picture setting, chosen from the host's library (the Content tab). */
+  function choosePropPictureFor(id: string | null, name: string) {
+    const f = found(id), p = f && propOf(f.node, name);
+    if (!f || !p) return;
+    const cur = f.node.props[name];
+    shell.openPicture(typeof cur === "string" ? cur : undefined, p.label, (url) => { const g = found(id); if (g) changeProp(id!, g.node, name, url, false); });
   }
   function choosePictureFor(id: string | null) {
     const f = found(id);
@@ -1579,6 +1835,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
         { id: "copy-style", label: "Copy style", sep: true, disabled: !look },
         { id: "paste-style", label: "Paste style", disabled: !styleClip || !(isOwn || onPart || !!defOf(f.node)) },
         { id: "hide", label: look?.hide ? "Show" : "Hide", disabled: !(isOwn || onPart) },
+        ...(free ? [{ id: "reset-position", label: "Reset position", disabled: !(look?.fx || look?.fy) }] : []),
         { id: "reset", label: "Reset style", disabled: !canReset },
       ];
     }
@@ -1603,6 +1860,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       { id: "paste-style", label: "Paste style", disabled: !styleClip || !(isOwn || onPart || !!defOf(f.node)) },
       // A block's root cannot be hidden from here: its parts can.
       { id: "hide", label: look?.hide ? "Show" : "Hide", disabled: !(isOwn || onPart) },
+      ...(free ? [{ id: "reset-position", label: "Reset position", disabled: !(look?.fx || look?.fy) }] : []),
       { id: "reset", label: "Reset style", disabled: !canReset },
       { id: "delete", label: "Delete", hint: "Del", danger: true, sep: true, disabled: onPart },
     ];
@@ -1642,6 +1900,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
         else if (f.node.props.morph) change(() => { delete f.node.props.morph; });
         break;
       }
+      case "reset-position": if (nodeId) change(() => writeFree(nodeId, 0, 0), undefined, true); break;
       case "delete": remove(); break;
     }
   }
@@ -1670,7 +1929,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       bar.hide();
       ct.hold(true);
       startBoxResize({
-        ev, el, handle, sides: design, snap: design,
+        ev, el, handle, sides: design, snap: design, zoom,
         onChange(c) {
           writeLook(id, (s) => {
             if (c.cspan !== undefined) s.cspan = c.cspan;
@@ -1690,6 +1949,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
       });
     },
     onPull(ev, el) {
+      if (tool === "move") return; // the Free move tool pulls for itself
       if (o.nested) { arrangeDrag(ev, el); return; }
       const id = idOf(el), f = found(id);
       if (!id || !f || id === ROOT_ID || parsePartRef(id)) return;
@@ -1718,6 +1978,17 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
 
   L.on(document, "keydown", (ev: KeyboardEvent) => {
     const field = (ev.target as Element).closest?.("input, textarea, select, [contenteditable='true'], [data-de-menu]");
+    if (free && !busy && !inline && !field && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+      const key = ev.key.toLowerCase();
+      if (key === "m") { setTool("move"); return; }
+      if (o.nested && key === "v") { setTool("select"); return; }
+      if (tool === "move" && selId && key.startsWith("arrow")) {
+        ev.preventDefault();
+        const n = ev.shiftKey ? 10 : 1;
+        nudge(key === "arrowleft" ? -n : key === "arrowright" ? n : 0, key === "arrowup" ? -n : key === "arrowdown" ? n : 0);
+        return;
+      }
+    }
     if (!o.nested && !busy && !inline && !field && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
       const key = ev.key.toLowerCase();
       if (key === "v") { setTool("select"); return; }
@@ -1738,6 +2009,7 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
   }, true);
 
   o.draw(doc);
+  if (!o.nested && o.fitToPanel) { applyPageScale(); L.on(window, "resize", applyPageScale); }
   // The page's own controls out of the Tab order while editing; re-applied as nodes redraw (quiet-focus.ts).
   const quiet = o.quietTab === false ? null : quietFocus(scope);
   panel.render(context());
@@ -1762,13 +2034,14 @@ export function mountTreeEditor(o: TreeEditorOptions): TreeEditorHandle {
     dispose() {
       // First: every page element's own tabindex back before anything else unmounts.
       quiet?.dispose();
+      forcer.clear();
       popup?.close();
       inline?.finish(true);
       bar.destroy();
       shell.dispose(); L.dispose(); ct.dispose(); panel.destroy(); side.remove();
       multiSheet?.remove();
       if (multiSheet) document.documentElement.classList.remove("de-design");
-      if (!o.nested) document.documentElement.classList.remove("de-vpanel-open", "de-present", "de-pan", "de-panning");
+      if (!o.nested) { restorePageScale(); document.documentElement.classList.remove("de-vpanel-open", "de-present", "de-pan", "de-panning"); }
     },
   };
   return handle;

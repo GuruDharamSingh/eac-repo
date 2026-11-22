@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { buildIcs, icsDataUrl } from "@elkdonis/cms-ui/surface";
+import { coverFrameStyle, frameOrNull, type CoverFrame } from "@elkdonis/cms-ui/files";
 import { RsvpPanel } from "@/components/rsvp-panel";
 import { LocalTime } from "@/components/landing/LocalTime";
 import { CallSlot, JoinRoomButton, OfferingCallProvider } from "@/components/landing/OfferingCall";
+import { OfferingSignIn } from "@/components/landing/OfferingSignIn";
 import { toSurfaceThread } from "@/lib/surface-thread";
 import {
   formatDuration,
@@ -20,6 +22,34 @@ export interface OfferingItem {
   attending: boolean;
 }
 
+/** One line of the row beneath the lead offering. */
+export interface OfferingRow {
+  id: string;
+  href: string;
+  title: string;
+  meta: string;
+}
+
+/** What sits in the card's right-hand column: the RSVP (as always), the sign-in form, or nothing. */
+export type OfferingPanel = "rsvp" | "signin" | "none";
+
+/**
+ * Words and choices the offerings block (offerings-block.tsx) sets. Every default is what this band always drew, so
+ * the page's own call (app/page.tsx, no tree saved) passes none of them.
+ */
+export interface OfferingsLook {
+  eyebrow?: string;
+  heading?: string;
+  panel?: OfferingPanel;
+  /** How the cover sits in its box: the focal point in percent and a zoom (cms-ui's CoverFrame). Absent: centred. */
+  frame?: Partial<CoverFrame> | null;
+  /** The rows beneath, when something other than the items after the lead should show. `[]` draws none. */
+  rows?: OfferingRow[];
+  /** The words of the closing link, and where it goes. Empty words: no link. */
+  allLabel?: string;
+  allHref?: string;
+}
+
 /**
  * The public offerings, first thing under the header.
  *
@@ -33,50 +63,62 @@ export function OfferingsBand({
   items,
   signedIn,
   nextcloudUrl,
+  eyebrow = "Open to everyone",
+  heading = "Current Offerings",
+  panel = "rsvp",
+  frame = null,
+  rows,
+  allLabel = "All offerings →",
+  allHref = "/offerings",
 }: {
   items: OfferingItem[];
   signedIn: boolean;
   nextcloudUrl: string | null;
-}) {
+} & OfferingsLook) {
   if (items.length === 0) return null;
   const [lead, ...rest] = items;
+  const more: OfferingRow[] =
+    rows ??
+    rest.map(({ thread }) => {
+      const when = thread.nextOccurrenceAt;
+      return {
+        id: thread.id,
+        href: `/${thread.feedSlug}/${thread.slug}`,
+        title: thread.title,
+        meta: [when && `${formatShortDate(when)} · ${formatTime(when)}`, formatRecurrence(thread.recurrencePattern)]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    });
 
   return (
     <section id="offerings" className="ig-offer-section" aria-labelledby="ig-offer-heading">
       <div className="ig-offer-inner">
         <header className="ig-offer-header">
-          <p className="ig-offer-eyebrow">Open to everyone</p>
-          <h2 id="ig-offer-heading" className="ig-offer-heading">Current Offerings</h2>
+          {eyebrow && <p className="ig-offer-eyebrow">{eyebrow}</p>}
+          <h2 id="ig-offer-heading" className="ig-offer-heading">{heading}</h2>
         </header>
 
-        <LeadOffering item={lead} signedIn={signedIn} nextcloudUrl={nextcloudUrl} />
+        <LeadOffering item={lead} signedIn={signedIn} nextcloudUrl={nextcloudUrl} panel={panel} frame={frame} />
 
-        {rest.length > 0 && (
+        {more.length > 0 && (
           <ul className="ig-offer-more">
-            {rest.map(({ thread }) => {
-              const when = thread.nextOccurrenceAt;
-              return (
-                <li key={thread.id}>
-                  <Link href={`/${thread.feedSlug}/${thread.slug}`} className="ig-offer-more-row">
-                    <span className="ig-offer-more-title">{thread.title}</span>
-                    <span className="ig-offer-more-meta">
-                      {[
-                        when && `${formatShortDate(when)} · ${formatTime(when)}`,
-                        formatRecurrence(thread.recurrencePattern),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+            {more.map((row) => (
+              <li key={row.id}>
+                <Link href={row.href} className="ig-offer-more-row">
+                  <span className="ig-offer-more-title">{row.title}</span>
+                  <span className="ig-offer-more-meta">{row.meta}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
 
-        <p className="ig-offer-all">
-          <Link href="/offerings">All offerings →</Link>
-        </p>
+        {allLabel && (
+          <p className="ig-offer-all">
+            <Link href={allHref}>{allLabel}</Link>
+          </p>
+        )}
       </div>
     </section>
   );
@@ -86,10 +128,14 @@ function LeadOffering({
   item,
   signedIn,
   nextcloudUrl,
+  panel,
+  frame,
 }: {
   item: OfferingItem;
   signedIn: boolean;
   nextcloudUrl: string | null;
+  panel: OfferingPanel;
+  frame: Partial<CoverFrame> | null;
 }) {
   const { thread, cycleStatus, attendanceCount, attending } = item;
   const href = `/${thread.feedSlug}/${thread.slug}`;
@@ -125,12 +171,16 @@ function LeadOffering({
       />
     </div>
   ) : null;
+  // The right-hand column. The sign-in form is for someone who is not signed in: it is never drawn for a member.
+  const side =
+    panel === "none" ? null : panel === "signin" ? (signedIn ? null : <div className="ig-offer-rsvp ig-offer-signin"><OfferingSignIn /></div>) : rsvp;
+  const framed = frameOrNull({ fx: 50, fy: 50, zoom: 1, ...(frame ?? {}) });
 
   return (
     <article className="ig-offer-card" data-thread={thread.id}>
       <OfferingCallProvider>
       {thread.coverImageUrl && (
-        <Link href={href} className="ig-offer-media" tabIndex={-1} aria-hidden="true">
+        <Link href={href} className="ig-offer-media" tabIndex={-1} aria-hidden="true" style={framed && framed.zoom !== 1 ? { overflow: "hidden" } : undefined}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={variant(thread.coverImageUrl, 1024)}
@@ -138,6 +188,7 @@ function LeadOffering({
             sizes="(max-width: 900px) 92vw, 440px"
             alt=""
             loading="lazy"
+            style={framed ? coverFrameStyle(framed) : undefined}
           />
         </Link>
       )}
@@ -186,9 +237,9 @@ function LeadOffering({
       </div>
 
       {talkUrl ? (
-        <CallSlot talkUrl={talkUrl} title={thread.title}>{rsvp}</CallSlot>
+        <CallSlot talkUrl={talkUrl} title={thread.title}>{side}</CallSlot>
       ) : (
-        rsvp
+        side
       )}
       </OfferingCallProvider>
     </article>

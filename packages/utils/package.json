@@ -14,6 +14,7 @@
     "./essay": "./src/essay.ts",
     "./host": "./src/host.ts",
     "./studio-back": "./src/studio-back.ts",
+    "./unfurl": "./src/unfurl.ts",
     "./media-thumbnail": "./src/media-thumbnail.ts"
   },
   "scripts": {

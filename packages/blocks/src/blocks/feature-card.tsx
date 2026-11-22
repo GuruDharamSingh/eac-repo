@@ -204,6 +204,7 @@ export const featureCard = defineBlock(
     description:
       "A picture, a title, a few words and details — typed, or filled live from a post, event or artwork. Made to sit in a grid.",
     memberSafe: true,
+    reads: [{ from: "record", via: "record", kinds: ["thread"] }],
     styling: "tokens",
     props,
     parts: {

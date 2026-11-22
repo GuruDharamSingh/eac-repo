@@ -126,12 +126,7 @@ const capabilities: Capability[] = [
   },
 ];
 
-const ignored: Area['ignored'] = [
-  {
-    key: api('center/quotes', 'POST') as HostKey,
-    why: 'dead: no caller found (grep for center/quotes over apps/ and packages/ finds nothing; amrit-canada, elktours, hidden-enneagram and sunjay have the same route; arts-collective uses lib/quote-actions). Route would let any signed-in person file a quote; owner or guide quotes publish at once, others go pending.',
-  },
-];
+const ignored: Area["ignored"] = [];
 
 const area: Area = { capabilities, ignored };
 export default area;

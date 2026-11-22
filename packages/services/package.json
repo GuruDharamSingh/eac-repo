@@ -8,8 +8,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./agreements": "./src/agreements.ts",
+    "./nav-core": "./src/nav-core.ts",
     "./thread-access": "./src/thread-access.ts",
     "./thread-audience": "./src/thread-audience.ts",
+    "./section-notes": "./src/section-notes.ts",
     "./reels": "./src/reels.ts",
     "./obs": "./src/obs.ts",
     "./relay": "./src/relay.ts",

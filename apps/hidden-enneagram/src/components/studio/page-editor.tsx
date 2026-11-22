@@ -2,31 +2,13 @@
 
 import { useMemo } from "react";
 import type { Data, Plugin } from "@puckeditor/core";
-import { PuckEditor, partsPlugin } from "@elkdonis/page-builder";
-import { partLookOf, partSafeDecls, setPartLook } from "@elkdonis/direct-edit/puck/morph";
-import { mountLookPanel, openStudioPopup } from "@elkdonis/direct-edit/puck";
-// The look panel's own sheet (every rule is prefixed de-). Editor only: this
-// file is reached from /studio, never from a visitor's route.
-import "@elkdonis/direct-edit/direct-edit.css";
+import { HouseWholePage } from "@elkdonis/house-editor";
 import { canvasConfig, canvasContract, puckConfig } from "@/lib/puck/config.client";
 import { savePageAction } from "@/lib/puck/actions";
 
-/**
- * The look layer (katie's and sunjay's): click into a block and change the
- * look of the parts it declares, stored as the node's `morph` (one undo
- * history with Puck's own edits) and drawn by MorphMark on the canvas and the
- * published page alike. "Edit look" in a block's action bar, or a double-click,
- * opens it alone in the block popup, drawn with the published-shape config
- * (canvasConfig). `developer: false` keeps the Code tab and Detach off.
- * Module scope: Puck rebuilds its whole UI when a plugin changes identity.
- */
-const PARTS = partsPlugin({
-  contract: canvasContract,
-  look: { partLookOf, setPartLook, partSafeDecls },
-  panel: mountLookPanel,
-  developer: false,
-  popup: (ctx) => openStudioPopup({ config: canvasConfig, contract: canvasContract }, ctx),
-});
+// The look layer (parts plugin, "Edit look" in the popup) is the house's: HouseWholePage adds it from the
+// contract. `developer: false` keeps the Code tab and Detach off. Hand-back stays off, as before.
+const CONFIG = { canvasConfig, puckConfig, contract: canvasContract };
 
 const TITLES: Record<string, string> = {
   home: "Landing (/)",
@@ -83,20 +65,10 @@ function pagesPlugin(pages: StudioPageLink[], current: string): Plugin {
 }
 
 /** The editor with this site's catalogue and save action bound to it. */
-export function PageEditor({ slug, orgId, initial, pages = [] }: { slug: string; orgId: string; initial: Data; pages?: StudioPageLink[] }) {
+export function PageEditor({ slug, orgId, initial, version, pages = [] }: { slug: string; orgId: string; initial: Data; version?: string; pages?: StudioPageLink[] }) {
   const key = JSON.stringify(pages);
   // Stable per page load: Puck rebuilds its UI when a plugin changes identity.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const plugins = useMemo(() => [PARTS, pagesPlugin(pages, slug)], [key, slug]);
-  return (
-    <PuckEditor
-      slug={slug}
-      initial={initial}
-      config={puckConfig}
-      orgId={orgId}
-      onPublish={savePageAction}
-      plugins={plugins}
-      title={TITLES[slug] ?? `/${slug}`}
-    />
-  );
+  const plugins = useMemo(() => [pagesPlugin(pages, slug)], [key, slug]);
+  return <HouseWholePage slug={slug} orgId={orgId} initial={initial} version={version} config={CONFIG} save={savePageAction} plugins={plugins} handBack={false} title={TITLES[slug] ?? `/${slug}`} />;
 }

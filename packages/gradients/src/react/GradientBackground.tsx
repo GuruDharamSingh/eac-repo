@@ -20,6 +20,13 @@ export interface GradientBackgroundProps {
    * Shaders then draw that moment and never run their own clock.
    */
   frame?: number;
+  /**
+   * Motion-seconds (the integral of motion/100 over time; word art's timeline computes it). When set,
+   * shaders draw exactly that moment and never run their own clock, so a speed change never jumps.
+   */
+  clock?: number;
+  /** For recording: pixel ratio 1 and a readable drawing buffer (preserveDrawingBuffer). */
+  capture?: boolean;
 }
 
 /**
@@ -34,7 +41,7 @@ export interface GradientBackgroundProps {
 /** What the element is given; typed explicitly so `as` stays usable across @types/react versions. */
 type Host = ElementType<{ className?: string; style?: CSSProperties; children?: ReactNode; "data-gradient"?: string }>;
 
-export function GradientBackground({ value, as = "div", className, style, children, frame }: GradientBackgroundProps) {
+export function GradientBackground({ value, as = "div", className, style, children, frame, clock, capture }: GradientBackgroundProps) {
   const Tag = as as Host;
   const spec = cleanGradient(value);
   const id = useId().replace(/:/g, "");
@@ -47,9 +54,10 @@ export function GradientBackground({ value, as = "div", className, style, childr
       style={{ ...gradientStyle(spec), ...(layered ? { position: "relative", isolation: "isolate" } : null), ...style }}
     >
       {/* keyed: a new shader gets a new canvas (the old one's context is released on cleanup) */}
-      {isOwnShader(spec.shader) && <ShaderCanvas key={spec.shader} spec={spec} frame={frame} style={{ zIndex: -1 }} />}
-      {isPaperShader(spec.shader) && <PaperLayer key={spec.shader} spec={spec} frame={frame} style={{ zIndex: -1 }} />}
-      {spec.paper > 0 && <PaperSurface spec={spec} frame={frame} style={{ zIndex: -1 }} />}
+      {/* capture changes the context attributes, so it also gets a fresh canvas */}
+      {isOwnShader(spec.shader) && <ShaderCanvas key={`${spec.shader}${capture ? ":c" : ""}`} spec={spec} frame={frame} clock={clock} capture={capture} style={{ zIndex: -1 }} />}
+      {isPaperShader(spec.shader) && <PaperLayer key={`${spec.shader}${capture ? ":c" : ""}`} spec={spec} frame={frame} clock={clock} capture={capture} style={{ zIndex: -1 }} />}
+      {spec.paper > 0 && <PaperSurface key={capture ? "c" : "p"} spec={spec} frame={frame} clock={clock} capture={capture} style={{ zIndex: -1 }} />}
       {spec.grain > 0 && <Grain id={`g${id}`} amount={spec.grain} seed={spec.seed} />}
       {children}
     </Tag>

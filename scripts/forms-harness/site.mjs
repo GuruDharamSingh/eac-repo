@@ -35,6 +35,7 @@ await send("Runtime.enable");
 
 const KINDS = ["meeting", "event", "post", "series", "workshop", "service"];
 const PAGES = [...KINDS.flatMap((k) => ["surface", "page", "surface-edit", "page-edit"].map((h) => `sf-${k}-${h}`)), "sf-route-calendar", "sf-route-write", "sf-route-edit", "sf-route-acting"];
+PAGES.push(...KINDS.flatMap((k) => ["surface", "page", "surface-edit", "page-edit", "surface-focus", "surface-edit-focus"].map((h) => `sf-${k}-${h}-pt`)));
 const WIDTHS = [460, 900, 390];
 const BTN = (label) =>
   `(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(label)} && !x.disabled); if (!b) return false; b.click(); return true; })()`;
@@ -45,7 +46,8 @@ const report = {};
 for (const page of PAGES) {
   if (only && !only.includes(page)) continue;
   const r = (report[page] = { shots: [], errors: [], checks: {} });
-  for (const w of WIDTHS) {
+  // The -pt pages at the focus tier are looked at at desktop width too.
+  for (const w of page.endsWith("-pt") ? [1280, 900, 390] : WIDTHS) {
     errors = [];
     await send("Emulation.setDeviceMetricsOverride", { width: w, height: w < 500 ? 844 : 1000, deviceScaleFactor: 1, mobile: w < 500 });
     await send("Page.navigate", { url: `file:///out/${page}.html` });
@@ -63,7 +65,7 @@ for (const page of PAGES) {
     r.checks = await js(`({ shared: Boolean(document.querySelector('.frm-site')), oldForm: Boolean(document.querySelector('.eac-composer, .eac-compose, .eac-write')), title: (document.querySelector('.frm-site input[id$=title], .frm-site textarea[id$=title], .frm-site .frm-title') || {}).value ?? null, date: (document.querySelector('.frm-site input[type=date]') || {}).value ?? null })`);
     continue;
   }
-  if (!page.endsWith("-edit")) continue;
+  if (!page.endsWith("-edit") && !page.endsWith("-edit-pt")) continue;
   // Interactions at the popup's width, on a fresh load.
   errors = [];
   await send("Emulation.setDeviceMetricsOverride", { width: 460, height: 1000, deviceScaleFactor: 1, mobile: false });

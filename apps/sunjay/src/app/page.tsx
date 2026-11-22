@@ -111,9 +111,9 @@ export default async function HomePage() {
           <div className={`pts-banner${slides.length === 0 ? " pts-banner--tall" : ""}`}>
             {parts.banner}
             <div className="pts-banner__words">
-              {hero.eyebrow && <p className="ifs-eyebrow">{hero.eyebrow}</p>}
-              <h1>{hero.title ?? siteConfig.orgName}</h1>
-              {(hero.subtitle ?? siteConfig.tagline) && <p className="pts-banner__sub">{hero.subtitle ?? siteConfig.tagline}</p>}
+              {hero.eyebrow && <p className="ifs-eyebrow" data-field="section:hero:eyebrow">{hero.eyebrow}</p>}
+              <h1 data-field="section:hero:title">{hero.title ?? siteConfig.orgName}</h1>
+              {(hero.subtitle ?? siteConfig.tagline) && <p className="pts-banner__sub" data-field="section:hero:subtitle">{hero.subtitle ?? siteConfig.tagline}</p>}
             </div>
           </div>
           {slides.length > 0 && <LiveRoot id="home-stage">{parts["home-stage"]}</LiveRoot>}
@@ -143,7 +143,7 @@ export default async function HomePage() {
               <div className="pts-stack">
                 <p className="ifs-eyebrow">About</p>
                 <h2 className="pts-h2">{siteConfig.orgName}</h2>
-                <p className="pts-lede">{firstLines(about.body) ?? siteConfig.tagline}</p>
+                <p className="pts-lede" data-field="section:about:body">{firstLines(about.body) ?? siteConfig.tagline}</p>
                 <div><Link className="ifs-btn" href="/about">Read more</Link></div>
               </div>
               <LiveRoot id="home-join">{parts["home-join"]}</LiveRoot>

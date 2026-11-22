@@ -26,9 +26,95 @@ export function businessAddress(b: Pick<PlaceBusinessSummary, "streetAddress" | 
   return [b.streetAddress, tail].filter(Boolean).join(", ") || null;
 }
 
-export function BusinessCard({ business: b, compact = false }: { business: PlaceBusinessSummary; compact?: boolean }) {
+/**
+ * The one-line card for tour stops (2026-11-19, Justin: declutter the route).
+ * Name, kind, hours and website on one line; the address, the rule-2 marking
+ * ("Unclaimed listing · listed by …" plus "Is this your business?") and the
+ * licence lines (OSM is ODbL, it needs its credit) sit behind "Details". They
+ * stay on the page, one click away, because the brief requires both on every
+ * surface that shows a shell (docs/open/ASSOCIATED_BUSINESSES_2026-11-04.md,
+ * rules 1-2; lib/catalogue-types.ts PlaceBusinessSummary). The summary keeps
+ * an "Unclaimed" word visible for shells, so the marking is never fully folded.
+ */
+function BusinessLine({ business: b }: { business: PlaceBusinessSummary }) {
+  const unclaimed = b.status === "shell";
+  const address = businessAddress(b);
+  const kind = b.categoryLabel ?? b.category;
+  const hasDetails = Boolean(address || (unclaimed && (b.marking || b.pageUrl)) || b.attributions.length > 0);
+  const sep = <span aria-hidden className="opacity-40">·</span>;
+  return (
+    <div className="rounded-md border border-border px-3 py-2 text-xs" data-business-status={b.status}>
+      <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 leading-snug">
+        <span className="font-medium">
+          {b.pageUrl ? (
+            <a href={b.pageUrl} className="underline-offset-4 hover:underline">
+              {b.name}
+            </a>
+          ) : (
+            b.name
+          )}
+        </span>
+        {kind ? <span className="opacity-75">{kind}{b.relation === "hosts" ? " (inside)" : ""}</span> : null}
+        {b.openingHours ? (
+          <>
+            {sep}
+            <span className="break-words">{b.openingHours}</span>
+          </>
+        ) : null}
+        {b.website ? (
+          <>
+            {sep}
+            <a href={b.website} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-4">
+              {host(b.website)} ↗
+            </a>
+          </>
+        ) : null}
+      </p>
+      {hasDetails ? (
+        <details className="group mt-1">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[0.65rem] uppercase tracking-wider opacity-70 hover:opacity-100 [&::-webkit-details-marker]:hidden">
+            <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
+            Details{unclaimed ? <span className="opacity-80"> · Unclaimed</span> : null}
+          </summary>
+          <div className="mt-1.5 space-y-1 pl-3">
+            {address ? (
+              <p>
+                <span className="opacity-70">Address </span>
+                {address}
+              </p>
+            ) : null}
+            {unclaimed && (b.marking || b.pageUrl) ? (
+              <p className="text-[0.65rem] opacity-80">
+                {b.marking}
+                {b.marking && b.pageUrl ? " · " : null}
+                {b.pageUrl ? (
+                  <a href={b.pageUrl} className="underline underline-offset-4">
+                    Is this your business?
+                  </a>
+                ) : null}
+              </p>
+            ) : null}
+            {b.attributions.length > 0 ? <p className="text-[0.65rem] opacity-70">{b.attributions.join(" · ")}</p> : null}
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+export function BusinessCard({
+  business: b,
+  compact = false,
+  line = false,
+}: {
+  business: PlaceBusinessSummary;
+  compact?: boolean;
+  /** One line plus a "Details" disclosure (tour stops). Other callers keep the full card. */
+  line?: boolean;
+}) {
   // A removed listing is never shown (its page answers 410); a former operator is history, not a card.
   if (b.status === "removed" || b.relation === "former") return null;
+  if (line) return <BusinessLine business={b} />;
   const unclaimed = b.status === "shell";
   const address = businessAddress(b);
   const text = compact ? "text-xs" : "text-sm";

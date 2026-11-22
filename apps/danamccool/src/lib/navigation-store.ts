@@ -1,7 +1,7 @@
-import { db } from "@elkdonis/db";
+import { loadSiteNav, saveSiteNav } from "@elkdonis/services";
 import { listPages } from "@elkdonis/page-builder/server";
 import { currentOrgId } from "@/lib/site-org";
-import { cleanNav, DEFAULT_NAV, type NavItem } from "./navigation";
+import { DEFAULT_NAV, type NavItem } from "./navigation";
 
 // ============================================================================
 // Reading and writing the navigation. Server only.
@@ -9,37 +9,13 @@ import { cleanNav, DEFAULT_NAV, type NavItem } from "./navigation";
 
 const KEY = "nav:main";
 
+/** The stored menu (shared services store, her key); DEFAULT_NAV until it is arranged. */
 export async function loadNav(): Promise<NavItem[]> {
-  try {
-    const [row] = await db<Array<{ value: unknown }>>`
-      SELECT value FROM site_config
-      WHERE org_id = ${currentOrgId()} AND key = ${KEY}
-      LIMIT 1
-    `;
-    const stored = cleanNav(row?.value);
-    // An empty stored nav means "never arranged", not "deliberately empty" —
-    // a site with no navigation at all is never what somebody meant.
-    return stored.length > 0 ? stored : DEFAULT_NAV;
-  } catch (err) {
-    console.error("[danamccool] loadNav:", err);
-    return DEFAULT_NAV;
-  }
+  return loadSiteNav(currentOrgId(), { key: KEY, fallback: DEFAULT_NAV });
 }
 
 export async function saveNav(items: NavItem[]): Promise<{ ok: boolean; error?: string }> {
-  const clean = cleanNav(items);
-  try {
-    await db`
-      INSERT INTO site_config (org_id, key, value, updated_at)
-      VALUES (${currentOrgId()}, ${KEY}, ${db.json(clean as never)}, NOW())
-      ON CONFLICT (org_id, key)
-      DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
-    `;
-    return { ok: true };
-  } catch (err) {
-    console.error("[danamccool] saveNav:", err);
-    return { ok: false, error: "Could not save the navigation." };
-  }
+  return saveSiteNav(currentOrgId(), items, { key: KEY });
 }
 
 /**

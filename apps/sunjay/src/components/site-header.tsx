@@ -5,21 +5,18 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import type { NavItem } from "@elkdonis/services/nav-core";
+import { DEFAULT_NAV } from "@/lib/nav-default";
 
 interface SiteHeaderProps {
   signedIn: boolean;
   canEdit: boolean;
   isMember?: boolean;
+  /** The menu: the stored `nav:main` row, else DEFAULT_NAV (lib/nav-default.ts). */
+  nav?: NavItem[];
 }
 
-/** Three pages in the nav (developer, 2026-11-02); the series is reached from the landing and Community. */
-const NAV_LINKS = [
-  { href: "/about", label: "About" },
-  { href: "/publications", label: "Publications" },
-  { href: "/community", label: "Community" },
-];
-
-export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderProps) {
+export function SiteHeader({ signedIn, canEdit, isMember = false, nav = DEFAULT_NAV }: SiteHeaderProps) {
   const homeHref = isMember ? "/hub" : "/center";
   const homeLabel = isMember ? "Hub" : "Center";
   const pathname = usePathname();
@@ -28,17 +25,23 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
 
   // Site style (round 2, 2026-11-14): the header's parts are named for the owner's style editor (lib/site-style-schema.ts).
   const here = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const links = NAV_LINKS.map((link) => (
-    <Link
-      key={link.href}
-      href={link.href}
-      data-part={here(link.href) ? "active" : "links"}
-      aria-current={here(link.href) ? "page" : undefined}
-      onClick={() => setOpen(false)}
-    >
-      {link.label}
-    </Link>
-  ));
+  const links = nav.map((link, i) =>
+    link.external ? (
+      <a key={`${link.href}-${i}`} href={link.href} data-part="links" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
+        {link.label}
+      </a>
+    ) : (
+      <Link
+        key={`${link.href}-${i}`}
+        href={link.href}
+        data-part={here(link.href) ? "active" : "links"}
+        aria-current={here(link.href) ? "page" : undefined}
+        onClick={() => setOpen(false)}
+      >
+        {link.label}
+      </Link>
+    )
+  );
   const tools = (
     <>
       {signedIn && <Link href={homeHref} data-part="tools" onClick={() => setOpen(false)}>{homeLabel}</Link>}

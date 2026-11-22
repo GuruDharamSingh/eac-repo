@@ -18,6 +18,8 @@
 import { emptyContentAnswers, type ContentFieldContext } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormKindSchema, KindLayout } from '../../contract';
 import { SERVICE_RULES } from '../../rules/service';
+import { num } from '../../rules/answers';
+import { money } from '../../preview/kind-lines';
 import {
   ServiceBooking,
   ServiceExcerpt,
@@ -80,6 +82,14 @@ export const serviceKind: FormKindSchema & { layout: KindLayout } = {
       fields: ['price', 'currency', 'sliding_scale', 'price_sliding_min', 'sliding_scale_note'],
       render: 'servicePrice',
       quick: true,
+      rowSummary: (a, ctx) => {
+        const n = num(a.price);
+        if (n === null) return undefined;
+        if (n === 0) return 'Free';
+        const cur = typeof a.currency === 'string' && a.currency ? a.currency : String(ctx.fields.defaultCurrency ?? 'CAD');
+        return `${money(n, cur)}${a.sliding_scale === true ? ', sliding scale' : ''}`;
+      },
+      rowPlaceholder: 'Set a price',
     },
     { id: 'description', label: 'Description', tier: 'essentials', fields: ['body'], quick: true },
     // ── More ──

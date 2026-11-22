@@ -30,6 +30,11 @@ export type SiteVarKind =
   | "hsl"
   /** Any colour the editor offers: #rrggbb. */
   | "color"
+  /**
+   * A colour that may be translucent. Stored exactly as written: rgba(r, g, b, a), #rrggbb or #rrggbbaa.
+   * The editor offers a colour picker plus an opacity; what the owner picks is written as rgba().
+   */
+  | "rgba"
   /** A length with a unit: 0, 4px, 0.5rem. */
   | "length"
   /** One of the site's declared fonts. */
@@ -61,6 +66,12 @@ export interface SiteVar {
   default: string;
   hint?: string;
   /**
+   * Fold: the group is shown closed behind a disclosure with this title ("More colours"), and the owner
+   * can open it. Read from the group's first variable; groups sharing a fold title share one disclosure.
+   * Absent: the group is shown open, as before.
+   */
+  fold?: string;
+  /**
    * Elements that should take this variable directly, when the owner sets it. The site's own CSS may
    * use a literal (body's gradient, h1–h4's font-family), so changing the variable alone would change
    * nothing there. Selectors are code. Written only when the variable is set, so an untouched site
@@ -74,7 +85,13 @@ export interface SiteVar {
 }
 
 export interface ChromePart { label: string }
-export interface ChromeRegion { label: string; parts: Readonly<Record<string, ChromePart>> }
+export interface ChromeRegion {
+  label: string;
+  parts: Readonly<Record<string, ChromePart>>;
+  /** Opt-in: the whole region's text colour also recolours its parts (a part's own colour still wins).
+   *  Off by default so sites that already store a region colour keep their look. */
+  cascadeColor?: boolean;
+}
 
 export interface SiteStyleSchema {
   vars: readonly SiteVar[];
@@ -102,6 +119,8 @@ const MAX_CSS = 600;
 
 const HSL_RE = /^\d{1,3}(?:\.\d+)? \d{1,3}(?:\.\d+)?% \d{1,3}(?:\.\d+)?%$/;
 const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const RGBA_RE = /^rgba?\(\s*(?:\d{1,3}\s*,\s*){2}\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d{1,3}|1\.0{1,3}|0\.0{1,3})\s*)?\)$/i;
+const HEX_ALPHA_RE = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const LENGTH_RE = /^(?:0|\d{1,3}(?:\.\d{1,3})?(?:px|rem|em))$/;
 const GRADIENT_RE = /^linear-gradient\(\d{1,3}deg(?:, #[0-9a-f]{6} \d{1,3}%){2,4}\)$/i;
 
@@ -112,6 +131,7 @@ function cleanVar(v: SiteVar, raw: unknown, fonts: readonly SiteFont[]): string 
   switch (v.kind) {
     case "hsl": ok = HSL_RE.test(value); break;
     case "color": ok = HEX_RE.test(value); break;
+    case "rgba": ok = RGBA_RE.test(value) || HEX_ALPHA_RE.test(value) || HEX_RE.test(value); break;
     case "length": ok = LENGTH_RE.test(value); break;
     case "background": ok = HEX_RE.test(value) || GRADIENT_RE.test(value); break;
     case "font": ok = fonts.some((f) => f.stack === value); break;
@@ -191,6 +211,9 @@ export function siteStyleCss(raw: unknown, schema: SiteStyleSchema, opts: { edit
     }
   }
   for (const [region, parts] of Object.entries(s.chrome ?? {})) {
+    // A cascading region's text colour reaches every part first; part rules come after and win.
+    const rootColor = schema.chrome[region]?.cascadeColor ? partDecls({ color: parts.root?.color } as PartStyle, {}).find(([k]) => k === "color") : undefined;
+    if (rootColor) rules.push(`[data-chrome="${esc(region)}"] [data-part]{${important([rootColor])}}`);
     for (const [name, look] of Object.entries(parts)) {
       const d = partDecls(look, { editor: opts.editor });
       if (look.hide && opts.editor) d.push(["opacity", ".3"]);
@@ -238,9 +261,29 @@ export function hexToHsl(hex: string): string | null {
   return `${hue} ${Math.round(sat * 100)}% ${Math.round(l * 100)}%`;
 }
 
+/** A translucent colour split for the picker: "rgba(1, 18, 78, 0.06)" or "#01124e0f" → { hex: "#01124e", a: 0.06 }. */
+export function rgbaParts(v: string): { hex: string; a: number } | null {
+  const x = v.trim();
+  if (HEX_RE.test(x)) { const hex = hslToHex(x); return hex ? { hex, a: 1 } : null; }
+  if (/^#[0-9a-f]{8}$/i.test(x)) return { hex: x.slice(0, 7).toLowerCase(), a: Math.round((parseInt(x.slice(7), 16) / 255) * 1000) / 1000 };
+  if (!RGBA_RE.test(x)) return null;
+  const n = x.replace(/^rgba?\(|\)$/gi, "").split(",").map((p) => parseFloat(p));
+  const [r, g, b] = n.map((c) => Math.max(0, Math.min(255, Math.round(c || 0))));
+  const a = n.length > 3 ? Math.max(0, Math.min(1, n[3]!)) : 1;
+  return { hex: `#${[r, g, b].map((c) => (c ?? 0).toString(16).padStart(2, "0")).join("")}`, a };
+}
+
+/** The picker's two values written back as a stored string. */
+export function rgbaString(hex: string, a: number): string {
+  const h = hslToHex(hex) ?? "#000000";
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${Math.round(Math.max(0, Math.min(1, a)) * 1000) / 1000})`;
+}
+
 /** A colour variable as hex, whatever its kind; null for gradients and non-colours. */
 export function varHex(v: SiteVar, value: string | undefined): string | null {
   const x = value ?? v.default;
+  if (v.kind === "rgba") return rgbaParts(x)?.hex ?? null;
   return v.kind === "hsl" ? hslToHex(x) : v.kind === "color" || (v.kind === "background" && HEX_RE.test(x)) ? hslToHex(x) : null;
 }
 

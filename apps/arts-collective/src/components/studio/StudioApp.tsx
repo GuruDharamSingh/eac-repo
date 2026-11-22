@@ -159,7 +159,7 @@ export function StudioApp({
         items: (orgId) => listServiceFormAction(orgId),
       }),
       recordingExtension(recording),
-      wordartExtension({ fonts: WORDART_FONTS }),
+      wordartExtension({ fonts: WORDART_FONTS, recording: { uploadEndpoint: "/api/studio/recordings/upload", reelHref: "/studio?kind=video" } }),
     ],
     [video, post, meeting, artworkForm, serviceForm, recording, create, orgs, canvas, makeFrom]
   );

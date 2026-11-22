@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🔨 Running Database Migrations (Production)..."
+echo "🔨 Database migrations (Production)..."
 echo ""
 
 # Check if postgres is running
@@ -19,10 +19,9 @@ fi
 echo "⏳ Waiting for PostgreSQL to be ready..."
 sleep 5
 
-# Run migrations
-docker compose -f docker-compose.prod.yml exec inner-gathering-prod \
-    sh -c "cd /app/packages/db && pnpm db:migrate"
+echo "⚠️  Nothing was run: docker-compose.prod.yml has no app service to run migrations in (the inner-gathering service was retired)."
+echo "   Apply migrations with packages/db/scripts/migrate.mjs against the production database (DATABASE_URL set)."
 
 echo ""
-echo "✅ Migrations complete!"
+echo "ℹ️  No migrations were applied by this script."
 echo ""

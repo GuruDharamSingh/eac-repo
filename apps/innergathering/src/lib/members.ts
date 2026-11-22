@@ -10,7 +10,7 @@ import { siteConfig } from "@/config/site";
  * org, which is the one fact the network profile cannot answer.
  */
 
-export interface MemberCard {
+interface MemberCard {
   userId: string;
   slug: string;
   displayName: string;

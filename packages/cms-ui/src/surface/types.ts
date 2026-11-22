@@ -34,6 +34,7 @@ export type SurfaceKind =
   | "define"
   | "document"
   | "idea"
+  | "place"
   | "neutral";
 
 /**
@@ -45,7 +46,8 @@ export type SurfaceKind =
  * wheel is a circle), a rectangle around it is furniture. A `bare` surface
  * renders its own close control, since there is no chrome to carry one.
  */
-export type SurfaceSize = "compact" | "standard" | "wide" | "full" | "bare";
+/** `stage` is the SurfaceStage's base: it fills the stage's height instead of sizing to its content. */
+export type SurfaceSize = "compact" | "standard" | "wide" | "full" | "bare" | "stage";
 
 /**
  * What a face already knows about the thing it opens. Painted into the
@@ -500,6 +502,14 @@ export interface SurfaceThread {
   /** Terms defined out of this thread. */
   terms?: SurfaceTerm[];
 
+  /**
+   * One web address a post carries, already read at write time (title, picture). Drawn as a card in the body.
+   * Optional: a host that has no links on its threads leaves it out and nothing changes.
+   */
+  link?: { url: string; title?: string | null; description?: string | null; imageUrl?: string | null; siteName?: string | null } | null;
+  /** Photos and videos on the opening post, in order. Drawn as a grid under the prose. Optional. */
+  attachments?: Array<{ kind: "image" | "video"; url: string; width?: number | null; height?: number | null }> | null;
+
   /** The full page, when there is one. */
   href?: string | null;
 
@@ -590,6 +600,10 @@ export interface SurfaceForumFeed {
   /** Hex; paints the row's hairline, as it does on the board. */
   accent?: string | null;
   href: string;
+  /** The section this one sits inside. The list indents it under its parent and counts it there. Optional. */
+  parentSlug?: string | null;
+  /** Visible only to some roles (a closed section). The list marks it. Optional. */
+  closed?: boolean | null;
 }
 
 export interface SurfaceForumThread {
@@ -1407,6 +1421,12 @@ export interface SurfaceConnectors {
    * the shared columns; supply this when the host stores extra fields.
    */
   threadToAnswers?: (thread: SurfaceThread) => Record<string, unknown>;
+
+  /**
+   * Content a host adds under a thread's body in the popup (the forum's replies and reply box, say). Return
+   * null for threads it has nothing for. Optional: without it the popup is exactly what it was.
+   */
+  threadBody?: (thread: SurfaceThread, helpers: { refresh: () => void }) => React.ReactNode;
 
   /** Extra actions for a thread surface — "Register", "Confirm this month". */
   threadActions?: (thread: SurfaceThread, helpers: { refresh: () => void }) => SurfaceAction[];

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { SuggestionStatus, VisitorSuggestion } from "@/lib/catalogue-types";
 import { acceptSuggestionAction, rejectSuggestionAction } from "@/lib/suggestion-actions";
+import type { LeadSuggestion } from "@/lib/suggestion-leads";
 
 const PlacesMap = dynamic(() => import("@/components/places/places-map").then((m) => m.PlacesMap), {
   ssr: false,
@@ -164,6 +165,110 @@ export function SuggestionsQueue({ suggestions }: { suggestions: VisitorSuggesti
                     <PlacesMap places={pts} route={s.kind === "route" ? pts : undefined} legs={s.preview?.legs ?? null} activeId={s.kind === "spot" ? s.id : null} className="h-56 w-full" />
                   )}
                 </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Artist and place leads": what visitors sent through Suggest an artist or a place (kinds artist and place_lead).
+ * Accept only marks the lead handled (the office then adds the artist or place itself); Reject keeps a reason.
+ * Same list style as the queue above; nothing here touches spots or walks.
+ */
+export function LeadsQueue({ leads }: { leads: LeadSuggestion[] }) {
+  const router = useRouter();
+  const [show, setShow] = React.useState<"pending" | "all">("pending");
+  const [busy, setBusy] = React.useState<string | null>(null);
+  const list = show === "pending" ? leads.filter((l) => l.status === "pending") : leads;
+
+  async function accept(l: LeadSuggestion) {
+    setBusy(l.id);
+    const r = await acceptSuggestionAction(l.id).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "Failed" }));
+    setBusy(null);
+    if (!r.ok) return void toast.error(r.error);
+    toast.success("Marked as handled");
+    router.refresh();
+  }
+
+  async function reject(l: LeadSuggestion) {
+    const reason = window.prompt("Why not? (kept with the suggestion)");
+    if (reason === null) return;
+    setBusy(l.id);
+    const r = await rejectSuggestionAction(l.id, reason.trim() || undefined).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "Failed" }));
+    setBusy(null);
+    if (!r.ok) return void toast.error(r.error);
+    toast.success("Rejected");
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="max-w-2xl text-sm text-muted-foreground">Artists and places that visitors think we should know. Accepting marks it handled; add the artist or place yourself.</p>
+        <div className="flex gap-1 text-sm">
+          {(["pending", "all"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setShow(k)}
+              className={`px-3 py-1.5 ${show === k ? "border-b-2 border-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {k === "pending" ? `Waiting (${leads.filter((l) => l.status === "pending").length})` : `All (${leads.length})`}
+            </button>
+          ))}
+        </div>
+      </div>
+      {list.length === 0 ? (
+        <p className="border border-dashed border-border p-10 text-center text-muted-foreground">{show === "pending" ? "Nothing waiting." : "No leads yet."}</p>
+      ) : (
+        <ul className="space-y-4">
+          {list.map((l) => {
+            const who = l.suggester.name ?? "A visitor";
+            return (
+              <li key={l.id} className="border border-border p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {l.kind === "artist" ? "Artist" : "Place"} · {STATUS_LABEL[l.status]}
+                    </p>
+                    <h3 className="font-serif text-xl">{l.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      From{" "}
+                      {l.suggester.slug && ARTDIRECT_URL ? (
+                        <a href={`${ARTDIRECT_URL}/${l.suggester.slug}`} target="_blank" rel="noopener" className="underline underline-offset-4">
+                          {who}
+                        </a>
+                      ) : (
+                        who
+                      )}{" "}
+                      · {when(l.createdAt)}
+                    </p>
+                  </div>
+                  {l.status === "pending" && (
+                    <div className="flex gap-2">
+                      <button type="button" disabled={busy === l.id} onClick={() => accept(l)} className="bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
+                        Accept
+                      </button>
+                      <button type="button" disabled={busy === l.id} onClick={() => reject(l)} className="border border-border px-3 py-1.5 text-sm disabled:opacity-50">
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {l.url && (
+                  <p className="mt-2 text-sm">
+                    <a href={l.url.startsWith("http") ? l.url : `https://${l.url}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 break-all">
+                      {l.url}
+                    </a>
+                  </p>
+                )}
+                {l.why && <p className="mt-2 whitespace-pre-line text-sm">“{l.why}”</p>}
+                {l.email && <p className="mt-2 text-sm text-muted-foreground">Contact: {l.email}</p>}
+                {l.rejectReason && <p className="mt-2 text-sm text-muted-foreground">Rejected: {l.rejectReason}</p>}
               </li>
             );
           })}

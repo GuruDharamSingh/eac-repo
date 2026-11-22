@@ -1,18 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { browseMediaFolder, getStorageSlug } from "@elkdonis/services";
-import { getSiteArtistUserId, getViewer } from "@/lib/auth";
+import { getViewer } from "@/lib/auth";
 
 /**
- * The site owner's own pictures — her personal Nextcloud folder (EAC_Network/users/<her
- * slug>), browsed a folder at a time (`?path=`) or searched (`?q=`).
+ * The SIGNED-IN person's own pictures: their personal Nextcloud folder
+ * (EAC_Network/users/<their slug>), browsed a folder at a time (`?path=`) or
+ * searched (`?q=`). The picker shows it as "My files", beside "This site"
+ * (../route.ts, the org's folder).
  *
- * The SITE OWNER's folder, not the signed-in person's: this is her site, and
- * the picker's "Katie's images" must show her work when a guide is editing it.
- * That is why it is editors only — it lists someone else's storage. The owner
- * comes from the membership table, never from the request. Private/ is never
- * listed (browseMediaFolder).
- *
- * Uploads through /api/media/upload land in this folder too.
+ * Changed 2026-11-17: this used to list the SITE OWNER's folder, so a guide
+ * editing the site saw the owner's private storage. It now lists the viewer's
+ * own, and nobody else's: the user id comes from the session and is never read
+ * from the request, so there is no parameter that could name another person.
+ * Editors only (the picker is an authoring tool). Private/ is never listed
+ * (browseMediaFolder).
  */
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,7 @@ export async function GET(req: NextRequest) {
   const viewer = await getViewer();
   if (!viewer?.canEdit) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
-  const owner = await getSiteArtistUserId(); // the store owner (lib/site-store.ts), fixed 2026-11-06
-  const slug = owner ? await getStorageSlug(owner) : null;
+  const slug = await getStorageSlug(viewer.userId);
   if (!slug) return NextResponse.json({ path: "", items: [], browsable: true });
 
   const url = new URL(req.url);

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37-tour-page-media</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 1287-1317. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-board.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.media }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 0 50px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;gap:14px;padding:0 16px">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:#f1ece2;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">←</button>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5">Tour page</span><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ md.title }}</span></div>
+</div>
+<div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:16px 16px 2px">
+<sc-for list="{{ md.tours }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.pick }}" style="flex:none;height:36px;padding:0 14px;border-radius:18px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Basteleur,Georgia,serif;font-size:13.5px;cursor:pointer;white-space:nowrap">{{ c.label }}</button></sc-for>
+</div>
+<h1 style="margin:22px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:36px;line-height:1.02">What guests see first</h1>
+<p style="margin:10px 20px 0;font-size:14.5px;line-height:1.55;color:#b9b2a5;text-wrap:pretty">The page opens on one of these, in the arched window at the top. Guests can switch to anything else that is on.</p>
+<div style="display:flex;align-items:center;gap:10px;margin:26px 20px 12px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Opens with</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 20px">
+<sc-for list="{{ md.leads }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.pick }}" style="flex:none;height:38px;padding:0 16px;border-radius:19px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Basteleur,Georgia,serif;font-size:14px;cursor:pointer">{{ c.label }}</button></sc-for>
+</div>
+<sc-if value="{{ md.noLead }}" hint-placeholder-val="{{ false }}"><p style="margin:0 20px;font-size:13.5px;color:#b9b2a5">Nothing is on, so the page starts with the title.</p></sc-if>
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 12px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">On the page</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:0 16px">
+<sc-for list="{{ md.rows }}" as="r" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px 12px 12px;border-radius:20px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<span style="flex:none;width:48px;height:52px;border-radius:{{ r.shape }};border:1px solid {{ r.ring }};background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 7px),#3d424a;display:flex;align-items:center;justify-content:center;font-family:Venture,Georgia,serif;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#dcc08a;opacity:{{ r.opacity }}">{{ r.tag }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;opacity:{{ r.opacity }}"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px">{{ r.title }}</span><span style="font-size:12.5px;line-height:1.4;color:#b9b2a5">{{ r.sub }}</span></div>
+<sc-if value="{{ r.hasSwitch }}" hint-placeholder-val="{{ true }}"><button onClick="{{ r.toggle }}" style="flex:none;position:relative;width:50px;height:28px;border-radius:14px;border:0;background:{{ r.track }};cursor:pointer;padding:0"><span style="position:absolute;top:3px;left:{{ r.knob }};width:22px;height:22px;border-radius:11px;background:#f1ece2;transition:left .2s"></span></button></sc-if>
+<sc-if value="{{ r.hasAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ r.act }}" style="flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid #c9a25c;background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:13px;cursor:pointer">{{ r.actLabel }}</button></sc-if>
+</div>
+</sc-for>
+</div>
+<p style="margin:14px 20px 0;font-size:13px;line-height:1.5;color:#8f8a82">New pictures and films arrive switched off. Nothing reaches the page until it is on.</p>
+<button onClick="{{ md.preview }}" style="display:flex;align-items:center;justify-content:center;width:calc(100% - 32px);height:52px;margin:20px 16px 0;border-radius:26px;border:1px solid rgba(241,236,226,.25);background:transparent;color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px;cursor:pointer">See the guest page →</button>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

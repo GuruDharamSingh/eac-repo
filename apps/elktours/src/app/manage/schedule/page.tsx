@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listOrgDepartures } from "@elkdonis/commerce/server";
+import { listOrgDepartures } from "@/lib/departures";
 import { SchedulePlanner, type PlannerDeparture } from "@/components/manage/schedule-planner";
 import { RepeatScheduler } from "@/components/manage/repeat-scheduler";
 import { listGuides, listTours } from "@/lib/tours";
@@ -15,12 +15,14 @@ import {
 } from "@/lib/schedule-plan";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
+import { Split } from "@/components/mobile/split";
+import { ScheduleMobile } from "@/components/mobile/board-server";
 
-export default async function ManageSchedulePage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
+async function DesktopSchedulePage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
   // Gate in the page as well as the layout: Next renders the two in parallel, and
   // the layout's redirect did not stop this page's data from streaming to a
   // signed-out visitor (verified on the live sites, 2026-11-06).
-  await requireOrgEditor();
+  const viewer = await requireOrgEditor();
   const { week } = await searchParams;
   const monday = resolveWeek(week);
   const today = parisToday();
@@ -86,6 +88,7 @@ export default async function ManageSchedulePage({ searchParams }: { searchParam
             departures={inWeek}
             tours={tours.map((t) => ({ id: t.id, title: t.title, status: t.status }))}
             guides={guides}
+            canRemove={viewer.role === "owner"}
           />
         </div>
       </section>
@@ -105,6 +108,13 @@ export default async function ManageSchedulePage({ searchParams }: { searchParam
       </section>
     </div>
   );
+}
+
+/** Phone: the Schedule (G7a). Desktop: the planner above, unchanged. */
+export default async function ManageSchedulePage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
+  await requireOrgEditor();
+  const { week } = await searchParams;
+  return <Split mobile={<ScheduleMobile week={week} />} desktop={<DesktopSchedulePage searchParams={searchParams} />} />;
 }
 
 function MonthStrip({ monday, today, month, perDay }: { monday: string; today: string; month: ReturnType<typeof monthGrid>; perDay: Map<string, number> }) {

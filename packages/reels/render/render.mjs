@@ -916,6 +916,16 @@ async function runWorker() {
   const postgres = requireRenderer('postgres');
   const sql = postgres(process.env.DATABASE_URL, { max: 2, idle_timeout: 30 });
 
+  // Wait for the database instead of exiting: after a host reboot this worker can
+  // start before postgres, and an uncaught connect error made it crash-loop.
+  for (let wait = 2000; ; wait = Math.min(wait * 2, 60000)) {
+    try { await sql`SELECT 1`; break; }
+    catch (err) {
+      console.log(`database not reachable (${err.code || err.message}); retrying in ${wait / 1000}s`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+
   // A job left 'running' by a previous process will never finish.
   const stale = await sql`
     UPDATE reel_renders SET status = 'failed', error = 'The renderer restarted during this render', finished_at = now()
@@ -929,7 +939,9 @@ async function runWorker() {
   console.log(`reel worker polling every ${POLL_MS / 1000}s`);
 
   for (;;) {
-    const [job] = await sql`
+    let job;
+    try {
+      [job] = await sql`
       UPDATE reel_renders SET status = 'running', started_at = now(), heartbeat_at = now(), progress = 0
       WHERE id = (
         SELECT id FROM reel_renders WHERE status = 'queued'
@@ -937,9 +949,16 @@ async function runWorker() {
       )
       RETURNING *
     `;
+    } catch (err) {
+      // Database gone mid-run (restart, network): back off and poll again.
+      console.log(`queue poll failed (${err.code || err.message}); retrying in 30s`);
+      await new Promise((r) => setTimeout(r, 30000));
+      continue;
+    }
     if (!job) {
       // Renders first; a transcript only when no render waits.
-      if (!(await takeTranscript(sql))) await new Promise((r) => setTimeout(r, POLL_MS));
+      const took = await takeTranscript(sql).catch((err) => { console.log(`transcript poll failed (${err.code || err.message})`); return false; });
+      if (!took) await new Promise((r) => setTimeout(r, POLL_MS));
       continue;
     }
     console.log(`job ${job.id} (project ${job.project_id})`);

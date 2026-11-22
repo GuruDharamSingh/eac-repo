@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ThemeStudio } from "@/components/studio/theme-studio";
-import { NavEditor } from "@/components/studio/nav-editor";
+import { MenuPanel } from "@elkdonis/page-builder";
 import { loadThemeForEditor, saveThemeAction } from "@/lib/theme-actions";
 import { loadNavForEditor, saveNavAction } from "@/lib/navigation-actions";
 import { applyThemeToDocument } from "@/lib/theme-preview";
@@ -105,32 +105,48 @@ export function ThemeTab() {
   );
 }
 
+/** Her Menu tab: the shared one (page-builder's MenuPanel), in her `dm-*` classes. */
+const MENU_EDITOR = {
+  className: "dm-hud dm-hud-stack dm-nav-editor",
+  classNames: {
+    row: "dm-hud-row",
+    primary: "dm-hud-primary",
+    muted: "dm-hud-muted",
+    list: "dm-nav-list",
+    card: "dm-nav-card",
+    cardSub: "dm-nav-card dm-nav-card--sub",
+    n: "dm-nav-n",
+    fields: "dm-nav-fields",
+    title: "dm-nav-title",
+    href: "dm-nav-href",
+    tools: "dm-nav-tools",
+    icon: "dm-hud-icon",
+  },
+  footer: (
+    <p className="dm-hud-muted">
+      How the menu looks — its colours, font and size — is in <a href="/studio/theme">Theme</a>.
+    </p>
+  ),
+};
+const MENU_HEADING = (
+  <div className="dm-hud" style={{ minHeight: 0, paddingBottom: 0 }}>
+    <h2>Menu</h2>
+    <p className="dm-hud-muted">The links down the side of every page: titles, order, addresses.</p>
+  </div>
+);
+const MENU_LOADING = <p className="dm-hud dm-hud-muted">Loading…</p>;
+
 export function MenuTab({ current }: { current: NavItem }) {
-  const [state, setState] = useState<{ nav: NavItem[]; candidates: NavItem[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadNavForEditor().then((res) => ("error" in res ? setError(res.error) : setState({ nav: res.nav, candidates: res.candidates })));
-  }, []);
-
-  if (error) return <p className="dm-hud dm-hud-error">{error}</p>;
-  if (!state) return <p className="dm-hud dm-hud-muted">Loading…</p>;
   return (
-    <div>
-      <div className="dm-hud" style={{ minHeight: 0, paddingBottom: 0 }}>
-        <h2>Menu</h2>
-        <p className="dm-hud-muted">The links down the side of every page: titles, order, addresses.</p>
-      </div>
-      <NavEditor
-        initial={state.nav}
-        candidates={state.candidates}
-        current={current}
-        onSave={async (items) => {
-          const res = await saveNavAction(items);
-          if (res.ok) setState((s) => (s ? { ...s, nav: items } : s));
-          return res;
-        }}
-      />
-    </div>
+    <MenuPanel
+      memoKey="danamccool"
+      load={loadNavForEditor}
+      save={saveNavAction}
+      current={current}
+      editor={MENU_EDITOR}
+      heading={MENU_HEADING}
+      loading={MENU_LOADING}
+      renderError={(m) => <p className="dm-hud dm-hud-error">{m}</p>}
+    />
   );
 }

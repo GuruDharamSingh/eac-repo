@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>@font-face{font-family:"Basteleur";src:url("fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}html,body{background:#16181c}body{margin:0;color:#f1ece2;font-family:Basteleur,Georgia,serif;height:auto;min-height:100%}a{color:#dcc08a}a:hover{color:#f1ece2}.dv-turn{padding:44px 48px 40px;border-bottom:1px solid rgba(241,236,226,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 22px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#c9a25c;color:#1b1e23;border-radius:4px;text-decoration:none}.dv-tname{font-family:Venture,Georgia,serif;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c}.dv-opts{display:flex;flex-wrap:wrap;gap:36px 32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(241,236,226,.1);color:#f1ece2;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:9px;font-size:14px;color:#b9b2a5}.dv-opt:target .dv-oid{background:#c9a25c;color:#1b1e23}.dv-next{margin:28px 0 0;font-size:13px;line-height:1.6;color:#8f8a82}</style></helmet>
+
+<section class="dv-turn" id="t6">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#c9a25c">Turn 6 · Feed &amp; forum on Discover</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">Three rows at the foot of Discover</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">The feed, the places catalogue and the forum are now rows in the catalogue's style. The feed row is the largest and previews the newest post; the forum row is the thinnest, at the bottom. The feed row opens a Feed page, and each post opens as a preview with comments.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">How it works</span>
+<span>Link posts load the site inside the preview, with a full-screen view. Many news sites refuse to be shown inside another page, so lemonde.fr and theartnewspaper.com may stay blank here; the real app would fall back to the browser for those.</span>
+<span>Every feed post is also a public topic in a new Feed section of the forum. Comments in the preview and replies in the forum are the same list (<a class="dv-oid" href="#6d">6d</a>, <a class="dv-oid" href="#6e">6e</a>).</span>
+<span>Forum link cards and place websites open in the same in-app view.</span>
+</div>
+</div>
+<div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Feed</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="6a"><div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Discover · scroll to the bottom rows</div><dc-import name="Elkdonis App" mode="client" start="discover" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="6b"><div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>Feed page</div><dc-import name="Elkdonis App" mode="client" start="feed" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="6c"><div class="dv-olabel"><a class="dv-oid" href="#6c">6c</a>Link post · site in the preview</div><dc-import name="Elkdonis App" mode="client" start="feed" post-sheet="p2" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="6d"><div class="dv-olabel"><a class="dv-oid" href="#6d">6d</a>Post · comment on it</div><dc-import name="Elkdonis App" mode="client" start="feed" post-sheet="p1" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="6e"><div class="dv-olabel"><a class="dv-oid" href="#6e">6e</a>The same posts in the forum's Feed section</div><dc-import name="Elkdonis App" mode="client" start="forumSec" sec="feed" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+</section>
+
+<section class="dv-turn" id="t5">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#c9a25c">Turn 5 · Elkdonis Forum, Local Artists, tags</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">Paris, with Local Artists</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">Discover now has a forum: sections with sub-sections, topics, replies, and a choice of who can read each topic. Guests, guides, artists and the office all post in it. Experiences link to an About page and a Local Artists page, and places carry tags that the catalogue filters by.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">From packages/cms-ui · ForumSurface, apps/sunjay</span>
+<span>The forum follows the surface's shape. The Discover tile shows the forum at tile size: section names, "N new" and the latest titles. Inside, Sections have a coloured left rule and new counts, Latest rows show a kind glyph, title, section · author · replies and the time.</span>
+<span>Who can read a topic: <b>Public</b> is anyone, signed in or not. <b>Members</b> is signed-in Elkdonis members. <b>Private</b> is you and the people you add. Authors can change it on their own topic (try <a class="dv-oid" href="#5e">5e</a>).</span>
+<span>Guides &amp; artists is a closed section. Guests never see it; it shows on the guide phones (<a class="dv-oid" href="#5g">5g</a>).</span>
+<span>Replies and new topics are shared across the phones.</span>
+</div>
+</div>
+<div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Elkdonis Forum</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="5a"><div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Discover · scroll to the forum tile</div><dc-import name="Elkdonis App" mode="client" start="discover" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5b"><div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a>Forum · sections &amp; latest</div><dc-import name="Elkdonis App" mode="client" start="forum" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5c"><div class="dv-olabel"><a class="dv-oid" href="#5c">5c</a>A section with sub-sections</div><dc-import name="Elkdonis App" mode="client" start="forumSec" sec="paris" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5d"><div class="dv-olabel"><a class="dv-oid" href="#5d">5d</a>A topic with replies · + adds photos or video</div><dc-import name="Elkdonis App" mode="client" start="thread" thread="f1" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5e"><div class="dv-olabel"><a class="dv-oid" href="#5e">5e</a>Your own topic · change who reads it</div><dc-import name="Elkdonis App" mode="client" start="thread" thread="f8" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5f"><div class="dv-olabel"><a class="dv-oid" href="#5f">5f</a>Start a topic · link, photos, video</div><dc-import name="Elkdonis App" mode="client" start="compose" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5m"><div class="dv-olabel"><a class="dv-oid" href="#5m">5m</a>A topic with a link and media</div><dc-import name="Elkdonis App" mode="client" start="thread" thread="f6" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5g"><div class="dv-olabel"><a class="dv-oid" href="#5g">5g</a>Forum as Dana · closed section shows</div><dc-import name="Elkdonis App" mode="guide" start="forum" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<div class="dv-thd" style="margin-top:56px"><span class="dv-tname">Experiences, Local Artists, places</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="5h"><div class="dv-olabel"><a class="dv-oid" href="#5h">5h</a>Experiences · Read more, the artists</div><dc-import name="Elkdonis App" mode="client" start="exps" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5i"><div class="dv-olabel"><a class="dv-oid" href="#5i">5i</a>About · shared by every Read more</div><dc-import name="Elkdonis App" mode="client" start="about" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5j"><div class="dv-olabel"><a class="dv-oid" href="#5j">5j</a>Local Artists</div><dc-import name="Elkdonis App" mode="client" start="locals" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5k"><div class="dv-olabel"><a class="dv-oid" href="#5k">5k</a>Places · filter by tag</div><dc-import name="Elkdonis App" mode="client" start="places" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="5l"><div class="dv-olabel"><a class="dv-oid" href="#5l">5l</a>Guide · tap a place to edit its tags</div><dc-import name="Elkdonis App" mode="guide" start="places" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<p class="dv-next">Try next: "pen names in the forum" · "reply to a reply" · "let the office pin a topic"</p>
+</section>
+
+<section class="dv-turn" id="t4">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#c9a25c">Turn 4 · Discover, places &amp; the feed</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">A home that the guides keep</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">The bottom bar is now Discover, Tours and Experiences. Discover keeps the week's walk, then the guides' favourite places, the experiences coming, the guides themselves and a feed of what they share. A catalogue of every place sits at the bottom.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">How it works</span>
+<span>A place opens as a sheet with its address, hours, links out and the tour it sits on. Businesses show a note that their own profile is coming later.</span>
+<span>Guides add places and star the ones they like. Starred places appear under Favourite places on Discover. Try starring one on <a class="dv-oid" href="#4i">4i</a>.</span>
+<span>Guides share a post or a link from their board. The office confirms it on <a class="dv-oid" href="#4k">4k</a>, and then it appears in the feed on Discover.</span>
+<span>Stops on a tour now open in place: what you see there, a Street View still, the place card and the 3D map.</span>
+<span>The places, posts and links are placeholders.</span>
+</div>
+</div>
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Guests</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="4a"><div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Discover · scroll for guides, feed, catalogue</div><dc-import name="Elkdonis App" mode="client" start="discover" open-guide="dana" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4b"><div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>A favourite place, as a sheet</div><dc-import name="Elkdonis App" mode="client" start="discover" place="sennelier" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4c"><div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>Places catalogue</div><dc-import name="Elkdonis App" mode="client" start="places" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4d"><div class="dv-olabel"><a class="dv-oid" href="#4d">4d</a>Guide profile</div><dc-import name="Elkdonis App" mode="client" start="guide" guide="dana" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4e"><div class="dv-olabel"><a class="dv-oid" href="#4e">4e</a>Experiences tab</div><dc-import name="Elkdonis App" mode="client" start="exps" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4f"><div class="dv-olabel"><a class="dv-oid" href="#4f">4f</a>Suggest an artist or place</div><dc-import name="Elkdonis App" mode="client" start="suggest" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4g"><div class="dv-olabel"><a class="dv-oid" href="#4g">4g</a>Tour detail · scroll to stop IV, opened</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="rev" stop-open="3" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<div class="dv-thd" style="margin-top:56px"><span class="dv-tname">Guides &amp; office</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="4h"><div class="dv-olabel"><a class="dv-oid" href="#4h">4h</a>Board · guide, scroll to On Discover</div><dc-import name="Elkdonis App" mode="guide" start="board" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4i"><div class="dv-olabel"><a class="dv-oid" href="#4i">4i</a>Places · star to feature</div><dc-import name="Elkdonis App" mode="guide" start="places" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4j"><div class="dv-olabel"><a class="dv-oid" href="#4j">4j</a>Share a post or a link</div><dc-import name="Elkdonis App" mode="guide" start="post" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="4k"><div class="dv-olabel"><a class="dv-oid" href="#4k">4k</a>Office · posts to confirm</div><dc-import name="Elkdonis App" mode="guide" start="board" role="admin" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<p class="dv-next">Try next: "design the business profile for a place" · "let guests save places" · "add a map view to the places catalogue"</p>
+</section>
+
+<section class="dv-turn" id="t3">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#c9a25c">Turn 3 · the tour page</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">What a tour opens with</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">The tour page now opens on an arched window. It can hold the fly-over film, the live 3D route or the photographs. A tour only shows what its guide has switched on, and guests can switch between them with the pills under the window.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">From apps/elktours · tour page &amp; assets</span>
+<span>On the site, a tour page opens on its film if it has one. Without a film it opens on the 3D route preview, and without that on the cover picture. Here the guide can also choose which one comes first.</span>
+<span>Films are always shown whole because the map credit is burned into the edges. On the phone the film sits in a 16:9 frame inside the arch, so the arch never crops it.</span>
+<span>As on the site, the 3D map only loads when a guest presses play. Tapping a stop under The route flies the map to that stop.</span>
+<span>The switches are shared with the guest phones. Turn the film off on <a class="dv-oid" href="#3f">3f</a> and <a class="dv-oid" href="#3a">3a</a> opens on the 3D route instead.</span>
+<span>The map, the film and the photos are stand-ins. The real ones come from each tour's assets.</span>
+</div>
+</div>
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Tour detail: film, 3D route, photos</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="3a"><div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Opens with the film</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="rev" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="3b"><div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>3D route · at stop IV, the experience</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="rev" media="map3d" stop="3" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="3c"><div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>No film · opens on Preview the route</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="cite" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="3d"><div class="dv-olabel"><a class="dv-oid" href="#3d">3d</a>Photos only · swipe</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="atelier" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="3e"><div class="dv-olabel"><a class="dv-oid" href="#3e">3e</a>One cover picture, nothing else</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="orsay" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="3f"><div class="dv-olabel"><a class="dv-oid" href="#3f">3f</a>Guide · what the page shows</div><dc-import name="Elkdonis App" mode="guide" start="media" role="guide" tour="rev" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<p class="dv-next">Try next: "add Highlights and What's included from the site" · "let guests open the 3D route full screen" · "play the film on the Tours list cards"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#86b9ab">Turn 2 · artists &amp; experiences</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">Something strange on the way</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">An experience is not a tour. A local artist or resident hosts it, usually at one stop of a guide's tour, and sometimes on its own by request. Artists sign up, post what they offer and when they're free. Guides put experiences on their stops, and the artist confirms each date. All of this happens on a shared board.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(134,185,171,.45);outline:1px solid rgba(134,185,171,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">From the experiences spec · assumptions</span>
+<span>Experiences get their own colour: verdigris, the patina on old copper. They also get their own shape, round portholes instead of the arched frames used for tours.</span>
+<span>An experience is a thread of kind <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">experience</span>, with the artist in <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">experience_people</span>. It sits on a stop through <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">tour_stops.experience_id</span>. Each date invitation is a <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">service_commissions</span> row: asked, confirmed or declined.</span>
+<span>On its own, an experience is enquiry-only for now, the spec's default. The office reviews each new one and publishes it as Public or Members only.</span>
+<span>The phones share data with turn 1. Accept an invitation on <a class="dv-oid" href="#2e">2e</a> and it shows up on <a class="dv-oid" href="#2g">2g</a>. Publish on <a class="dv-oid" href="#2h">2h</a> and it appears on Discover.</span>
+</div>
+</div>
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname" style="color:#86b9ab">Guests: experiences &amp; artists</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="2a"><div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Experience detail</div><dc-import name="Elkdonis App" mode="client" start="exp" exp="shoebox" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2b"><div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Artist profile</div><dc-import name="Elkdonis App" mode="client" start="artist" artist="saskia" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<div class="dv-thd" style="margin-top:56px"><span class="dv-tname" style="color:#86b9ab">Artists, guides &amp; office: the board</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="2c"><div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Artist sign-up · step I</div><dc-import name="Elkdonis App" mode="guide" start="create" role="artist" me="new" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2d"><div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Sign-up · step III, when you're free</div><dc-import name="Elkdonis App" mode="guide" start="create" role="artist" me="new" step="2" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2e"><div class="dv-olabel"><a class="dv-oid" href="#2e">2e</a>Board · artist (Lucien)</div><dc-import name="Elkdonis App" mode="guide" start="board" role="artist" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2f"><div class="dv-olabel"><a class="dv-oid" href="#2f">2f</a>Board · guide (Dana)</div><dc-import name="Elkdonis App" mode="guide" start="board" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2g"><div class="dv-olabel"><a class="dv-oid" href="#2g">2g</a>Collaborate · experiences on stops</div><dc-import name="Elkdonis App" mode="guide" start="collab" role="guide" tour="cite" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="2h"><div class="dv-olabel"><a class="dv-oid" href="#2h">2h</a>Board · office, review queue</div><dc-import name="Elkdonis App" mode="guide" start="board" role="admin" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<p class="dv-next">Try next: "let artists propose themselves for a tour stop" · "add a guide profile page like <a class="dv-oid" href="#2b">2b</a>" · "make experiences bookable with their own dates"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;max-width:1240px;margin-bottom:44px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<span style="font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#c9a25c">Elkdonis Experiences · mobile · direction 1</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:64px;line-height:1">Scheduling for guides, a travel guide for guests</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a5;max-width:620px;text-wrap:pretty">One app, two sides. Guides and the office set up slots: dates, start times, places from minimum to maximum, when booking closes, waitlist and price. Guests browse Paris as an art-magazine city guide and book those slots. Every phone below is live, and they share one set of data: book a place on a guest phone and it appears on the guide phones.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:22px 24px;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.14);outline-offset:5px;border-radius:18px;font-size:14px;line-height:1.55;color:#e6e0d4">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Built from apps/elktours · assumptions</span>
+<span>Palette and type are the site's own "zinc and brass": Basteleur, Brothers, Venture. Medieval cues: arched picture frames, chamfered buttons, double rules, Roman numerals. The layout follows your reference: dark cards, pill chips, floating nav.</span>
+<span>A slot is one dated departure (<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">tour_departures</span>). Minimum, maximum, booking cutoff, waitlist and price sit on each slot, with defaults taken from the experience.</span>
+<span>Dana McCool is the guide. "Admin" is the company office, which sees every guide and assigns slots. Margaux, the prices and the photos are placeholders.</span>
+<span>Below the minimum at cutoff, the guide decides. The Tweaks panel can switch this to auto-cancel, and can move the clock forward.</span>
+</div>
+</div>
+
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Guests: the city guide &amp; tours</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Discover · city picker under "Paris"</div><dc-import name="Elkdonis App" mode="client" start="discover" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Tours list</div><dc-import name="Elkdonis App" mode="client" start="list" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Tour detail · scroll to The route for the experience stop</div><dc-import name="Elkdonis App" mode="client" start="detail" tour="rev" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Date &amp; time · try Sat 28 for a waitlist</div><dc-import name="Elkdonis App" mode="client" start="dates" tour="rev" day="21" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Booking &amp; payment</div><dc-import name="Elkdonis App" mode="client" start="pay" dep="d6" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+
+<div class="dv-thd" style="margin-top:56px"><span class="dv-tname">Guide &amp; office: the console</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Schedule · guide view</div><dc-import name="Elkdonis App" mode="guide" start="schedule" role="guide" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>New slots · the setup form</div><dc-import name="Elkdonis App" mode="guide" start="form" role="admin" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Slot below its minimum</div><dc-import name="Elkdonis App" mode="guide" start="slot" dep="d4" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Full slot with a waitlist</div><dc-import name="Elkdonis App" mode="guide" start="slot" dep="d3" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1j"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Schedule · office view, all guides</div><dc-import name="Elkdonis App" mode="guide" start="schedule" role="admin" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+<div class="dv-opt" id="1k"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Decisions</div><dc-import name="Elkdonis App" mode="guide" start="decisions" now="{{ now }}" rule="{{ rule }}" hint-size="414px,868px"></dc-import></div>
+</div>
+<p class="dv-next">Try next: "make the guest side lighter, like paper" · "add a guide profile page" · "show <a class="dv-oid" href="#1g">1g</a> as a step-by-step wizard instead of one long form"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;demoNow&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Sun 15 Nov, 14:20&quot;,&quot;Mon 16 Nov, 09:00&quot;,&quot;Wed 18 Nov, 18:00&quot;],&quot;default&quot;:&quot;Sun 15 Nov, 14:20&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;belowMinimum&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Guide decides&quot;,&quot;Auto-cancel&quot;],&quot;default&quot;:&quot;Guide decides&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      now: this.props.demoNow ?? 'Sun 15 Nov, 14:20',
+      rule: this.props.belowMinimum ?? 'Guide decides'
+    };
+  }
+}
+</script>
+</body>
+</html>

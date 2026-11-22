@@ -21,6 +21,23 @@ interface SiteHeaderProps {
   offerings?: NavOffering[];
 }
 
+/**
+ * The brand in Brothers with wide spacing (2026-11-20). The l and k of "Elkdonis" are one joined mark in the face, so
+ * the pair sits in its own span with no letter-spacing between them (.elk-brand-lk in globals.css); the text stays
+ * "Elkdonis Tours & Experiences" for copy and screen readers.
+ */
+function brandMark(name: string) {
+  const i = name.toLowerCase().indexOf("lk");
+  if (i < 0) return name;
+  return (
+    <>
+      {name.slice(0, i)}
+      <span className="elk-brand-lk">{name.slice(i, i + 2)}</span>
+      {name.slice(i + 2)}
+    </>
+  );
+}
+
 export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = [] }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -46,7 +63,7 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
     <header data-chrome="header" className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
         <Link href="/" className="flex flex-col leading-tight" onClick={() => setOpen(false)}>
-          <span data-part="brand" className="font-serif text-lg font-semibold tracking-wide">{siteConfig.orgName}</span>
+          <span data-part="brand" className="elk-brand">{brandMark(siteConfig.orgName)}</span>
           <span data-part="city" className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</span>
         </Link>
 
@@ -55,7 +72,6 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
             <Link key={l.href} href={l.href} data-part={partOf(l.href)} className={linkClass(l.href)}>{l.label}</Link>
           ))}
           {signedIn && <Link href={homeHref} data-part={partOf(homeHref)} className={linkClass(homeHref)}>{isMember ? "Hub" : "Center"}</Link>}
-          {canEdit && <Link href="/manage/tours" data-part={partOf("/manage")} className={linkClass("/manage")}>Manage</Link>}
           <Button asChild size="sm" variant="outline" className="ml-2">
             <Link href={signedIn ? "/account" : "/login"} data-part="account">{signedIn ? "Account" : "Sign in"}</Link>
           </Button>
@@ -78,7 +94,6 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
             <Link key={l.href} href={l.href} data-part={partOf(l.href)} onClick={() => setOpen(false)} className="block py-2.5 text-sm">{l.label}</Link>
           ))}
           {signedIn && <Link href={homeHref} onClick={() => setOpen(false)} className="block py-2.5 text-sm">{isMember ? "Hub" : "Center"}</Link>}
-          {canEdit && <Link href="/manage/tours" onClick={() => setOpen(false)} className="block py-2.5 text-sm">Manage</Link>}
           <Link href={signedIn ? "/account" : "/login"} onClick={() => setOpen(false)} className="block py-2.5 text-sm font-medium">
             {signedIn ? "Account" : "Sign in"}
           </Link>

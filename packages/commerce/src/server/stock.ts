@@ -2,17 +2,19 @@
  * Stock for artwork variants (2026-11-08).
  *
  * `artwork_variant.inventory_qty` is what is still on hand: it drops when an
- * order is PAID (confirmOrderPaid) and comes back on a refund. A copy is HELD
- * while an unpaid order has it — the order line itself is the hold, so a
- * cancelled or expired order releases it the moment its status leaves the
- * unpaid set, with nothing else to tidy. What a new buyer can take is
+ * order is PAID (confirmOrderPaid) and comes back on a refund.
+ *
+ * 2026-11-17: nothing is reserved while someone is paying. A cart, a started
+ * checkout and an unpaid order do not hold a copy and do not set 'reserved'
+ * (see HOLDING_ORDER_STATUSES); a piece is 'sold' only when payment is
+ * confirmed. 'reserved' is now only what a seller sets by hand
+ * (setArtworkAvailability). What a new buyer can take is
  *
  *   sellable = inventory_qty - held
  *
- * and the artwork as a whole is 'reserved' or 'sold' only when no variant has
- * a sellable copy left. A one-of-a-kind piece (one variant, qty 1) therefore
- * behaves exactly as before: the first order holds the only copy (reserved),
- * payment takes it (sold), a cancel gives it back (available).
+ * with `held` counting only orders whose money has arrived but are not yet
+ * confirmed. Protection against two buyers paying for the last copy is in
+ * confirmOrderPaid (it refuses the second, OrderOversoldError).
  *
  * Every write that changes stock locks the artwork row first
  * ({@link lockArtworks}), so all copies of a piece — across its variants —
@@ -26,13 +28,36 @@ import { num, type Row } from "./map-order";
 
 type Tx = typeof db;
 
-/** Order statuses that hold stock: unpaid, not yet cancelled. */
-export const HOLDING_ORDER_STATUSES = [
-  "draft",
-  "pending_payment",
-  "awaiting_etransfer",
-  "payment_received",
-] as const;
+/**
+ * Order statuses that hold stock. Changed 2026-11-17 (developer's decision): a
+ * cart, a started checkout and an unpaid order (card or eTransfer) no longer
+ * hold a piece or mark it 'reserved'; only an order whose money has arrived
+ * (`payment_received`, before the seller's confirmation) does. The piece is
+ * marked 'sold' when `confirmOrderPaid` runs. Two buyers can therefore both
+ * start paying for the last copy: `confirmOrderPaid` refuses the second
+ * ({@link OrderOversoldError}) and the card path refunds it.
+ */
+export const HOLDING_ORDER_STATUSES = ["payment_received"] as const;
+
+/**
+ * Thrown by `confirmOrderPaid` when a paid order asks for more copies than are
+ * on hand (another buyer's payment took them first). The order stays unpaid
+ * (the transaction rolls back). Match on `code`, not `instanceof`: the error
+ * crosses package boundaries.
+ */
+export class OrderOversoldError extends Error {
+  readonly code = "ORDER_OVERSOLD";
+  constructor(public readonly titles: string[]) {
+    super(
+      `${titles.map((t) => `“${t}”`).join(", ")} ${titles.length === 1 ? "has" : "have"} already sold to another buyer.`
+    );
+    this.name = "OrderOversoldError";
+  }
+}
+
+export function isOrderOversold(err: unknown): err is OrderOversoldError {
+  return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "ORDER_OVERSOLD";
+}
 
 /**
  * Lock these artworks for the rest of the transaction, in id order (one
@@ -109,14 +134,15 @@ export async function artworkStock(tx: Tx, artworkId: string): Promise<{ sellabl
  * Bring an artwork's status into line with its stock after an order event.
  * Call with the artwork already locked.
  *
- *   order / paid  no sellable copy left → 'reserved' while some copy is held,
- *                 else 'sold' — written whatever the status was, as the
- *                 one-of-a-kind path always did. Copies left → a 'reserved'
- *                 piece goes back to 'available' (the seller raised stock
- *                 while it was held); anything else is left alone.
+ *   order         (2026-11-17) nothing: creating an order does not reserve.
+ *   paid          no sellable copy left → 'sold' (written whatever the status
+ *                 was, as the one-of-a-kind path always did). Copies left → a
+ *                 'reserved' piece goes back to 'available'; anything else is
+ *                 left alone.
  *   cancelled     (cancel / expiry) a 'reserved' piece → 'available', unless
- *                 other orders still hold every remaining copy. Only
- *                 'reserved' is touched, as before.
+ *                 a payment already received still holds every remaining copy.
+ *                 Only 'reserved' is touched. This also releases pieces that
+ *                 an order marked 'reserved' before 2026-11-17.
  *   refunded      the copies are back on hand: a 'sold' or 'reserved' piece
  *                 with a copy to sell → 'available'.
  */
@@ -125,6 +151,9 @@ export async function syncArtworkStatus(
   artworkId: string,
   event: "order" | "paid" | "cancelled" | "refunded"
 ): Promise<string | null> {
+  // An unpaid order never reserves a piece (2026-11-17). Left in the signature
+  // so call sites and the event list stay as they were.
+  if (event === "order") return null;
   const { sellable, held } = await artworkStock(tx, artworkId);
   let rows: Row[];
   if (event === "cancelled") {
@@ -142,9 +171,10 @@ export async function syncArtworkStatus(
       RETURNING status
     `) as unknown as Row[];
   } else if (sellable === 0) {
-    const target = held > 0 ? "reserved" : "sold";
+    // Paid and no copy left: sold, even if another payment is awaiting
+    // confirmation (confirmOrderPaid refuses that one).
     rows = (await tx`
-      UPDATE artwork SET status = ${target} WHERE id = ${artworkId} AND status <> ${target}
+      UPDATE artwork SET status = 'sold' WHERE id = ${artworkId} AND status <> 'sold'
       RETURNING status
     `) as unknown as Row[];
   } else {

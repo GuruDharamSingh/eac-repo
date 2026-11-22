@@ -10,6 +10,7 @@ import { fontVariables } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
 import { getSiteSections } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
+import { loadNav } from "@/lib/nav";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
 import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
 import { loadSiteStyle } from "@/lib/site-style";
@@ -37,11 +38,13 @@ export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Nav is built from org_feeds, so adding a section to the site is a database
   // row rather than a code change.
-  const [viewer, sections, siteStyle] = await Promise.all([
+  const [viewer, sections, siteStyle, nav] = await Promise.all([
     getViewer().catch(() => null),
     getSiteSections(),
     // Site style (round 2, 2026-11-14): nothing stored means no sheet at all, so visitors see no change until a save.
     loadSiteStyle().catch(() => null),
+    // The menu: the stored row, else the three links the header always had.
+    loadNav(),
   ]);
   // `data-site-style` lets the editor switch this sheet off while it previews a draft.
   const styleCss = siteStyleCss(siteStyle, SITE_STYLE);
@@ -92,6 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             signedIn={Boolean(viewer)}
             canEdit={canEdit}
             isMember={Boolean(viewer?.isMember)}
+            nav={nav}
           />
           <main className="flex-1">{children}</main>
           <SiteFooter content={sections.footer} />

@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/config/site";
 import { SignOutButton } from "@/components/sign-out-button";
+import type { NavItem } from "@elkdonis/services/nav-core";
+import { DEFAULT_NAV } from "@/lib/nav-default";
 
 interface SiteHeaderProps {
   signedIn: boolean;
@@ -13,24 +15,27 @@ interface SiteHeaderProps {
   email?: string | null;
   /** Lines in the visitor's cart. */
   cartCount?: number;
+  /** The menu: the stored `nav:main` row, else DEFAULT_NAV (lib/nav-default.ts). */
+  nav?: NavItem[];
 }
 
-/** Sunjay's header shape (brand, nav, tools, a sheet on phones) in this site's own CSS. */
-const NAV_LINKS = [
-  { href: "/#pieces", label: "Pieces" },
-  { href: "/about", label: "About" },
-];
-
-export function SiteHeader({ signedIn, canEdit, email, cartCount = 0 }: SiteHeaderProps) {
+export function SiteHeader({ signedIn, canEdit, email, cartCount = 0, nav = DEFAULT_NAV }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
-  const links = NAV_LINKS.map((link) => {
+  const links = nav.map((link, i) => {
+    if (link.external) {
+      return (
+        <a key={`${link.href}-${i}`} href={link.href} target="_blank" rel="noopener noreferrer" onClick={close}>
+          {link.label}
+        </a>
+      );
+    }
     const path = link.href.split("#")[0] || "/";
     const current = path !== "/" && (pathname === path || pathname.startsWith(`${path}/`));
     return (
-      <Link key={link.href} href={link.href} aria-current={current ? "page" : undefined} onClick={close}>
+      <Link key={`${link.href}-${i}`} href={link.href} aria-current={current ? "page" : undefined} onClick={close}>
         {link.label}
       </Link>
     );

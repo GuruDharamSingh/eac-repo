@@ -61,19 +61,37 @@ export async function ensureStopStills(threadId: string): Promise<{ made: number
   return { made, skipped };
 }
 
-/** Fetch and store the walking geometry for a tour. Returns the route or null when nothing could be made. */
+/**
+ * Fetch and store the walking geometry for a tour. Returns the route or null when nothing could be made.
+ * The route runs meeting point → stops. `metadata.tour.via` (Create Tour wizard, 2026-11-19) holds points the
+ * editor dragged the path through, per leg, keyed "<from>><to>" with "meet" for the meeting point and the stop id
+ * otherwise; they are sent to the router as extra waypoints and folded back into the leg they belong to.
+ */
 export async function refreshTourRoute(threadId: string): Promise<TourRoute | null> {
   const tour = await getTourById(threadId);
   if (!tour) return null;
   const stops = (await listTourStops(threadId)).filter((s) => s.lat != null && s.lng != null);
-  const points: LngLat[] = [
-    ...(tour.details.meetingPoint ? [[tour.details.meetingPoint.lng, tour.details.meetingPoint.lat] as LngLat] : []),
-    ...stops.map((s) => [s.lng!, s.lat!] as LngLat),
+  const keyed: Array<{ key: string; p: LngLat }> = [
+    ...(tour.details.meetingPoint ? [{ key: "meet", p: [tour.details.meetingPoint.lng, tour.details.meetingPoint.lat] as LngLat }] : []),
+    ...stops.map((s) => ({ key: s.id, p: [s.lng!, s.lat!] as LngLat })),
   ];
+  const points = keyed.map((k) => k.p);
   if (points.length < 2) return null;
-  let legs: LngLat[][] = points.slice(1).map((p, i) => [points[i]!, p]);
+  const via = tour.details.via ?? {};
+  // Every waypoint sent to the router, and where each stop point sits in that list.
+  const all: LngLat[] = [];
+  const stopAt: number[] = [];
+  keyed.forEach((k, i) => {
+    stopAt.push(all.length);
+    all.push(k.p);
+    const next = keyed[i + 1];
+    if (next) for (const v of (via[`${k.key}>${next.key}`] ?? []).slice(0, 8)) all.push(v);
+  });
+  // Straight fallback: through the via points.
+  let legs: LngLat[][] = points.slice(1).map((_, i) => all.slice(stopAt[i]!, stopAt[i + 1]! + 1));
+  let routed = false;
   try {
-    const path = points.map((p) => `${p[0]},${p[1]}`).join(";");
+    const path = all.map((p) => `${p[0]},${p[1]}`).join(";");
     // FOSSGIS's foot profile (OSRM API): the project-osrm.org demo answers every profile with car routing, which
     // skips footbridges such as the Pont des Arts. Same router as the ElkTourUnity films (claude, 2026-11-01).
     const res = await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${path}?overview=full&geometries=geojson&steps=false`, {
@@ -84,24 +102,35 @@ export async function refreshTourRoute(threadId: string): Promise<TourRoute | nu
       const json = (await res.json()) as { routes?: { geometry: { coordinates: LngLat[] } }[]; waypoints?: { location: LngLat }[] };
       const coords = json.routes?.[0]?.geometry.coordinates;
       const wp = (json.waypoints ?? []).map((w) => w.location);
-      if (coords && wp.length === points.length) {
-        const cut = wp.map((w) => {
-          let best = 0, bd = Infinity;
-          coords.forEach((c, i) => { const d = (c[0] - w[0]) ** 2 + (c[1] - w[1]) ** 2; if (d < bd) { bd = d; best = i; } });
-          return best;
-        });
-        const split: LngLat[][] = [];
-        for (let i = 0; i < cut.length - 1; i++) {
-          const a = Math.min(cut[i]!, cut[i + 1]!), b = Math.max(cut[i]!, cut[i + 1]!);
-          split.push([points[i]!, ...coords.slice(a, b + 1), points[i + 1]!]);
+      if (coords && wp.length === all.length) {
+        // Nearest coordinate to each waypoint, searched forward so a path that doubles back stays in order.
+        const cut: number[] = [];
+        let from = 0;
+        for (const w of wp) {
+          let best = from, bd = Infinity;
+          for (let i = from; i < coords.length; i++) {
+            const c = coords[i]!;
+            const d = (c[0] - w[0]) ** 2 + (c[1] - w[1]) ** 2;
+            if (d < bd) { bd = d; best = i; }
+          }
+          cut.push(best);
+          from = best;
         }
-        if (split.length === points.length - 1) legs = split;
+        const split: LngLat[][] = [];
+        for (let i = 0; i < stopAt.length - 1; i++) {
+          const a = cut[stopAt[i]!]!, b = cut[stopAt[i + 1]!]!;
+          split.push([points[i]!, ...coords.slice(Math.min(a, b), Math.max(a, b) + 1), points[i + 1]!]);
+        }
+        if (split.length === points.length - 1) {
+          legs = split;
+          routed = true;
+        }
       }
     }
   } catch (err) {
     console.error("[elktours] route:", err);
   }
-  const route: TourRoute = { legs, fetchedAt: new Date().toISOString(), source: legs.some((l) => l.length > 2) ? "osrm" : "straight" };
+  const route: TourRoute = { legs, fetchedAt: new Date().toISOString(), source: routed ? "osrm" : "straight" };
   await db`
     UPDATE threads SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{tour,route}', ${db.json(route as unknown as Record<string, never>)}, true), updated_at = NOW()
     WHERE id = ${threadId} AND org_id = ${ORG} AND kind = 'tour'

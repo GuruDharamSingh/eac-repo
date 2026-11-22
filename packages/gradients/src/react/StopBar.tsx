@@ -75,6 +75,7 @@ export function StopBar({ spec, onStops }: { spec: GradientSpec; onStops: (stops
       for (const s of specRef.current.stops) instance.addHandler(s.at, s.color, 0, { silent: true });
       paint(specRef.current.stops);
       instance.on("change", () => {
+        if (!alive) return;
         // a stop added by clicking the bar arrives as rgba(r, g, b, 255), which the colour
         // input refuses; hand it back to Grapick as hex (same stops, so no second update)
         for (const h of instance?.getHandlers() ?? []) {
@@ -87,7 +88,15 @@ export function StopBar({ spec, onStops }: { spec: GradientSpec; onStops: (stops
         onStopsRef.current(stops);
       });
     });
-    return () => { alive = false; instance?.destroy(); gp.current = null; };
+    // Grapick's destroy() runs a NON-silent clear(): every handle it removes fires "change" with
+    // the stops that are left, which wrote a truncated gradient (its first two colours) back into
+    // the value whenever the control unmounted (word art's Mark fill / Background tabs, closing a
+    // Puck field). So: stop listening first, clear silently, then destroy. (fixed 2026-11-18)
+    return () => {
+      alive = false;
+      gp.current = null;
+      if (instance) { instance.clear({ silent: true }); instance.destroy(); }
+    };
   }, []);
 
   // stops changed from outside (sliders, presets, generators): rebuild the handles quietly

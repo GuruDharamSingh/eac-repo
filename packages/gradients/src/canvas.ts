@@ -117,7 +117,8 @@ export function paintGradient(ctx: Ctx, value: unknown, w: number, h: number): b
 }
 
 /** Monochrome noise in overlay, deterministic by seed. */
-function paintGrain(ctx: Ctx, w: number, h: number, amount: number, seed: number) {
+/** Monochrome noise in overlay (amount 0..1), as paintGradient draws grain; also used by recorders. */
+export function paintGrain(ctx: Ctx, w: number, h: number, amount: number, seed: number) {
   const tile = 256;
   const c = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(tile, tile) : Object.assign(document.createElement("canvas"), { width: tile, height: tile });
   const t = c.getContext("2d") as Ctx | null;

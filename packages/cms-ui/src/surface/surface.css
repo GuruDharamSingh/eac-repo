@@ -93,6 +93,7 @@
   --sf-kind-compose: var(--eac-kind-compose, var(--sf-accent));
   --sf-kind-document: var(--eac-kind-document, var(--sf-accent));
   --sf-kind-idea: var(--eac-kind-idea, var(--sf-accent));
+  --sf-kind-place: var(--eac-kind-place, #8fb3c4);
   --sf-kind-neutral: var(--eac-kind-neutral, var(--sf-muted));
 }
 
@@ -114,6 +115,7 @@
 [data-kind="gallery"] { --sf-kind: var(--sf-kind-gallery); --sf-on-kind: var(--eac-kind-gallery-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="compose"] { --sf-kind: var(--sf-kind-compose); --sf-on-kind: var(--eac-kind-compose-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="document"] { --sf-kind: var(--sf-kind-document); --sf-on-kind: var(--eac-kind-document-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="place"] { --sf-kind: var(--sf-kind-place); --sf-on-kind: var(--eac-kind-place-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="idea"] { --sf-kind: var(--sf-kind-idea); --sf-on-kind: var(--eac-kind-idea-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="neutral"],
 [data-kind=""]              { --sf-kind: var(--sf-kind-neutral); --sf-on-kind: var(--eac-kind-neutral-on, var(--sf-bg)); }
@@ -756,13 +758,13 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
    a button. The surface-level accent is the fallback, and every `--sf-kind`
    outside a [data-kind] subtree needs one. */
 .eac-btn--primary {
-  background: var(--sf-kind, var(--sf-accent));
-  border-color: var(--sf-kind, var(--sf-accent));
-  color: var(--sf-on-kind, var(--sf-on-accent, #fff));
+  background: var(--eac-surface-primary, var(--sf-kind, var(--sf-accent)));
+  border-color: var(--eac-surface-primary, var(--sf-kind, var(--sf-accent)));
+  color: var(--eac-surface-on-primary, var(--sf-on-kind, var(--sf-on-accent, #fff)));
 }
 .eac-btn--primary:hover {
   filter: brightness(0.94);
-  border-color: var(--sf-kind, var(--sf-accent));
+  border-color: var(--eac-surface-primary, var(--sf-kind, var(--sf-accent)));
 }
 .eac-btn--quiet { border-color: transparent; color: var(--sf-muted); }
 .eac-btn--quiet:hover { border-color: transparent; color: var(--sf-fg); background: var(--sf-bg-soft); }
@@ -3910,3 +3912,240 @@ dialog.eac-surface:has(.eac-me-dialog) { width: min(960px, calc(100vw - 32px)); 
 .eac-conn__addpage input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--sf-line); border-radius: var(--sf-radius-sm, 6px); background: var(--sf-bg); color: var(--sf-fg); font: inherit; font-size: 0.9rem; }
 .eac-conn__targets { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; font-size: 0.9em; opacity: 0.85; }
 .eac-conn__targets li::before { content: "· "; }
+
+/* A post's link card and media grid (SurfaceThread.link / .attachments), and an indented forum sub-section. */
+.eac-surface-link { display: flex; gap: 12px; margin: 14px 0 0; padding: 10px; border: 1px solid var(--sf-line); border-radius: var(--sf-radius, 2px); color: inherit; text-decoration: none; }
+.eac-surface-link:hover { background: color-mix(in srgb, var(--sf-fg) 3%, transparent); }
+.eac-surface-link img { flex: none; width: 72px; height: 72px; object-fit: cover; border-radius: var(--sf-radius, 2px); }
+.eac-surface-link-body { min-width: 0; display: grid; gap: 2px; align-content: start; }
+.eac-surface-link-host { font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
+.eac-surface-link-title { font-weight: 700; line-height: 1.3; }
+.eac-surface-link-desc { font-size: 0.85rem; color: var(--sf-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.eac-surface-media { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 14px 0 0; }
+.eac-surface-media img, .eac-surface-media video { width: 100%; height: 130px; object-fit: cover; display: block; border-radius: var(--sf-radius, 2px); background: var(--sf-bg-soft); }
+.eac-forum-feed--child { padding-left: 24px; }
+.eac-forum-feed--child .eac-forum-feed-name { font-weight: 400; }
+.eac-forum-feed-closed { font-weight: 400; font-size: 0.72rem; color: var(--sf-faint); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SurfaceStage: the dialog, docked (SurfaceStage.tsx). Additive: nothing here
+   matches markup the popup renders.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-stage { position: relative; min-width: 0; }
+.eac-stage-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.eac-stage-backdrop-caption {
+  position: absolute; right: 28px; bottom: 12px;
+  font-family: var(--sf-font-record); font-size: 10.5px; color: color-mix(in srgb, var(--sf-fg) 55%, transparent);
+}
+.eac-stage-view { position: relative; z-index: 1; margin: 24px 24px 0; min-height: 0; }
+
+.eac-stage-panel { position: absolute; inset: 0; max-height: none; transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s; }
+.eac-stage-panel[hidden] { display: none; }
+.eac-stage-panel[data-layer="base"] {
+  background: var(--eac-stage-bg, color-mix(in srgb, var(--sf-bg) 95%, transparent));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.eac-stage-panel[data-layer="base"][data-under] { transform: translateY(-14px) scale(0.985); opacity: 0.4; pointer-events: none; }
+
+/* Pushed layers sit over the base. compact: centred at 440. standard/wide: the panel, inset 14px. */
+.eac-stage-panel[data-layer="pushed"] {
+  inset: 14px;
+  z-index: 2;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  animation: eac-stage-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.eac-stage-panel[data-layer="pushed"][data-size="compact"] {
+  inset: 14px auto auto 50%;
+  width: min(440px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  transform: translateX(-50%);
+  animation-name: eac-stage-rise-centred;
+}
+.eac-stage-panel[data-layer="pushed"][data-size="stage"] { inset: 0; }
+@keyframes eac-stage-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes eac-stage-rise-centred { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translateX(-50%); } }
+
+/* The stage's base fills its host; its body scrolls. */
+.eac-stage-panel[data-size="stage"] { height: 100%; }
+
+/* Head: glyph tile carries the face numeral, filled with the kind on the base. */
+.eac-surface-glyph.is-filled { background: var(--sf-kind); color: var(--sf-on-kind, var(--sf-on-accent, #fff)); font-size: 0.95rem; letter-spacing: 0.06em; }
+
+.eac-stage-siblings { display: flex; align-items: center; gap: 8px; }
+.eac-stage-siblings .eac-surface-iconbtn:disabled { opacity: 0.4; cursor: default; }
+.eac-stage-siblings .eac-surface-iconbtn:disabled:hover { border-color: var(--sf-line); }
+.eac-stage-counter { min-width: 62px; text-align: center; font-family: var(--sf-font-record); font-size: 0.72rem; color: var(--sf-muted); }
+
+/* Strip: a row of small faces. */
+.eac-stage-strip {
+  position: relative; z-index: 1;
+  display: flex; align-items: flex-end; gap: 8px;
+  margin: 0 36px; padding: 14px 0 16px;
+}
+.eac-stage-face {
+  position: relative; flex: 1 1 0; min-width: 96px;
+  /* stretch: a host's button rule (elktours: align-items flex-start) otherwise collapses the cover to 0 wide. */
+  display: flex; flex-direction: column; align-items: stretch; gap: 7px;
+  padding: 6px 6px 9px; text-align: left; font: inherit; color: var(--sf-fg);
+  background:
+    radial-gradient(124% 96% at 0% 0%, color-mix(in srgb, var(--sf-kind) 7%, transparent), transparent 64%),
+    color-mix(in srgb, var(--sf-bg) 94%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--sf-line); border-radius: 0; cursor: pointer; overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s, border-color 0.18s;
+}
+.eac-stage-face::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; z-index: 2;
+  background: linear-gradient(90deg, var(--sf-kind), color-mix(in srgb, var(--sf-kind) 34%, transparent) 40%, transparent 66%);
+}
+.eac-stage-face:hover, .eac-stage-face:focus-visible { transform: translateY(-10px); box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6); }
+.eac-stage-face:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-stage-face[data-open] { border-color: var(--sf-kind); }
+.eac-stage-face-cover {
+  position: relative; display: block; height: 44px; transition: height 0.2s;
+  background: color-mix(in srgb, var(--sf-kind) 22%, var(--sf-bg)) center / cover no-repeat;
+}
+.eac-stage-face:hover .eac-stage-face-cover, .eac-stage-face:focus-visible .eac-stage-face-cover { height: 84px; }
+.eac-stage-face-numeral {
+  position: absolute; top: 5px; left: 5px; min-width: 22px; height: 22px; padding: 0 3px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--sf-bg) 80%, transparent); border: 1px solid color-mix(in srgb, var(--sf-kind) 50%, transparent);
+  color: var(--sf-fg); font-family: var(--eac-font-numeral, var(--sf-font-record)); font-size: 0.6rem; letter-spacing: 0.04em;
+}
+.eac-stage-face[data-open] .eac-stage-face-numeral { background: var(--sf-kind); border-color: var(--sf-kind); color: var(--sf-on-kind, var(--sf-on-accent, #fff)); }
+.eac-stage-face-cue {
+  position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; display: none; place-items: center;
+  border-radius: 999px; border: 1px solid color-mix(in srgb, var(--sf-kind) 32%, transparent);
+  background: color-mix(in srgb, var(--sf-bg) 70%, transparent); color: var(--sf-kind); font-family: var(--sf-font-record); font-size: 0.75rem;
+}
+.eac-stage-face:hover .eac-stage-face-cue, .eac-stage-face:focus-visible .eac-stage-face-cue { display: grid; }
+.eac-stage-face-title {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: 2.3em; padding: 0 2px; font-family: var(--sf-font-title); font-size: 0.8rem; line-height: 1.15;
+}
+.eac-stage-face-more { display: none; gap: 4px; padding: 0 2px; }
+.eac-stage-face:hover .eac-stage-face-more, .eac-stage-face:focus-visible .eac-stage-face-more { display: grid; }
+.eac-stage-face-kicker { font-family: var(--sf-font-record); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; }
+.eac-stage-face-teaser {
+  font-size: 0.7rem; line-height: 1.35; color: var(--sf-muted);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Docked (design 1a, 2026-11-20): the strip sits on the frame's lower edge, over the frame and above the stage,
+   so a face that grows on hover rises over the stage's foot instead of stopping at it. The frame keeps
+   --eac-stage-strip-room under the stage for the strip at rest (144px in the design: 28 gap + face + 16). */
+.eac-stage:not(.eac-stage--phone) { padding-bottom: var(--eac-stage-strip-room, 144px); }
+.eac-stage:not(.eac-stage--phone):not(:has(> .eac-stage-strip)) { padding-bottom: 24px; }
+.eac-stage:not(.eac-stage--phone) > .eac-stage-strip { position: absolute; left: 36px; right: 36px; bottom: 16px; z-index: 3; margin: 0; padding: 0; }
+.eac-stage:not(.eac-stage--phone) > .eac-stage-strip .eac-stage-face:hover,
+.eac-stage:not(.eac-stage--phone) > .eac-stage-strip .eac-stage-face:focus-visible { z-index: 1; }
+
+/* The stage inside a popup: a `size: "stage"` dialog has no window of its own; the stage's frame is the window. */
+dialog.eac-surface[data-size="stage"] { --sf-width: 1320px; width: min(var(--sf-width), calc(100vw - 48px)); }
+dialog.eac-surface[data-size="stage"]:focus { outline: none; }
+dialog.eac-surface[data-size="stage"] > .eac-surface-panel {
+  display: block; max-height: none; background: transparent; border: 0; box-shadow: none; overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-stage-panel, .eac-stage-face, .eac-stage-face-cover { transition: none; animation: none; }
+  .eac-stage-panel[data-layer="pushed"] { animation: none; }
+  .eac-stage-face:hover, .eac-stage-face:focus-visible { transform: none; }
+}
+
+@media (max-width: 640px) {
+  .eac-stage-view { margin: 0; }
+  .eac-stage:not(.eac-stage--phone) { padding-bottom: 0; }
+  .eac-stage:not(.eac-stage--phone) > .eac-stage-strip { position: relative; left: auto; right: auto; bottom: auto; }
+  .eac-stage-panel[data-layer="base"] .eac-surface-body.has-rail { grid-template-columns: minmax(0, 1fr); }
+  .eac-stage-strip { margin: 0; padding: 10px 12px 12px; overflow-x: auto; scroll-snap-type: x proximity; }
+  .eac-stage-face { flex: 0 0 86px; min-width: 0; scroll-snap-align: center; }
+  .eac-stage-face[data-open] { flex-basis: 132px; }
+  .eac-stage-face:hover, .eac-stage-face:focus-visible { transform: none; }
+  .eac-stage-face:hover .eac-stage-face-cover { height: 44px; }
+  .eac-stage-panel[data-layer="pushed"] { inset: auto 0 0 0; max-height: 92%; }
+  .eac-stage-panel[data-layer="pushed"][data-size="compact"] { inset: auto 0 0 0; width: auto; transform: none; animation-name: eac-stage-rise; }
+}
+
+/* ── SurfaceStage, phone layout (layout="phone"): media band, panel flowing under it,
+   dock fixed at the bottom, pushed layers as bottom sheets. Scoped to .eac-stage--phone
+   so the docked layout is untouched; independent of viewport width. Height of the dock
+   (166px in the design) is --eac-stage-dock-h. ── */
+.eac-stage--phone { --eac-stage-dock-h: 166px; padding-bottom: calc(var(--eac-stage-dock-h) + env(safe-area-inset-bottom, 0px)); }
+.eac-stage--phone .eac-stage-media { position: relative; height: 300px; overflow: hidden; background: color-mix(in srgb, var(--sf-kind, var(--sf-fg)) 14%, var(--sf-bg)); }
+/* z-index auto: the view must not be a stacking context, or the fixed sheets inside it (z 41) sit under the dock and scrim. */
+.eac-stage--phone .eac-stage-view { height: auto; margin: 0; z-index: auto; }
+.eac-stage--phone .eac-stage-panel[data-layer="base"] {
+  position: relative; inset: auto; height: auto; max-height: none; overflow: visible;
+  transition: opacity 0.22s;
+}
+.eac-stage--phone .eac-stage-panel[data-layer="base"][data-under] { transform: none; opacity: 0.5; }
+.eac-stage--phone .eac-stage-panel[data-layer="base"] .eac-surface-body { overflow: visible; scrollbar-gutter: auto; }
+.eac-stage--phone .eac-stage-panel[data-layer="base"] .eac-surface-body.has-rail { grid-template-columns: minmax(0, 1fr); }
+.eac-stage--phone .eac-stage-panel[data-layer="base"] .eac-surface-head { align-items: flex-start; }
+.eac-stage--phone .eac-surface-title { white-space: normal; overflow: visible; text-overflow: clip; }
+.eac-stage--phone .eac-stage-siblings { gap: 4px; align-self: center; }
+.eac-stage--phone .eac-stage-siblings .eac-surface-iconbtn { width: 44px; height: 44px; font-size: 1.15rem; }
+.eac-stage--phone .eac-stage-counter { min-width: 0; }
+
+/* Dock */
+.eac-stage--phone .eac-stage-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--eac-stage-dock-bg, color-mix(in srgb, var(--sf-bg) 96%, transparent));
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-top: 1px solid var(--sf-rule);
+}
+.eac-stage--phone .eac-stage-strip {
+  margin: 0; padding: 10px 12px 8px; gap: 8px; align-items: flex-end;
+  overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.eac-stage--phone .eac-stage-strip::-webkit-scrollbar { display: none; }
+.eac-stage--phone .eac-stage-face {
+  flex: 0 0 86px; min-width: 0; height: 70px; gap: 4px; padding: 4px 4px 5px;
+  scroll-snap-align: center; transition: flex-basis 0.2s, border-color 0.18s;
+}
+.eac-stage--phone .eac-stage-face[data-open] { flex-basis: 132px; }
+.eac-stage--phone .eac-stage-face:hover, .eac-stage--phone .eac-stage-face:focus-visible { transform: none; box-shadow: none; }
+.eac-stage--phone .eac-stage-face-cover, .eac-stage--phone .eac-stage-face:hover .eac-stage-face-cover,
+.eac-stage--phone .eac-stage-face:focus-visible .eac-stage-face-cover { height: 24px; }
+.eac-stage--phone .eac-stage-face-numeral { top: 2px; left: 2px; min-width: 20px; height: 20px; }
+.eac-stage--phone .eac-stage-face-cue, .eac-stage--phone .eac-stage-face:hover .eac-stage-face-cue { display: none; }
+.eac-stage--phone .eac-stage-face-title { min-height: 0; font-size: 0.74rem; -webkit-line-clamp: 2; }
+.eac-stage--phone .eac-stage-face[data-open] .eac-stage-face-title { -webkit-line-clamp: 1; }
+.eac-stage--phone .eac-stage-face-more, .eac-stage--phone .eac-stage-face:hover .eac-stage-face-more { display: none; }
+.eac-stage--phone .eac-stage-face[data-open] .eac-stage-face-more { display: block; padding: 0 2px; }
+.eac-stage--phone .eac-stage-face-kicker { font-size: 0.54rem; color: var(--sf-kind); }
+.eac-stage--phone .eac-stage-dock-foot {
+  display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 0 12px;
+  border-top: 1px solid var(--sf-line); box-sizing: border-box;
+}
+
+/* Sheets */
+.eac-stage--phone .eac-stage-scrim {
+  position: fixed; inset: 0; z-index: 40; border: 0; padding: 0; cursor: pointer;
+  background: rgba(8, 10, 14, 0.58); animation: eac-stage-fade 0.22s;
+}
+@keyframes eac-stage-fade { from { opacity: 0; } to { opacity: 1; } }
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"],
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"][data-size="compact"],
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"][data-size="stage"] {
+  position: fixed; inset: auto 0 0 0; z-index: 41; width: auto; height: auto;
+  max-height: 88vh; max-height: 88dvh; transform: none;
+  border-radius: 14px 14px 0 0; border-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: eac-stage-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"]::before {
+  content: ""; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px;
+  border-radius: 2px; background: var(--sf-line); z-index: 1;
+}
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"] .eac-surface-head { padding-top: 18px; }
+.eac-stage--phone .eac-stage-panel[data-layer="pushed"] .eac-surface-iconbtn { width: 44px; height: 44px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-stage--phone .eac-stage-scrim, .eac-stage--phone .eac-stage-face { animation: none; transition: none; }
+}

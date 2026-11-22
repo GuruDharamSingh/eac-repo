@@ -16,7 +16,7 @@ import { siteConfig } from "@/config/site";
  */
 
 /** One definition of where the forum's links go — the board and the hub tile. */
-export const forumHrefs = orgHrefs({ base: "/forum", signIn: "/login?next=/forum" });
+const forumHrefs = orgHrefs({ base: "/forum", signIn: "/login?next=/forum" });
 
 /** The forum viewer for this site's session, or the anonymous one. */
 export async function getForumViewer() {

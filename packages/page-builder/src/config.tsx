@@ -1,4 +1,4 @@
-import { createElement, type ComponentType, type ReactNode } from "react";
+import { createElement, Fragment, type ComponentType, type ReactNode } from "react";
 import type { Config } from "@puckeditor/core";
 import { SHARED_BLOCKS, toDefaultProps, toPuckFields } from "@elkdonis/blocks";
 import type { Block, BlockCategory, BlockDef, PropDef, PropKind } from "@elkdonis/blocks";
@@ -340,6 +340,24 @@ export interface PuckConfigOptions {
    * and client configs. Without one the prop is removed and ignored.
    */
   morph?: ComponentType<{ def: BlockDef; morph: unknown; editing: boolean; children?: ReactNode }>;
+
+  /**
+   * Edit marks (2026-11-20, the live editor): put an inert `<template data-blk-mark="<block id>" data-blk-type="<block
+   * type>">` right before each block, so the Fields lens can find the element that draws each declared part's setting
+   * (`parts[x].prop`) and offer it for editing as `block:<slug>:<id>:<prop>`. Default off: a config built without it
+   * draws exactly the markup it always did. Pass it only in the config used to draw a page for someone who may edit it.
+   * `from` names, per block, the settings whose shown value comes from somewhere else than the block's own setting
+   * (a record), as `{ <prop>: "record:<kind>:<id>:<field>" }`; the mark carries it as `data-blk-from`.
+   */
+  marks?: boolean | { from?: (block: { type: string; props: Record<string, unknown> }) => Record<string, string> | null | undefined };
+
+  /**
+   * Lay a block's fields out in tabs (Puck 0.24 `renderFields`, 2026-11-20). Called for a block that has a Style
+   * control (the generic `blkStyle` or the site's `blockStyle`), with every field's node and the names of the style
+   * ones. Editor configs only: the tab components are Puck editor parts, and a published config must not import them.
+   * Omitted: Puck's own flat list, as before.
+   */
+  fieldTabs?: (ctx: { fields: Record<string, ReactNode>; style: string[] }) => React.ReactElement;
 }
 
 /**
@@ -369,6 +387,8 @@ export function buildPuckConfig({
   styleField,
   richText = false,
   morph: MorphMark,
+  marks,
+  fieldTabs,
 }: PuckConfigOptions = {}): Config {
   // Typed as Puck's own map rather than Record<string, unknown>, so the
   // compiler actually checks that toPuckFields() produces field shapes Puck
@@ -459,7 +479,11 @@ export function buildPuckConfig({
     // Published pages were never affected: <Render> transforms only slots and
     // rich text, by field path.
     if (MorphMark) {
-      fields.morph = { type: "custom", visible: false, render: () => null } as unknown as (typeof fields)[string];
+      // A hidden OBJECT field with none of its own, not a custom one: resolveAllData walks an object under any
+      // non-object field with the block fields by key, so a part named like one of the block slots (morph.parts.items)
+      // was read as that slot and threw on the public route (still true on Puck 0.24, direct-edit/scripts/check-look.mts).
+      // An object field with no fields also gets no transform, so the editor case above stays closed.
+      fields.morph = { type: "object", objectFields: {}, visible: false } as unknown as (typeof fields)[string];
     }
 
     // `look` (the canvas's style object on its box, words and picture blocks,
@@ -476,10 +500,19 @@ export function buildPuckConfig({
       fields.look = { type: "object", objectFields: {}, visible: false } as unknown as (typeof fields)[string];
     }
 
+    // The Style controls, for the tabbed layout (`fieldTabs`): the site's own and the generic one.
+    const styleKeys = [...(styled?.field ? [styled.name] : []), ...(generic && styleField ? [STYLE_PROP] : [])];
+
     components[def.id] = {
       label: def.label,
       fields,
       defaultProps: defaults,
+      ...(fieldTabs && styleKeys.length
+        ? {
+            renderFields: ({ fields: nodes }: { fields: Record<string, ReactNode> }) =>
+              fieldTabs({ fields: nodes, style: styleKeys }),
+          }
+        : {}),
       // `memberSafe` finally reaches the editor. A block an untrusted author
       // may not place is one they cannot drag out of the drawer — the flag has
       // existed in the catalogue since the start and until now changed nothing.
@@ -540,15 +573,34 @@ export function buildPuckConfig({
           return morph || editing ? createElement(MorphMark, { def, morph, editing }, drawn) : drawn;
         };
 
+        // Edit marks (option `marks`, off by default): an inert marker before the block. Between it and the block's
+        // root there may be the look's own marker and font links; the lens skips those.
+        const markFrom = typeof marks === "object" ? marks.from : undefined;
+        const marked = marks
+          ? function Marked(props: Record<string, unknown>) {
+              const from = markFrom?.({ type: def.id, props });
+              return createElement(
+                Fragment,
+                null,
+                createElement("template", {
+                  "data-blk-mark": typeof props.id === "string" ? props.id : "",
+                  "data-blk-type": def.id,
+                  ...(from && Object.keys(from).length ? { "data-blk-from": JSON.stringify(from) } : {}),
+                }),
+                createElement(morphed as ComponentType<never>, props as never)
+              );
+            }
+          : morphed;
+
         // The per-block style wraps the block itself; with nothing set it
         // renders the block alone, so an unstyled page's markup is unchanged.
         const base = styled
           ? function Styled(props: Record<string, unknown>) {
-              const drawn = createElement(morphed as ComponentType<never>, props as never);
+              const drawn = createElement(marked as ComponentType<never>, props as never);
               const settings = props[styled.name];
               return settings ? createElement(styled.wrap, { settings }, drawn) : drawn;
             }
-          : morphed;
+          : marked;
 
         // Outermost of the block's own output, inside the editor chrome. With
         // nothing set it renders the block alone.

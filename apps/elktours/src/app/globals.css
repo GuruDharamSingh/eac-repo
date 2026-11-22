@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@elkdonis/commerce/commerce.css";
+@import "@elkdonis/direct-edit/site/shared-accents.css";
 
 @source "../../../../packages/pipeline/src";
 @source "../../../../packages/chat/src";
@@ -89,6 +90,8 @@
   --eac-control-accent-on: hsl(var(--primary-foreground));
   --eac-control-accent-ink: #dcc08a;   /* brass-light — 7.8:1 on zinc */
   --eac-control-danger: hsl(var(--destructive));
+  /* Surface danger ink (2026-11-19, handoff finding 1): the cms-ui fallback #ae3a31 is ~1.9:1 on the zinc card; #e8805c is ~4.9:1. */
+  --eac-surface-danger: hsl(var(--destructive));
   --eac-control-radius: var(--radius);
 
   --eac-card-bg: hsl(var(--card));
@@ -154,22 +157,25 @@
   --foreground: 40 33% 92%;           /* ivory #f1ece2 */
 
   --card: 216 11% 23%;                /* #343941 */
-  --card-foreground: 40 33% 92%;
+  /* Text on cards, popovers, quiet buttons and hover washes follows "Text", and popovers follow "Cards and panels",
+     so a saved Site style that flips the page to light does not leave ivory text on white (2026-11-20). Same values
+     as before in this default palette. */
+  --card-foreground: var(--foreground);
 
-  --popover: 216 11% 21%;
-  --popover-foreground: 40 33% 92%;
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
 
-  --primary: 40 50% 57%;              /* brass #c9a25c — buttons, rings, marks */
+  --primary: var(--eac-accent-bronze);              /* brass #c9a25c — buttons, rings, marks */
   --primary-foreground: 216 13% 12%;  /* ink #1b1e23 */
 
   --secondary: 216 10% 27%;           /* #3e434c — quiet buttons, badges */
-  --secondary-foreground: 40 33% 92%;
+  --secondary-foreground: var(--foreground);
 
   --muted: 216 10% 25%;
   --muted-foreground: 37 12% 69%;     /* #b9b2a5 */
 
   --accent: 216 10% 30%;              /* hover wash */
-  --accent-foreground: 40 33% 92%;
+  --accent-foreground: var(--foreground);
 
   /* Vermilion: danger, the route line, the one hot note. */
   --terracotta: 17 75% 64%;           /* #e8805c */
@@ -181,12 +187,12 @@
 
   --border: 216 9% 49%;               /* #727a86 */
   --input: 216 9% 49%;
-  --ring: 40 50% 57%;
+  --ring: var(--eac-accent-bronze);
 
   /* Per-feed accents (org_feeds.accent is the source of truth; fallbacks). */
-  --feed-tours: 40 50% 57%;
+  --feed-tours: var(--eac-accent-bronze);
   --feed-journal: 17 75% 64%;
-  --feed-amrit-vela: 40 50% 57%;
+  --feed-amrit-vela: var(--eac-accent-bronze);
   --feed-yoga: 150 14% 55%;
   --feed-gurdwara: 17 75% 64%;
 
@@ -201,6 +207,12 @@
   --eac-surface-on-accent: hsl(var(--primary-foreground));
   --eac-surface-radius: var(--radius);
   --eac-font-title: "Brothers", "Venture", Georgia, serif;
+  /* Surface labels (kickers, facts, status) in Venture, the site's label face (design handoff 2026-11-20, docs/01
+     finding 5): the cms-ui fallback is a system monospace. Letter-spacing comes from surface.css. */
+  --eac-font-record: "Venture", Georgia, serif;
+  /* Places (handoff finding 2): a blue that reads on the zinc card (#8fb3c4 on #343941 measured 5.21:1; #1b1e23 on it 7.49:1). */
+  --eac-kind-place: #8fb3c4;
+  --eac-kind-place-on: #1b1e23;
   --eac-kind-meeting: hsl(var(--primary));
   --eac-kind-event: hsl(var(--primary));
   --eac-kind-post: hsl(var(--terracotta));
@@ -222,22 +234,22 @@
   --background: 216 12% 19%;
   --foreground: 40 33% 92%;
   --card: 216 11% 23%;
-  --card-foreground: 40 33% 92%;
-  --popover: 216 11% 21%;
-  --popover-foreground: 40 33% 92%;
-  --primary: 40 50% 57%;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: var(--eac-accent-bronze);
   --primary-foreground: 216 13% 12%;
   --secondary: 216 10% 27%;
-  --secondary-foreground: 40 33% 92%;
+  --secondary-foreground: var(--foreground);
   --muted: 216 10% 25%;
   --muted-foreground: 37 12% 69%;
   --accent: 216 10% 30%;
-  --accent-foreground: 40 33% 92%;
+  --accent-foreground: var(--foreground);
   --destructive: 17 75% 64%;
   --destructive-foreground: 216 13% 12%;
   --border: 216 9% 49%;
   --input: 216 9% 49%;
-  --ring: 40 50% 57%;
+  --ring: var(--eac-accent-bronze);
 }
 
 @theme inline {
@@ -515,4 +527,73 @@ h4 {
   --pc-accent: hsl(var(--primary));
   --pc-on-accent: hsl(var(--primary-foreground));
   --pc-radius: var(--radius);
+}
+
+/* ==========================================================================
+   Mobile design tokens (2026-11-15). Additive: nothing on the desktop pages
+   reads these. Derived from the palette above where possible, so Site style
+   edits to --background / --foreground / --card / --primary flow through.
+   Independent ones (--verdigris, --m-screen, radii) are in SITE_STYLE.
+   Classes that use them live in src/components/mobile/mobile.css.
+   ========================================================================== */
+:root {
+  --shell-nav-h: 0px;                 /* raised below md by mobile.css where the bottom nav shows */
+
+  --verdigris: 160 26% 63%;           /* #86b9ab, experiences and artists only (bare HSL triplet) */
+
+  --foreground-soft: color-mix(in srgb, hsl(var(--foreground)) 93%, hsl(var(--background)));
+  --faint: color-mix(in srgb, hsl(var(--muted-foreground)) 76%, hsl(var(--background)));
+
+  --m-screen: linear-gradient(180deg, #25282e 0%, #2b2f36 55%, #282b31 100%);
+  --m-card: hsl(var(--card));
+  --m-card-raised: color-mix(in srgb, hsl(var(--card)) 94%, hsl(var(--foreground)));
+  --m-sheet: hsl(var(--popover));
+  --m-well: hsl(var(--secondary));
+
+  --hair-1: hsl(var(--foreground) / 0.08);
+  --hair-2: hsl(var(--foreground) / 0.12);
+  --hair-3: hsl(var(--foreground) / 0.16);
+  --hair-4: hsl(var(--foreground) / 0.2);
+  --brass-line: hsl(var(--primary) / 0.45);
+  --brass-halo: hsl(var(--primary) / 0.16);
+  --scrim: rgba(10, 11, 13, 0.55);
+
+  --radius-card: 22px;
+  --radius-sheet: 30px;
+  --radius-input: 16px;
+
+  --m-ease-sheet: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --m-dur-screen: 0.32s;
+}
+
+/* ==========================================================================
+   Header brand (2026-11-20): Brothers, bold, wide spacing, with the l and k of "Elkdonis" kept joined.
+   Brothers ships one cut (BrothersTypeface-Regular.otf, weight 400). The old class asked for 600, which the browser
+   met with a synthetic bold; that is switched off (font-synthesis-weight) and a thin currentColor stroke gives the
+   weight instead, the same at every size. Letter-spacing separates the glyphs, so the l-k pair carries none and
+   hands the spacing it would have had to its right (margin-right), keeping the rhythm of the rest of the word.
+   Spacing shrinks below 1024px so the header fits beside the nav at 768-1024px.
+   ========================================================================== */
+.elk-brand {
+  --elk-brand-ls: 0.14em;
+  font-family: "Brothers", "Venture", Georgia, serif;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  font-size: 1.125rem;
+  letter-spacing: var(--elk-brand-ls);
+  -webkit-text-stroke: 0.045em currentColor;
+  paint-order: stroke fill;
+  white-space: nowrap;
+}
+.elk-brand-lk { letter-spacing: 0; margin-right: var(--elk-brand-ls); }
+@media (max-width: 1023px) {
+  .elk-brand { --elk-brand-ls: 0.07em; font-size: 1.0625rem; }
+}
+/* 768-899px: the desktop nav and the spaced brand do not fit side by side (Sign in was cut off at 768, 2026-11-20). */
+@media (min-width: 768px) and (max-width: 899px) {
+  .elk-brand { --elk-brand-ls: 0.02em; font-size: 0.95rem; }
+  header[data-chrome="header"] nav > a { padding-left: 0.45rem; padding-right: 0.45rem; }
+}
+@media (max-width: 767px) {
+  .elk-brand { --elk-brand-ls: 0.04em; font-size: 1rem; }
 }

@@ -91,7 +91,7 @@ export async function getOfferById(orgId: string, offerId: string, tx: Tx = db):
 /** The editable part of an offer, for a form to load. */
 export function offerToInput(o: BookingOffer): BookingOfferInput {
   return {
-    mode: o.mode === "request_time" ? "request_time" : "open_hours",
+    mode: o.mode === "request_time" ? "request_time" : o.mode === "set_dates" ? "set_dates" : "open_hours",
     durationMinutes: o.durationMinutes ?? 60,
     timeZone: o.timeZone,
     hours: o.hours,
@@ -108,6 +108,12 @@ export function offerToInput(o: BookingOffer): BookingOfferInput {
     questions: o.questions,
     status: o.status,
     reminderMinutesBefore: o.reminderMinutesBefore,
+    minParty: o.minParty,
+    maxParty: o.maxParty,
+    priceUnit: o.priceUnit,
+    minToRun: o.minToRun,
+    closeBeforeMinutes: o.closeBeforeMinutes,
+    waitlist: o.waitlist,
   };
 }
 
@@ -134,19 +140,26 @@ export async function saveOffer(input: {
     if (!threads[0]) return { ok: false as const, error: "That offering was not found." };
     const host = input.hostUserId ?? (threads[0].author_id as string | null) ?? null;
     const capacity = v.capacityPerSlot ?? 1;
+    // Phase 2 fields: omitted gives today's values on insert and keeps the stored value on update.
+    const minParty = v.minParty ?? (v.maxParty !== undefined ? Math.min(1, v.maxParty) : 1);
+    const maxParty = v.maxParty ?? Math.max(1, v.minParty ?? 1);
+    const partyGiven = v.minParty !== undefined || v.maxParty !== undefined;
+    const minToRunGiven = v.minToRun !== undefined;
 
     const saved = (await tx`
       INSERT INTO booking_offers (
         org_id, thread_id, host_user_id, mode, duration_minutes, slot_step_minutes, buffer_minutes,
         time_zone, capacity_per_slot, min_party, max_party, lead_time_minutes, max_ahead_days,
         approval, cancel_free_until_minutes, cancel_refund_percent_after, cancel_policy_text,
-        questions, status, reminder_minutes_before
+        questions, status, reminder_minutes_before,
+        min_to_run, close_before_minutes, price_unit, waitlist
       ) VALUES (
         ${input.orgId}, ${input.threadId}, ${host}, ${v.mode}, ${v.durationMinutes}, ${v.slotStepMinutes ?? null},
-        ${v.bufferMinutes ?? 0}, ${v.timeZone}, ${capacity}, 1, 1, ${v.leadTimeMinutes ?? 720}, ${v.maxAheadDays ?? 60},
+        ${v.bufferMinutes ?? 0}, ${v.timeZone}, ${capacity}, ${minParty}, ${maxParty}, ${v.leadTimeMinutes ?? 720}, ${v.maxAheadDays ?? 60},
         ${v.approval ?? "instant"}, ${v.cancelFreeUntilMinutes ?? null}, ${v.cancelRefundPercentAfter ?? null},
         ${v.cancelPolicyText ?? null}, ${tx.json((v.questions ?? []) as unknown as Parameters<typeof tx.json>[0])}, ${v.status ?? "open"},
-        ${v.reminderMinutesBefore === undefined ? 1440 : v.reminderMinutesBefore}
+        ${v.reminderMinutesBefore === undefined ? 1440 : v.reminderMinutesBefore},
+        ${v.minToRun ?? null}, ${v.closeBeforeMinutes ?? 0}, ${v.priceUnit ?? "per_booking"}, ${v.waitlist ?? false}
       )
       ON CONFLICT (thread_id) DO UPDATE SET
         host_user_id = COALESCE(EXCLUDED.host_user_id, booking_offers.host_user_id),
@@ -165,6 +178,12 @@ export async function saveOffer(input: {
         questions = EXCLUDED.questions,
         status = EXCLUDED.status,
         reminder_minutes_before = EXCLUDED.reminder_minutes_before,
+        min_party = CASE WHEN ${partyGiven} THEN ${minParty} ELSE booking_offers.min_party END,
+        max_party = CASE WHEN ${partyGiven} THEN ${maxParty} ELSE booking_offers.max_party END,
+        min_to_run = CASE WHEN ${minToRunGiven} THEN ${v.minToRun ?? null} ELSE booking_offers.min_to_run END,
+        close_before_minutes = COALESCE(${v.closeBeforeMinutes ?? null}, booking_offers.close_before_minutes),
+        price_unit = COALESCE(${v.priceUnit ?? null}, booking_offers.price_unit),
+        waitlist = COALESCE(${v.waitlist ?? null}, booking_offers.waitlist),
         updated_at = now()
       WHERE booking_offers.org_id = ${input.orgId}
       RETURNING *

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { FieldsLensGate } from "@/components/fields/FieldsLensGate";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { siteConfig } from "@/config/site";
 import { ArrivalNotice } from "@elkdonis/cms-ui/network";
@@ -14,6 +15,9 @@ import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
 import { loadSiteStyle } from "@/lib/site-style";
 import { SITE_STYLE } from "@/lib/site-style-schema";
 import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
+import { MobileShell } from "@/components/mobile";
+import { phoneThemeScript } from "@/components/mobile/phone-theme-script";
+import { PhoneThemeKeeper } from "@/components/mobile/phone-theme";
 
 // Type is local (@font-face in globals.css): Basteleur, Brothers, Venture, shared with innergathering.
 
@@ -69,6 +73,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {/* The left-column Kundalini animation (components/kundalini-panel*)
           was taken off 2026-09-26; the component is kept for reuse. */}
       <body suppressHydrationWarning className="flex min-h-screen">
+        <script dangerouslySetInnerHTML={{ __html: phoneThemeScript }} />
+        <PhoneThemeKeeper />
         {styleFonts ? <link rel="stylesheet" href={styleFonts} /> : null}
         {styleCss ? <style data-site-style="" dangerouslySetInnerHTML={{ __html: styleCss }} /> : null}
         <div className="flex min-w-0 flex-1 flex-col">
@@ -90,7 +96,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
             <main className="flex-1">{children}</main>
             <SiteFooter content={sections.footer} />
+            <FieldsLensGate />
             <Toaster position="top-right" />
+            {/* Phone layout (below md): bottom nav. Header and footer give way by CSS where a page has a mobile tree (.elk-m), see components/mobile/mobile.css. */}
+            <MobileShell nav="guest" />
             <ArrivalNotice endpoint="/api/network/arrival" />
             <AnalyticsBeacon />
             {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}

@@ -61,12 +61,12 @@ export default async function AboutPage() {
               <div className="pts-about__org">
                 <article className="pts-orgcard" data-edit-name="Organization card">
                   <div>
-                    <p className="ifs-eyebrow">{hero.eyebrow?.trim() || "Elkdonis Arts Collective"}</p>
+                    <p className="ifs-eyebrow" data-field="section:hero:eyebrow">{hero.eyebrow?.trim() || "Elkdonis Arts Collective"}</p>
                     <h2>{siteConfig.orgName}</h2>
                   </div>
-                  <p>{hero.subtitle ?? siteConfig.tagline}</p>
+                  <p data-field="section:hero:subtitle">{hero.subtitle ?? siteConfig.tagline}</p>
                 </article>
-                <div className="pts-prose" data-edit-name="Description">
+                <div className="pts-prose" data-edit-name="Description" data-field="section:about:body">
                   {paragraphs.map((p, i) =>
                     p.startsWith("mailto:") ? (
                       <p key={i}><a className="ifs-link" href={p}>{p.slice("mailto:".length)}</a></p>

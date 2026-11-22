@@ -20,3 +20,7 @@ export type { CoverFrame } from "./cover-frame";
 // link (2026-10-18; series covers and series weeks).
 export { CoverField } from "./CoverField";
 export type { CoverValue } from "./CoverField";
+
+// The direct-edit canvas's picture chooser, from a site's upload and library routes.
+export { makeChoosePicture } from "./make-choose-picture";
+export type { ChoosePictureOptions } from "./make-choose-picture";

@@ -53,6 +53,7 @@ export const ICONS: Record<string, string> = {
   unlink: svg('<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1-1a2.8 2.8 0 014 4l-1 1M9 11.5l-1 1a2.8 2.8 0 01-4-4l1-1"/><path d="M2.5 13.5l11-11"/>'),
   more: svg('<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>'),
   "tool-select": svg('<path d="M4 2.5l8 6.2-3.6.7 2.2 4.1-1.6.9-2.2-4.1L4.5 12.2z"/>'),
+  "tool-move": svg('<path d="M8 1.5v13M1.5 8h13M8 1.5L6 3.5M8 1.5l2 2M8 14.5l-2-2M8 14.5l2-2M1.5 8l2-2M1.5 8l2 2M14.5 8l-2-2M14.5 8l-2 2"/>'),
   "tool-hand": svg('<path d="M5.5 8V3.8a1 1 0 012 0V7M7.5 7V2.8a1 1 0 012 0V7M9.5 7V3.8a1 1 0 012 0V9M5.5 8L4.3 6.6a1 1 0 00-1.6 1.2L5 12.2c.7 1.2 1.8 1.8 3.2 1.8h.8c2.2 0 3.5-1.6 3.5-3.8V7"/>'),
   "tool-text": svg('<path d="M3.5 4V3h9v1M8 3v10M6 13h4"/>'),
   phone: svg('<rect x="4.5" y="1.8" width="7" height="12.4" rx="1.4"/><path d="M7 12.2h2"/>'),

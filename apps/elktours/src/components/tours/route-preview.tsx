@@ -39,11 +39,15 @@ const ARRIVE_RANGE = 130;
 const ORBIT_DEG = 55;
 
 type LngLat = [number, number];
-interface Cam { lng: number; lat: number; heading: number; tilt: number; range: number }
+export interface Cam { lng: number; lat: number; heading: number; tilt: number; range: number }
 
-interface Renderer {
+export interface Renderer {
   setCamera(c: Cam): void;
+  /** Optional animated camera move (the phone variant uses it). */
+  flyTo?(c: Cam, ms: number): void;
   setDrawn(coords: LngLat[]): void;
+  /** Optional dim line under the drawn one (phone variant): the whole route, so the walked part reads brighter. */
+  setRest?(coords: LngLat[]): void;
   setActive(i: number): void;
   fitAll(ms: number): void;
   destroy(): void;
@@ -148,7 +152,10 @@ async function makeGoogle3D(g: GMaps, container: HTMLElement, stops: LngLat[], m
 
 // ── MapLibre fallback ──────────────────────────────────────────────────────
 
-async function makeMapLibre(container: HTMLElement, stops: LngLat[], meeting: LngLat | null): Promise<Renderer> {
+/** Phone-variant hooks. `pin` styles each marker (i = -1 for the meeting point) and returns false to skip it. */
+export interface MapLibreOpts { pin?: (el: HTMLElement, i: number) => boolean | void; lineColor?: string; lineWidth?: number; restColor?: string }
+
+export async function makeMapLibre(container: HTMLElement, stops: LngLat[], meeting: LngLat | null, opts?: MapLibreOpts): Promise<Renderer> {
   const maplibregl = (await import("maplibre-gl")).default;
   const all = [...(meeting ? [meeting] : []), ...stops];
   const m = new maplibregl.Map({ container, style: "https://tiles.openfreemap.org/styles/liberty", center: all[0] ?? [2.3522, 48.8566], zoom: 13, attributionControl: { compact: true }, interactive: false });
@@ -156,19 +163,26 @@ async function makeMapLibre(container: HTMLElement, stops: LngLat[], meeting: Ln
   const labelLayer = m.getStyle().layers?.find((l) => l.type === "symbol" && (l.layout as Record<string, unknown> | undefined)?.["text-field"])?.id;
   m.addLayer({ id: "p3d", type: "fill-extrusion", source: "openmaptiles", "source-layer": "building", minzoom: 14, paint: { "fill-extrusion-color": "#d9d4c7", "fill-extrusion-height": ["coalesce", ["get", "render_height"], 12], "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0], "fill-extrusion-opacity": 0.85 } }, labelLayer);
   m.addSource("pr", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  m.addLayer({ id: "pr-line", type: "line", source: "pr", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ff5a1f", "line-width": 6 } });
+  if (opts?.restColor) {
+    m.addSource("pr-rest", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    m.addLayer({ id: "pr-rest", type: "line", source: "pr-rest", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": opts.restColor, "line-width": (opts.lineWidth ?? 6) - 1 } });
+  }
+  m.addLayer({ id: "pr-line", type: "line", source: "pr", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": opts?.lineColor ?? "#ff5a1f", "line-width": opts?.lineWidth ?? 6 } });
   const pins: maplibregl.Marker[] = [];
-  const pin = (p: LngLat, label: string) => {
+  const pin = (p: LngLat, label: string, i: number) => {
     const el = document.createElement("span"); el.className = "tour-pin"; el.textContent = label;
+    if (opts?.pin && opts.pin(el, i) === false) { pins.push(new maplibregl.Marker({ element: document.createElement("span") })); return; }
     pins.push(new maplibregl.Marker({ element: el }).setLngLat(p).addTo(m));
   };
-  if (meeting) pin(meeting, "★");
-  stops.forEach((p, i) => pin(p, String(i + 1)));
+  if (meeting) pin(meeting, "★", -1);
+  stops.forEach((p, i) => pin(p, String(i + 1), i));
   // range (m) → zoom: at zoom z one pixel is 40075016·cos(lat)/(256·2^z) m; a 75 m range over ~half the view height.
   const zoomFor = (range: number, lat: number, h: number) => Math.log2((40075016 * Math.cos(rad(lat)) * h * 0.55) / (256 * range));
   return {
     setCamera: (c) => m.jumpTo({ center: [c.lng, c.lat], bearing: c.heading, pitch: Math.min(85, c.tilt), zoom: Math.min(19.5, zoomFor(c.range, c.lat, container.clientHeight || 600)) }),
     setDrawn: (coords) => (m.getSource("pr") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: coords.length > 1 ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } }] : [] }),
+    flyTo: (c, ms) => m.easeTo({ center: [c.lng, c.lat], bearing: c.heading, pitch: Math.min(85, c.tilt), zoom: Math.min(19.5, zoomFor(c.range, c.lat, container.clientHeight || 600)), duration: ms, easing: (t) => t * t * (3 - 2 * t) }),
+    setRest: (coords) => (m.getSource("pr-rest") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: coords.length > 1 ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } }] : [] }),
     setActive: (i) => pins.forEach((p, k) => p.getElement().classList.toggle("is-active", k - (meeting ? 1 : 0) === i)),
     fitAll: (ms) => { if (all.length) m.fitBounds(all.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(all[0], all[0])), { padding: 60, pitch: 35, bearing: 0, duration: ms }); },
     destroy: () => { pins.forEach((p) => p.remove()); m.remove(); },

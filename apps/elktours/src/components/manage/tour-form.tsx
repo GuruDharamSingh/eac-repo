@@ -8,10 +8,11 @@ import { MediaField } from "@/components/manage/media-field";
 import { PlaceSearch } from "@/components/manage/place-search";
 import { saveTourAction, type TourFormValues } from "@/lib/tour-actions";
 import type { Tour } from "@/lib/tours";
+import { TourBookingRules } from "@/components/manage/tour-booking-rules";
 import { Button, Input, Label, Textarea } from "@elkdonis/primitives";
 
 /** Create or edit the tour's own facts; stops and departures have their own tabs. */
-export function TourForm({ tour }: { tour?: Tour }) {
+export function TourForm({ tour, bookingDefaults = null }: { tour?: Tour; bookingDefaults?: { minToRun: number | null; closeBeforeMinutes: number; waitlistCap: number | null } | null }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [f, setF] = useState({
@@ -111,6 +112,8 @@ export function TourForm({ tour }: { tour?: Tour }) {
           <Label htmlFor="effort">Walking</Label>
           <Input id="effort" value={f.effort} onChange={(e) => set("effort", e.target.value)} placeholder="Easy, 3 km, a few stairs" className="mt-1" />
         </div>
+
+        {tour && <TourBookingRules tourId={tour.id} type={tour.tourType ?? null} defaults={bookingDefaults} />}
 
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
           <Button type="button" variant="outline" disabled={pending} onClick={() => submit("draft")}>

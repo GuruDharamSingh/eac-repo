@@ -14,6 +14,8 @@ import { EmptyState, Notice, PageHeader, Toolbar } from "@elkdonis/cms-ui/manage
 import { advance, isQuoteFlow, LABEL_STATES, shipmentsForOrders, type ShipmentRow } from "@/lib/shipping/shipments";
 import { daysLabel } from "@/lib/shipping/rates";
 import { ShipThis, type ShipThisFacts } from "@/components/manage/ship-this";
+import { getStoreShippingMode, listOrderShipments, orderShippingOf, easyshipEnv } from "@elkdonis/commerce/shipping";
+import { PlatformLabel } from "@/components/manage/platform-label";
 
 /** Quote-only rows (Katie buys the label). */
 const QUOTE_WORDS: Partial<Record<ShipmentRow["status"], string>> = {
@@ -101,6 +103,11 @@ export default async function ManageOrders({ searchParams }: { searchParams: Pro
   const orders = await listOrdersForStore(store.id, { limit: 100, status: filter.status });
   const labels = await orderPieceLabels(orders.map((o) => o.id));
   const shipments = await shipmentsForOrders(orders.map((o) => o.id)).catch(() => new Map<string, ShipmentRow>());
+  // Shipping chosen and paid at checkout (2026-11-17, shared engine): the
+  // label the collective bought, per order.
+  const platformShipments = await listOrderShipments(orders.map((o) => o.id)).catch(() => ({}));
+  const storeShippingMode = await getStoreShippingMode(store.id).catch(() => "arranged" as const);
+  const sandboxLabels = easyshipEnv() === "sandbox";
   // Catch up anything the buyer paid for but nobody came back to (the webhook
   // records the payment; buying the label happens here or on the return hop).
   for (const [orderId, s] of shipments) {
@@ -161,6 +168,29 @@ export default async function ManageOrders({ searchParams }: { searchParams: Pro
                     </p>
                   ) : null}
                   {(() => {
+                    const chosen = orderShippingOf(o.metadata);
+                    const paid = o.status === "paid" || o.status === "fulfilled" || o.status === "completed";
+                    if (!chosen?.option || !paid) return null;
+                    const ps = (platformShipments as Record<string, Awaited<ReturnType<typeof listOrderShipments>>[string]>)[o.id];
+                    if (!ps && storeShippingMode !== "platform") return null;
+                    return (
+                      <PlatformLabel
+                        canAct={canAct}
+                        f={{
+                          orderId: o.id,
+                          service: chosen.option.name,
+                          buyerPaid: fm(o.shippingMinor, o.currency),
+                          labelUrl: ps?.labelUrl ?? null,
+                          trackingNumber: ps?.trackingNumber ?? null,
+                          trackingUrl: ps?.trackingUrl ?? null,
+                          labelCost: ps?.labelCostMinor != null && ps.labelCurrency ? fm(ps.labelCostMinor, ps.labelCurrency) : null,
+                          state: ps?.labelUrl ? "ready" : ps ? "pending" : "none",
+                          sandbox: sandboxLabels,
+                        }}
+                      />
+                    );
+                  })()}
+                  {(() => {
                     const s = shipments.get(o.id);
                     if (!s) return null;
                     if (isQuoteFlow(s) && s.status === "paid") {
@@ -178,6 +208,8 @@ export default async function ManageOrders({ searchParams }: { searchParams: Pro
                       status={o.status}
                       payment={o.paymentMethod}
                       tracking={(() => {
+                        const ps = (platformShipments as Record<string, Awaited<ReturnType<typeof listOrderShipments>>[string]>)[o.id];
+                        if (ps?.trackingNumber) return `${ps.courierName ?? "Tracking"} ${ps.trackingNumber}`;
                         const s = shipments.get(o.id);
                         return s && (LABEL_STATES as string[]).includes(s.status) && s.trackingNumber ? `${s.courierName ?? "Tracking"} ${s.trackingNumber}` : null;
                       })()}

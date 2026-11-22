@@ -1,4 +1,5 @@
 // CONTRACT: service commissions (server only). Payment is a STUB: payment_status is always stub, no money moves. Types in lib/catalogue-types.ts.
+import { departuresSql } from "@/lib/departures";
 import { db } from "@elkdonis/db";
 import { siteConfig } from "@/config/site";
 import type { CommissionProposal, CommissionStatus, CommissionUnit, ServiceCommission } from "@/lib/catalogue-types";
@@ -18,7 +19,7 @@ const iso = (v: unknown): string | null => (v == null ? null : new Date(v as str
 function mapCommission(r: Row): ServiceCommission {
   return {
     id: r.id as string,
-    serviceThreadId: r.service_thread_id as string,
+    serviceThreadId: (r.service_thread_id as string | null) ?? null,
     serviceTitle: (r.service_title as string) ?? "",
     sellerUserId: r.seller_user_id as string,
     sellerName: (r.seller_name as string | null) ?? null,
@@ -44,7 +45,7 @@ function mapCommission(r: Row): ServiceCommission {
 const SELECT = db`
   SELECT c.*, s.title AS service_title, u.display_name AS seller_name
   FROM service_commissions c
-  JOIN threads s ON s.id = c.service_thread_id
+  LEFT JOIN threads s ON s.id = c.service_thread_id
   LEFT JOIN users u ON u.id = c.seller_user_id
 `;
 
@@ -71,7 +72,7 @@ export async function proposeCommission(input: CommissionProposal, requestedBy: 
     if (!t) throw new Error(`That ${col} is not on this site.`);
   }
   if (input.departureId) {
-    const [d] = (await db`SELECT id FROM tour_departures WHERE id = ${input.departureId} AND org_id = ${buyerOrgId}`) as unknown as Row[];
+    const [d] = (await db`SELECT id FROM ${departuresSql()} d WHERE id = ${input.departureId} AND org_id = ${buyerOrgId}`) as unknown as Row[];
     if (!d) throw new Error("That departure is not on this site.");
   }
   const price = svc.price == null ? null : Math.round(Number(svc.price) * 100);

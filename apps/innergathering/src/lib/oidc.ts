@@ -20,13 +20,13 @@ import { db } from "@elkdonis/db";
  * Secrets are read on first use, not at import, so `next build` doesn't need them.
  */
 
-export interface OidcClient {
+interface OidcClient {
   id: string;
   secret: string;
   redirectUris: string[];
 }
 
-export interface ValidatedAuthCode {
+interface ValidatedAuthCode {
   userId: string;
   nonce?: string;
   codeChallenge?: string;
@@ -86,7 +86,7 @@ function hmac(secret: string, data: string): Buffer {
   return createHmac("sha256", secret).update(data).digest();
 }
 
-export function signHs256(payload: Record<string, unknown>, secret: string): string {
+function signHs256(payload: Record<string, unknown>, secret: string): string {
   const head = b64url(Buffer.from(JSON.stringify({ alg: "HS256" })));
   const body = b64url(Buffer.from(JSON.stringify(payload)));
   return `${head}.${body}.${b64url(hmac(secret, `${head}.${body}`))}`;

@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { cleanBoxDoc } from "@elkdonis/direct-edit/block";
+import { createSavePageAction } from "@elkdonis/house-editor/server";
 import { isValidSlug } from "@elkdonis/page-builder";
+import { savePage as savePageFor } from "@elkdonis/page-builder/server";
 import { listOrgFeeds } from "@elkdonis/services";
-import { stripResolved } from "@/blocks/resolved-keys";
+import { RESOLVED_KEYS, stripResolved } from "@/blocks/resolved-keys";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { deletePage, HOME_SLUG, savePage } from "./store";
@@ -30,28 +32,29 @@ export async function slugProblem(slug: string, opts: { allowTemplate?: boolean 
   return null;
 }
 
+const publishPage = createSavePageAction({
+  orgId: siteConfig.orgId,
+  // The role check is HERE, not in the editor component: the editor is a client component and cannot be what
+  // decides who may change a site.
+  gate: getApiEditor,
+  denied: "Only editors can publish pages.",
+  slugProblem: (slug) => slugProblem(slug, { allowTemplate: true }),
+  resolvedKeys: RESOLVED_KEYS,
+  store: savePageFor,
+  // A template draws every thread's page, so a saved one revalidates the whole layout.
+  revalidate: (slug) => (TEMPLATE_SLUGS.has(slug) ? revalidatePath("/", "layout") : revalidatePath(slug === HOME_SLUG ? "/" : `/${slug}`)),
+});
+
 /**
- * Publish a page.
- *
- * The role check is HERE, not in the editor component: the editor is a client
- * component and cannot be what decides who may change a site.
+ * Publish a page. `expectedUpdatedAt` is the page's version as the editor loaded it (then as each save returned it):
+ * when the row has changed since, nothing is written and the answer has `stale: true`. Absent: unguarded.
  */
 export async function savePageAction(
   slug: string,
-  data: unknown
-): Promise<{ ok: boolean; error?: string }> {
-  const editor = await getApiEditor();
-  if (!editor) return { ok: false, error: "Only editors can publish pages." };
-
-  const problem = await slugProblem(slug, { allowTemplate: true });
-  if (problem) return { ok: false, error: problem };
-
-  const result = await savePage(slug, cleanBoxDoc(stripResolved(data)));
-  if (result.ok) {
-    if (TEMPLATE_SLUGS.has(slug)) revalidatePath("/", "layout");
-    else revalidatePath(slug === HOME_SLUG ? "/" : `/${slug}`);
-  }
-  return result;
+  data: unknown,
+  expectedUpdatedAt?: string
+): Promise<{ ok: boolean; error?: string; stale?: boolean; updatedAt?: string }> {
+  return publishPage(slug, data, expectedUpdatedAt);
 }
 
 /** Save the home page as a tree. The check is here because a client component is not an authorisation boundary. */

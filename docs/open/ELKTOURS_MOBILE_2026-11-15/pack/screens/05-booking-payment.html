@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05-booking-payment</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 358-428. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.pay }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ payForm }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 0 140px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;gap:14px;padding:0 16px">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:#f1ece2;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">←</button>
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#b9b2a5">{{ pay.step }}</span>
+</div>
+<h1 style="margin:18px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:36px;line-height:1">{{ pay.heading }}</h1>
+<div style="display:flex;gap:14px;margin:20px 16px 0;padding:12px;border-radius:22px;background:#31353c;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.15);outline-offset:4px">
+<div style="flex:none;width:76px;height:96px;border-radius:38px 38px 10px 10px;background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 8px),linear-gradient(165deg,#474c56,#2e3238)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:4px">
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;line-height:1.2">{{ pay.title }}</span>
+<span style="font-size:13.5px;color:#e6e0d4">{{ pay.when }}</span>
+<span style="font-size:13px;color:#b9b2a5">{{ pay.people }} · {{ pay.guide }}</span>
+<span style="font-size:12.5px;color:#8f8a82">Meet at {{ pay.meet }}</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding:24px 16px 0">
+<label style="display:flex;flex-direction:column;gap:7px"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5">Your name</span><input defaultValue="Ana Ribeiro" style="height:50px;border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:0 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0"></input></label>
+<label style="display:flex;flex-direction:column;gap:7px"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5">Email</span><input defaultValue="ana.ribeiro@mail.com" style="height:50px;border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:0 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0"></input></label>
+<label style="display:flex;flex-direction:column;gap:7px"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5">Anything your guide should know?</span><textarea rows="2" placeholder="Optional" style="border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:12px 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0;resize:none"></textarea></label>
+</div>
+<sc-if value="{{ pay.isBook }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin:26px 20px 12px">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Payment</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div>
+</div>
+<div style="display:flex;gap:8px;padding:0 16px">
+<sc-for list="{{ pay.methods }}" as="m" hint-placeholder-count="2">
+<button onClick="{{ m.pick }}" style="flex:1;height:46px;border-radius:23px;border:1px solid {{ m.border }};background:{{ m.bg }};color:{{ m.fg }};font-family:Basteleur,Georgia,serif;font-size:15px;cursor:pointer">{{ m.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ pay.payCard }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0">
+<input placeholder="Card number" style="grid-column:1 / -1;height:50px;border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:0 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0"></input>
+<input placeholder="MM / YY" style="height:50px;border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:0 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0"></input>
+<input placeholder="CVC" style="height:50px;border-radius:14px;border:1px solid #5b626d;background:#2e3238;color:#f1ece2;padding:0 16px;font-family:Basteleur,Georgia,serif;font-size:15px;outline:0"></input>
+</div>
+</sc-if>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 20px 0;padding-top:14px;border-top:1px solid rgba(241,236,226,.12)"><span style="font-size:14px;color:#b9b2a5">{{ pay.line }}</span><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:20px;color:#dcc08a">{{ pay.total }}</span></div>
+</sc-if>
+<p style="margin:16px 20px 0;font-size:12.5px;line-height:1.55;color:#8f8a82;text-wrap:pretty">{{ pay.policy }} {{ pay.rule }}</p>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 30px;background:linear-gradient(180deg,rgba(40,43,49,0) 0%,#282b31 32%)">
+<button onClick="{{ pay.submit }}" style="width:100%;display:flex;align-items:center;justify-content:center;height:56px;padding:0 24px;border:0;background:#c9a25c;color:#1b1e23;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;cursor:pointer;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)">{{ pay.cta }}</button>
+</div>
+</sc-if>
+<sc-if value="{{ hasDone }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:80px 20px 40px;display:flex;flex-direction:column;animation:elkIn .4s ease both">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#c9a25c;text-align:center">{{ done.kicker }}</span>
+<h1 style="margin:12px 0 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:44px;line-height:1;text-align:center">{{ done.heading }}</h1>
+<p style="margin:12px 10px 0;font-size:14.5px;line-height:1.55;color:#b9b2a5;text-align:center;text-wrap:pretty">{{ done.text }}</p>
+<div style="position:relative;margin-top:26px;border-radius:24px;background:#c9a25c;color:#1b1e23;outline:1px solid rgba(201,162,92,.35);outline-offset:5px">
+<div style="padding:22px 22px 18px;display:flex;flex-direction:column;gap:6px">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase">Elkdonis Experiences · Paris</span>
+<span style="font-family:Brothers,Georgia,serif;font-size:28px;line-height:1.05">{{ done.title }}</span>
+</div>
+<div style="position:relative;height:0;border-top:1.5px dashed rgba(27,30,35,.4);margin:0 18px"><span style="position:absolute;left:-30px;top:-12px;width:24px;height:24px;border-radius:12px;background:#282b31"></span><span style="position:absolute;right:-30px;top:-12px;width:24px;height:24px;border-radius:12px;background:#282b31"></span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;padding:18px 22px 22px">
+<div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.7">When</span><span style="font-weight:700;font-size:14.5px">{{ done.when }}</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.7">Guests</span><span style="font-weight:700;font-size:14.5px">{{ done.people }}</span></div>
+<div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.7">Meet at</span><span style="font-weight:700;font-size:14.5px">{{ done.meet }}</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.7">{{ done.refLabel }}</span><span style="font-weight:700;font-size:14.5px">{{ done.ref }}</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:28px">
+<button onClick="{{ restart }}" style="height:54px;border-radius:27px;border:1px solid rgba(241,236,226,.25);background:transparent;color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15.5px;cursor:pointer">Back to Discover</button>
+</div>
+</div>
+</sc-if>
+</sc-if>
+</div>
+</body>
+</html>

@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listDepartureBookings } from "@elkdonis/commerce/server";
+import { listDepartureBookings } from "@/lib/departures";
 import { TourForm } from "@/components/manage/tour-form";
 import { StopsEditor } from "@/components/manage/stops-editor";
 import { TourSubnav } from "@/components/manage/tour-subnav";
@@ -7,12 +8,13 @@ import { DeparturesPanel } from "@/components/manage/departures-panel";
 import { getTourById, listGuides, loadTourFull } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
+import { getTourBookingDefaults } from "@/lib/tour-slots";
 
 export default async function EditTourPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   // Gate in the page as well as the layout: Next renders the two in parallel, and
   // the layout's redirect did not stop this page's data from streaming to a
   // signed-out visitor (verified on the live sites, 2026-11-06).
-  await requireOrgEditor();
+  const viewer = await requireOrgEditor();
   const { id } = await params;
   const { tab = "details" } = await searchParams;
   const base = await getTourById(id);
@@ -34,13 +36,19 @@ export default async function EditTourPage({ params, searchParams }: { params: P
         counts={{ stops: tour.stops.length, departures: upcoming }}
       />
 
+      {/* Phone only (G7b): the Collaborate and Tour page media screens. */}
+      <nav className="mt-4 flex flex-wrap gap-2 md:hidden" aria-label="Tour screens for the phone">
+        <Link href={`/manage/tours/${tour.id}/collaborate`} className="border border-border px-4 py-2 text-sm">Collaborate</Link>
+        <Link href={`/manage/tours/${tour.id}/assets`} className="border border-border px-4 py-2 text-sm">Tour page media</Link>
+      </nav>
+
       <div className="mt-6">
         {tab === "stops" ? (
           <StopsEditor tourId={tour.id} initial={tour.stops} googleMapsKey={siteConfig.googleMapsKey} />
         ) : tab === "departures" ? (
-          <DeparturesPanel tourId={tour.id} departures={tour.departures} guides={guides} manifests={manifests} />
+          <DeparturesPanel tourId={tour.id} departures={tour.departures} guides={guides} manifests={manifests} canRemove={viewer.role === "owner"} />
         ) : (
-          <TourForm tour={tour} />
+          <TourForm tour={tour} bookingDefaults={await getTourBookingDefaults(tour.id)} />
         )}
       </div>
     </>

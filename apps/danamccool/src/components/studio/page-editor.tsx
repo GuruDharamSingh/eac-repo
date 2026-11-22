@@ -54,7 +54,7 @@ const icon = (d: string) => (
   </svg>
 );
 
-export function PageEditor({ slug, initial }: { slug: string; initial: Data }) {
+export function PageEditor({ slug, initial, version }: { slug: string; initial: Data; version?: string }) {
   const title = (initial.root as { props?: { title?: string } } | undefined)?.props?.title;
   const href = slug === "home" ? "/" : `/${slug}`;
   useCanvasTheme();
@@ -100,6 +100,7 @@ export function PageEditor({ slug, initial }: { slug: string; initial: Data }) {
       initial={initial}
       config={puckConfig}
       orgId={siteConfig.orgId}
+      version={version}
       onPublish={savePageAction}
       plugins={plugins}
       title={slug === "home" ? "/ (home)" : `/${slug}`}

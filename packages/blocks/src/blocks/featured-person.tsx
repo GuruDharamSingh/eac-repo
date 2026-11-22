@@ -111,6 +111,7 @@ export const featuredPerson = defineBlock(
     category: "content",
     description: "One person from this site or from one of its tours or series, drawn from their profile.",
     memberSafe: true,
+    reads: [{ from: "site", what: "org" }, { from: "record", via: "person", kinds: ["person"] }],
     dataDriven: true,
     styling: "tokens",
     props,

@@ -34,6 +34,7 @@ import {
   setPayoutIdentity,
   markStripeAccountOnboarded,
   refundOrder,
+  isOrderOversold,
   UNPAID_ORDER_STATUSES,
 } from "@elkdonis/commerce/server";
 import { handleShippingLabelSessionEvent, isShippingLabelSession } from "./shipping-label";
@@ -222,6 +223,34 @@ export async function startStripeCheckout(input: {
 }
 
 /**
+ * A card payment arrived for a piece another buyer had already paid for
+ * (nothing is reserved while checkout is open, 2026-11-17; confirmOrderPaid
+ * refuses the second payment with OrderOversoldError). Refund it in full,
+ * then cancel the order. Never throws: the caller is a webhook or a page
+ * visit, and a failure here is logged for a human instead.
+ */
+async function refundOversoldPayment(orderId: string, paymentIntentId: string | null | undefined, detail: string): Promise<void> {
+  const why = `Sold to another buyer first (${detail}).`;
+  try {
+    const order = await getOrderById(orderId);
+    if (!order || !(UNPAID_ORDER_STATUSES as readonly string[]).includes(order.status)) return;
+    if (!paymentIntentId || !paymentIntentId.startsWith("pi_")) {
+      console.error(`[checkout] OVERSOLD ${orderId}: paid but no payment intent to refund (${paymentIntentId}). Refund by hand.`);
+      return;
+    }
+    const r = await requireStripe().refund!({
+      order: { id: order.id, currency: order.currency, paymentReference: paymentIntentId },
+      amountMinor: order.totalMinor,
+      notes: why,
+    });
+    await cancelOrder({ orderId, reason: `${why} Paid by card and refunded in full (${r.refundReference ?? "no reference"}).` });
+    console.warn(`[checkout] OVERSOLD ${orderId}: refunded ${r.refundReference ?? ""} and cancelled.`);
+  } catch (err) {
+    console.error(`[checkout] OVERSOLD ${orderId}: refund or cancel failed, check Stripe and the order by hand:`, err);
+  }
+}
+
+/**
  * Reconcile an order against its last Checkout session. Confirms the order if
  * Stripe says it is paid and we have not recorded that yet. Idempotent; safe to
  * call on every visit to the order page.
@@ -245,13 +274,19 @@ export async function syncStripeOrder(orderId: string): Promise<Order | null> {
     // Before confirming, so the seller's sale notice carries the email.
     const filled = await applyCollected(orderId, s.collected ?? null);
     if (unpaid && s.paymentStatus === "paid") {
-      return await confirmOrderPaid({
-        orderId,
-        confirmedByUserId: null,
-        method: "stripe",
-        paymentReference: s.paymentIntentId ?? sessionId,
-        notes: `Stripe session ${sessionId} reconciled on return`,
-      });
+      try {
+        return await confirmOrderPaid({
+          orderId,
+          confirmedByUserId: null,
+          method: "stripe",
+          paymentReference: s.paymentIntentId ?? sessionId,
+          notes: `Stripe session ${sessionId} reconciled on return`,
+        });
+      } catch (err) {
+        if (!isOrderOversold(err)) throw err;
+        await refundOversoldPayment(orderId, s.paymentIntentId, `session ${sessionId}`);
+        return (await getOrderById(orderId)) ?? order;
+      }
     }
     if (filled) return (await getOrderById(orderId)) ?? order;
   } catch (err) {
@@ -338,10 +373,15 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
               notes: `Stripe ${event.type} (${event.id})`,
             });
           } catch (err) {
-            // Already confirmed by the return-visit sync, or cancelled by the
-            // expiry sweep between payment and this event. The former is
-            // fine; the latter needs a human, so make it loud.
-            console.warn(`[checkout] webhook confirm for ${orderId} skipped:`, err);
+            if (isOrderOversold(err)) {
+              // Another buyer's payment took the piece first: refund this one.
+              await refundOversoldPayment(orderId, pi, `event ${event.id}`);
+            } else {
+              // Already confirmed by the return-visit sync, or cancelled by the
+              // expiry sweep between payment and this event. The former is
+              // fine; the latter needs a human, so make it loud.
+              console.warn(`[checkout] webhook confirm for ${orderId} skipped:`, err);
+            }
           }
         }
         break;

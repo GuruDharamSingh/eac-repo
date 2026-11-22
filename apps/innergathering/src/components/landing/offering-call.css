@@ -26,10 +26,10 @@
   /* Clear the sticky site header when the page scrolls the call into view. */
   scroll-margin-top: var(--ig-call-top);
 }
-.ig-offer-card .ig-offer-call { border-left: 1px solid rgba(183, 154, 85, 0.3); }
-.ig-offer-call-bar { padding: 0.45rem 0.75rem; background: #f6efe2; }
+.ig-offer-card .ig-offer-call { border-left: 1px solid var(--ig-a-b79a55-3); }
+.ig-offer-call-bar { padding: 0.45rem 0.75rem; background: var(--ig-c-x-f6efe2); }
 .ig-offer-call--page {
-  margin-top: 1.5rem; border: 1px solid rgba(183, 154, 85, 0.5); border-radius: 6px; overflow: hidden;
+  margin-top: 1.5rem; border: 1px solid var(--ig-a-b79a55-5); border-radius: 6px; overflow: hidden;
   height: calc(100dvh - var(--ig-call-top)); min-height: 480px;
 }
 .ig-offer-call-bar {
@@ -40,7 +40,7 @@
   gap: 0.5rem;
   font-family: var(--font-sans);
   font-size: 0.85rem;
-  color: #01124e;
+  color: var(--ig-c-navy-deep);
 }
 .ig-offer-call-tools { display: flex; gap: 0.4rem; }
 .ig-offer-call-tools button,
@@ -48,10 +48,10 @@
   font: inherit;
   font-size: 0.78rem;
   padding: 0.3rem 0.6rem;
-  border: 1px solid #01124e;
+  border: 1px solid var(--ig-c-navy-deep);
   border-radius: 3px;
   background: transparent;
-  color: #01124e;
+  color: var(--ig-c-navy-deep);
   cursor: pointer;
   text-decoration: none;
 }
@@ -62,14 +62,14 @@
   min-height: 0;
   height: auto;
   border: 0;
-  background: #fff;
+  background: var(--ig-c-white-short);
 }
 @media (max-width: 1080px) {
   /* Stacked: the body above, then a call the height of the window. */
   .ig-offer-card:has(.ig-offer-call) { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .ig-offer-card:has(.ig-offer-call) .ig-offer-body { overflow-y: visible; }
   .ig-offer-card .ig-offer-call {
-    border-left: 0; border-top: 1px solid rgba(183, 154, 85, 0.3);
+    border-left: 0; border-top: 1px solid var(--ig-a-b79a55-3);
     height: calc(100dvh - var(--ig-call-top)); min-height: 480px;
   }
 }

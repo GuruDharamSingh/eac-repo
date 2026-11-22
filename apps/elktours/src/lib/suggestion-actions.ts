@@ -15,6 +15,8 @@ import { uniquePlaceSlug } from "@/lib/places";
 import { reverseGeocode } from "@/lib/suggest";
 import { walkingLegs } from "@/lib/walking-route";
 import { siteConfig } from "@/config/site";
+import { DAILY_LIMIT } from "@/lib/suggestion-limits";
+import type { LeadSuggestion } from "@/lib/suggestion-leads";
 import type { RouteItem, RoutePreview, RouteSuggestionInput, Result, SpotSuggestionInput, SuggestionStatus, VisitorSuggestion } from "@/lib/catalogue-types";
 
 /**
@@ -27,7 +29,6 @@ import type { RouteItem, RoutePreview, RouteSuggestionInput, Result, SpotSuggest
  */
 
 const ORG = siteConfig.orgId;
-const DAILY_LIMIT = 10;
 type Row = Record<string, unknown>;
 const UUID = /^[0-9a-f-]{36}$/i;
 const canSuggest = (v: Viewer | null) => !!v && v.isAffiliate;
@@ -260,7 +261,7 @@ export async function withdrawSuggestionAction(id: string): Promise<Result> {
 export async function listSuggestionsAction(filter: { status?: SuggestionStatus; kind?: "spot" | "route" } = {}): Promise<VisitorSuggestion[]> {
   await requireOrgEditor();
   const rows = (await db`
-    ${SELECT} WHERE s.org_id = ${ORG}
+    ${SELECT} WHERE s.org_id = ${ORG} AND s.kind IN ('spot', 'route')
       ${filter.status ? db`AND s.status = ${filter.status}` : db``}
       ${filter.kind ? db`AND s.kind = ${filter.kind}` : db``}
     ORDER BY (s.status = 'pending') DESC, s.created_at DESC LIMIT 300
@@ -278,9 +279,63 @@ async function createPlace(tx: typeof db, p: { title: string; lat: number; lng: 
   return r!.id as string;
 }
 
-/** Spot -> catalogue place (credited: places.suggested_by). Route -> draft tour from those places (metadata.suggestedBy). */
+/**
+ * Artist and place leads ("Suggest an artist or place", kinds 'artist' and 'place_lead'). Editors only.
+ * Empty until the visitor_suggestions columns exist (migrations-draft); spots and routes are not listed here.
+ */
+export async function listLeadSuggestionsAction(filter: { status?: SuggestionStatus; kind?: "artist" | "place_lead" } = {}): Promise<LeadSuggestion[]> {
+  await requireOrgEditor();
+  if (!(await leadColumnsExist())) return [];
+  const rows = (await db`
+    SELECT s.id, s.kind, s.status, s.title, s.note, s.url, s.contact_email, s.user_id, s.reject_reason, s.reviewed_at, s.created_at,
+           u.display_name AS user_name, u.slug AS user_slug
+    FROM visitor_suggestions s JOIN users u ON u.id = s.user_id
+    WHERE s.org_id = ${ORG} AND s.kind IN ('artist', 'place_lead')
+      ${filter.status ? db`AND s.status = ${filter.status}` : db``}
+      ${filter.kind ? db`AND s.kind = ${filter.kind}` : db``}
+    ORDER BY (s.status = 'pending') DESC, s.created_at DESC LIMIT 300
+  `) as unknown as Row[];
+  return rows.map((r) => ({
+    id: r.id as string,
+    kind: r.kind as LeadSuggestion["kind"],
+    status: r.status as SuggestionStatus,
+    name: r.title as string,
+    why: (r.note as string | null) ?? null,
+    url: (r.url as string | null) ?? null,
+    email: (r.contact_email as string | null) ?? null,
+    suggester: { userId: r.user_id as string, name: (r.user_name as string | null) ?? null, slug: (r.user_slug as string | null) ?? null },
+    rejectReason: (r.reject_reason as string | null) ?? null,
+    reviewedAt: iso(r.reviewed_at),
+    createdAt: iso(r.created_at)!,
+  }));
+}
+
+async function leadColumnsExist(): Promise<boolean> {
+  const [c] = (await db`
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'visitor_suggestions' AND column_name = 'url')
+       AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'visitor_suggestions' AND column_name = 'contact_email') AS ok
+  `) as unknown as Row[];
+  return Boolean(c?.ok);
+}
+
+/**
+ * Spot -> catalogue place (credited: places.suggested_by). Route -> draft tour from those places (metadata.suggestedBy).
+ * Artist and place leads are only marked handled (accepted): there is no draft-place helper without a map point.
+ */
 export async function acceptSuggestionAction(id: string, opts: { title?: string } = {}): Promise<Result<{ placeId?: string; threadId?: string }>> {
   const editor = await requireOrgEditor();
+  if (UUID.test(id)) {
+    const [k] = (await db`SELECT kind, status FROM visitor_suggestions WHERE id = ${id} AND org_id = ${ORG}`) as unknown as Row[];
+    if (k && (k.kind === "artist" || k.kind === "place_lead")) {
+      if (k.status !== "pending") return { ok: false, error: `This suggestion is ${k.status as string}.` };
+      await db`
+        UPDATE visitor_suggestions SET status = 'accepted', reviewed_by = ${editor.userId}, reviewed_at = NOW(), updated_at = NOW()
+        WHERE id = ${id} AND org_id = ${ORG} AND status = 'pending'
+      `;
+      revalidatePath("/manage/suggestions");
+      return { ok: true };
+    }
+  }
   const s = UUID.test(id) ? await getOne(id) : null;
   if (!s) return { ok: false, error: "Not found" };
   if (s.status !== "pending") return { ok: false, error: `This suggestion is ${s.status}.` };

@@ -3,15 +3,12 @@
 import { SHARED_BLOCKS } from "@elkdonis/blocks";
 import { createElement } from "react";
 import type { PropDef } from "@elkdonis/blocks";
-import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
-import { ArtworkPickerField } from "@/components/studio/artwork-picker";
-import { GalleryPickerField } from "@/components/studio/gallery-picker";
+import { buildEditorConfig, siteBindsFields, type BlockResolvers } from "@elkdonis/page-builder";
+import { danaPickerCopy, danaSources } from "@/lib/puck/site-sources";
 import { GalleryPicturesField } from "@/components/studio/gallery-pictures-field";
 import { TextStyleField } from "@/components/studio/text-style-field";
-import { PageLinkField, TileKeyField } from "@/components/studio/tile-fields";
 import { TileArrangeField } from "@/components/studio/tile-arrange-field";
 import { TextStyleWrap } from "@/lib/puck/text-style";
-import { RecordPickerField } from "@/components/studio/record-picker";
 import { SITE_BLOCKS } from "@/blocks";
 import { PAGE_SETTINGS, PageSettingsWrap } from "@/lib/puck/page-settings";
 import { boundIds } from "@/blocks/binding-ids";
@@ -118,6 +115,8 @@ const clientResolvers: BlockResolvers = {
   }),
 };
 
+const sharedBinds = siteBindsFields(danaSources, danaPickerCopy);
+
 export const puckConfig = buildEditorConfig({
   resolvers: clientResolvers,
   // The shared catalogue plus this site's own. The registry has offered this
@@ -140,39 +139,18 @@ export const puckConfig = buildEditorConfig({
     // A string that BINDS to a record gets a picker for that record; every
     // other string keeps Puck's own text box (null = leave it alone).
     string: (prop: PropDef) =>
-      prop.binds === "artwork"
-        ? function ArtworkProp(props: Record<string, unknown>) {
-            return createElement(ArtworkPickerField, props as never);
+      // artwork, gallery, opens-gallery, record, page-link, tile-key: the
+      // shared pickers over her sources (lib/puck/site-sources.ts).
+      sharedBinds(prop) ??
+      (prop.binds === "gallery-pictures"
+        ? function GalleryPicturesProp(props: Record<string, unknown>) {
+            return createElement(GalleryPicturesField, props as never);
           }
-        : prop.binds === "gallery"
-          ? function GalleryProp(props: Record<string, unknown>) {
-              return createElement(GalleryPickerField, props as never);
+        : prop.binds === "tile-layout"
+          ? function TileLayoutProp(props: Record<string, unknown>) {
+              return createElement(TileArrangeField, props as never);
             }
-          : prop.binds === "opens-gallery"
-            ? function OpensGalleryProp(props: Record<string, unknown>) {
-                return createElement(GalleryPickerField, { ...props, emptyLabel: "None — an ordinary picture" } as never);
-              }
-          : prop.binds === "gallery-pictures"
-            ? function GalleryPicturesProp(props: Record<string, unknown>) {
-                return createElement(GalleryPicturesField, props as never);
-              }
-          : prop.binds === "record"
-            ? function RecordProp(props: Record<string, unknown>) {
-                return createElement(RecordPickerField, props as never);
-              }
-          : prop.binds === "page-link"
-            ? function PageLinkProp(props: Record<string, unknown>) {
-                return createElement(PageLinkField, props as never);
-              }
-          : prop.binds === "tile-key"
-            ? function TileKeyProp(props: Record<string, unknown>) {
-                return createElement(TileKeyField, props as never);
-              }
-          : prop.binds === "tile-layout"
-            ? function TileLayoutProp(props: Record<string, unknown>) {
-                return createElement(TileArrangeField, props as never);
-              }
-            : null,
+          : null),
   },
   media: {
     // This site's own upload route: images only, stored under the uploader's

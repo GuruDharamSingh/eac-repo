@@ -12,9 +12,11 @@ import type {
   Paged,
 } from "@elkdonis/services";
 import { kindMeta } from "@elkdonis/cms-ui/surface";
-import type { ForumHrefs, ForumLayout, ForumTextSize } from "./connectors";
+import type { ForumAttachment } from "@elkdonis/services";
+import type { ForumComposeOptions, ForumHrefs, ForumLayout, ForumTextSize } from "./connectors";
 import { clock, dayHeading, dayKey, fullStamp, plural, timeAgo } from "./format";
 import { mediaUrl } from "./media";
+import { AttachPicker } from "./attach";
 
 export { plural };
 
@@ -55,6 +57,8 @@ export function PersonName({ person, hrefs }: { person: ForumPerson; hrefs: Foru
 }
 
 export function RoleChip({ role }: { role: string | null }) {
+  // "artist" comes only from a host's roleBadges hook (never from an org role). Colour is the host's: class + data-role.
+  if (role === "artist") return <span className="gf-role gf-role--artist" data-role="artist">Artist</span>;
   if (role !== "owner" && role !== "guide") return null;
   return <span className={`gf-role gf-role--${role}`}>{role === "owner" ? "Owner" : "Guide"}</span>;
 }
@@ -571,5 +575,89 @@ export function NewTopicLink({ href, label }: { href: string; label?: string }) 
     <a className="eac-btn eac-btn--primary gf-newtopic-btn" href={href}>
       {label ?? "+ New Topic"}
     </a>
+  );
+}
+
+// ── start-a-topic extras (opt-in: ForumComposeOptions) ─────────────────────
+
+const KIND_CHIPS = [
+  { value: "post", label: "Discussion", glyph: "◉" },
+  { value: "idea", label: "Idea", glyph: "✦" },
+  { value: "event", label: "Event", glyph: "◆" },
+] as const;
+const AUDIENCE_LABEL = { everyone: "Public", followers: "Members", author: "Private" } as const;
+const AUDIENCE_HINT = {
+  everyone: "Anyone can read it, signed in or not.",
+  followers: "Only signed-in members can read it.",
+  author: "Only you can read it.",
+} as const;
+
+/** Kind chips, audience chips and a link field, for the forms that opted in. Renders nothing otherwise. */
+/** Photos, videos and a link card under a post. Renders nothing for an empty list (every host that did not opt in). */
+export function AttachmentList({ items }: { items: ForumAttachment[] | undefined }) {
+  if (!items || items.length === 0) return null;
+  const media = items.filter((a) => a.kind !== "link");
+  const links = items.filter((a) => a.kind === "link");
+  return (
+    <div className="gf-attachments">
+      {links.map((a) => (
+        <a key={a.id} className="gf-linkcard" href={a.url} target="_blank" rel="noopener noreferrer">
+          {a.card.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={a.card.imageUrl} alt="" loading="lazy" />}
+          <span className="gf-linkcard-body">
+            <strong>{a.card.title ?? a.url}</strong>
+            {a.card.description && <small>{a.card.description}</small>}
+            <small>{a.card.siteName ?? ""}</small>
+          </span>
+        </a>
+      ))}
+      {media.length > 0 && (
+        <div className="gf-media-grid">
+          {media.map((a) =>
+            a.kind === "video" ? (
+              <video key={a.id} src={mediaUrl(a.url) ?? a.url} controls preload="metadata" playsInline width={a.width ?? undefined} height={a.height ?? undefined} />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img key={a.id} src={mediaUrl(a.url) ?? a.url} alt="" loading="lazy" width={a.width ?? undefined} height={a.height ?? undefined} />
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ComposeExtras({ options }: { options: ForumComposeOptions | undefined }) {
+  if (!options || (!options.kinds && !options.audiences?.length && !options.link && !options.attachments)) return null;
+  return (
+    <>
+      {options.kinds && (
+        <fieldset className="gf-field gf-compose-kinds">
+          <legend className="gf-field-label">Kind</legend>
+          {KIND_CHIPS.map((k, i) => (
+            <label key={k.value} className="gf-chip gf-chip--pick">
+              <input type="radio" name="kind" value={k.value} defaultChecked={i === 0} /> {k.glyph} {k.label}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {options.link && (
+        <label className="gf-field">
+          <span className="gf-field-label">Link (optional)</span>
+          <input name="link" className="gf-input" inputMode="url" maxLength={2000} placeholder="https://" />
+        </label>
+      )}
+      {options.attachments && <AttachPicker variant="compose" uploadUrl={options.uploadUrl} />}
+      {options.audiences && options.audiences.length > 0 && (
+        <fieldset className="gf-field gf-compose-audience">
+          <legend className="gf-field-label">Who can read it</legend>
+          {options.audiences.map((a, i) => (
+            <label key={a} className="gf-chip gf-chip--pick" title={AUDIENCE_HINT[a]}>
+              <input type="radio" name="audience" value={a} defaultChecked={i === 0} /> {AUDIENCE_LABEL[a]}
+            </label>
+          ))}
+          <span className="gf-field-hint">{options.audiences.map((a) => `${AUDIENCE_LABEL[a]}: ${AUDIENCE_HINT[a]}`).join(" ")}</span>
+        </fieldset>
+      )}
+    </>
   );
 }

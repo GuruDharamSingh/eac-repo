@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Data } from "@puckeditor/core";
 import { EMPTY_PAGE, isValidPagePath } from "@elkdonis/page-builder";
 import { requireOrgEditor } from "@/lib/auth";
-import { loadPage } from "@/lib/puck/store";
+import { loadPageWithVersion } from "@/lib/puck/store";
 import { PageEditor } from "@/components/studio/page-editor";
 
 /**
@@ -31,6 +31,12 @@ export default async function StudioPage({
 
   await requireOrgEditor(`/studio/${slug}`);
 
-  const page = await loadPage(slug);
-  return <PageEditor slug={slug} initial={(page?.data as Data) ?? (EMPTY_PAGE as Data)} />;
+  const page = await loadPageWithVersion(slug);
+  return (
+    <PageEditor
+      slug={slug}
+      initial={(page?.data as Data) ?? (EMPTY_PAGE as Data)}
+      version={page?.updatedAt}
+    />
+  );
 }

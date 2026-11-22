@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40-board-nav</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 1325-1331. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-board.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ showGNav }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:18px;right:18px;bottom:24px;height:66px;padding:6px;border-radius:33px;background:rgba(27,30,35,.9);backdrop-filter:blur(14px);border:1px solid rgba(241,236,226,.12);display:flex;align-items:center;gap:6px;z-index:20">
+<button onClick="{{ gnav.board }}" style="flex:1;height:54px;border-radius:27px;border:0;background:{{ gnav.bBg }};color:{{ gnav.bFg }};font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">Board<sc-if value="{{ gnav.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:{{ gnav.badgeBg }};color:#1b1e23;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:12px;letter-spacing:0;line-height:20px">{{ gnav.badge }}</span></sc-if></button>
+<button onClick="{{ gnav.add }}" style="flex:none;width:54px;height:54px;border:0;background:transparent;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:40px;height:40px;background:#c9a25c;transform:rotate(45deg);border-radius:6px;display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);color:#1b1e23;font-size:24px;line-height:1">+</span></span></button>
+<button onClick="{{ gnav.right }}" style="flex:1;height:54px;border-radius:27px;border:0;background:{{ gnav.rBg }};color:{{ gnav.rFg }};font-family:Venture,Georgia,serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer">{{ gnav.rightLabel }}</button>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

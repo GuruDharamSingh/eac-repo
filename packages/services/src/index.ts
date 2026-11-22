@@ -37,6 +37,9 @@ export {
   reviewTopic,
   listTopicChoices,
   moderateThread,
+  setTopicAudience,
+  listForumAttachments,
+  TOPIC_KINDS,
   listNotifications,
   countUnreadNotifications,
   markNotificationsRead,
@@ -69,6 +72,9 @@ export type {
   WriteResult as ForumWriteResult,
   PostReplyInput,
   CreateTopicInput,
+  TopicKind,
+  ForumAttachment,
+  ForumAttachmentInput,
   CreateCategoryInput,
   VoteTarget,
   Voters as ForumVoters,
@@ -1411,3 +1417,10 @@ export type {
   RsvpThread,
   RsvpMail,
 } from "./rsvp-handler";
+export { mediaUploadRoute } from "./media-upload-route";
+export type { MediaUploadRouteOptions, MediaUploadMessages } from "./media-upload-route";
+export { loadSiteNav, saveSiteNav, DEFAULT_NAV_KEY } from "./nav";
+export { cleanNav, groupNav, NAV_MAX_ITEMS } from "./nav-core";
+export type { NavItem, NavGroup } from "./nav-core";
+export { listSitePages } from "./site-pages";
+export type { SitePage } from "./site-pages";

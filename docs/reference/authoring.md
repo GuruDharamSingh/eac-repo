@@ -60,9 +60,11 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
 ### Puck: `@elkdonis/page-builder` + `@elkdonis/blocks`
 
 - Generic "Style" on every block (2026-10-03, code written and type-checked in all six editing hosts; rebuilt into sunjay, danamccool, innergathering, ifac and art-auction on 2026-10-04; artdirect runs from source): `packages/page-builder/src/style/` (`schema.ts` pure model and sanitiser, `wrap.tsx` published wrapper, `field.tsx` editor control). Stored in each block's props as `blkStyle`; colours are `--blk-*` tokens or hex; a block with nothing set renders with no wrapper and the hoisted `<style href="blk-style">` appears only with the first styled block. **Verified** (sunjay dev preview, 2026-10-04): wrapper markup, token colours, phone-width hide, hover attribute, the editor control (presets, sections, CSS box flagging rejected lines) and no wrapper on an unstyled page. **Unverified**: danamccool, innergathering, ifac, art-auction and artdirect were only type-checked; a person-page block inside `.eac-person-page` with a style set gains a wrapper `div` that child-combinator CSS in `person-page.css` would not match.
-- Package: `@puckeditor/core@0.23.0` everywhere (page-builder, art-auction,
-  danamccool, ifac, innergathering). `@measured/puck` is the deprecated name
-  (renamed in 0.21); do not add it.
+- Package: `@puckeditor/core@0.24.0` in every workspace that uses Puck (page-builder,
+  house-editor and 11 apps), installed 2026-11-20; ~~0.23.0~~. Built production apps keep
+  0.23.0 in their `.next` until rebuilt. Harness and `tsc` results were identical on both
+  (claude, 2026-11-20; log on `docs/open/MANJUSHRI_2026-11-20/BOARD.md`).
+  `@measured/puck` is the deprecated name (renamed in 0.21); do not add it.
 - `@elkdonis/page-builder` entries: `.` is client-safe (`buildPuckConfig`,
   `buildEditorConfig`, `PuckEditor`, `ImageField`, `SizeField`, `ColorField`,
   `CanvasDrag`, `validatePage`, `isValidSlug`, `isValidPagePath`,

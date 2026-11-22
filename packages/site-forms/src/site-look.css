@@ -1,0 +1,191 @@
+/*
+  The site look for @elkdonis/site-forms (2026-11-15): `SiteFormSite.look === "site"`, FormTheme attr `site`.
+
+  Every rule is scoped to [data-form-theme='site'], so no other look changes. ledger.css selects only
+  `ledger*` attrs ([data-form-theme^='ledger'] / 'ledger-quick'), so none of it applies here either.
+
+  The look is derived from the host's surface tokens (cms-ui surface.css: --sf-bg, --sf-bg-soft, --sf-fg,
+  --sf-muted, --sf-line, --sf-accent, --sf-on-accent, --sf-danger, --sf-radius-sm) and the page's own fonts
+  (forms.css already reads --sf-font-title through --eac-font-title; the body face is inherited), so it works on
+  light and dark sites. A site pins exact values through the --eac-form-* hooks read below:
+    --eac-form-field         the filled field (a sunken tone: darker than the panel on a dark site)
+    --eac-form-field-line    the field's 1px border
+    --eac-form-input-line    the field's bottom border and the checkbox/radio edge (3:1 on the panel)
+    --eac-form-warn, -warn-line, -warn-soft, -danger-soft, -danger-soft-ink, -shadow-pop, -shadow-panel,
+    --eac-form-color-scheme, --eac-form-row-panel-bg / -line / -shadow, --eac-form-row-press-bg
+  Para Theater's pins: apps/sunjay/src/app/globals.css ("Site forms").
+
+  color-mix() is used here only with var() operands (as surface.css does), which the minifier leaves alone;
+  forms.css avoids it for literal colours.
+*/
+
+[data-form-theme='site'].frm,
+[data-form-theme='site'] .frm {
+  /* the site's scheme: a dark site pins `dark` so native controls, scrollbars and pickers follow */
+  --frm-color-scheme: var(--eac-form-color-scheme, normal);
+
+  /* fields: a sunken, filled box with a stronger bottom edge */
+  --frm-field: var(--eac-form-field, color-mix(in srgb, var(--sf-bg, #ffffff) 90%, #000000));
+  --frm-field-line: var(--eac-form-field-line, color-mix(in srgb, var(--sf-fg, #16181d) 8%, var(--sf-line, #cfd4db)));
+  --frm-input-line: var(--eac-form-input-line, color-mix(in srgb, var(--sf-fg, #16181d) 40%, var(--sf-bg, #ffffff)));
+  --frm-control-line: var(--frm-input-line);
+  --frm-control-hover: var(--eac-form-control-hover, var(--sf-fg, #16181d));
+  --frm-label-weight: var(--eac-form-label-weight, 500);
+  --frm-heading-weight: var(--eac-form-heading-weight, 500);
+  --frm-title-size: var(--eac-form-title-size, 22px);
+  --frm-title-size-sm: var(--eac-form-title-size-sm, 22px);
+
+  /* the accent: lighter or darker on hover by mixing toward the site's text colour */
+  --frm-accent-hover: var(--eac-form-accent-hover, color-mix(in srgb, var(--frm-accent) 86%, var(--sf-fg, #16181d)));
+  --frm-accent-press: var(--eac-form-accent-press, color-mix(in srgb, var(--frm-accent) 72%, var(--sf-fg, #16181d)));
+  --frm-accent-soft: var(--eac-form-accent-soft, color-mix(in srgb, var(--frm-accent) 14%, var(--sf-bg, #ffffff)));
+  --frm-accent-soft-ink: var(--eac-form-accent-soft-ink, var(--frm-accent-ink));
+  --frm-accent-soft-line: var(--eac-form-accent-soft-line, color-mix(in srgb, var(--frm-accent) 45%, var(--sf-bg, #ffffff)));
+
+  /* problems: ink pulled toward the text colour so it reads on a dark or a light ground */
+  --frm-danger-ink: var(--eac-form-danger-ink, color-mix(in srgb, var(--sf-danger, #ae3a31) 55%, var(--sf-fg, #16181d)));
+  --frm-danger-soft: var(--eac-form-danger-soft, color-mix(in srgb, var(--sf-danger, #ae3a31) 16%, var(--sf-bg, #ffffff)));
+  --frm-danger-soft-ink: var(--eac-form-danger-soft-ink, color-mix(in srgb, var(--sf-danger, #ae3a31) 45%, var(--sf-fg, #16181d)));
+  --frm-warn: var(--eac-form-warn, color-mix(in srgb, #c2681c 60%, var(--sf-fg, #16181d)));
+  --frm-warn-line: var(--eac-form-warn-line, color-mix(in srgb, #c2681c 50%, var(--sf-bg, #ffffff)));
+  --frm-warn-soft: var(--eac-form-warn-soft, color-mix(in srgb, #c2681c 14%, var(--sf-bg, #ffffff)));
+
+  /* depth: soft by default; a dark site pins heavier shadows */
+  --frm-shadow-panel: var(--eac-form-shadow-panel, 0 3px 10px color-mix(in srgb, #000000 16%, transparent));
+  --frm-shadow-pop: var(--eac-form-shadow-pop, 0 12px 32px color-mix(in srgb, #000000 22%, transparent));
+
+  /* the focus tier's rail column (forms-core: .frm-cols) */
+  --frm-rail-bg: var(--eac-form-rail-bg, var(--sf-bg-soft, #f3f2f1));
+  --frm-cols-gap: var(--eac-form-cols-gap, 22px);
+
+  /* read by the rows' dropdown panel (forms.css rows block; these are the themed values) */
+  --frm-row-panel-bg: var(--eac-form-row-panel-bg, color-mix(in srgb, var(--sf-bg, #ffffff) 94%, var(--sf-fg, #16181d)));
+  --frm-row-panel-line: var(--eac-form-row-panel-line, var(--frm-input-line));
+  --frm-row-panel-shadow: var(--eac-form-row-panel-shadow, 0 8px 20px color-mix(in srgb, #000000 14%, transparent));
+  --frm-row-press-bg: var(--eac-form-row-press-bg, color-mix(in srgb, var(--sf-bg, #ffffff) 92%, var(--sf-fg, #16181d)));
+}
+
+/* ── fields ─────────────────────────────────────────────────────────────── */
+
+[data-form-theme='site'] .frm-input:not([data-state]),
+[data-form-theme='site'] .frm-textarea:not([aria-invalid='true']),
+[data-form-theme='site'] .frm-lite:not([data-state]) {
+  background: var(--frm-field);
+  border-color: var(--frm-field-line);
+  border-bottom-color: var(--frm-input-line);
+  border-radius: var(--frm-radius-control);
+}
+[data-form-theme='site'] .frm-input:not([data-state]):hover,
+[data-form-theme='site'] .frm-textarea:not([aria-invalid='true']):hover,
+[data-form-theme='site'] .frm-lite:not([data-state]):hover {
+  border-color: var(--frm-control-hover);
+}
+[data-form-theme='site'] .frm-input:not([data-state]):focus-within,
+[data-form-theme='site'] .frm-textarea:not([aria-invalid='true']):focus,
+[data-form-theme='site'] .frm-lite:not([data-state]):focus-within {
+  border-color: var(--frm-accent);
+}
+
+/* the title: a boxed line in the title face, on the panel */
+[data-form-theme='site'] .frm-title,
+[data-form-theme='site'] .frm-title[data-tier] {
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--frm-bg);
+  border: 1px solid var(--frm-field-line);
+  border-bottom-color: var(--frm-input-line);
+  border-radius: var(--frm-radius-control);
+  font-size: calc(var(--frm-title-size) * var(--frm-text-scale, 1));
+  line-height: 1.25;
+}
+[data-form-theme='site'] .frm .frm-title:focus-visible,
+[data-form-theme='site'] .frm-title:focus-visible {
+  border-color: var(--frm-accent);
+  box-shadow: 0 0 0 1px var(--frm-accent);
+}
+[data-form-theme='site'] .frm-title[aria-invalid='true'] {
+  border-color: var(--frm-danger);
+  box-shadow: 0 0 0 1px var(--frm-danger);
+}
+
+/* ── labels: the body face, sentence case, muted ────────────────────────── */
+
+[data-form-theme='site'] .frm-label {
+  font-family: var(--frm-font-body, inherit);
+  font-size: calc(14px * var(--frm-text-scale, 1));
+  color: var(--frm-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+[data-form-theme='site'] :is(.frm-eyebrow, .frm-pv-near-label, .frm-qcard-mon, .frm-pvc-kicker, .frm-grid-head, .frm-grid-cell-label) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+[data-form-theme='site'] .frm-eyebrow {
+  font-size: calc(13px * var(--frm-text-scale, 1));
+}
+/* Content first (boards ERows/EQuick): no "Essentials" eyebrow over the title; section
+   labels (Why) read like field labels (What), not in the full ink. */
+[data-form-theme='site'] .frm-stack > .frm-eyebrow[data-at='essentials'] {
+  display: none;
+}
+[data-form-theme='site'] .frm-sec-label {
+  font-family: var(--frm-font-body, inherit);
+  color: var(--frm-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── buttons: squared, the body face, accent fill with the ground as ink ── */
+
+[data-form-theme='site'] .frm-btn {
+  padding: 9px 16px;
+  font-family: var(--frm-font-body, inherit);
+  font-weight: 500;
+  border-radius: var(--frm-radius-control);
+}
+[data-form-theme='site'] .frm-btn--primary {
+  border-color: var(--frm-accent);
+}
+[data-form-theme='site'] .frm-btn--primary:hover {
+  border-color: var(--frm-accent-hover);
+}
+[data-form-theme='site'] .frm-btn--secondary {
+  border-color: var(--frm-input-line);
+}
+[data-form-theme='site'] .frm-btn--ghost {
+  padding-inline: 5px;
+}
+@media (hover: none), (pointer: coarse) {
+  [data-form-theme='site'] .frm-btn:not(.frm-btn--sm, .frm-btn--icon) {
+    min-height: 44px;
+  }
+}
+
+/* ── status ─────────────────────────────────────────────────────────────── */
+
+[data-form-theme='site'] .frm-input[data-state='warning'] {
+  background: var(--frm-warn-soft);
+}
+
+/* ── SiteFormPage under the site look: one panel around the title, the form and the foot ───────────
+   Scoped by the wrapper's data-look (the wrapper sits outside the forms root, so it carries no data-form-theme). */
+
+.frm-site-page[data-look='site'] {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 20px 22px 22px;
+  background: var(--sf-bg, #ffffff);
+  color: var(--sf-fg, #16181d);
+  border: 1px solid var(--sf-line, #cfd4db);
+  border-radius: var(--sf-radius, 0);
+}
+.frm-site-page[data-look='site'] [data-form-theme='site'].frm {
+  background: transparent;
+}
+
+/* The two-column focus layout needs the form's full width: forms.css caps .frm-stack at 600px (a one-column
+   measure), which would keep the container under the 720px collapse point. The frame sets the width. */
+[data-form-theme='site'] .frm-stack {
+  max-width: none;
+}

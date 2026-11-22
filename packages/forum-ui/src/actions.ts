@@ -1,3 +1,4 @@
+import type { ForumAttachmentInput } from "@elkdonis/services";
 import type { ForumConnectors } from "./connectors";
 
 // ============================================================================
@@ -44,6 +45,23 @@ function pair(fd: FormData, key: string): [string, string] {
   const v = str(fd, key);
   const i = v.indexOf("|");
   return i < 0 ? [v, ""] : [v.slice(0, i), v.slice(i + 1)];
+}
+
+/**
+ * Attachments posted as repeated `attachment` fields, each a JSON object {kind,url,meta?} (a host's uploader fills
+ * them after /api/upload/forum). Read only when the host opted in (composeOptions.attachments); otherwise ignored.
+ */
+function readAttachments(fd: FormData, on: boolean | undefined): ForumAttachmentInput[] {
+  if (!on) return [];
+  const out: ForumAttachmentInput[] = [];
+  for (const v of fd.getAll("attachment")) {
+    if (typeof v !== "string") continue;
+    try {
+      const o = JSON.parse(v) as ForumAttachmentInput;
+      if (o && (o.kind === "image" || o.kind === "video" || o.kind === "link") && typeof o.url === "string") out.push({ kind: o.kind, url: o.url, ...(o.meta && typeof o.meta === "object" ? { meta: o.meta } : {}) });
+    } catch { /* ignore a malformed field */ }
+  }
+  return out.slice(0, 12);
 }
 
 function escapeHtml(text: string): string {
@@ -146,7 +164,8 @@ export async function handleForumAction({ request, action, connectors }: HandleA
   switch (action as ForumActionName) {
     case "reply": {
       const threadId = str(fd, "thread");
-      const r = await w.postReply(viewer, { threadId, text: str(fd, "text"), parentId: str(fd, "parent") || null });
+      const atts = readAttachments(fd, connectors.composeOptions?.attachments);
+      const r = await w.postReply(viewer, { threadId, text: str(fd, "text"), parentId: str(fd, "parent") || null, ...(atts.length ? { attachments: atts } : {}) });
       if (r.ok === false) return fail(r.error);
       const slug = str(fd, "slug") || "topic";
       const base = hrefs.thread(threadId, slug);
@@ -157,9 +176,21 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       const orgId = str(fd, "org") || tOrg;
       const feedSlug = str(fd, "feed") || tFeed;
       const topicIds = fd.getAll("topics").filter((v): v is string => typeof v === "string");
+      // The extras are read only when the host opted in (connectors.composeOptions);
+      // otherwise a posted `kind`, `audience` or `link` is ignored, so a host that
+      // did not turn them on behaves exactly as before. createTopic validates each.
+      const co = connectors.composeOptions;
+      const kind = co?.kinds ? str(fd, "kind") : "";
+      const audience = str(fd, "audience") as "everyone" | "followers" | "author";
+      const link = co?.link ? str(fd, "link") : "";
+      const topicAtts = readAttachments(fd, co?.attachments);
       const r = await w.createTopic(viewer, {
         orgId, feedSlug, title: str(fd, "title"), text: str(fd, "text"), topicIds,
         syncToNextcloud: str(fd, "nc_sync") === "1",
+        ...(kind ? { kind: kind as "post" | "idea" | "event" } : {}),
+        ...(co?.audiences?.includes(audience) ? { audience } : {}),
+        ...(link ? { link } : {}),
+        ...(topicAtts.length ? { attachments: topicAtts } : {}),
       });
       if (r.ok === false) return fail(r.error);
       return done(hrefs.thread(r.threadId, r.slug));

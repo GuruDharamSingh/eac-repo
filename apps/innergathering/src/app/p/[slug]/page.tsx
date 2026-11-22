@@ -10,7 +10,8 @@ import type { Metadata } from "next";
 import { Render, resolveAllData } from "@puckeditor/core/rsc";
 import type { Data } from "@puckeditor/core";
 import { siteConfig } from "@/config/site";
-import { serverPuckConfig } from "@/lib/puck/config.server";
+import { markedPuckConfig, serverPuckConfig } from "@/lib/puck/config.server";
+import { getViewer } from "@/lib/auth";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { loadPage } from "@/lib/puck/store";
 
@@ -59,10 +60,18 @@ export default async function PublishedPage({
   // site; a 404 reads as an unfinished one, which is the truth.
   if (!page) notFound();
 
-  const resolved = await resolveAllData(page.data as Data, serverPuckConfig, {
+  // Someone who may edit gets the same page with an inert marker before each block (the Fields lens reads them).
+  const viewer = await getViewer().catch(() => null);
+  const config = viewer?.canEdit ? markedPuckConfig : serverPuckConfig;
+  const resolved = await resolveAllData(page.data as Data, config, {
     orgId: siteConfig.orgId,
     slug,
   });
 
-  return <Render config={serverPuckConfig} data={resolved as Data} />;
+  return (
+    <>
+      {viewer?.canEdit ? <template data-blk-page={slug} /> : null}
+      <Render config={config} data={resolved as Data} />
+    </>
+  );
 }

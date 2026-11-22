@@ -1,0 +1,235 @@
+/* Tour-page hero stage, portrait phone, on cms-ui SurfaceStage layout="phone". Light theme (developer, 2026-11-20; docs/06 and
+   "Tour Detail Page Phone Light"). The host draws the frame, head, strip, dock and sheets; this file sets the light map on the
+   wrapper (.tsp-root) whatever palette the site is saved with, and fits the host's rules to the design's values. It also
+   redefines the shadcn-style tokens (HSL triplets) so BookingForm and the primitives inside the Book sheet read light.
+   Type: Basteleur 700 titles, Basteleur 400 text, Venture (regular, spaced, no stroke) for small labels, kickers and numerals.
+   Yellow #f2c14e carries ink #14284b (8.72:1) for what you act on and "you are here"; it is never text on white (1.68:1).
+   Contrast (measured, WCAG relative luminance):
+     ink #14284b on card #fff = 14.64:1, on page #f7f5f0 = 13.43, on soft #eef2f8 = 13.03;
+     muted #4f5d75 on #fff = 6.66, on soft = 5.92; accent #2350a0 on #fff = 7.70, on soft = 6.86; #fff on accent = 7.70;
+     place #3c7fa6 on #fff = 4.39 (marks and borders only; place text uses #2f6f93 = 5.50 on #fff, 4.90 on soft, see --tsp-place-ink);
+     route #c4532f on #fff = 4.54; faint #7d889c on #fff = 3.58 (control borders, 3:1 non-text);
+     rule #8d9bb4 on #fff = 2.81 (dividers only, decoration). Pictures keep light-on-dark scrim controls. */
+
+.tsp-root {
+  /* host tokens (output side: the wrapper redefines what the host computed at :root) */
+  --sf-bg: #ffffff;
+  --sf-bg-soft: #eef2f8;
+  --sf-fg: #14284b;
+  --sf-muted: #4f5d75;
+  --sf-faint: #7d889c;
+  --sf-line: #c9d2e0;
+  --sf-rule: #8d9bb4;
+  --sf-accent: #2350a0;
+  --sf-on-accent: #ffffff;
+  --sf-danger: #c4532f;
+  --sf-scrim: rgba(20, 40, 75, .45);
+  --sf-radius: 0px;
+  --sf-radius-sm: 0px;
+  --sf-shadow: 0 -18px 40px -18px rgba(20, 40, 75, .35);
+  --sf-kind-neutral: #2350a0;
+  --sf-kind-event: #2350a0;
+  --sf-kind-place: #3c7fa6;
+  --tsp-ground: #f7f5f0;
+  --tsp-yellow: #f2c14e;
+  --tsp-ink: #14284b;
+  --tsp-font: "Basteleur", Georgia, serif;
+  --tsp-label: "Venture", Georgia, serif;
+  --sf-font-title: var(--tsp-font);
+  --sf-font-body: var(--tsp-font);
+  --sf-font-record: var(--tsp-label);
+  /* input hooks read per element by the [data-kind] rules */
+  --eac-surface-on-accent: #ffffff;
+  --eac-kind-neutral-on: #ffffff;
+  --eac-kind-place-on: #ffffff;
+  --eac-kind-event-on: #ffffff;
+  --eac-stage-dock-bg: #eef2f8;
+  --tsp-ok: #14284b;
+  --tsp-kl: #2350a0;
+  --tsp-place-ink: #2f6f93;
+  --tsp-route: #c4532f;
+  --tsp-ln: #7d889c;
+  /* tokens the booking form and primitives read */
+  --background: 0 0% 100%;
+  --foreground: 219 57% 19%;
+  --card: 0 0% 100%;
+  --card-foreground: 219 57% 19%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 219 57% 19%;
+  --primary: 218 65% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 218 40% 95%;
+  --secondary-foreground: 219 57% 19%;
+  --muted: 220 33% 96%;
+  --muted-foreground: 219 17% 37%;
+  --accent: 218 40% 95%;
+  --accent-foreground: 219 57% 19%;
+  --destructive: 16 59% 48%;
+  --border: 219 13% 56%;
+  --input: 219 13% 56%;
+  --ring: 218 65% 38%;
+  --radius: 0rem;
+
+  color: var(--sf-fg);
+  font-family: var(--tsp-font);
+  /* Basteleur again (developer, 2026-11-20): the Venture double-bold and the text stroke are gone. */
+  font-weight: 400;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+.tsp-root .eac-surface-kicker, .tsp-root .tsp-placeface__kicker, .tsp-root .tsp-guide__label, .tsp-root .tsp-foot__sub, .tsp-root .tsp-foot__count,
+.tsp-root .tsp-facts dt, .tsp-root .tsp-media__note, .tsp-root .tsp-edit-hint, .tsp-root .tsp-flow, .tsp-root .eac-surface-status { font-family: var(--tsp-label); font-weight: 400; }
+.tsp-root input, .tsp-root select, .tsp-root textarea, .tsp-root button { font-family: inherit; }
+.tsp-root *, .tsp-root *::before, .tsp-root *::after { box-sizing: border-box; }
+.tsp-root button { font: inherit; color: inherit; }
+
+@media (max-width: 767px) {
+  /* the dock's way back replaces the guest tab bar; the dock clears the page's last line */
+  body:has(.tsp-root) .m-nav, body:has(.tsp-root) .m-back { display: none !important; }
+  body:has(.tsp-root) { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* the host pads the stage for the dock; here the page's details follow the stage, so the page carries the padding */
+/* One screen, as the design's 844px frame: the band is fixed, the card scrolls inside the remaining height and clears
+   the dock at its end (the dock is the foot only, 78px, since 2026-11-21: the strip's thumbnails moved into the band). A stage taller than the screen (content + dock) rested 22px off the top and fought the
+   page's snap to the index (DESIGN, INDEX 2026-11-20). */
+.eac-stage--phone.tsp-root { padding-bottom: 0; background: var(--tsp-ground); display: flex; flex-direction: column; height: 100vh; height: 100svh; overflow: hidden; }
+.eac-stage--phone.tsp-root { --eac-stage-dock-h: 78px; --tsp-media-h: 232px; }
+.eac-stage--phone.tsp-root .eac-stage-media { flex: none; height: var(--tsp-media-h); }
+.eac-stage--phone.tsp-root .eac-stage-view { flex: 1 1 auto; min-height: 0; overflow: hidden; padding-bottom: 0; background: var(--sf-bg); }
+.eac-stage--phone.tsp-root .eac-stage-view::-webkit-scrollbar { display: none; }
+/* The card does not scroll (developer, 2026-11-21): the base panel fills the view, the body takes what the head leaves, and the
+   description shrinks to fit (FitText sets --tsp-fit, 1 to .7). */
+.eac-stage--phone.tsp-root .eac-stage-panel[data-layer="base"] { height: 100%; }
+.eac-stage--phone.tsp-root .eac-stage-panel[data-layer="base"] .eac-surface-body { overflow: hidden; position: relative; grid-template-rows: minmax(0, 1fr); }
+.eac-stage--phone.tsp-root .eac-surface-main { min-height: 0; height: 100%; }
+.tsp-root .tsp-body.tsp-body--fit { position: relative; height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 18px 14px; }
+.tsp-fit { flex: 1 1 auto; min-height: 0; overflow: hidden; display: grid; gap: 12px; align-content: start; }
+.tsp-fit[data-scroll] { overflow-y: auto; scrollbar-width: none; }
+.tsp-root .tsp-body--fit > .tsp-flow, .tsp-root .tsp-body--fit > .tsp-placeface { flex: none; }
+/* The head's number tile as a button (stop with place details): a magnifier, ink on yellow, inverted while the details are open. */
+.tsp-root .eac-surface-glyph.is-action { width: 44px; height: 44px; padding: 0; border: 0; cursor: pointer; background: var(--tsp-yellow); color: var(--tsp-ink); }
+.tsp-root .eac-surface-glyph.is-action.is-pressed { background: var(--tsp-ink); color: var(--tsp-yellow); }
+/* The place's details, over the description only. */
+.tsp-placecard { position: absolute; inset: 0; z-index: 2; display: grid; gap: 12px; align-content: start; padding: 14px 18px 18px; overflow-y: auto; background: var(--sf-bg); }
+.tsp-placecard__kicker { font-family: var(--tsp-label); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--tsp-place-ink); }
+
+/* ---- media band: 232px (300px until 2026-11-21: the text gets the room) ---- */
+.tsp-root .eac-stage-media { background: #2e3239; color: #f1ece2; }
+.tsp-media__bg { position: absolute; inset: 0; }
+.tsp-media__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tsp-street { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tsp-media__center { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 60px 20px 30px; text-align: center; pointer-events: none; }
+.tsp-media__center > * { pointer-events: auto; }
+.tsp-media__note { font-family: var(--tsp-label); font-size: .72rem; letter-spacing: .08em; color: #d9d4c8; }
+.tsp-load { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 18px; border: 1px solid #f1ece2; background: rgba(27,30,35,.65); color: #f1ece2; font-size: .92rem; cursor: pointer; }
+/* arrows: opaque (developer, 2026-11-21), centred on the picture above the thumbnail row */
+.tsp-arrow { position: absolute; top: calc((100% - 54px) / 2 - 22px); z-index: 3; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(241,236,226,.7); background: rgba(27,30,35,.88); color: #f1ece2; font-size: 1.15rem; cursor: pointer; }
+.tsp-arrow--prev { left: 10px; }
+.tsp-arrow--next { right: 10px; }
+/* the stops' thumbnails, on the line the caption and credit had: 46x38 pictures, number at the old size (1.6rem), bold.
+   White on the dimmed picture: the 42% navy veil keeps it above 4.5:1 on light pictures (measured on the strip, 2026-11-20). */
+.tsp-thumbs { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; gap: 6px; align-items: center; padding: 18px 12px 8px; overflow-x: auto; scrollbar-width: none; background: linear-gradient(180deg, transparent, rgba(27,30,35,.82)); pointer-events: none; }
+.tsp-thumbs::-webkit-scrollbar { display: none; }
+.tsp-thumb { position: relative; flex: none; min-width: 46px; height: 38px; padding: 0 5px; display: grid; place-items: center; border: 1px solid rgba(241,236,226,.55); background: var(--tone, #3a3f47); color: #fff; cursor: pointer; overflow: hidden; pointer-events: auto; }
+.tsp-thumb__pic { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.tsp-thumb::after { content: ""; position: absolute; inset: 0; background: rgba(20,40,75,.42); pointer-events: none; }
+.tsp-thumb__num { position: relative; z-index: 1; font-family: var(--tsp-label); font-weight: 700; font-size: 1.6rem; line-height: 1; letter-spacing: 0; text-shadow: 0 1px 6px rgba(0,0,0,.9); }
+.tsp-thumb.is-on { border: 2px solid var(--tsp-yellow); }
+.tsp-thumb.is-on .tsp-thumb__num { padding: 3px 7px; background: var(--tsp-yellow); color: var(--tsp-ink); text-shadow: none; }
+
+/* ---- the card (base layer) ---- */
+.eac-stage--phone.tsp-root .eac-stage-panel[data-layer="base"] { border: 0; box-shadow: none; background: var(--sf-bg); }
+.tsp-root .eac-stage-panel[data-layer="base"] .eac-surface-head { align-items: center; gap: 12px; padding: 12px 10px 12px 16px; }
+.tsp-root .eac-surface-glyph.is-filled { background: var(--tsp-yellow); color: var(--tsp-ink); font-family: var(--tsp-label); font-size: .95rem; letter-spacing: 0; }
+/* the counter lives in the dock's foot, not the masthead */
+.tsp-root .eac-stage-counter { display: none; }
+.tsp-root .eac-stage-panel[data-layer="base"] .eac-surface-head { border-top: 3px solid var(--tsp-yellow); }
+.tsp-root .eac-surface-kicker { gap: 6px; font-size: .68rem; }
+/* font-family is set here because mobile.css sets `.elk-m :is(h1,h2,h3)` (Brothers) above the host's class rule */
+.tsp-root .eac-surface-title { font-family: var(--tsp-font); font-weight: 700; font-size: 1.4rem; letter-spacing: 0; -webkit-text-stroke: 0; }
+.tsp-root .eac-surface-iconbtn { border-color: var(--tsp-ln); background: var(--sf-bg); font-family: var(--sf-font-body); }
+
+.tsp-body { padding: 18px 18px 28px; display: grid; gap: 16px; }
+.tsp-narr { margin: 0; font-family: var(--tsp-font); font-weight: 400; font-size: calc(1.32rem * var(--tsp-fit, 1)); line-height: 1.5; color: var(--sf-fg); text-wrap: pretty; }
+.tsp-narr--quiet { font-size: calc(1.1rem * var(--tsp-fit, 1)); color: var(--sf-muted); }
+.tsp-edit-hint { justify-self: start; font-family: var(--sf-font-record); font-size: .8rem; color: var(--tsp-kl); text-underline-offset: 3px; }
+.tsp-flow { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--sf-muted); font-family: var(--sf-font-record); font-size: .82rem; letter-spacing: .04em; cursor: pointer; text-align: left; }
+.tsp-flow__rule { flex: none; width: 18px; border-top: 2px dashed var(--tsp-route); }
+.tsp-placeface { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 64px; padding: 0 12px; border: 1px solid var(--sf-line); background: var(--sf-bg-soft); cursor: pointer; text-align: left; }
+.tsp-placeface__bar { position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, var(--pk), color-mix(in srgb, var(--pk) 34%, transparent) 40%, transparent 66%); }
+.tsp-placeface__medal { display: grid; place-items: center; width: 32px; height: 32px; background: var(--sf-bg); border: 1px solid color-mix(in srgb, var(--pk) 26%, transparent); color: var(--pk); }
+.tsp-placeface__text { display: grid; gap: 2px; min-width: 0; }
+.tsp-placeface__kicker { color: var(--tsp-place-ink); font-family: var(--sf-font-record); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp-placeface__line { font-size: .92rem; color: var(--sf-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp-placeface__cue { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--pk) 32%, transparent); background: color-mix(in srgb, var(--pk) 9%, transparent); color: var(--pk); font-family: var(--sf-font-record); font-size: .8rem; }
+.tsp-guide { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; border: 1px dashed var(--tsp-route); font-size: calc(.95rem * var(--tsp-fit, 1)); color: var(--sf-muted); }
+.tsp-guide__label { flex: none; font-family: var(--sf-font-record); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--tsp-route); }
+
+/* ---- the dock: the foot only, 78px (the strip of stop faces moved into the media band, 2026-11-21; it stays in the markup for the stage's own logic) ---- */
+.eac-stage--phone.tsp-root .eac-stage-strip { display: none; }
+.tsp-root .eac-stage-dock { border-top: 1px solid var(--sf-line); background: var(--sf-bg-soft); }
+.tsp-root .eac-stage-dock::after { content: ""; position: absolute; left: 50%; bottom: calc(8px + env(safe-area-inset-bottom, 0px) / 2); width: 120px; height: 4px; margin-left: -60px; border-radius: 999px; background: rgba(20,40,75,.3); pointer-events: none; }
+.eac-stage--phone.tsp-root .eac-stage-strip { padding: 8px 14px; gap: 6px; align-items: flex-start; scroll-snap-type: x proximity; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face { flex: 0 0 86px; width: 86px; height: 70px; gap: 0; padding: 0; align-items: stretch; justify-content: flex-start; background: var(--sf-bg); -webkit-backdrop-filter: none; backdrop-filter: none; border-color: var(--sf-line); transition: flex-basis .22s cubic-bezier(.2,.8,.2,1), border-color .18s; scroll-snap-align: start; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face[data-open] { flex-basis: 132px; width: 132px; border: 2px solid var(--tsp-yellow); }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face .eac-stage-face-cover { position: absolute; inset: 0; width: 100%; height: 100%; background-color: #3a3f47; background-size: cover; background-position: center; }
+/* a scrim so the centred number reads on any picture, then the design's stripe */
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face .eac-stage-face-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(20,40,75,.42), rgba(20,40,75,.42)), repeating-linear-gradient(135deg, rgba(241,236,226,.05) 0 6px, transparent 6px 12px); pointer-events: none; }
+/* the plain number, centred on the thumbnail */
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face-numeral { top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 0; height: auto; padding: 0; background: none; border: 0; color: #ffffff; font-family: var(--tsp-label); font-size: 1.6rem; line-height: 1; letter-spacing: 0; text-shadow: 0 1px 6px rgba(0,0,0,.85); z-index: 1; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face[data-open] .eac-stage-face-numeral { background: var(--tsp-yellow); border: 0; color: var(--tsp-ink); padding: 3px 7px; text-shadow: none; }
+/* no title text on the phone strip (still there for screen readers) */
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face-title, .eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face[data-open] .eac-stage-face-more { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* faces without a picture: the design's tones */
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+1) .eac-stage-face-cover { background-color: #6d6559; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+2) .eac-stage-face-cover { background-color: #5f6a6e; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+3) .eac-stage-face-cover { background-color: #5f5a6e; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+4) .eac-stage-face-cover { background-color: #5b5f66; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+5) .eac-stage-face-cover { background-color: #6e6150; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+6) .eac-stage-face-cover { background-color: #566259; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+7) .eac-stage-face-cover { background-color: #6a5d52; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+8) .eac-stage-face-cover { background-color: #5d6470; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face:nth-child(9n+9) .eac-stage-face-cover { background-color: #6b6457; }
+.eac-stage--phone.tsp-root .eac-stage-strip .eac-stage-face[data-face-id="book"] .eac-stage-face-cover { background-image: linear-gradient(135deg, #f2c14e, #d9a730); }
+
+.eac-stage--phone.tsp-root .eac-stage-dock-foot { gap: 8px; min-height: 78px; padding: 8px 14px 18px; border-top: 1px solid var(--sf-line); }
+.tsp-back { flex: none; display: flex; height: 44px; border: 1px solid var(--tsp-ln); background: var(--sf-bg); }
+.tsp-root .tsp-back__tours { display: flex; align-items: center; gap: 4px; padding: 0 10px; color: var(--sf-fg); text-decoration: none; font-family: var(--tsp-label); font-size: .72rem; letter-spacing: .14em; }
+.tsp-back__chev { font-family: Georgia, serif; font-size: 1.1rem; line-height: 1; letter-spacing: 0; }
+.tsp-root .tsp-back__home { display: grid; place-items: center; width: 36px; border-left: 1px solid var(--tsp-ln); color: var(--sf-fg); text-decoration: none; font-size: .9rem; }
+.tsp-foot__name { display: grid; min-width: 0; flex: 1; }
+.tsp-foot__title { font-family: var(--tsp-font); font-weight: 700; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp-foot__sub { font-family: var(--sf-font-record); font-size: .7rem; color: var(--sf-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp-foot__count { flex: none; font-family: var(--tsp-label); font-size: .72rem; color: var(--sf-muted); }
+.tsp-bookbtn { flex: none; height: 44px; padding: 0 18px; border: 1px solid var(--tsp-ink); background: var(--tsp-yellow); color: var(--tsp-ink); font-family: var(--tsp-font); font-weight: 700; font-size: 1rem; cursor: pointer; }
+
+/* ---- sheets (pushed layers): square, rule on top, handle ---- */
+.tsp-root .eac-stage-scrim { background: rgba(20,40,75,.45); }
+.eac-stage--phone.tsp-root .eac-stage-panel[data-layer="pushed"] { border: 0; border-top: 1px solid var(--sf-rule); border-radius: 0; background: var(--sf-bg); box-shadow: var(--sf-shadow); }
+.tsp-root .eac-stage-panel[data-layer="pushed"]::before { background: rgba(20,40,75,.3); }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-surface-head { padding: 18px 10px 12px 16px; gap: 12px; }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-surface-glyph { width: 36px; height: 36px; }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-surface-title { font-size: 1.3rem; }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-surface-foot { padding: 10px 14px calc(18px + env(safe-area-inset-bottom, 0px) / 2); background: var(--sf-bg-soft); border-top: 1px solid var(--sf-line); }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-surface-status { font-size: .76rem; }
+.tsp-root .eac-stage-panel[data-layer="pushed"] .eac-btn { min-height: 44px; padding: 0 14px; border: 1px solid var(--tsp-ln); border-radius: 0; background: var(--sf-bg); color: var(--sf-fg); font-family: var(--tsp-font); font-weight: 700; font-size: .95rem; }
+.tsp-sheet__body { padding: 16px 16px 18px; display: grid; gap: 14px; align-content: start; }
+.tsp-facts { margin: 0; display: grid; gap: 8px; font-size: .98rem; }
+.tsp-facts__row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 14px; }
+.tsp-facts dt { font-family: var(--sf-font-record); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; padding-top: 3px; }
+.tsp-facts dd { margin: 0; }
+.tsp-about { margin: 0; font-size: 1.05rem; line-height: 1.55; }
+.tsp-about--quiet { color: var(--sf-muted); }
+.tsp-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.tsp-chip { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--tsp-ln); font-size: .9rem; color: var(--sf-fg); text-decoration: none; }
+.tsp-price { margin: 0; font-family: var(--tsp-font); font-weight: 700; font-size: 2rem; line-height: 1; }
+.tsp-price span { font-weight: 400; font-size: .95rem; color: var(--sf-muted); }
+.tsp-form { font-size: 1rem; }
+
+/* ---- folded: the stage is scrolled away (index and sections), the dock keeps its foot only ---- */
+@media (max-width: 767px) {
+  body:has(.tsp-root.is-folded) { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}
+.tsp-root.is-folded .eac-stage-strip { display: none; }
+.tsp-root.is-folded .tsp-foot__count { display: none; }

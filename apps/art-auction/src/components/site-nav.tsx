@@ -38,7 +38,7 @@ export function SiteNav({ links }: { links: NavLink[] }) {
 
   return (
     <>
-      <nav aria-label="Main" className="hidden gap-6 text-sm md:flex">
+      <nav aria-label="Main" className="hidden gap-6 text-sm md:flex" data-part="links">
         {links.filter((l) => !l.narrowOnly).map((l) => (
           <Link
             key={l.href}
@@ -54,7 +54,7 @@ export function SiteNav({ links }: { links: NavLink[] }) {
         ))}
       </nav>
 
-      <details ref={ref} className="relative md:hidden">
+      <details ref={ref} className="relative md:hidden" data-part="menu">
         <summary
           className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-md border border-border [&::-webkit-details-marker]:hidden"
           aria-label="Menu"

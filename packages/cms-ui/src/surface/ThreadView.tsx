@@ -164,6 +164,9 @@ export function threadViewParts(
         <p className="eac-surface-muted">No description yet.</p>
       ) : null}
 
+      {thread.link && <ThreadLinkCard link={thread.link} />}
+      {thread.attachments && thread.attachments.length > 0 && <ThreadMedia items={thread.attachments} />}
+
       {/* What the occasion holds. Curated and ordered, so it leads. */}
       {gathered.length > 0 && (
         <SurfaceSection title={GATHER_HEADING[thread.kind] ?? "In this gathering"}>
@@ -214,6 +217,38 @@ export function threadViewParts(
   const kicker = [kindLabel, thread.feed?.name].filter(Boolean).join(" · ");
 
   return { main, rail, kicker };
+}
+
+/** The one web address a post carries, as a card that opens it in a new tab. */
+function ThreadLinkCard({ link }: { link: NonNullable<SurfaceThread["link"]> }) {
+  let host = link.url;
+  try { host = new URL(link.url).hostname.replace(/^www\./, ""); } catch { /* keep the raw address */ }
+  return (
+    <a className="eac-surface-link" href={link.url} target="_blank" rel="noopener noreferrer">
+      {link.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={link.imageUrl} alt="" loading="lazy" />}
+      <span className="eac-surface-link-body">
+        <span className="eac-surface-link-host">{link.siteName ?? host}</span>
+        <span className="eac-surface-link-title">{link.title ?? host}</span>
+        {link.description && <span className="eac-surface-link-desc">{link.description}</span>}
+      </span>
+    </a>
+  );
+}
+
+/** Photos and videos on a post, two across. */
+function ThreadMedia({ items }: { items: NonNullable<SurfaceThread["attachments"]> }) {
+  return (
+    <div className="eac-surface-media">
+      {items.map((a, i) =>
+        a.kind === "video" ? (
+          <video key={i} src={a.url} controls preload="metadata" playsInline />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={i} src={a.url} alt="" loading="lazy" />
+        )
+      )}
+    </div>
+  );
 }
 
 /**

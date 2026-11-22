@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* The shared packages ship SOURCE, not a bundle, so Tailwind must scan them or a
+   Tailwind-styled block draws unstyled (the @source trap). Blocks marked
+   styling:"tailwind" are drawn faithfully only with these lines. */
+@source "../../../../packages/blocks/src";
+@source "../../../../packages/cms-ui/src";
+@source "../../../../packages/direct-edit/src";
+@source "../../../../packages/page-builder/src";
+/* Real app-local blocks imported by relative path (registry/local) and the mocks use their app's Tailwind classes. */
+@source "../../../art-auction/src/blocks";
+@source "../../../arts-collective/src/blocks";
+@source "../../../danamccool/src/blocks";
+@source "../../../hidden-enneagram/src/blocks";
+@source "../../../katie-the-potter/src/blocks";
+@source "../../../sunjay/src/blocks";
+
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/editor.css";
+
+/* layer(components) is REQUIRED: an unlayered sheet beats every Tailwind utility. */
+@import "@elkdonis/primitives/primitives.css" layer(components);
+@import "@elkdonis/blocks/blocks.css" layer(components);
+
+
+@import "./dev.css";
+
+/* Test theme: the shadcn colour names the apps' Tailwind blocks use (bg-card, text-muted-foreground, border-border ...)
+   map to the --background / --card / ... triplets that the theme wrapper sets (src/theme/test-theme.ts). */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --font-serif: var(--eac-font-title, Georgia, serif);
+  --font-sans: var(--eac-font-body, system-ui, sans-serif);
+  --font-mono: var(--eac-font-record, ui-monospace, monospace);
+}

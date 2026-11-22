@@ -7,6 +7,23 @@ const TICK_MS = 5 * 60 * 1000;
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // Slot sweeper: expire lapsed holds and auto-cancel slots that closed below their minimum
+  // (only under the auto_cancel rule). A no-op unless BOOKING_TABLES=1. Idempotent and safe on
+  // several instances (cancelling locks the slot row and re-checks its status).
+  if (process.env.DISABLE_SLOT_SWEEP !== "1") {
+    const sweep = async () => {
+      try {
+        const { sweepTourSlots } = await import("@/lib/tour-slots");
+        await sweepTourSlots();
+      } catch (err) {
+        console.error("[elktours] slot sweep tick error:", err);
+      }
+    };
+    setTimeout(sweep, 30_000);
+    setInterval(sweep, TICK_MS);
+  }
+
   if (process.env.DISABLE_REMINDER_SCHEDULER === "1") return;
 
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3021";

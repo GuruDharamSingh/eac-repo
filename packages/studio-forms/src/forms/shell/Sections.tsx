@@ -7,6 +7,8 @@ import { specKindOf, visibleSections } from '../state';
 import { renderField, type FieldRenderContext, type ShellFieldOverride } from '../fields/FieldRenderer';
 import { sectionAnchor } from '../fields/ids';
 import { MoreRow } from '../fields/MoreRow';
+import { SheetRow } from '../fields/SheetRow';
+import { SectionNote, noteOf } from '../fields/SectionNote';
 import { paragraphs } from '../preview/format';
 import { QuickCard } from '../preview/quick-card';
 import { bodyEditorOf } from './ui';
@@ -92,6 +94,18 @@ function fieldRuns(names: string[], rc: FieldRenderContext, override: (name: str
   return out;
 }
 
+/**
+ * Sections the rows layout leaves drawn as fields (title, the Why line, the body, artwork's
+ * pictures); every other quick section becomes a SheetRow. By section id.
+ */
+export const ROWS_FIELD_SECTIONS: readonly string[] = ['title', 'why', 'excerpt', 'body', 'description', 'pictures'];
+
+/**
+ * The wide layout's main column (rows layout at the focus tier), in this order: the title, the pictures,
+ * the cover, then the Why line and the body. Any other visible section, essentials or More, goes to the rail.
+ */
+export const WIDE_MAIN_SECTIONS: readonly string[] = ['title', 'pictures', 'cover', 'why', 'excerpt', 'body', 'description'];
+
 export interface FormSectionsProps {
   schema: FormKindSchema;
   state: FormState;
@@ -104,9 +118,16 @@ export interface FormSectionsProps {
   fullEditorHref?: string | null;
   /** Drawn first in the stack (the phone's "Start from" row, the alert). */
   before?: React.ReactNode;
+  /**
+   * 'rows': at the quick tier every quick section except ROWS_FIELD_SECTIONS draws as one row
+   * (label, value, chevron) that opens a thin dropdown holding its body. At the focus tier the form
+   * is two columns: WIDE_MAIN_SECTIONS as fields, and a rail of rows (essentials, then More).
+   * Unset: unchanged.
+   */
+  layout?: 'rows';
 }
 
-export function FormSections({ schema, state, host, ctx, tier, scope = '', patch, toggleSection, fullEditorHref, before }: FormSectionsProps) {
+export function FormSections({ schema, state, host, ctx, tier, scope = '', patch, toggleSection, fullEditorHref, before, layout }: FormSectionsProps) {
   const { answers } = state;
   const { groups, specs } = useFieldSpecs(schema, answers, ctx);
   const issues = shownIssues(state);
@@ -250,13 +271,140 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
     );
   };
 
+  const rows = layout === 'rows' && tier === 'quick';
+  const wide = layout === 'rows' && tier === 'focus';
+
+  // Under the rows layout every row starts closed: a kind's defaultOpen (post opens Also show on for the
+  // Studio's stacked list) would otherwise show a dropdown over the form on arrival (rendered 2026-11-15).
+  // Runs when the layout or tier changes; rows opened later by a person or an error are left alone.
+  React.useEffect(() => {
+    if (layout !== 'rows') return;
+    for (const id of state.openSections) if (!ROWS_FIELD_SECTIONS.includes(id) && !WIDE_MAIN_SECTIONS.includes(id)) toggleSection(id, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, tier]);
+  const rowSections = [...essentials, ...more];
+  const sectionOrder = schema.sections.map((x) => x.id);
+
+  /** A rows-layout row: the section's body (no heading: the row names it) in a dropdown. */
+  const sheetRow = (s: FormSection) => {
+    const anchor = sectionAnchor(s.id, scope);
+    const names = namesOf(s, groups);
+    const mine = issues.filter((i) => i.section === s.id);
+    const worst = mine.find((i) => i.severity === 'block') ?? mine[0];
+    let value = '';
+    try {
+      value = s.rowSummary?.(answers, ctx) || s.summary?.(answers, ctx) || '';
+    } catch {
+      value = '';
+    }
+    const open = state.openSections.includes(s.id);
+    const closeOthers = () => {
+      for (const o of state.openSections) if (o !== s.id && rowSections.some((e) => e.id === o)) toggleSection(o, false);
+    };
+    return (
+      <SheetRow
+        key={s.id}
+        id={anchor}
+        name={s.label}
+        value={value}
+        placeholder={s.rowPlaceholder ?? `Add ${s.label.toLowerCase()}`}
+        problem={worst ? { tone: worst.severity === 'block' ? 'error' : 'warning', text: worst.message } : null}
+        open={open}
+        onToggle={() => {
+          if (!open) closeOthers();
+          toggleSection(s.id);
+        }}
+        onOpen={() => {
+          closeOthers();
+          toggleSection(s.id, true);
+        }}
+        onClose={() => toggleSection(s.id, false)}
+        noted={s.notes ? noteOf(answers, s.id) !== '' : false}
+        footer={
+          s.notes ? <SectionNote id={anchor} section={s.id} label={s.label} answers={answers} order={sectionOrder} patch={patch} /> : undefined
+        }
+      >
+        {s.render
+          ? custom(s)
+          : fieldRuns(names, rcFor(s, 'sub'), () => (names.length === 1 ? { label: s.label, hideLabel: true } : undefined))}
+      </SheetRow>
+    );
+  };
+
+  /** The essentials, with each run of consecutive rows in one bordered group. */
+  const essentialNodes = (): React.ReactNode[] => {
+    if (!rows) return essentials.map(essential);
+    const out: React.ReactNode[] = [];
+    let run: React.ReactNode[] = [];
+    const flush = () => {
+      if (run.length) out.push(<div key={`rows-${out.length}`} className="frm-srows">{run}</div>);
+      run = [];
+    };
+    for (const s of essentials) {
+      if (ROWS_FIELD_SECTIONS.includes(s.id)) {
+        flush();
+        out.push(essential(s));
+      } else run.push(sheetRow(s));
+    }
+    flush();
+    return out;
+  };
+
+  /** A More section drawn as a field in the wide main column (the cover, the Why line, a description). */
+  const moreField = (s: FormSection) => {
+    const anchor = sectionAnchor(s.id, scope);
+    const names = namesOf(s, groups);
+    const headingId = `${anchor}-h`;
+    if (s.render) {
+      return (
+        <div key={s.id} className="frm-sec" id={anchor} role="group" aria-labelledby={headingId}>
+          <h3 className="frm-sec-label" id={headingId}>
+            {s.label}
+          </h3>
+          {custom(s)}
+        </div>
+      );
+    }
+    return (
+      <div key={s.id} className="frm-sec" id={anchor}>
+        {fieldRuns(names, rcFor(s, 'section'), () => (names.length === 1 ? { label: s.label } : undefined))}
+      </div>
+    );
+  };
+
+  if (wide) {
+    const rank = (id: string) => WIDE_MAIN_SECTIONS.indexOf(id);
+    const mainSecs = rowSections.filter((s) => rank(s.id) >= 0).sort((a, b) => rank(a.id) - rank(b.id));
+    const railEss = essentials.filter((s) => rank(s.id) < 0);
+    const railMore = more.filter((s) => rank(s.id) < 0);
+    return (
+      <div className="frm-stack">
+        {before}
+        <div className="frm-colswrap">
+          <div className="frm-cols">
+            <div className="frm-wmain">{mainSecs.map((s) => (s.tier === 'essentials' ? essential(s) : moreField(s)))}</div>
+            <aside className="frm-wrail" aria-label="Settings">
+              {railEss.length > 0 && <div className="frm-srows">{railEss.map(sheetRow)}</div>}
+              {railMore.length > 0 && (
+                <>
+                  <span className="frm-wrail-label">More</span>
+                  <div className="frm-srows">{railMore.map(sheetRow)}</div>
+                </>
+              )}
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="frm-stack">
       {before}
       <span className="frm-eyebrow" data-at="essentials">
         Essentials
       </span>
-      {essentials.map(essential)}
+      {essentialNodes()}
       {tier === 'quick' && (
         <div className="frm-sec frm-sec--card" data-label="Card" id={sectionAnchor('card', scope)}>
           <QuickCard kind={schema.id} answers={answers} ctx={ctx} />

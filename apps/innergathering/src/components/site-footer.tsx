@@ -57,13 +57,13 @@ export function SiteFooter() {
   }
 
   const input: React.CSSProperties = {
-    width: "100%", padding: "0.7rem 0.9rem", border: "1px solid rgba(183,154,85,0.45)", borderRadius: 4,
-    background: "#fffdf8", color: "#01124E", fontFamily: '"Basteleur", Georgia, serif', fontSize: "1rem",
+    width: "100%", padding: "0.7rem 0.9rem", border: "1px solid var(--ig-a-b79a55-45)", borderRadius: 4,
+    background: "var(--ig-c-paper)", color: "var(--ig-c-navy-deep)", fontFamily: 'var(--ig-font-text)', fontSize: "1rem",
   };
 
   return (
     <>
-      <footer className="bg-header-footer mt-16 border-t-[3px] border-[#b79a55]">
+      <footer className="bg-header-footer mt-16 border-t-[3px] border-[color:var(--ig-c-gold)]" data-chrome="footer">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 py-12 text-center">
           <div className="flex flex-wrap items-center justify-center gap-6">
             {SOCIAL_LINKS.map(({ label, href, Icon }) => (
@@ -73,31 +73,32 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="inline-flex flex-col items-center gap-1 text-[0.6rem] font-medium uppercase tracking-[0.12em] text-[#d6c38e] opacity-90 hover:opacity-100"
-                style={{ fontFamily: '"Venture", Georgia, serif' }}
+                data-part="social"
+                className="inline-flex flex-col items-center gap-1 text-[0.6rem] font-medium uppercase tracking-[0.12em] text-[color:var(--ig-c-gold-light)] opacity-90 hover:opacity-100"
+                style={{ fontFamily: 'var(--site-font-heading)' }}
               >
                 <Icon size={20} strokeWidth={1.6} />
                 {label}
               </a>
             ))}
-            <span className="h-7 w-px bg-[#b79a55]/40" aria-hidden />
+            <span className="h-7 w-px bg-[color:var(--ig-a-b79a55-4)]" aria-hidden />
             <address className="not-italic">
-              <a href="mailto:info@elkdonis-arts.org" className="inline-flex items-center gap-2 text-sm text-[#fffdf8]/85 hover:text-[#d6c38e]">
+              <a href="mailto:info@elkdonis-arts.org" data-part="contact" className="inline-flex items-center gap-2 text-sm text-[color:var(--ig-a-fffdf8-85)] hover:text-[color:var(--ig-c-gold-light)]">
                 <Mail size={16} aria-hidden />
                 info@elkdonis-arts.org
               </a>
             </address>
-            <button type="button" onClick={() => setOpen(true)} className="cta-btn" style={{ fontSize: "0.72rem", padding: "0.45rem 1rem" }}>
+            <button type="button" onClick={() => setOpen(true)} data-part="cta" className="cta-btn" style={{ fontSize: "0.72rem", padding: "0.45rem 1rem" }}>
               Leave a Message
             </button>
           </div>
 
           <hr className="gold-rule" style={{ "--rule-width": "80px", margin: 0 } as React.CSSProperties} />
 
-          <p className="text-xs text-[#fffdf8]/60" style={{ fontFamily: '"Venture", Georgia, serif', letterSpacing: "0.12em" }}>
+          <p data-part="legal" className="text-xs text-[color:var(--ig-a-fffdf8-6)]" style={{ fontFamily: 'var(--site-font-heading)', letterSpacing: "0.12em" }}>
             © {new Date().getFullYear()} {siteConfig.orgName} · Toronto · Los Angeles · Paris ·{" "}
-            <Link href="/login" className="underline underline-offset-2 hover:text-[#d6c38e]">Member sign in</Link>{" "}·{" "}
-            <Link href="/data" className="underline underline-offset-2 hover:text-[#d6c38e]">Your data</Link>
+            <Link href="/login" className="underline underline-offset-2 hover:text-[color:var(--ig-c-gold-light)]">Member sign in</Link>{" "}·{" "}
+            <Link href="/data" className="underline underline-offset-2 hover:text-[color:var(--ig-c-gold-light)]">Your data</Link>
           </p>
         </div>
       </footer>
@@ -105,29 +106,29 @@ export function SiteFooter() {
       {open && (
         <div
           onClick={close}
-          style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(1,18,78,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}
+          style={{ position: "fixed", inset: 0, zIndex: 200, background: "var(--ig-a-01124e-82)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Leave a message"
-            style={{ width: "min(520px, 100%)", background: "#fbf7ef", border: "1px solid rgba(183,154,85,0.55)", borderRadius: 6, padding: "1.5rem", boxShadow: "0 24px 60px rgba(0,0,0,0.4)" }}
+            style={{ width: "min(520px, 100%)", background: "var(--ig-c-parchment)", border: "1px solid var(--ig-a-b79a55-55)", borderRadius: 6, padding: "1.5rem", boxShadow: "0 24px 60px var(--ig-a-000000-4)" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, fontFamily: '"Venture", Georgia, serif', fontSize: "1.3rem", color: "#01124E" }}>Leave a Message</h3>
-              <button type="button" onClick={close} aria-label="Close" style={{ background: "none", border: 0, cursor: "pointer", color: "#01124E" }}>
+              <h3 style={{ margin: 0, fontFamily: 'var(--site-font-heading)', fontSize: "1.3rem", color: "var(--ig-c-navy-deep)" }}>Leave a Message</h3>
+              <button type="button" onClick={close} aria-label="Close" style={{ background: "none", border: 0, cursor: "pointer", color: "var(--ig-c-navy-deep)" }}>
                 <X size={20} />
               </button>
             </div>
             {status === "done" ? (
-              <p style={{ margin: 0, color: "#01124E", fontFamily: '"Basteleur", Georgia, serif' }}>Thank you — we&rsquo;ll be in touch.</p>
+              <p style={{ margin: 0, color: "var(--ig-c-navy-deep)", fontFamily: 'var(--ig-font-text)' }}>Thank you — we&rsquo;ll be in touch.</p>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: "grid", gap: "0.75rem" }}>
                 <input style={input} placeholder="Your name" value={fields.name} onChange={(e) => set("name", e.target.value)} />
                 <input style={input} type="email" required placeholder="Your email" value={fields.email} onChange={(e) => set("email", e.target.value)} />
                 <textarea style={{ ...input, minHeight: 120, resize: "vertical" }} placeholder="Your message" value={fields.message} onChange={(e) => set("message", e.target.value)} />
-                {errorMsg && <p style={{ margin: 0, color: "#8b2e2e", fontSize: "0.9rem" }}>{errorMsg}</p>}
+                {errorMsg && <p style={{ margin: 0, color: "var(--ig-c-red-dark)", fontSize: "0.9rem" }}>{errorMsg}</p>}
                 <button type="submit" className="cta-btn" disabled={status === "sending"} style={{ justifySelf: "end", cursor: "pointer" }}>
                   {status === "sending" ? "Sending…" : "Send"}
                 </button>

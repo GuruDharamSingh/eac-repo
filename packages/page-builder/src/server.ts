@@ -6,7 +6,7 @@
 // same reason, as @elkdonis/blocks and its /server entry.
 // ============================================================================
 
-export { loadPage, savePage, listPages, isValidSlug } from "./store";
+export { loadPage, loadPageWithVersion, savePage, listPages, isValidSlug } from "./store";
 export {
   loadUserPage,
   loadPublishedUserPage,
@@ -17,4 +17,6 @@ export {
   type UserPageStatus,
 } from "./user-store";
 export { isValidPagePath, MAX_PATH_DEPTH } from "./slug";
-export type { PuckPage } from "./store";
+export type { PuckPage, SavePageResult } from "./store";
+export { loadDraft, saveDraft, publishDraft, discardDraft, listDrafts, parseDraft } from "./drafts";
+export type { PageDraft, DraftAuthor, DraftInput, DraftOptions, PublishOptions } from "./drafts";

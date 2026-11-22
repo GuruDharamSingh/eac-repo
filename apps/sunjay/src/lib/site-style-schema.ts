@@ -1,4 +1,5 @@
 import type { SiteStyleSchema } from "@elkdonis/direct-edit/site";
+import { SHARED_ACCENTS } from "@elkdonis/direct-edit/site/shared-accents";
 
 // ============================================================================
 // What an owner may change about Para Theater's look (round 2, 2026-11-14, from
@@ -25,7 +26,7 @@ export const SITE_STYLE: SiteStyleSchema = {
     { name: "--foreground", label: "Text", group: "Colours", kind: "hsl", default: "40 21% 89%", on: "--background" },
     { name: "--muted-foreground", label: "Quiet text", group: "Colours", kind: "hsl", default: "40 5% 62%", on: "--background" },
     { name: "--card", label: "Cards and panels", group: "Colours", kind: "hsl", default: "200 8% 15%" },
-    { name: "--primary", label: "Bronze", group: "Colours", kind: "hsl", default: "40 43% 63%", hint: "Buttons, marks, numbers in steps, the current page." },
+    { name: "--primary", label: "Bronze", group: "Colours", kind: "hsl", default: SHARED_ACCENTS.bronze.hsl, hint: "Buttons, marks, numbers in steps, the current page." },
     { name: "--primary-foreground", label: "Text on bronze", group: "Colours", kind: "hsl", default: "204 8% 12%", on: "--primary" },
     { name: "--rust", label: "Rust", group: "Colours", kind: "hsl", default: "23 52% 60%", hint: "Links, italic subheads, second-tier accents." },
     { name: "--border", label: "Lines", group: "Colours", kind: "hsl", default: "203 7% 23%" },

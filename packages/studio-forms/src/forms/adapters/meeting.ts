@@ -82,6 +82,8 @@ export function meetingAnswers(record: MeetingRecordView, ctx: MeetingContextVie
     min_role: record.input.minRole ?? null,
     // Only when stored (innergathering keeps false): an absent key is never sent, so no host clears it.
     ...(record.input.metadata && 'showCycleBadge' in record.input.metadata ? { show_cycle_badge: record.input.metadata.showCycleBadge !== false } : {}),
+    // Row notes (services section-notes.ts): only when stored, so an absent key is never sent back.
+    ...(record.input.metadata && Array.isArray(record.input.metadata.sectionNotes) ? { section_notes: record.input.metadata.sectionNotes } : {}),
     where_mode: whereModeOf(a),
     'forms.loaded_start': a.scheduled_at ?? '',
   };
@@ -145,6 +147,10 @@ export function meetingActions(actions: MeetingActions, opts: MeetingAdapterOpti
       // The confirmation badge (innergathering): stored only as false; shown again removes the key.
       if ('show_cycle_badge' in resolved && resolved.show_cycle_badge !== undefined) {
         input.metadata = { showCycleBadge: resolved.show_cycle_badge === false ? false : null };
+      }
+      // Row notes: sent when the form has the answer (an empty array removes the key); left out keeps them.
+      if ('section_notes' in resolved && resolved.section_notes !== undefined) {
+        input.metadata = { ...(input.metadata ?? {}), sectionNotes: Array.isArray(resolved.section_notes) ? resolved.section_notes : null };
       }
       // Members only is INVITE_ONLY with a minimum role (the Goes on row sets both); anything else has none.
       if ('min_role' in resolved) {

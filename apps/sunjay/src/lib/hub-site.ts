@@ -12,6 +12,7 @@ import type { HubSite, HubViewer } from "@elkdonis/hub/contract";
 import type { SiteBuilderDeclaration } from "@elkdonis/hub/site-builder/model";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
+import { SHARED_ACCENTS } from "@elkdonis/direct-edit/site/shared-accents";
 
 const siteBuilder: SiteBuilderDeclaration = {
   look: "paper",
@@ -35,7 +36,7 @@ const siteBuilder: SiteBuilderDeclaration = {
       surface: "#24282a",
       ink: "#e9e5dd",
       line: "#373c3f",
-      accent: "#c9ae79",
+      accent: SHARED_ACCENTS.bronze.hex,
       accent2: "#6b7478",
       frame: "#373c3f",
     },

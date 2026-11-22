@@ -41,34 +41,34 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
     `ig-nav-link${active ? " is-active" : ""}`;
 
   return (
-    <header className="ig-topbar">
+    <header className="ig-topbar" data-chrome="header">
       <div className="ig-topbar-inner">
         <Link href="/" className="ig-wordmark" onClick={() => setOpen(false)}>
-          <span className="ig-wordmark-main">{siteConfig.orgName}</span>
+          <span className="ig-wordmark-main" data-part="brand">{siteConfig.orgName}</span>
         </Link>
 
         <nav className="ig-nav" aria-label="Primary">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className={linkClass(isActive(link.href))}>
+            <Link key={link.href} href={link.href} className={linkClass(isActive(link.href))} data-part="links">
               {link.label}
             </Link>
           ))}
           {signedIn && (
-            <Link href={homeHref} className={linkClass(isActive(homeHref))}>
+            <Link href={homeHref} className={linkClass(isActive(homeHref))} data-part="links">
               {homeLabel}
             </Link>
           )}
           {canEdit && (
-            <Link href="/manage" className={linkClass(isActive("/manage"))}>
+            <Link href="/manage" className={linkClass(isActive("/manage"))} data-part="links">
               Manage
             </Link>
           )}
           {!signedIn && (
-            <Link href="/login" className={linkClass(isActive("/login"))}>
+            <Link href="/login" className={linkClass(isActive("/login"))} data-part="links">
               Login
             </Link>
           )}
-          <Link href={signedIn ? "/account" : "/login"} className="ig-nav-link ig-nav-link--door">
+          <Link href={signedIn ? "/account" : "/login"} className="ig-nav-link ig-nav-link--door" data-part="account">
             {signedIn ? "Account" : "Web-Portal"}
           </Link>
         </nav>
@@ -77,6 +77,7 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
           type="button"
           onClick={() => setOpen((v) => !v)}
           className="ig-nav-toggle"
+          data-part="menu"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
         >
@@ -85,7 +86,7 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
       </div>
 
       {open && (
-        <nav className="ig-nav-sheet" aria-label="Primary">
+        <nav className="ig-nav-sheet" aria-label="Primary" data-part="menu">
           {links.map((link) => (
             <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
               {link.label}

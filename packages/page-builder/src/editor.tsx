@@ -10,6 +10,8 @@ import "@puckeditor/core/puck.css";
 // sheet, so it is in the document when Puck mirrors the host's styles into
 // the canvas iframe — see editor.css for what it fixes.
 import "./editor.css";
+// Optional theme tokens, applied only under `theme` (see puck-theme.css).
+import "./puck-theme.css";
 import { blockDescription, resolverKeysFor } from "./config";
 import { FocusedFields, ItemPicker } from "./drag/item-focus";
 import { CanvasMenu } from "./drag/canvas-menu";
@@ -37,8 +39,21 @@ export interface PuckEditorProps {
   config: Config;
   /** Ambient context for blocks and resolvers. `orgId` and `slug` are added. */
   metadata?: Record<string, unknown>;
-  onPublish: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>;
+  /**
+   * Called with the page, and the `version` this editor holds (when the host
+   * gave one). A host that ignores the third argument works unchanged. To
+   * refuse a stale save, answer `{ ok: false, stale: true }`; to keep the
+   * guard going across saves, answer `{ ok: true, updatedAt }` with the new
+   * version.
+   */
+  onPublish: (slug: string, data: Data, version?: string) => Promise<SaveResult>;
   orgId: string;
+  /**
+   * The page's version as loaded (`loadPageWithVersion().updatedAt`). Opaque;
+   * held here and replaced by each successful save's `updatedAt`. Omitted:
+   * no stale-save guard, as before.
+   */
+  version?: string;
   /**
    * Extra tabs for the editor's left rail, beside Blocks and Outline — the
    * site's own panels (its pages, galleries, media…). Puck always keeps its
@@ -69,7 +84,17 @@ export interface PuckEditorProps {
   onSaveDraft?: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>;
   /** Status shown after a successful Publish. Default "Published". */
   publishedLabel?: string;
+  /**
+   * Editor look (Puck 0.22+ theme tokens, puck-theme.css). `"studio"` is the
+   * light Studio palette. Omitted: Puck's own look, as before.
+   */
+  theme?: "studio";
 }
+
+type SaveResult = { ok: boolean; error?: string; stale?: boolean; updatedAt?: string };
+
+const STALE_MESSAGE =
+  "This page changed since you opened it. Reload to get the latest; your changes are kept in this browser.";
 
 export function PuckEditor({
   slug,
@@ -78,11 +103,13 @@ export function PuckEditor({
   metadata,
   onPublish,
   orgId,
+  version,
   plugins,
   title,
   viewports,
   onSaveDraft,
   publishedLabel = "Published",
+  theme,
 }: PuckEditorProps) {
   // Plain-text bodies from before a prop became rich, as paragraphs the rich
   // editor can hold. Also what "saved" is compared against, so opening an old
@@ -106,6 +133,13 @@ export function PuckEditor({
   // from a state value captured at render, and publish twice. The stock header
   // never passes `loading` to its own button, so it will not stop this for us.
   const publishing = useRef(false);
+  // The version this editor last saw, for the host's stale-save check. A ref:
+  // it changes on every save and nothing renders from it. Reset when the
+  // host hands over a different one (another page, or a reload).
+  const versionRef = useRef<string | undefined>(version);
+  useEffect(() => {
+    versionRef.current = version;
+  }, [slug, version]);
 
   // Edits that could not be saved (see runSave), restored once on load.
   // Read in an effect, not during render: localStorage does not exist on the
@@ -145,7 +179,7 @@ export function PuckEditor({
    */
   const runSave = useCallback(
     async (
-      action: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>,
+      action: (slug: string, data: Data, version?: string) => Promise<SaveResult>,
       data: Data,
       okLabel: string
     ) => {
@@ -153,8 +187,15 @@ export function PuckEditor({
       publishing.current = true;
       setStatus("Saving…");
       try {
-        const res = await action(slug, data);
-        if (res.ok) {
+        const res = await action(slug, data, versionRef.current);
+        if (res.stale) {
+          // Someone (or another tab) saved this page since it opened here.
+          // Nothing was written. Keep the work in this browser, leave `dirty`
+          // armed, and let a reload offer it back.
+          writeStash(stashKey, data);
+          setStatus(STALE_MESSAGE);
+        } else if (res.ok) {
+          if (res.updatedAt) versionRef.current = res.updatedAt;
           saved.current = data;
           setDirty(false);
           clearStash(stashKey);
@@ -192,24 +233,24 @@ export function PuckEditor({
 
   // Stable unless the host's draft action changes: Puck re-derives its whole
   // UI when `overrides` changes identity.
-  const overrides = useMemo(
-    () =>
-      onSaveDraft
-        ? {
-            ...OVERRIDES,
-            headerActions: ({ children }: { children: ReactNode }) => (
-              <>
-                <SaveDraftButton onSave={saveDraft} />
-                {children}
-              </>
-            ),
-          }
-        : OVERRIDES,
-    [onSaveDraft, saveDraft]
-  );
+  const overrides = useMemo(() => {
+    // Under a theme the canvas iframe also carries it (see ThemedFrame).
+    const base = theme ? THEMED_OVERRIDES[theme] : OVERRIDES;
+    return onSaveDraft
+      ? {
+          ...base,
+          headerActions: ({ children }: { children: ReactNode }) => (
+            <>
+              <SaveDraftButton onSave={saveDraft} />
+              {children}
+            </>
+          ),
+        }
+      : base;
+  }, [onSaveDraft, saveDraft, theme]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
+    <div className={theme ? "eac-puck-theme" : undefined} data-puck-theme={theme} style={{ position: "fixed", inset: 0, zIndex: 50 }}>
       <Puck
         // Puck reads `data` ONCE, in a useState initialiser — it is an
         // uncontrolled component. Keying on the slug is what makes moving
@@ -309,6 +350,40 @@ const OVERRIDES = {
   ),
   fields: ({ children }: { children: ReactNode }) => <FocusedFields>{children}</FocusedFields>,
 };
+
+/**
+ * The theme's tokens are set on a wrapper in the host document (class
+ * `eac-puck-theme`), and custom properties do not cross into the canvas iframe,
+ * which has its own `:root`. This marks that root so puck-theme.css reaches the
+ * overlays, action bar and our own canvas marks drawn inside it. Verified in the
+ * harness 2026-11-20: without it the iframe kept Puck's default blue.
+ */
+function ThemedFrame({ theme, document: doc, children }: { theme: string; document?: Document; children: ReactNode }) {
+  useEffect(() => {
+    const root = doc?.documentElement;
+    if (!root) return;
+    root.setAttribute("data-eac-puck-theme", theme);
+    return () => root.removeAttribute("data-eac-puck-theme");
+  }, [doc, theme]);
+  return (
+    <ItemPicker doc={doc}>
+      {children}
+      <CanvasMenu doc={doc} />
+    </ItemPicker>
+  );
+}
+
+/** OVERRIDES with the iframe override that carries the theme. Module-level, per theme: identity must stay stable. */
+const THEMED_OVERRIDES = {
+  studio: {
+    ...OVERRIDES,
+    iframe: ({ children, document }: { children: ReactNode; document?: Document }) => (
+      <ThemedFrame theme="studio" document={document}>
+        {children}
+      </ThemedFrame>
+    ),
+  },
+} as const;
 
 /**
  * Give every rich-text prop holding PLAIN text (typed before the prop was

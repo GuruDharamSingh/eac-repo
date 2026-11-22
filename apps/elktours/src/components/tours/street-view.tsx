@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { StreetViewPano } from "@/components/tours/street-view-pano";
+import { StreetViewPano, type PanoView } from "@/components/tours/street-view-pano";
 
 export interface StreetViewPose {
   lat: number;
@@ -9,6 +9,9 @@ export interface StreetViewPose {
   heading?: number | null;
   pitch?: number | null;
   fov?: number | null;
+  /** Where the panorama opens when it is not the place itself (the editor walked it there; migration 279). */
+  viewLat?: number | null;
+  viewLng?: number | null;
 }
 
 /** The Street View link that needs no key (Google Maps URLs API). */
@@ -49,6 +52,8 @@ interface StreetViewProps {
   title: string;
   apiKey?: string | null;
   className?: string;
+  /** The live panorama reports turns and zooms here (place form: saved as the starting view). */
+  onViewChange?: (view: PanoView) => void;
 }
 
 /**
@@ -58,9 +63,9 @@ interface StreetViewProps {
  * markup is the same either way, so turning the key on later changes
  * nothing else.
  */
-export function StreetView({ pose, imageUrl, title, apiKey, className }: StreetViewProps) {
+export function StreetView({ pose, imageUrl, title, apiKey, className, onViewChange }: StreetViewProps) {
   if (pose && apiKey) {
-    return <StreetViewPano pose={pose} apiKey={apiKey} className={className} />;
+    return <StreetViewPano pose={pose} apiKey={apiKey} className={className} onViewChange={onViewChange} />;
   }
   return (
     <div className={`relative ${className ?? ""}`}>

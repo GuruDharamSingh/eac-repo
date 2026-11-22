@@ -1,15 +1,22 @@
 import * as React from "react";
-import type { Constellation, ForumBoard, ForumPersonCard, ForumReply, ForumThreadRecord, ForumViewer, ForumVoters } from "@elkdonis/services";
+import type { Constellation, ForumAttachment, ForumBoard, ForumPersonCard, ForumReply, ForumThreadRecord, ForumViewer, ForumVoters } from "@elkdonis/services";
 import { SurfacePage, SurfaceSection, threadViewParts } from "@elkdonis/cms-ui/surface";
 import type { ForumConnectors } from "./connectors";
 import { toSurfaceThread } from "./adapters";
-import { Avatar, Breadcrumb, Empty, Flash, Layout, Pagination, PersonName, SectionTitle, Time, kindLabel, plural } from "./parts";
+import { AttachPicker } from "./attach";
+import { AttachmentList, Avatar, Breadcrumb, Empty, Flash, Layout, Pagination, PersonName, SectionTitle, Time, kindLabel, plural } from "./parts";
 import { ConstellationSvg, DrawLineForm, MapEdgeList } from "./map";
 import { PersonWithCard } from "./people";
 import { timeAgo } from "./format";
 import { mediaUrl } from "./media";
 
 /** A byline whose name carries the hover card. */
+/** An org owner or guide keeps their chip; otherwise a host badge (artist) shows. */
+function roleWithBadge(role: string | null | undefined, badge: string | undefined): string | null {
+  if (role === "owner" || role === "guide") return role;
+  return badge ?? role ?? null;
+}
+
 function CardByline({ person, role, at, edited, card, hrefs, size = 32 }: {
   person: ForumReply["author"]; role?: string | null; at: Date; edited?: Date | null; card?: ForumPersonCard; hrefs: ForumConnectors["hrefs"]; size?: 24 | 32;
 }) {
@@ -71,6 +78,10 @@ interface Ctx {
   votersFor: string | null;
   voters: ForumVoters | null;
   cards: Record<string, ForumPersonCard>;
+  /** Extra role badges by user id (host's roleBadges hook). Absent for hosts that did not opt in. */
+  badges?: Record<string, string>;
+  /** Attachments by reply id, and under the key "op" for the opening post. Absent unless the host opted in. */
+  attachments?: Record<string, ForumAttachment[]>;
 }
 
 function actionUrl(c: ForumConnectors, name: string): string | null {
@@ -170,7 +181,7 @@ export function ReplyItem({ ctx, reply, replies: children, nested = false, isFir
       {isFirstUnread && <div className="gf-newrule" role="separator"><span>new since your last visit</span></div>}
       <article id={`reply-${reply.id}`} className={`gf-reply${nested ? " gf-reply--nested" : ""}`}>
         <div className="gf-reply-head">
-          <CardByline person={reply.author} role={reply.authorRole} at={reply.createdAt} edited={reply.editedAt} card={ctx.cards[reply.author.id]} hrefs={hrefs} size={nested ? 24 : 32} />
+          <CardByline person={reply.author} role={roleWithBadge(reply.authorRole, ctx.badges?.[reply.author.id])} at={reply.createdAt} edited={reply.editedAt} card={ctx.cards[reply.author.id]} hrefs={hrefs} size={nested ? 24 : 32} />
           {reply.viaNextcloud && <NcBadge label="via Nextcloud" />}
           {reply.replyingTo && (
             <span className="gf-reply-to">↳ replying to <a href={`#reply-${reply.replyingTo.id}`}>{reply.replyingTo.name}</a></span>
@@ -180,6 +191,7 @@ export function ReplyItem({ ctx, reply, replies: children, nested = false, isFir
           )}
         </div>
         <ReplyBody html={reply.contentHtml} />
+        <AttachmentList items={ctx.attachments?.[reply.id]} />
         <div className="gf-reply-foot">
           <VoteBar ctx={ctx} replyId={reply.id} score={reply.score} hearts={reply.heartCount} viewerVote={reply.viewerVote} viewerHearted={reply.viewerHearted} authorId={reply.author.id} />
           {replyLinks(ctx, reply)}
@@ -229,6 +241,7 @@ function ReplyBox({ ctx, replyTo, quote }: { ctx: Ctx; replyTo: ForumReply | nul
         )}
       </div>
       <textarea name="text" className="gf-textarea" rows={quote ? 8 : 5} required defaultValue={quote ? `${quote}\n\n` : ""} placeholder="Write your reply. Blank lines make paragraphs; lines starting with > quote." />
+      {connectors.composeOptions?.attachments && <AttachPicker variant="reply" uploadUrl={connectors.composeOptions.uploadUrl} />}
       <div className="gf-replybox-foot">
         <span className="gf-replybox-hint">Plain text. Blank line = new paragraph · <code>&gt;</code> = quote</span>
         <button type="submit" className="eac-btn eac-btn--primary">Post reply</button>
@@ -351,6 +364,10 @@ export interface ThreadPageViewProps {
   quote: string;
   cards?: Record<string, ForumPersonCard>;
   constellation?: Constellation | null;
+  /** Attachments keyed by reply id ("op" = opening post). Pass only for hosts with composeOptions.attachments. */
+  attachments?: Record<string, ForumAttachment[]>;
+  /** Role badges by user id from connectors.roleBadges, for the reply authors. */
+  badges?: Record<string, string>;
   notice: string | null;
   error: string | null;
 }
@@ -358,7 +375,7 @@ export interface ThreadPageViewProps {
 export function ThreadPageView(p: ThreadPageViewProps) {
   const { connectors, viewer, thread, replies, href, board } = p;
   const { hrefs, scope, siteName } = connectors;
-  const ctx: Ctx = { connectors, viewer, thread, back: p.back, votersFor: p.votersFor, voters: p.voters, cards: p.cards ?? {} };
+  const ctx: Ctx = { connectors, viewer, thread, back: p.back, votersFor: p.votersFor, voters: p.voters, cards: p.cards ?? {}, attachments: p.attachments, badges: p.badges };
   const surface = toSurfaceThread(thread, href);
   const parts = threadViewParts(surface, {}, { showCover: true });
   const network = scope.kind === "network";
@@ -464,6 +481,7 @@ export function ThreadPageView(p: ThreadPageViewProps) {
           <CardByline person={thread.author} at={thread.publishedAt ?? thread.createdAt} card={ctx.cards[thread.author.id]} hrefs={hrefs} />
         </div>
         {parts.main}
+        <AttachmentList items={ctx.attachments?.op} />
         <div className="gf-reply-foot gf-op-foot">
           <VoteBar ctx={ctx} replyId={null} score={thread.score} hearts={thread.heartCount} viewerVote={thread.viewerVote} viewerHearted={thread.viewerHearted} authorId={thread.author.id} />
         </div>

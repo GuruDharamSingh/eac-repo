@@ -18,7 +18,7 @@ const TZ = "America/Toronto";
  * the wall-clock reading the author typed into the matching UTC instant,
  * accounting for DST on that particular date.
  */
-export function torontoInputToDate(value: string): Date | null {
+function torontoInputToDate(value: string): Date | null {
   if (!value) return null;
 
   // A bare date (recurrence end, RSVP deadline) means midnight that day.

@@ -1,0 +1,9 @@
+/* The sign-in form inside the offerings card's right-hand column (OfferingSignIn.tsx): the baroque frame is sized
+   for a page of its own, so here it is narrower and sits flush in the column. Colours stay the form's own. */
+.ig-offer-signin-box .eac-bq {
+  --eac-bq-w: min(15.5rem, 100%);
+}
+
+.ig-offer-signin-box .eac-bq-frame {
+  margin: calc(var(--eac-bq-w) * 0.12) auto;
+}

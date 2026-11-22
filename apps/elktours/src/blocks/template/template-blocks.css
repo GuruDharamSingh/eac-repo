@@ -1,0 +1,20 @@
+/* Booking options and Locations (TEMPLATE lane, 2026-11-21). The rows, map and stop list are the phone tour page's own (tpi-*,
+   phone/index/tour-phone-index.css); this adds only what the page does not have: the price line, the Book fold, the picture
+   on a location. The tpi-root wrapper brings the phone page's tokens, but also its snap-scrolling on <html>: switched off
+   here unless the page also holds the stage, which wants it. */
+@media (max-width: 767px) {
+  html:has(.tb-root):not(:has(.tsp-root)) { scroll-snap-type: none; }
+}
+.tb-root { background: transparent; }
+.tb-root .tpi-sec { padding-bottom: 20px; }
+.tb-price { margin: 0; font-family: var(--tpi-v); letter-spacing: .04em; font-size: 1.2rem; color: var(--tpi-fg); }
+.tb-price span { font-family: var(--tpi-b); font-size: .85rem; letter-spacing: .01em; color: var(--tpi-mu); }
+.tb-book { display: grid; gap: 10px; }
+.tb-book__form { border: 1px solid var(--tpi-ln); background: var(--tpi-bg); padding: 12px; }
+.tb-loc__pic { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--tpi-ln); flex: none; }
+.tb-loc { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--tpi-ln); background: var(--tpi-bg); }
+.tb-loc__text { display: grid; min-width: 0; flex: 1; }
+.tb-loc__t { font-weight: 700; }
+.tb-loc__k, .tb-loc__a { font-size: .85rem; color: var(--tpi-mu); }
+.tb-loc__min { font-family: var(--tpi-v); font-size: .7rem; letter-spacing: .1em; color: var(--tpi-mu); white-space: nowrap; }
+.tb-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--tpi-ln); border-bottom: 0; }

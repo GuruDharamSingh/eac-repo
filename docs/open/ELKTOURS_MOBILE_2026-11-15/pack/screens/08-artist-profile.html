@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08-artist-profile</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 780-812. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.artist }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 0 60px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:#f1ece2;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">←</button>
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">Artist</span>
+<span style="width:44px"></span>
+</div>
+<div style="display:flex;justify-content:center;margin-top:18px"><div style="width:220px;height:280px;border-radius:110px 110px 18px 18px;border:1px solid #86b9ab;outline:1px solid rgba(134,185,171,.22);outline-offset:6px;background:repeating-linear-gradient(135deg,rgba(134,185,171,.1) 0 1px,transparent 1px 10px),linear-gradient(165deg,#4b545a,#2c3036);display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px"><span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,236,226,.5)">portrait · {{ ar.name }}</span></div></div>
+<h1 style="margin:28px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:42px;line-height:1;text-align:center">{{ ar.name }}</h1>
+<p style="margin:10px 20px 0;font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:#b9b2a5;text-align:center">{{ ar.craft }} · {{ ar.area }}</p>
+<sc-if value="{{ ar.hasAbout }}" hint-placeholder-val="{{ true }}"><p style="margin:22px 20px 0;font-size:16px;line-height:1.6;color:#e6e0d4;text-wrap:pretty"><span style="float:left;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:60px;line-height:.82;margin:6px 10px 0 0;color:#86b9ab">{{ ar.first }}</span>{{ ar.rest }}</p></sc-if>
+<sc-if value="{{ ar.isNew }}" hint-placeholder-val="{{ false }}"><p style="margin:18px 20px 0;padding:12px 14px;border-radius:14px;border:1px dashed rgba(241,236,226,.3);font-size:13px;color:#b9b2a5;text-align:center">New to Elkdonis. The office is reviewing this page.</p></sc-if>
+<sc-if value="{{ ar.hasWorks }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 12px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">Work</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(134,185,171,.6),transparent)"></div></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 16px">
+<sc-for list="{{ ar.works }}" as="w" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px"><div style="height:112px;border-radius:14px;background:repeating-linear-gradient(135deg,rgba(134,185,171,.1) 0 1px,transparent 1px 8px),linear-gradient(165deg,#474f55,#2c3036);border:1px solid rgba(241,236,226,.08)"></div><span style="font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35;color:#8f8a82">{{ w.cap }}</span></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ ar.hasExps }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 12px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">Experiences</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(134,185,171,.6),transparent)"></div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:0 16px">
+<sc-for list="{{ ar.exps }}" as="c" hint-placeholder-count="1"><button onClick="{{ c.open }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px 12px 12px;border-radius:20px;background:#31353c;border:1px solid rgba(241,236,226,.09);color:#f1ece2;text-align:left;cursor:pointer"><span style="flex:none;width:52px;height:52px;border-radius:26px;border:1px solid #86b9ab;background:repeating-linear-gradient(135deg,rgba(134,185,171,.12) 0 1px,transparent 1px 7px),radial-gradient(circle at 40% 35%,#4f585e,#2c3036)"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-weight:700;font-size:15.5px;line-height:1.25">{{ c.title }}</span><span style="font-size:12.5px;color:#b9b2a5">{{ c.sub }}</span><span style="font-size:12px;color:#dcc08a">{{ c.pill }}</span></span><span style="color:#86b9ab;font-size:18px">›</span></button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ ar.hasTours }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 12px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Find {{ ar.short }} on</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:0 16px">
+<sc-for list="{{ ar.tours }}" as="t" hint-placeholder-count="1"><button onClick="{{ t.open }}" style="display:flex;gap:12px;align-items:center;width:100%;padding:10px 14px 10px 10px;border-radius:22px;background:#31353c;border:1px solid rgba(201,162,92,.35);color:#f1ece2;text-align:left;cursor:pointer"><span style="flex:none;width:56px;height:70px;border-radius:28px 28px 8px 8px;background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 8px),linear-gradient(165deg,#474c56,#2e3238)"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#dcc08a">{{ t.kicker }}</span><span style="font-weight:700;font-size:15.5px;line-height:1.25">{{ t.title }}</span><span style="font-size:12.5px;color:#b9b2a5">{{ t.sub }}</span></span><span style="color:#c9a25c;font-size:18px">›</span></button></sc-for>
+</div>
+</sc-if>
+<a href="#" style="display:block;margin:26px 20px 0;font-size:14px">Full portfolio on ArtDirect →</a>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

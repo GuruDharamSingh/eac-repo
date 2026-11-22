@@ -34,7 +34,7 @@ import { siteConfig } from "@/config/site";
 // ============================================================================
 
 /** Where this app's email pages live. All four exist here. */
-export function emailRoutes() {
+function emailRoutes() {
   return {
     suite: "/hub/email",
     newsletter: "/hub/newsletter",

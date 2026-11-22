@@ -4,7 +4,11 @@ import { cleanMorph, morphCss, type MorphParts } from "../block/morph";
 
 // The morph helpers a Puck editor plugin writes with (page-builder's partsPlugin, 2026-11-06):
 // page-builder does not depend on this package, so the host passes these.
-export { partLookOf, setPartLook, partSafeDecls, setToken, tokenOf } from "../block/morph";
+export { partLookOf, setPartLook, partLookAt, setPartLookAt, clearPartLook, partSafeDecls, setToken, tokenOf, cleanMorph, morphCss } from "../block/morph";
+export type { NodeMorph, PartLook, LookWhere, LookState, LookSize } from "../block/morph";
+/** Style against look (2026-11-20): `declsFromStyleObject(styleToCss(cleanStyle(raw)).style)` is a host's `blkStyleDecls`. */
+export { declsFromStyleObject } from "../block/read-look";
+export type { BlkStyleDecls } from "../block/read-look";
 
 // ============================================================================
 // Draws a node's `morph`: the marker the stylesheet is scoped by, right before the

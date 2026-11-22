@@ -4,7 +4,7 @@ import { requireOrgEditor } from "@/lib/auth";
 import { EMPTY_PAGE, isValidSlug } from "@elkdonis/page-builder";
 import type { PuckDoc } from "@elkdonis/direct-edit/block";
 import { siteConfig } from "@/config/site";
-import { loadPage } from "@/lib/puck/store";
+import { loadPageWithVersion } from "@/lib/puck/store";
 import { CanvasEditor } from "@/components/studio/CanvasEditor";
 
 /**
@@ -20,6 +20,6 @@ export default async function CanvasPage({ params }: { params: Promise<{ slug: s
 
   await requireOrgEditor(`/studio/${slug}/canvas`);
 
-  const page = await loadPage(slug);
-  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={(page?.data as PuckDoc) ?? (EMPTY_PAGE as PuckDoc)} />;
+  const page = await loadPageWithVersion(slug);
+  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={(page?.data as PuckDoc) ?? (EMPTY_PAGE as PuckDoc)} version={page?.updatedAt} />;
 }

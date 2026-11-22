@@ -1,0 +1,42 @@
+/* Desktop landing heading with a city chooser. 2026-11-20: one centred line, the city in a pill. 2026-11-21: sits in the
+   hero's text column, left-aligned; the city is plain bold text with a brass underline and a chevron. The menu carries its
+   own paper and ink so it reads on any hero fill.
+   Contrast (measured): ink #292723 on paper #fbf8f1 14.2:1; "coming 2027" #6a6258 on paper 5.4:1. */
+.hct-root { text-align: left; color: #292723; }
+.hct-root h1 { max-width: none; width: 100%; margin: 0; font-size: clamp(2rem, 3.6vw, 3.25rem); font-weight: 700; line-height: 1.15; color: #292723; }
+.hct { display: inline; }
+.hct-wrap { position: relative; display: inline-block; vertical-align: baseline; }
+.hct-btn {
+  display: inline-flex; align-items: center; gap: 0.2em;
+  padding: 0 0.04em;
+  border: 0; border-bottom: 0.08em solid #c8a45b; border-radius: 0;
+  background: none;
+  color: inherit; font: inherit; font-variant: inherit; letter-spacing: inherit; line-height: 1.1;
+  cursor: pointer;
+}
+.hct-btn:hover { background: rgba(200, 164, 91, 0.18); }
+.hct-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.hct-chev { width: 0.45em; height: 0.45em; margin-top: 0.1em; flex: none; }
+.hct-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hct-menu {
+  position: absolute; z-index: 30; top: calc(100% + 10px); left: 0;
+  display: block; min-width: 15rem; padding: 6px;
+  background: #ffffff; color: #292723; border: 1px solid #727b88; border-radius: 0;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  font-family: Basteleur, Georgia, serif; font-size: 1.0625rem; font-weight: 400; font-variant: normal; letter-spacing: 0; line-height: 1.3; text-align: left; white-space: nowrap;
+  outline: none;
+}
+.hct-menu:focus-visible { outline: 2px solid #292723; outline-offset: 2px; }
+.hct-opt { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 10px 14px; cursor: pointer; }
+.hct-opt[data-active] { background: #f4efe3; }
+.hct-opt[aria-selected="true"] .hct-name { font-weight: 700; }
+.hct-opt[aria-disabled="true"] { cursor: not-allowed; color: #6a6258; }
+.hct-soon { font-size: 0.8125rem; letter-spacing: 0.04em; }
+.hct-tick { color: #292723; }
+
+/* The hero's two buttons (page.tsx part "hero-actions"): gold primary and a plain ink outline, both readable on white. */
+.hct-acts { display: flex; flex-wrap: wrap; gap: 12px; }
+.hct-acts a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; font-size: 15px; border: 1px solid #292723; background: #fff; color: #292723; text-decoration: none; }
+.hct-acts a:hover { background: #f4efe3; }
+.hct-acts a.hct-acts__main { background: #c8a45b; border-color: #c8a45b; color: #1b1e23; font-weight: 700; }
+.hct-acts a.hct-acts__main:hover { background: #b9954f; }

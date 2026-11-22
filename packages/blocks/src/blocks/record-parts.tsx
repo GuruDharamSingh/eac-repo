@@ -1,8 +1,15 @@
 import type { ComponentType } from "react";
 import { sanitizeRichText } from "@elkdonis/utils/sanitize";
 import { defineBlock, type PropsOf } from "../registry";
-import type { Block } from "../types";
+import type { Block, BlockRead } from "../types";
 import { sized, srcSet } from "../media";
+
+/** What every record block works out for itself: the record in the address, else the one its setting names, on this site. */
+const RECORD_READS: readonly BlockRead[] = [
+  { from: "route", what: "record", kinds: ["thread", "service"] },
+  { from: "record", via: "record", kinds: ["thread", "service"] },
+  { from: "site", what: "org" },
+];
 
 // ============================================================================
 // Record parts (2026-11-11): one record of any kind (a post, a gathering, a
@@ -189,6 +196,7 @@ export const recordHeader = defineBlock(
     category: "headers",
     description: "The title of a post, gathering or service, with its small line, subtitle, date, author and cover. Its words come from the record.",
     memberSafe: true,
+    reads: RECORD_READS,
     dataDriven: true,
     styling: "tokens",
     props: headerProps,
@@ -238,6 +246,7 @@ export const recordBody = defineBlock(
     category: "content",
     description: "The record's own text, as its author wrote it.",
     memberSafe: true,
+    reads: RECORD_READS,
     dataDriven: true,
     styling: "tokens",
     props: bodyProps,
@@ -287,6 +296,7 @@ export const recordFacts = defineBlock(
     category: "content",
     description: "When, where, format, length: the facts the record's kind has. Hidden when there are none.",
     memberSafe: true,
+    reads: RECORD_READS,
     dataDriven: true,
     styling: "tokens",
     props: factsProps,
@@ -388,6 +398,7 @@ export function checkoutBlock(host: CheckoutHost): Block<CheckoutProps> {
       category: "actions",
       description: "The price of a service, workshop or tour and a button that takes the buyer to the card page. Sold by this site only.",
       memberSafe: true,
+      reads: [...RECORD_READS, { from: "flow", what: "checkout" }],
       dataDriven: true,
       styling: "tokens",
       props: checkoutProps,
@@ -457,6 +468,7 @@ export function rsvpBlock(host: RsvpHost): Block<RsvpProps> {
       category: "actions",
       description: "“I’m coming” for a gathering on this site, with the count.",
       memberSafe: true,
+      reads: [...RECORD_READS, { from: "flow", what: "rsvp" }, { from: "viewer", what: "signed-in" }],
       dataDriven: true,
       styling: "tokens",
       props: rsvpProps,

@@ -31,7 +31,7 @@ export function StopDetails({
       ) : (
         <p className="text-sm text-[color:var(--sf-muted)]">No description of this stop yet.</p>
       )}
-      {stop.business ? <BusinessCard business={stop.business} compact /> : null}
+      {stop.business ? <BusinessCard business={stop.business} compact line /> : null}
       {linksSlot ?? <PlaceLinks links={stop.links} compact />}
       {adminSlot}
       {stop.placeId && <ReviewsSection target={{ type: "place", id: stop.placeId }} title={`Reviews of ${stop.title}`} compact />}

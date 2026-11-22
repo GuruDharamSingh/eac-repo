@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MultiImageUploader, type UploadedImage } from "@elkdonis/studio-ui";
+import type { UploadedImage } from "@elkdonis/studio-ui";
+import { PieceImages } from "./piece-images";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import "@elkdonis/cms-ui/editor.css";
 import { savePieceAction, type PieceInput } from "@/lib/manage-actions";
@@ -15,9 +16,10 @@ import { useToast } from "@elkdonis/cms-ui/manage/client";
  * studio form is 900 lines because it also carries maker credit, beneficiary,
  * provenance and estimates; none of those belong here.)
  *
- * Pictures upload through THIS site's /api/media/upload (editors only; it
- * answers { url, id, ... } which is what MultiImageUploader expects) into the
- * owner's own Media/Images folder, so the same address works on Collect Art.
+ * Pictures are added with the library picker (components/manage/piece-images.tsx):
+ * upload through THIS site's /api/media/upload (editors only) into the site's own
+ * Media/Images folder, or choose from "This site" / "My files". Every address is an
+ * /api/media/EAC_Network/ path, so the same address works on Collect Art.
  */
 
 export interface PieceFormInitial {
@@ -45,7 +47,6 @@ const numOrNull = (v: string): number | null => (v.trim() === "" || Number.isNaN
 export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormInitial; readOnlyReason?: string | null }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [uploading, setUploading] = useState(false);
   const toast = useToast();
 
   const [title, setTitle] = useState(initial.title);
@@ -183,20 +184,19 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
 
       <section className="ktp-m-card">
         <h2>Pictures</h2>
-        <p className="ktp-m-fine">The first picture is the cover. Drag to reorder; add a short description of each for screen readers.</p>
-        <MultiImageUploader value={images} onChange={setImages} uploadEndpoint="/api/media/upload" maxImages={12} disabled={disabled} onBusyChange={setUploading} />
+        <p className="ktp-m-fine">The first picture is the cover. Use the arrows to reorder; add a short description of each for screen readers.</p>
+        <PieceImages value={images} onChange={setImages} maxImages={12} disabled={disabled} />
       </section>
 
       <div className="ktp-m-savebar">
-        <button type="submit" className="ktp-btn ktp-btn--ghost" disabled={disabled || uploading}>
+        <button type="submit" className="ktp-btn ktp-btn--ghost" disabled={disabled}>
           {pending ? "Saving…" : initial.status === "available" ? "Save changes" : "Save draft"}
         </button>
         {initial.status === "available" ? null : (
-          <button type="button" className="ktp-btn" disabled={disabled || uploading} onClick={() => save(true)}>
+          <button type="button" className="ktp-btn" disabled={disabled} onClick={() => save(true)}>
             Save and put on sale
           </button>
         )}
-        {uploading ? <span className="ktp-m-fine">Waiting for a picture to finish uploading…</span> : null}
       </div>
     </form>
   );

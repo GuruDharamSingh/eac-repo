@@ -32,15 +32,16 @@ export default async function ManageLayout({ children }: { children: React.React
   const viewer = await requireOrgEditor();
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
-      <header className="flex flex-wrap items-baseline justify-between gap-3">
+    <div className="elk-manage mx-auto max-w-6xl px-5 py-10">
+      <header className="elk-manage-chrome flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-serif text-3xl">Manage</h1>
         <p className="text-sm text-muted-foreground">
-          Signed in as {viewer.email} · <span className="capitalize">{viewer.role}</span>
+          Signed in as {viewer.email} · <span className="capitalize">{viewer.role}</span> ·{" "}
+          <Link href="/" data-part="public-site" className="underline underline-offset-4 hover:text-foreground">View site</Link>
         </p>
       </header>
 
-      <nav className="mt-6 flex flex-wrap gap-1 border-b border-border">
+      <nav className="elk-manage-chrome mt-6 flex flex-wrap gap-1 border-b border-border">
         {[...TABS, ...(viewer.role === "owner" ? OWNER_TABS : [])].map((tab) => (
           <Link
             key={tab.href}
@@ -52,7 +53,7 @@ export default async function ManageLayout({ children }: { children: React.React
         ))}
       </nav>
 
-      <div className="mt-8">{children}</div>
+      <div className="elk-manage-body mt-8">{children}</div>
     </div>
   );
 }

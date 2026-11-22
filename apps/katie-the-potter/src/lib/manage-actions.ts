@@ -15,6 +15,7 @@ import {
   setArtworkMedia,
   updateArtwork,
 } from "@elkdonis/commerce/server";
+import { buyPlatformLabel } from "@elkdonis/commerce/shipping";
 import type { ArtworkKind, ArtworkMediaInput, Currency } from "@elkdonis/commerce/types";
 import { guardStore } from "@/lib/manage";
 import { UUID_RE } from "@/lib/shop";
@@ -289,6 +290,23 @@ export async function shipOrderAction(orderId: string, note?: string): Promise<A
     return done("Marked as shipped.");
   } catch (err) {
     return friendly(err, "We couldn't mark that shipped. Only a paid order can be.");
+  }
+}
+
+/**
+ * Buy the label for a paid order whose buyer chose a courier at checkout, when
+ * the automatic purchase after payment did not go through (platform mode: the
+ * collective's Easyship account pays for it; the engine refuses a second one).
+ */
+export async function buyLabelAction(orderId: string): Promise<ActionResult> {
+  const a = await orderAccess(orderId);
+  if (typeof a === "string") return fail(a);
+  try {
+    const r = await buyPlatformLabel({ orderId, actorUserId: a.userId });
+    afterOrder(orderId);
+    return r.ok ? done("Label bought. Download it from the order.") : fail(r.error ?? "We couldn't buy the label.");
+  } catch (err) {
+    return friendly(err, "We couldn't buy the label.");
   }
 }
 

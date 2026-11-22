@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>32-new-slots</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 524-660. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-board.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.form }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 0 130px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;gap:14px;padding:0 16px">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:#f1ece2;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">✕</button>
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#b9b2a5">{{ form.who }}</span>
+</div>
+<h1 style="margin:18px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:40px;line-height:1">New slots</h1>
+<p style="margin:8px 20px 0;font-size:14px;line-height:1.5;color:#b9b2a5">Each date and start time becomes one bookable slot.</p>
+
+<div style="display:flex;flex-direction:column;gap:12px;padding:20px 14px 0">
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">I</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Experience</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">
+<sc-for list="{{ form.tours }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="height:36px;padding:0 14px;border-radius:18px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Basteleur,Georgia,serif;font-size:13.5px;cursor:pointer">{{ c.label }}</button></sc-for>
+</div>
+<p style="margin:12px 0 0;font-size:12.5px;color:#8f8a82">{{ form.tourNote }}</p>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">II</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Dates</span><span style="flex:1"></span><span style="font-size:12.5px;color:#b9b2a5">{{ form.daysLabel }}</span></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin:14px 2px 8px"><span style="font-family:Brothers,Georgia,serif;font-size:20px">November</span><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.16em;color:#8f8a82">2026</span></div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:4px;text-align:center">
+<sc-for list="{{ weekHead }}" as="w" hint-placeholder-count="7"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.12em;color:#8f8a82;padding-bottom:4px">{{ w }}</span></sc-for>
+<sc-for list="{{ form.cal }}" as="c" hint-placeholder-count="35">
+<div style="display:flex;flex-direction:column;align-items:center;gap:1px"><button onClick="{{ c.pick }}" style="width:36px;height:36px;border-radius:18px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Basteleur,Georgia,serif;font-size:14px;cursor:{{ c.cursor }};padding:0">{{ c.label }}</button><span style="width:4px;height:4px;border-radius:2px;background:{{ c.dot }}"></span></div>
+</sc-for>
+</div>
+<p style="margin:8px 0 0;font-size:12px;color:#8f8a82;display:flex;align-items:center;gap:6px"><span style="width:4px;height:4px;border-radius:2px;background:#dcc08a"></span>Already has a slot of this experience</p>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">III</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Start times</span><span style="flex:1"></span><span style="font-size:12.5px;color:#b9b2a5">Paris time</span></div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+<sc-for list="{{ form.times }}" as="tm" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:18px;background:#2a2e34;border:1px solid rgba(241,236,226,.08)">
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:20px;min-width:62px">{{ tm.tm }}</span>
+<span style="flex:1;font-size:12.5px;color:#8f8a82">{{ tm.end }}</span>
+<button onClick="{{ tm.down }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:16px;cursor:pointer;padding:0">‹</button>
+<button onClick="{{ tm.up }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:16px;cursor:pointer;padding:0">›</button>
+<button onClick="{{ tm.remove }}" style="width:34px;height:34px;border-radius:17px;border:0;background:transparent;color:{{ tm.removeColor }};font-size:15px;cursor:pointer;padding:0">✕</button>
+</div>
+</sc-for>
+<button onClick="{{ form.addTime }}" style="height:42px;border-radius:18px;border:1px dashed rgba(201,162,92,.6);background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:14px;cursor:pointer;opacity:{{ form.addOpacity }}">+ Add a start time</button>
+</div>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">IV</span><span style="flex:1;font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Length</span>
+<button onClick="{{ form.durMinus }}" style="width:36px;height:36px;border-radius:18px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:20px;line-height:1;cursor:pointer;padding:0">−</button>
+<span style="min-width:64px;text-align:center;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:17px">{{ form.durLabel }}</span>
+<button onClick="{{ form.durPlus }}" style="width:36px;height:36px;border-radius:18px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:20px;line-height:1;cursor:pointer;padding:0">+</button>
+</div>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">V</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Places</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+<div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:#2a2e34">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#b9b2a5">Minimum to run</span>
+<div style="display:flex;align-items:center;justify-content:space-between"><button onClick="{{ form.minMinus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">−</button><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:24px">{{ form.min }}</span><button onClick="{{ form.minPlus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">+</button></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:#2a2e34">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#b9b2a5">Maximum</span>
+<div style="display:flex;align-items:center;justify-content:space-between"><button onClick="{{ form.maxMinus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">−</button><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:24px">{{ form.max }}</span><button onClick="{{ form.maxPlus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">+</button></div>
+</div>
+</div>
+<div style="display:flex;gap:4px;margin-top:14px">
+<sc-for list="{{ form.seats }}" as="x" hint-placeholder-count="12"><span style="flex:1;height:18px;border-radius:4px 4px 2px 2px;border:1px solid {{ x.border }};background:{{ x.bg }}"></span></sc-for>
+</div>
+<p style="margin:10px 0 0;font-size:12.5px;line-height:1.5;color:#8f8a82">{{ form.minRule }}</p>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">VI</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Booking closes</span></div>
+<div style="display:flex;gap:6px;margin-top:12px">
+<sc-for list="{{ form.cuts }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.pick }}" style="flex:1;height:40px;padding:0;border-radius:20px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Basteleur,Georgia,serif;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for>
+</div>
+<p style="margin:10px 0 0;font-size:12.5px;line-height:1.5;color:#8f8a82">{{ form.cutNote }}</p>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">VII</span><span style="flex:1;font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Waitlist when full</span>
+<button onClick="{{ form.wlToggle }}" style="position:relative;flex:none;width:52px;height:30px;border-radius:15px;border:0;background:{{ form.wlTrack }};cursor:pointer;padding:0"><span style="position:absolute;top:3px;left:{{ form.wlKnob }};width:24px;height:24px;border-radius:12px;background:#f1ece2;transition:left .18s ease"></span></button>
+</div>
+<sc-if value="{{ form.wl }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 10px 10px 14px;border-radius:16px;background:#2a2e34">
+<span style="flex:1;font-size:13.5px;color:#e6e0d4">Holds up to</span>
+<button onClick="{{ form.wlMinus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">−</button>
+<span style="min-width:28px;text-align:center;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:19px">{{ form.wlCap }}</span>
+<button onClick="{{ form.wlPlus }}" style="width:34px;height:34px;border-radius:17px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">+</button>
+</div>
+<p style="margin:10px 0 0;font-size:12.5px;line-height:1.5;color:#8f8a82">When a guest cancels, you offer the place to the first in line.</p>
+</sc-if>
+</div>
+
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">VIII</span><span style="flex:1;font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Price per person</span><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:19px;color:#dcc08a">{{ form.priceLabel }}</span></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+<span style="flex:1;font-size:13.5px;color:#e6e0d4">{{ form.overrideText }}</span>
+<button onClick="{{ form.ovToggle }}" style="position:relative;flex:none;width:52px;height:30px;border-radius:15px;border:0;background:{{ form.ovTrack }};cursor:pointer;padding:0"><span style="position:absolute;top:3px;left:{{ form.ovKnob }};width:24px;height:24px;border-radius:12px;background:#f1ece2;transition:left .18s ease"></span></button>
+</div>
+<sc-if value="{{ form.override }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-top:12px;padding:10px;border-radius:16px;background:#2a2e34">
+<button onClick="{{ form.priceMinus }}" style="width:36px;height:36px;border-radius:18px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">−</button>
+<span style="min-width:70px;text-align:center;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:24px">{{ form.priceLabel }}</span>
+<button onClick="{{ form.pricePlus }}" style="width:36px;height:36px;border-radius:18px;border:1px solid rgba(241,236,226,.22);background:transparent;color:#f1ece2;font-size:19px;line-height:1;cursor:pointer;padding:0">+</button>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px;border-radius:22px;background:#31353c;border:1px solid rgba(241,236,226,.08)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Brothers,Georgia,serif;font-size:22px;color:#c9a25c;min-width:28px">IX</span><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase">Guide</span></div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<sc-for list="{{ form.guides }}" as="g" hint-placeholder-count="2"><button onClick="{{ g.pick }}" style="flex:1;display:flex;align-items:center;gap:10px;height:52px;padding:0 8px;border-radius:26px;border:1px solid {{ g.border }};background:{{ g.bg }};color:{{ g.fg }};font-family:Basteleur,Georgia,serif;font-size:14.5px;cursor:pointer"><span style="width:36px;height:36px;border-radius:18px;background:#3e434c;border:1px solid #c9a25c;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:16px;color:#dcc08a">{{ g.initial }}</span>{{ g.short }}</button></sc-for>
+</div>
+</div>
+</sc-if>
+
+<div style="padding:16px;border-radius:22px;border:1px solid rgba(201,162,92,.45);outline:1px solid rgba(201,162,92,.16);outline-offset:4px;margin:6px 4px 0">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:Venture,Georgia,serif;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:#c9a25c">To be created</span><span style="flex:1"></span><span style="font-size:12.5px;color:#b9b2a5">{{ form.countLabel }}</span></div>
+<div style="display:flex;flex-direction:column;margin-top:8px">
+<sc-for list="{{ form.items }}" as="it" hint-placeholder-count="3">
+<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(241,236,226,.08)">
+<span style="flex:none;width:20px;font-size:14px;color:{{ it.markColor }};text-align:center;padding-top:1px">{{ it.mark }}</span>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:14.5px">{{ it.label }}</span><span style="font-size:12.5px;line-height:1.4;color:{{ it.subColor }}">{{ it.sub }}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 30px;background:linear-gradient(180deg,rgba(40,43,49,0) 0%,#282b31 32%)">
+<button onClick="{{ form.create }}" style="width:100%;display:flex;align-items:center;justify-content:center;height:56px;padding:0 24px;border:0;background:{{ form.createBg }};color:{{ form.createFg }};font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;cursor:pointer;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)">{{ form.createLabel }}</button>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

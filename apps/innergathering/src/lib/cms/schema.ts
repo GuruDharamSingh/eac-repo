@@ -50,12 +50,12 @@ const baseFields = {
   audience: z.enum(["everyone", "followers", "members", "guides", "owners", "author"]).optional(),
 };
 
-export const postFormSchema = z.object({
+const postFormSchema = z.object({
   kind: z.literal("post"),
   ...baseFields,
 });
 
-export const meetingFormSchema = z.object({
+const meetingFormSchema = z.object({
   kind: z.literal("meeting"),
   ...baseFields,
   scheduledAt: z.string().min(1, "Pick a date and time"),

@@ -40,6 +40,8 @@ export function parseRangeKey(value: string | string[] | undefined): RangeKey {
   return RANGES.some((r) => r.key === v) ? (v as RangeKey) : '30d';
 }
 
+export { isBotUserAgent } from './classify';
+
 export type {
   DashboardData,
   Totals,

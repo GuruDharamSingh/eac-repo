@@ -60,10 +60,10 @@
 .eac-empty-block-fill {
   margin-top: 6px;
   padding: 6px 12px;
-  border: 1px solid #0158ad;
+  border: 1px solid var(--puck-color-interactive, #0158ad);
   border-radius: 6px;
   /* White on Puck's own azure-04: 6.3:1. */
-  background: #0158ad;
+  background: var(--puck-color-interactive, #0158ad);
   color: #ffffff;
   font: inherit;
   font-size: 13px;
@@ -74,7 +74,7 @@
   background: #014292;
 }
 .eac-empty-block-fill:focus-visible {
-  outline: 2px solid #0158ad;
+  outline: 2px solid var(--puck-color-interactive, #0158ad);
   outline-offset: 2px;
 }
 
@@ -118,7 +118,7 @@
   border-radius: var(--puck-radius-m, 4px);
   background: var(--puck-color-surface, #fff);
   /* Puck's azure-04 on white: 6.3:1. */
-  color: #0158ad;
+  color: var(--puck-color-interactive, #0158ad);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -142,11 +142,11 @@
 }
 .eac-row-focus-back:hover,
 .eac-row-focus-step button:hover:not(:disabled) {
-  background: var(--puck-color-azure-11, #f3f6fb);
+  background: var(--puck-color-interactive-soft, #f3f6fb);
 }
 .eac-row-focus-back:focus-visible,
 .eac-row-focus-step button:focus-visible {
-  outline: 2px solid #0158ad;
+  outline: 2px solid var(--puck-color-interactive, #0158ad);
   outline-offset: 2px;
 }
 .eac-row-focus-step button:disabled {
@@ -167,7 +167,7 @@
 .eac-height-handle {
   z-index: 41;
   box-sizing: border-box;
-  border: 2px solid #0158ad;
+  border: 2px solid var(--puck-color-interactive, #0158ad);
   border-radius: 6px;
   /* White with Puck's azure-04 edge: the edge is 6.3:1 on white, and the
      white body separates it from any photo behind it. */
@@ -179,7 +179,7 @@
   content: "";
   position: absolute;
   inset: 3px 14px;
-  border-block: 1px solid #0158ad;
+  border-block: 1px solid var(--puck-color-interactive, #0158ad);
 }
 .eac-height-handle-hint {
   position: absolute;
@@ -188,7 +188,7 @@
   transform: translateX(-50%);
   padding: 2px 8px;
   border-radius: 4px;
-  background: #0158ad;
+  background: var(--puck-color-interactive, #0158ad);
   color: #ffffff;
   font: 500 12px/1.6 system-ui, sans-serif;
   white-space: nowrap;
@@ -281,7 +281,7 @@
   pointer-events: none;
 }
 .eac-part-mark[data-on] {
-  outline: 2px solid var(--puck-color-azure-04, #0158ad);
+  outline: 2px solid var(--puck-color-interactive, #0158ad);
   outline-offset: 0;
 }
 .eac-part-mark-label {
@@ -291,7 +291,7 @@
   padding: 0 6px;
   border-radius: 4px 4px 4px 0;
   /* White on azure-04: 6.3:1. Fixed, not inherited: the site's own type applies in the canvas. */
-  background: var(--puck-color-azure-04, #0158ad);
+  background: var(--puck-color-interactive, #0158ad);
   color: #ffffff;
   font: 600 11px/18px system-ui, -apple-system, "Segoe UI", sans-serif;
   letter-spacing: normal;
@@ -330,7 +330,7 @@
 .eac-parts-back {
   padding: 5px 10px;
   /* Puck's azure-04 on white: 6.3:1. */
-  color: #0158ad;
+  color: var(--puck-color-interactive, #0158ad);
   font-weight: 600;
 }
 .eac-parts-head { display: grid; gap: 2px; }
@@ -357,9 +357,9 @@
 }
 .eac-parts-chip[aria-pressed="true"],
 .eac-parts-choices button[aria-pressed="true"] {
-  border-color: #0158ad;
-  background: var(--puck-color-azure-11, #e7eef7);
-  color: #0158ad;
+  border-color: var(--puck-color-interactive, #0158ad);
+  background: var(--puck-color-interactive-soft, #e7eef7);
+  color: var(--puck-color-interactive, #0158ad);
   font-weight: 600;
 }
 .eac-parts-count { color: var(--puck-color-text-secondary, #5a5a5a); font-weight: 400; }
@@ -413,7 +413,7 @@
 .eac-parts-input select:focus-visible,
 .eac-parts-css textarea:focus-visible,
 .eac-parts button:focus-visible {
-  outline: 2px solid #0158ad;
+  outline: 2px solid var(--puck-color-interactive, #0158ad);
   outline-offset: 1px;
 }
 .eac-parts-unit {
@@ -455,13 +455,13 @@
 .eac-parts-reset:hover:not(:disabled),
 .eac-parts-chip:hover,
 .eac-parts-choices button:hover {
-  background: var(--puck-color-azure-11, #f3f6fb);
+  background: var(--puck-color-interactive-soft, #f3f6fb);
 }
 /* A part pointed at from the layer tree. */
 .eac-part-mark[data-over] {
-  outline: 2px dashed var(--puck-color-azure-04, #0158ad);
+  outline: 2px dashed var(--puck-color-interactive, #0158ad);
   outline-offset: -2px;
-  background: color-mix(in srgb, var(--puck-color-azure-04, #0158ad) 8%, transparent);
+  background: color-mix(in srgb, var(--puck-color-interactive, #0158ad) 8%, transparent);
 }
 /* A look panel mounted from another package (direct-edit's), in Puck's right column. */
 .eac-look-panel.de-panel { height: auto; min-height: 100%; }

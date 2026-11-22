@@ -53,10 +53,22 @@ const serverResolvers: BlockResolvers = {
   checkout: async (props) => ({ ...(await loadRecordParts(props, { pay: true })) }),
 };
 
-export const serverPuckConfig = buildPuckConfig({
+/** Every block a page of this site may hold: the catalogue, then the canvas editor's boxes. */
+export const serverBlocks = [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])];
+
+const serverOptions = {
   resolvers: serverResolvers,
-  blocks: [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])],
+  blocks: serverBlocks,
   morph: MorphMark,
   // A page with no look on its root draws no wrapper: stored pages publish the markup they did before.
   root: { props: [], wrap: PublishedRoot },
-});
+};
+
+export const serverPuckConfig = buildPuckConfig(serverOptions);
+
+/**
+ * The same page drawn for someone who may edit it (live editor, 2026-11-20): an inert marker before each block, so the
+ * Fields lens can offer a block's own words for typing on the page. Never used for a visitor: their markup is
+ * `serverPuckConfig`'s, unchanged. (No block of this site fills a setting from a record, so there are no record marks.)
+ */
+export const markedPuckConfig = buildPuckConfig({ ...serverOptions, marks: true });

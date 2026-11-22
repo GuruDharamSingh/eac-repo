@@ -35,6 +35,7 @@ const KINDS: Record<SurfaceKind, KindMeta> = {
   // Compact on purpose: a definition is one sentence, opened over the thing
   // being written rather than replacing it.
   define: { label: "Define", glyph: "§", size: "compact" },
+  place: { label: "Place", glyph: "⊙", size: "standard" },
   neutral: { label: "", glyph: "•", size: "standard" },
 };
 

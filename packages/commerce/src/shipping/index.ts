@@ -534,7 +534,7 @@ export async function recordSellerTracking(input: {
  * courier service the buyer paid for. Spends money when EASYSHIP_ENV is
  * production. Access (store manager or network admin) is the caller's.
  */
-export async function buyPlatformLabel(input: { orderId: string; actorUserId: string }): Promise<Result<{ shipment: ShipmentRow }>> {
+export async function buyPlatformLabel(input: { orderId: string; actorUserId: string | null }): Promise<Result<{ shipment: ShipmentRow }>> {
   const ctx = await loadContext(input.orderId);
   if (!ctx) return { ok: false, error: "Order not found." };
   if (ctx.mode !== "platform") return { ok: false, error: "This store ships with its own labels." };
@@ -592,6 +592,21 @@ export async function buyPlatformLabel(input: { orderId: string; actorUserId: st
     `;
     return { ok: false, error: `Label purchase failed: ${message}` };
   }
+}
+
+/**
+ * Buy the platform label for a paid order that chose a courier, with no
+ * signed-in actor (called after `confirmOrderPaid` commits). Does nothing for
+ * a store that is not in platform mode, an order that arranged shipping, or
+ * one that already has a live shipment. A failure is logged, and the
+ * seller's "Buy label" button remains.
+ */
+export async function ensurePlatformLabel(orderId: string): Promise<void> {
+  const r = await buyPlatformLabel({ orderId, actorUserId: null });
+  if (r.ok) return;
+  // Expected refusals are silent; anything else is worth a line in the log.
+  if (/already|ships with its own|arranged shipping|Only a paid/i.test(r.error ?? "")) return;
+  console.warn(`[commerce] automatic label for ${orderId} not bought: ${r.error}`);
 }
 
 // ---------------------------------------------------------------------------

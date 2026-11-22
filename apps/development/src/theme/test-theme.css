@@ -1,0 +1,59 @@
+/* Test theme: faces and the font variable names the apps' own CSS reads (next/font variables in the real apps).
+   The colour roles are applied by ThemeScope (src/theme/test-theme.ts); this sheet only does what needs the
+   document: @font-face and :root font variables, so mocks (which carry their own palettes) get real faces too. */
+
+/* Basteleur: SIL Open Font License (copied from apps/elktours/public/fonts). */
+@font-face {
+  font-family: "Basteleur";
+  src: url("./fonts/Basteleur-Moonlight.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Basteleur";
+  src: url("./fonts/Basteleur-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Brothers and Venture: Justin holds the licences for both (told to the PM 2026-11-21). Copied, not moved, from
+   apps/elktours/public/fonts (same bytes in apps/innergathering/public/fonts). Declared the way those apps declare
+   them, so mocks and themes naming "Brothers" / "Venture" stop falling back to Georgia. Brothers ships one cut. */
+@font-face {
+  font-family: "Brothers";
+  src: url("./fonts/BrothersTypeface-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Venture";
+  src: url("./fonts/Venture-nRqOR.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The names the real apps get from next/font (--font-<name>), here pointing at the loaded families. */
+:root {
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-fraunces: "Fraunces", Georgia, serif;
+  --font-newsreader: "Newsreader", Georgia, serif;
+  --font-cormorant: "Cormorant Garamond", Garamond, Georgia, serif;
+  --font-eb-garamond: "EB Garamond", Garamond, Georgia, serif;
+  --font-spectral: "Spectral", Georgia, serif;
+  --font-karla: "Karla", system-ui, sans-serif;
+  --font-marcellus: "Marcellus", Georgia, serif;
+  --font-chivo-mono: "Chivo Mono", ui-monospace, monospace;
+  --font-jost: "Jost", system-ui, sans-serif;
+  --font-cinzel: "Cinzel", Georgia, serif;
+  --font-lora: "Lora", Georgia, serif;
+  --font-merriweather: "Merriweather", Georgia, serif;
+  --font-space-grotesk: "Space Grotesk", system-ui, sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}

@@ -1,7 +1,7 @@
 import { Render, resolveAllData } from "@puckeditor/core/rsc";
 import type { Data } from "@puckeditor/core";
 import { currentOrgId } from "@/lib/site-org";
-import { serverPuckConfig } from "@/lib/puck/config.server";
+import { markedPuckConfig, serverPuckConfig } from "@/lib/puck/config.server";
 import { loadPage } from "@/lib/puck/store";
 import { getViewer } from "@/lib/auth";
 
@@ -32,14 +32,17 @@ export function titleOf(data: Data | null): string | undefined {
 
 export async function PuckPage({ slug, data }: { slug: string; data: Data }) {
   const viewer = await getViewer().catch(() => null);
-  const resolved = await resolveAllData(data, serverPuckConfig, {
+  // Someone who may edit gets the same page with an inert marker before each block (the Fields lens reads them).
+  const config = viewer?.canEdit ? markedPuckConfig : serverPuckConfig;
+  const resolved = await resolveAllData(data, config, {
     orgId: currentOrgId(),
     slug,
     canEdit: Boolean(viewer?.canEdit),
   });
   return (
     <main className="he-content">
-      <Render config={serverPuckConfig} data={resolved as Data} />
+      {viewer?.canEdit ? <template data-blk-page={slug} /> : null}
+      <Render config={config} data={resolved as Data} />
       {viewer?.canEdit ? (
         <a className="he-edit-page" href={`/studio/${slug}`} data-de-ui="">
           Edit this page

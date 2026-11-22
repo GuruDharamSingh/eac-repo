@@ -13,7 +13,7 @@ const props = [
   { name: "showNav", kind: "boolean", label: "Back and previous / next links", default: true },
   { name: "showFacts", kind: "boolean", label: "Facts (year, medium, size, kind, status)", default: true },
   { name: "showDescription", kind: "boolean", label: "Description", default: true },
-  { name: "note", kind: "text", label: "A note under it", description: "e.g. how checkout works. Optional.", default: "Pay here by card or Interac eTransfer. Each piece is one of a kind and is held for you once you check out." },
+  { name: "note", kind: "text", label: "A note under it", description: "e.g. how checkout works. Optional.", default: "Pay here by card or Interac eTransfer. Each piece is one of a kind and goes to whoever pays first." },
 ] as const;
 
 interface NavLink {

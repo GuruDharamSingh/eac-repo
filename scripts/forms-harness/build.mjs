@@ -39,6 +39,7 @@ const css = [
   read("packages/studio-forms/src/forms/theme/forms.css"),
   read("packages/studio-forms/src/forms/theme/broadsheet.css"),
   read("packages/studio-forms/src/forms/theme/ledger.css"),
+  read("packages/site-forms/src/site-look.css"),
 ].join("\n");
 
 const PAGES = [
@@ -96,3 +97,34 @@ for (const page of ["sf-route-calendar", "sf-route-write", "sf-route-edit", "sf-
   siteCount++;
 }
 console.log("built", siteCount, "site-forms pages");
+
+// ── Para Theater look (2026-11-15): site-forms `look: "site"` on sunjay's surface tokens ──────────────
+// The :root block of apps/sunjay/src/app/globals.css (palette, --eac-surface-*, --eac-form-* pins), the site's
+// fonts (Fraunces for titles, Spectral for text) and body colours; surface.css loads first, as in the app.
+{
+  const g = read("apps/sunjay/src/app/globals.css");
+  // Every top-level `:root {` block (palette, surface hooks, form pins), in file order.
+  let rootBlock = "";
+  for (const m of g.matchAll(/^:root \{/gm)) {
+    let depth = 0, end = m.index;
+    for (let i = m.index; i < g.length; i++) {
+      if (g[i] === "{") depth++;
+      if (g[i] === "}" && --depth === 0) { end = i + 1; break; }
+    }
+    rootBlock += g.slice(m.index, end) + "\n";
+  }
+  const ptFonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">';
+  const ptCss = `${rootBlock}:root{--font-fraunces:'Fraunces';--font-spectral:'Spectral';color-scheme:dark}body{margin:0;background:hsl(var(--background));color:hsl(var(--foreground));font-family:'Spectral',Georgia,serif}`;
+  let n = 0;
+  for (const kind of ["meeting", "event", "post", "series", "workshop", "service"]) {
+    for (const hostKind of ["surface", "page", "surface-edit", "page-edit", "surface-focus", "surface-edit-focus"]) {
+      const page = `sf-${kind}-${hostKind}-pt`;
+      writeFileSync(
+        `${H}/out/${page}.html`,
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${ptFonts}<style>${css}\n${ptCss}</style></head><body><div id="root"></div><script>window.process={env:{NODE_ENV:"production"},browser:true};window.global=window;window.__PAGE__=${JSON.stringify(page.replace(/-pt$/, ""))};window.__LOOK__="site"</script><script src="site.js"></script></body></html>`
+      );
+      n++;
+    }
+  }
+  console.log("built", n, "Para Theater site-forms pages");
+}

@@ -8,10 +8,16 @@ import { Render, resolveAllData } from "@puckeditor/core/rsc";
 import type { Data } from "@puckeditor/core";
 import type { PuckDoc } from "@elkdonis/direct-edit/block";
 import { serverPuckConfig } from "@/lib/puck/config.server";
-import { loadPage } from "@/lib/puck/store";
+import { loadPageWithVersion } from "@/lib/puck/store";
 import { LANDING_SLUG } from "@/lib/puck/landing";
 import { RESOLVED_KEYS } from "@/lib/puck/resolved";
 import { EditPageButton } from "@/components/landing/EditPageButton";
+import { HeroCityTitle } from "@/components/landing/hero-city-title";
+import { swapHeroTitle } from "@/lib/puck/landing-hero";
+import { Split } from "@/components/mobile/split";
+import { loadMobileDoc } from "@/lib/puck/mobile";
+import { mobileServerConfig } from "@/lib/puck/config.mobile.server";
+import { readMobileDiscover } from "@/lib/puck/mobile-discover";
 
 /** What each stored block's resolver drew (a person, an Opens, a Card's record), by node id, for the editor: it draws them without asking again. Never saved. */
 function resolvedByNode(list: unknown, out: Record<string, Record<string, unknown>> = {}) {
@@ -36,13 +42,13 @@ function resolvedByNode(list: unknown, out: Record<string, Record<string, unknow
  * that is saved it draws from this code. After saving, `puck:landing` is the page: the words
  * stop following /manage/pages, and the parts below stay live. "Restore" returns to this code.
  */
-export default async function HomePage() {
+async function DesktopHome() {
   const [tours, guides, sections, viewer, tree] = await Promise.all([
     listTours(),
     getGuides().catch(() => []),
     getSiteSections(),
     getViewer().catch(() => null),
-    loadPage(LANDING_SLUG, new Set(Object.keys(serverPuckConfig.components))),
+    loadPageWithVersion(LANDING_SLUG, new Set(Object.keys(serverPuckConfig.components))),
   ]);
   const next = await nextDepartures(tours.map((t) => t.id));
   const [lead, ...rest] = tours;
@@ -77,20 +83,23 @@ export default async function HomePage() {
         )}
       </div>
     ) : null,
+    // Desktop heading (2026-11-20): one centred line, "See [Paris v] with Local Artists." The saved tree's heading node
+    // is swapped for this part at read time (lib/puck/landing-hero.ts); the stored row is not changed.
+    "hero-title": (
+      <div className="hct-root" data-landing-part="hero-title" data-edit-name="Heading">
+        <h1 className="font-serif"><HeroCityTitle /></h1>
+      </div>
+    ),
     "hero-actions": (
-      <div className="mt-8 flex flex-wrap gap-3" data-landing-part="hero-actions" data-edit-name="Tour buttons">
-        <Link href="/tours" className="bg-primary px-5 py-3 text-sm font-medium text-primary-foreground">See the tours</Link>
-        {lead && (
-          <Link href={`/tours/${lead.slug}`} className="border border-border bg-background/80 px-5 py-3 text-sm backdrop-blur">
-            {lead.title}
-          </Link>
-        )}
+      <div className="hct-acts" data-landing-part="hero-actions" data-edit-name="Hero buttons">
+        <Link href="/about" className="hct-acts__main">About</Link>
+        {lead && <Link href={`/tours/${lead.slug}`}>{lead.title}</Link>}
       </div>
     ),
     "tour-cards": (
       <div data-landing-part="tour-cards" data-edit-name="Tour cards">
         {tours.length === 0 ? (
-          <p className="mt-6 text-muted-foreground">The first tours are being written.</p>
+          <p className="mt-6 text-muted-foreground">No tours are scheduled at the moment.</p>
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[lead!, ...rest].slice(0, 6).map((t) => (
@@ -123,12 +132,13 @@ export default async function HomePage() {
 
   // Once the page has been saved as a tree, the tree is the page.
   if (tree) {
+    const { data: treeData } = swapHeroTitle(tree.data);
     const metadata = { orgId: siteConfig.orgId, slug: LANDING_SLUG, parts };
-    const filled = await resolveAllData(tree.data as Data, serverPuckConfig, metadata);
+    const filled = await resolveAllData(treeData as Data, serverPuckConfig, metadata);
     return (
       <div className="elk-landing">
         <Render config={serverPuckConfig} data={filled as Data} metadata={metadata} />
-        {viewer?.canEdit && <EditPageButton tree={tree.data as PuckDoc} resolved={resolvedByNode(filled.content)} />}
+        {viewer?.canEdit && <EditPageButton tree={treeData as PuckDoc} resolved={resolvedByNode(filled.content)} version={tree.updatedAt} orgId={siteConfig.orgId} />}
       </div>
     );
   }
@@ -139,9 +149,11 @@ export default async function HomePage() {
         {parts["hero-backdrop"]}
         <div className="mx-auto max-w-6xl px-5 pt-28 pb-16 sm:pt-40">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</p>
-          <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-tight sm:text-6xl">
-            {hero.title ?? "Walk Paris with someone who lives here."}
-          </h1>
+          {hero.title ? (
+            <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-tight sm:text-6xl">{hero.title}</h1>
+          ) : (
+            <div className="mt-3">{parts["hero-title"]}</div>
+          )}
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
             {hero.body ?? "Small groups, unhurried routes, places the guidebooks skip. Choose a tour, pick a date, and you are booked."}
           </p>
@@ -179,7 +191,23 @@ export default async function HomePage() {
           {parts.guides}
         </section>
       )}
-      {viewer?.canEdit && <EditPageButton tree={null} />}
+      {viewer?.canEdit && <EditPageButton tree={null} orgId={siteConfig.orgId} />}
     </div>
+  );
+}
+
+/**
+ * "/" has two trees (G3a, 2026-11-15): the phone Discover page (the m-discover document, below md) and the landing
+ * page above, unchanged, from md up. Discover reads its data once and hands it to the document as metadata.
+ */
+export default async function HomePage() {
+  const [{ data }, mobileDiscover] = await Promise.all([loadMobileDoc("m-discover"), readMobileDiscover()]);
+  const metadata = { orgId: siteConfig.orgId, slug: "m-discover", mobileDiscover };
+  const filled = await resolveAllData(data, mobileServerConfig, metadata);
+  return (
+    <Split
+      mobile={<Render config={mobileServerConfig} data={filled as Data} metadata={metadata} />}
+      desktop={<DesktopHome />}
+    />
   );
 }

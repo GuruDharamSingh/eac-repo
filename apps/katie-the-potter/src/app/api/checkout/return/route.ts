@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { syncStripeOrder } from "@elkdonis/checkout/stripe";
 import { siteOrigin } from "@/lib/origin";
-import { UUID_RE } from "@/lib/shop";
+import { getOrderById } from "@elkdonis/commerce/queries";
+import { dropPaidOrderFromCart, UUID_RE } from "@/lib/shop";
 
 /**
  * Where Stripe's hosted page sends a buyer back after paying. Reconciles the
@@ -22,5 +23,9 @@ export async function GET(request: NextRequest) {
   if (!orderId || !UUID_RE.test(orderId)) return Response.redirect(`${origin}/`, 303);
 
   await syncStripeOrder(orderId).catch((err) => console.error(`[katie-the-potter] return ${orderId}:`, err));
+  // The cart is kept through a card checkout (so backing out loses nothing);
+  // a confirmed payment takes the bought pieces out of it.
+  const order = await getOrderById(orderId).catch(() => null);
+  if (order && ["paid", "fulfilled", "completed"].includes(order.status)) await dropPaidOrderFromCart(orderId);
   return Response.redirect(`${origin}/orders/${orderId}?paid=1`, 303);
 }

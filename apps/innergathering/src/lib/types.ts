@@ -57,7 +57,7 @@ export interface Thread {
   nextOccurrenceAt: Date | null;
 }
 
-export interface GuideSocialLink {
+interface GuideSocialLink {
   label?: string;
   url?: string;
 }

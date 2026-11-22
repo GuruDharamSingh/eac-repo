@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { PagePatches, PuckDoc } from "@elkdonis/direct-edit/block";
 
 /** Owners and guides see this; the server decides that, and checks again on save. */
-export function EditPageButton({ doc, tree }: { page: string; doc: PagePatches; tree: PuckDoc | null }) {
+export function EditPageButton({ doc, tree, resolved }: { page: string; doc: PagePatches; tree: PuckDoc | null; resolved?: Record<string, Record<string, unknown>> }) {
   const [editing, setEditing] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -12,7 +12,7 @@ export function EditPageButton({ doc, tree }: { page: string; doc: PagePatches; 
     setFailed(false);
     try {
       const { openLandingEditor } = await import("./page-editor-mount");
-      await openLandingEditor({ tree, edits: doc });
+      await openLandingEditor({ tree, edits: doc, resolved });
       setEditing(true);
     } catch (err) {
       console.error("[page-edits] open:", err);

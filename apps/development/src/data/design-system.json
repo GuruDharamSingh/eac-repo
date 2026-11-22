@@ -1,0 +1,2618 @@
+{
+ "name": "Elkdonis Frame (working name)",
+ "version": "0.1-suggestion",
+ "date": "2026-11-20",
+ "status": "proposal, not adopted",
+ "principle": "Roles are named for meaning, never for a place or an app. Every old name stays and becomes an alias that reads the role.",
+ "how_aliases_work": "Additive: old family declarations gain the role as their final fallback (--sf-bg: var(--eac-surface-bg, var(--eac-ground, #fff))). No old name is removed; apps that set nothing change nothing.",
+ "layers": [
+  {
+   "id": "foundations",
+   "label": "Foundations",
+   "summary": "colour roles, type roles, space, radius, elevation, motion"
+  },
+  {
+   "id": "surfaces",
+   "label": "Surfaces",
+   "summary": "face, sheet, stage, strip, card"
+  },
+  {
+   "id": "flows",
+   "label": "Flows",
+   "summary": "wizard steps, row cards, readiness, side panel"
+  },
+  {
+   "id": "chrome",
+   "label": "Page chrome",
+   "summary": "header and footer regions and parts"
+  }
+ ],
+ "groups": [
+  {
+   "id": "colour",
+   "layer": "foundations",
+   "label": "Colour roles",
+   "tokens": [
+    {
+     "name": "--eac-ground",
+     "kind": "color",
+     "description": "Page and panel background"
+    },
+    {
+     "name": "--eac-ground-soft",
+     "kind": "color",
+     "description": "Sunken or tinted background: fields, wells, hover"
+    },
+    {
+     "name": "--eac-ink",
+     "kind": "color",
+     "description": "Main text"
+    },
+    {
+     "name": "--eac-ink-muted",
+     "kind": "color",
+     "description": "Secondary text, hints"
+    },
+    {
+     "name": "--eac-ink-faint",
+     "kind": "color",
+     "description": "Placeholders, disabled"
+    },
+    {
+     "name": "--eac-line",
+     "kind": "color",
+     "description": "Hairline borders"
+    },
+    {
+     "name": "--eac-rule",
+     "kind": "color",
+     "description": "Strong rule under heads and feet"
+    },
+    {
+     "name": "--eac-accent",
+     "kind": "color",
+     "description": "The one brand colour: fills, focus, current step"
+    },
+    {
+     "name": "--eac-accent-ink",
+     "kind": "color",
+     "description": "Accent used as TEXT on the ground (must pass 4.5:1)"
+    },
+    {
+     "name": "--eac-on-accent",
+     "kind": "color",
+     "description": "Text that sits on a filled accent"
+    },
+    {
+     "name": "--eac-accent-soft",
+     "kind": "color",
+     "description": "Accent as a quiet fill (chips, selected row)"
+    },
+    {
+     "name": "--eac-danger",
+     "kind": "color",
+     "description": "Errors and destructive actions"
+    },
+    {
+     "name": "--eac-ok",
+     "kind": "color",
+     "description": "Done, ready, saved"
+    },
+    {
+     "name": "--eac-warn",
+     "kind": "color",
+     "description": "Needs attention"
+    },
+    {
+     "name": "--eac-scrim",
+     "kind": "rgba",
+     "description": "Backdrop behind a popup"
+    },
+    {
+     "name": "--eac-kind",
+     "kind": "color",
+     "description": "Accent of the thing being shown; set per element by data-kind"
+    },
+    {
+     "name": "--eac-on-kind",
+     "kind": "color",
+     "description": "Text on a filled kind colour"
+    }
+   ]
+  },
+  {
+   "id": "type",
+   "layer": "foundations",
+   "label": "Type roles",
+   "tokens": [
+    {
+     "name": "--eac-font-title",
+     "kind": "font",
+     "description": "Titles and mastheads (Site style role: heading)"
+    },
+    {
+     "name": "--eac-font-body",
+     "kind": "font",
+     "description": "Running text and controls"
+    },
+    {
+     "name": "--eac-font-record",
+     "kind": "font",
+     "description": "Kickers, facts, datelines: the registry voice"
+    },
+    {
+     "name": "--eac-font-nav",
+     "kind": "font",
+     "description": "Navigation"
+    },
+    {
+     "name": "--eac-font-caption",
+     "kind": "font",
+     "description": "Captions"
+    },
+    {
+     "name": "--eac-font-reading",
+     "kind": "font",
+     "description": "Long-form reading"
+    },
+    {
+     "name": "--eac-text-scale",
+     "kind": "length",
+     "description": "Overall text size multiplier"
+    },
+    {
+     "name": "--eac-label-weight",
+     "kind": "choice",
+     "description": "Weight of field labels"
+    }
+   ]
+  },
+  {
+   "id": "space",
+   "layer": "foundations",
+   "label": "Space and shape",
+   "tokens": [
+    {
+     "name": "--eac-gap-1",
+     "kind": "length",
+     "description": "4px: inside a chip"
+    },
+    {
+     "name": "--eac-gap-2",
+     "kind": "length",
+     "description": "8px: between a label and its field"
+    },
+    {
+     "name": "--eac-gap-3",
+     "kind": "length",
+     "description": "12px: between fields"
+    },
+    {
+     "name": "--eac-gap-4",
+     "kind": "length",
+     "description": "18px: between groups, face grid gap"
+    },
+    {
+     "name": "--eac-gap-5",
+     "kind": "length",
+     "description": "24px: between columns (wizard two-pane gap)"
+    },
+    {
+     "name": "--eac-measure",
+     "kind": "length",
+     "description": "Reading line length"
+    },
+    {
+     "name": "--eac-width-compact",
+     "kind": "length",
+     "description": "440px popup"
+    },
+    {
+     "name": "--eac-width-standard",
+     "kind": "length",
+     "description": "640px popup"
+    },
+    {
+     "name": "--eac-width-wide",
+     "kind": "length",
+     "description": "940px popup"
+    },
+    {
+     "name": "--eac-width-full",
+     "kind": "length",
+     "description": "1180px popup / stage"
+    },
+    {
+     "name": "--eac-radius",
+     "kind": "length",
+     "description": "Panels, cards, faces"
+    },
+    {
+     "name": "--eac-radius-control",
+     "kind": "length",
+     "description": "Inputs and buttons"
+    },
+    {
+     "name": "--eac-radius-mark",
+     "kind": "length",
+     "description": "Medallions, chips"
+    }
+   ]
+  },
+  {
+   "id": "elevation",
+   "layer": "foundations",
+   "label": "Elevation",
+   "tokens": [
+    {
+     "name": "--eac-shadow-rest",
+     "kind": "shadow",
+     "description": "A face at rest: a whisper of lift"
+    },
+    {
+     "name": "--eac-shadow-lift",
+     "kind": "shadow",
+     "description": "A face on hover"
+    },
+    {
+     "name": "--eac-shadow-panel",
+     "kind": "shadow",
+     "description": "A sheet over the page"
+    },
+    {
+     "name": "--eac-shadow-pop",
+     "kind": "shadow",
+     "description": "A menu or tooltip"
+    }
+   ]
+  },
+  {
+   "id": "motion",
+   "layer": "foundations",
+   "label": "Motion",
+   "tokens": [
+    {
+     "name": "--eac-ease",
+     "kind": "easing",
+     "description": "cubic-bezier(0.2,0.7,0.3,1): the face-to-sheet morph and hover lift"
+    },
+    {
+     "name": "--eac-dur-fast",
+     "kind": "duration",
+     "description": "120ms: hover, focus"
+    },
+    {
+     "name": "--eac-dur-base",
+     "kind": "duration",
+     "description": "180ms: lift, step change"
+    },
+    {
+     "name": "--eac-dur-slow",
+     "kind": "duration",
+     "description": "320ms: face to sheet morph"
+    }
+   ]
+  },
+  {
+   "id": "surface",
+   "layer": "surfaces",
+   "label": "Surfaces",
+   "tokens": [
+    {
+     "name": "--eac-face-wash",
+     "kind": "length",
+     "description": "Strength of the kind tint at a face corner (5%)"
+    },
+    {
+     "name": "--eac-face-min",
+     "kind": "length",
+     "description": "Minimum face height (210px)"
+    },
+    {
+     "name": "--eac-sheet-w",
+     "kind": "choice",
+     "description": "Which width a sheet opens at: compact, standard, wide, full, stage, bare"
+    },
+    {
+     "name": "--eac-strip-h",
+     "kind": "length",
+     "description": "Height of the strip face used by the stage"
+    }
+   ]
+  },
+  {
+   "id": "flow",
+   "layer": "flows",
+   "label": "Flows",
+   "tokens": [
+    {
+     "name": "--eac-pane-main",
+     "kind": "choice",
+     "description": "Wizard main pane share: 1.2fr"
+    },
+    {
+     "name": "--eac-pane-side",
+     "kind": "choice",
+     "description": "Wizard side pane share (preview, readiness, map): 1fr"
+    },
+    {
+     "name": "--eac-step-pill",
+     "kind": "color",
+     "description": "Current step pill fill (= accent)"
+    },
+    {
+     "name": "--eac-row-card-bg",
+     "kind": "color",
+     "description": "Expandable row card background"
+    },
+    {
+     "name": "--eac-ready-ok",
+     "kind": "color",
+     "description": "Readiness item met (= ok)"
+    }
+   ]
+  },
+  {
+   "id": "chrome",
+   "layer": "chrome",
+   "label": "Page chrome",
+   "tokens": [
+    {
+     "name": "--eac-header-h",
+     "kind": "length",
+     "description": "Header height (today --pts-header-h on sunjay)"
+    },
+    {
+     "name": "--eac-chrome-ground",
+     "kind": "color",
+     "description": "Header/footer background; owner-editable per part"
+    }
+   ]
+  }
+ ],
+ "families": [
+  {
+   "pattern": "--eac-surface-*",
+   "package": "cms-ui surface",
+   "where": "packages/cms-ui/src/surface/surface.css",
+   "role": "Public override hooks of the surface system; apps set these in :root",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--sf-*",
+   "package": "cms-ui surface",
+   "where": "surface.css :root",
+   "role": "Internal resolved values (50 names); read by faces, sheets, fields",
+   "tier": "internal"
+  },
+  {
+   "pattern": "--eac-kind-*",
+   "package": "cms-ui surface",
+   "where": "surface.css",
+   "role": "Per-kind accent, 19 kinds plus -on",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--fld-*",
+   "package": "cms-ui wizard",
+   "where": "packages/cms-ui/src/wizard/fields.css",
+   "role": "Field controls; fall back to --sf-*",
+   "tier": "internal"
+  },
+  {
+   "pattern": "--eac-field-*",
+   "package": "cms-ui wizard",
+   "where": "fields.css",
+   "role": "Public hooks for fields",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--eac-form-*",
+   "package": "studio-forms",
+   "where": "packages/studio-forms theme/forms.css",
+   "role": "Public hooks for Studio forms (~60)",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--frm-*",
+   "package": "studio-forms",
+   "where": "studio-forms",
+   "role": "Resolved tokens components read (86)",
+   "tier": "internal"
+  },
+  {
+   "pattern": "--eac-block-*",
+   "package": "page-builder blocks",
+   "where": "blocks.css",
+   "role": "Public hooks for Puck blocks (27)",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--blk-*",
+   "package": "page-builder blocks",
+   "where": "blocks.css",
+   "role": "Resolved block tokens (36)",
+   "tier": "internal"
+  },
+  {
+   "pattern": "--eac-control-*",
+   "package": "elktours globals",
+   "where": "apps/elktours/src/app/globals.css",
+   "role": "Control hooks (shadcn bridge)",
+   "tier": "hook"
+  },
+  {
+   "pattern": "shadcn --background etc.",
+   "package": "apps",
+   "where": "each app globals.css",
+   "role": "HSL triplets: background foreground card muted border primary destructive radius",
+   "tier": "app"
+  },
+  {
+   "pattern": "--font-*",
+   "package": "@elkdonis/fonts",
+   "where": "packages/fonts/src/roles.ts",
+   "role": "Font roles: body heading nav caption reading",
+   "tier": "hook"
+  },
+  {
+   "pattern": "--dm-*",
+   "package": "danamccool",
+   "where": "apps/danamccool/src/lib/theme.ts",
+   "role": "Fonts, nav, plate, diamond (22)",
+   "tier": "app"
+  },
+  {
+   "pattern": "--ig-*",
+   "package": "innergathering",
+   "where": "apps/innergathering",
+   "role": "141 names: palette --ig-c-*, translucent --ig-a-*, fonts",
+   "tier": "app"
+  },
+  {
+   "pattern": "--pts-*",
+   "package": "sunjay",
+   "where": "apps/sunjay/src/components/site/pts.css",
+   "role": "Header height",
+   "tier": "app"
+  }
+ ],
+ "aliases": [
+  {
+   "from": "--eac-surface-bg",
+   "to": "--eac-ground",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-bg",
+   "to": "--eac-ground",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-bg-soft",
+   "to": "--eac-ground-soft",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-bg-soft",
+   "to": "--eac-ground-soft",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-fg",
+   "to": "--eac-ink",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-fg",
+   "to": "--eac-ink",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-muted",
+   "to": "--eac-ink-muted",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-muted",
+   "to": "--eac-ink-muted",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-faint",
+   "to": "--eac-ink-faint",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-faint",
+   "to": "--eac-ink-faint",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-line",
+   "to": "--eac-line",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-line",
+   "to": "--eac-line",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-rule",
+   "to": "--eac-rule",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-rule",
+   "to": "--eac-rule",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-accent",
+   "to": "--eac-accent",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-accent",
+   "to": "--eac-accent",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-on-accent",
+   "to": "--eac-on-accent",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-on-accent",
+   "to": "--eac-on-accent",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-danger",
+   "to": "--eac-danger",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-danger",
+   "to": "--eac-danger",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-scrim",
+   "to": "--eac-scrim",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-scrim",
+   "to": "--eac-scrim",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-radius",
+   "to": "--eac-radius",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-radius",
+   "to": "--eac-radius",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-shadow",
+   "to": "--eac-shadow-panel",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-shadow",
+   "to": "--eac-shadow-panel",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-primary",
+   "to": "--eac-accent",
+   "family": "surface",
+   "note": "light-theme fill; same role",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-surface-on-primary",
+   "to": "--eac-on-accent",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-radius-sm",
+   "to": "--eac-radius-mark",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-kind",
+   "to": "--eac-kind",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-on-kind",
+   "to": "--eac-on-kind",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-font-title",
+   "to": "--eac-font-title",
+   "family": "surface",
+   "note": "name kept",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-font-record",
+   "to": "--eac-font-record",
+   "family": "surface",
+   "note": "name kept",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-font-title",
+   "to": "--eac-font-title",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-font-record",
+   "to": "--eac-font-record",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-font-body",
+   "to": "--eac-font-body",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-w-compact",
+   "to": "--eac-width-compact",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-w-standard",
+   "to": "--eac-width-standard",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-w-wide",
+   "to": "--eac-width-wide",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-w-full",
+   "to": "--eac-width-full",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--sf-morph-easing",
+   "to": "--eac-ease",
+   "family": "surface",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--eac-kind-<kind>",
+   "to": "--eac-kind-<kind>",
+   "family": "surface",
+   "note": "kept as is: the kind palette is a design-system feature",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect",
+    "arts-collective"
+   ]
+  },
+  {
+   "from": "--fld-fg",
+   "to": "--eac-ink",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-muted",
+   "to": "--eac-ink-muted",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-line",
+   "to": "--eac-rule",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-bg",
+   "to": "--eac-ground",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-bg-soft",
+   "to": "--eac-ground-soft",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-danger",
+   "to": "--eac-danger",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-radius",
+   "to": "--eac-radius-control",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-record",
+   "to": "--eac-font-record",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-on-accent",
+   "to": "--eac-on-kind",
+   "family": "wizard",
+   "note": "",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--fld-accent",
+   "to": "--eac-kind",
+   "family": "wizard",
+   "note": "falls back to --eac-accent",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--eac-field-*",
+   "to": "--eac-*",
+   "family": "wizard",
+   "note": "each hook maps to the same-named role above",
+   "apps": [
+    "elktours",
+    "ifac",
+    "artdirect"
+   ]
+  },
+  {
+   "from": "--eac-form-bg",
+   "to": "--eac-ground",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-bg",
+   "to": "--eac-ground",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-surface",
+   "to": "--eac-ground",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-surface",
+   "to": "--eac-ground",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-text",
+   "to": "--eac-ink",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-text",
+   "to": "--eac-ink",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-muted",
+   "to": "--eac-ink-muted",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-muted",
+   "to": "--eac-ink-muted",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-faint",
+   "to": "--eac-ink-faint",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-faint",
+   "to": "--eac-ink-faint",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-divider",
+   "to": "--eac-line",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-divider",
+   "to": "--eac-line",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-accent",
+   "to": "--eac-accent",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-accent",
+   "to": "--eac-accent",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-accent-on",
+   "to": "--eac-on-accent",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-accent-on",
+   "to": "--eac-on-accent",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-accent-ink",
+   "to": "--eac-accent-ink",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-accent-ink",
+   "to": "--eac-accent-ink",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-accent-soft",
+   "to": "--eac-accent-soft",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-accent-soft",
+   "to": "--eac-accent-soft",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-danger",
+   "to": "--eac-danger",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--frm-danger",
+   "to": "--eac-danger",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-rule",
+   "to": "--eac-rule",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-warn",
+   "to": "--eac-warn",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-radius-control",
+   "to": "--eac-radius-control",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-radius-panel",
+   "to": "--eac-radius",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-shadow-panel",
+   "to": "--eac-shadow-panel",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-shadow-pop",
+   "to": "--eac-shadow-pop",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-font-body",
+   "to": "--eac-font-body",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-font-heading",
+   "to": "--eac-font-title",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-label-weight",
+   "to": "--eac-label-weight",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-text-scale",
+   "to": "--eac-text-scale",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-cols-gap",
+   "to": "--eac-gap-5",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-field",
+   "to": "--eac-ground-soft",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-field-line",
+   "to": "--eac-line",
+   "family": "forms",
+   "note": "",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-form-* (rest)",
+   "to": "(kept)",
+   "family": "forms",
+   "note": "preview-*, rail-*, row-panel-*, track-off, tag-*, media-*: forms-only detail, stays a forms extension",
+   "apps": [
+    "arts-collective",
+    "katie"
+   ]
+  },
+  {
+   "from": "--eac-block-bg",
+   "to": "--eac-ground",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-bg",
+   "to": "--eac-ground",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-fg",
+   "to": "--eac-ink",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-fg",
+   "to": "--eac-ink",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-muted",
+   "to": "--eac-ink-muted",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-muted",
+   "to": "--eac-ink-muted",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-line",
+   "to": "--eac-line",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-line",
+   "to": "--eac-line",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-accent",
+   "to": "--eac-accent",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-accent",
+   "to": "--eac-accent",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-on-accent",
+   "to": "--eac-on-accent",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-on-accent",
+   "to": "--eac-on-accent",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-danger",
+   "to": "--eac-danger",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-danger",
+   "to": "--eac-danger",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-ok",
+   "to": "--eac-ok",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-ok",
+   "to": "--eac-ok",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-radius",
+   "to": "--eac-radius",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-radius",
+   "to": "--eac-radius",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-bg-soft",
+   "to": "--eac-ground-soft",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-faint",
+   "to": "--eac-ink-faint",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-accent-ink",
+   "to": "--eac-accent-ink",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-radius-sm",
+   "to": "--eac-radius-mark",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-font-title",
+   "to": "--eac-font-title",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-font-title",
+   "to": "--eac-font-title",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-block-font-body",
+   "to": "--eac-font-body",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-font-body",
+   "to": "--eac-font-body",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-measure",
+   "to": "--eac-measure",
+   "family": "blocks",
+   "note": "",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--blk-band, --blk-band-fg, --blk-banner-accent, --blk-wall-*, --blk-textimg-*, --blk-figure-offset",
+   "to": "(kept)",
+   "family": "blocks",
+   "note": "block-specific layout/look: stay as block extensions",
+   "apps": [
+    "art-auction",
+    "arts-collective",
+    "danamccool",
+    "sunjay",
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-bg",
+   "to": "--eac-ground",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-fg",
+   "to": "--eac-ink",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-muted",
+   "to": "--eac-ink-muted",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-line",
+   "to": "--eac-line",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-accent",
+   "to": "--eac-accent",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-accent-on",
+   "to": "--eac-on-accent",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-accent-ink",
+   "to": "--eac-accent-ink",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-danger",
+   "to": "--eac-danger",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--eac-control-radius",
+   "to": "--eac-radius-control",
+   "family": "control",
+   "note": "",
+   "apps": [
+    "elktours"
+   ]
+  },
+  {
+   "from": "--background",
+   "to": "--eac-ground",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--foreground",
+   "to": "--eac-ink",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--card",
+   "to": "--eac-ground",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--muted",
+   "to": "--eac-ground-soft",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--muted-foreground",
+   "to": "--eac-ink-muted",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--border",
+   "to": "--eac-line",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--primary",
+   "to": "--eac-accent",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--primary-foreground",
+   "to": "--eac-on-accent",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--destructive",
+   "to": "--eac-danger",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--radius",
+   "to": "--eac-radius",
+   "family": "shadcn",
+   "note": "HSL triplet today; the alias wraps it in hsl()",
+   "apps": [
+    "elktours",
+    "sunjay",
+    "art-auction"
+   ]
+  },
+  {
+   "from": "--font-body",
+   "to": "--eac-font-body",
+   "family": "fonts",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-font-body",
+   "to": "--eac-font-body",
+   "family": "danamccool",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--font-heading",
+   "to": "--eac-font-title",
+   "family": "fonts",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-font-heading",
+   "to": "--eac-font-title",
+   "family": "danamccool",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--font-nav",
+   "to": "--eac-font-nav",
+   "family": "fonts",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-font-nav",
+   "to": "--eac-font-nav",
+   "family": "danamccool",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--font-caption",
+   "to": "--eac-font-caption",
+   "family": "fonts",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-font-caption",
+   "to": "--eac-font-caption",
+   "family": "danamccool",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--font-reading",
+   "to": "--eac-font-reading",
+   "family": "fonts",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-font-reading",
+   "to": "--eac-font-reading",
+   "family": "danamccool",
+   "note": "",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--dm-nav-*, --dm-caption-*, --dm-plate-width, --dm-diamond-*, --dm-sidebar-bg, --dm-set-min",
+   "to": "(kept)",
+   "family": "danamccool",
+   "note": "site-specific look; declared in its SiteStyleSchema, shown under that app",
+   "apps": [
+    "danamccool"
+   ]
+  },
+  {
+   "from": "--ig-c-gold",
+   "to": "--eac-accent",
+   "family": "innergathering",
+   "note": "palette colour to role: the app's choice, shown in the matrix",
+   "apps": [
+    "innergathering"
+   ]
+  },
+  {
+   "from": "--ig-c-paper",
+   "to": "--eac-ground",
+   "family": "innergathering",
+   "note": "",
+   "apps": [
+    "innergathering"
+   ]
+  },
+  {
+   "from": "--ig-c-black",
+   "to": "--eac-ink",
+   "family": "innergathering",
+   "note": "check per use",
+   "apps": [
+    "innergathering"
+   ]
+  },
+  {
+   "from": "--ig-a-<hex>-<n>",
+   "to": "(none)",
+   "family": "innergathering",
+   "note": "about 100 hard-coded translucent colours: the audit's top item; become color-mix of a role",
+   "apps": [
+    "innergathering"
+   ]
+  },
+  {
+   "from": "--pts-header-h",
+   "to": "--eac-header-h",
+   "family": "sunjay",
+   "note": "",
+   "apps": [
+    "sunjay"
+   ]
+  }
+ ],
+ "token_kinds": [
+  "color",
+  "rgba",
+  "hsl",
+  "length",
+  "font",
+  "shadow",
+  "easing",
+  "duration",
+  "choice"
+ ],
+ "surface_kinds": [
+  "post",
+  "event",
+  "meeting",
+  "series",
+  "workshop",
+  "service",
+  "product",
+  "questionnaire",
+  "poll",
+  "calendar",
+  "gallery",
+  "board",
+  "forum",
+  "compose",
+  "document",
+  "idea",
+  "define",
+  "place",
+  "neutral"
+ ],
+ "chrome_regions": {
+  "header": [
+   "brand",
+   "nav",
+   "actions"
+  ],
+  "footer": [
+   "links",
+   "legal"
+  ],
+  "note": "illustrative; each app declares its real parts via SiteStyleSchema.chrome"
+ },
+ "title": "Elkdonis Frame: one set of roles over many looks (suggestion)",
+ "summary": "Meanings first (ground, ink, line, accent), shapes second (face, sheet, stage, flow), pages wear it. Every old token name stays as an alias.",
+ "vocabulary": [
+  {
+   "token": "--eac-ground",
+   "meaning": "Page and panel background",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-ground-soft",
+   "meaning": "Sunken or tinted background: fields, wells, hover",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-ink",
+   "meaning": "Main text",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-ink-muted",
+   "meaning": "Secondary text, hints",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-ink-faint",
+   "meaning": "Placeholders, disabled",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-line",
+   "meaning": "Hairline borders",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-rule",
+   "meaning": "Strong rule under heads and feet",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-accent",
+   "meaning": "The one brand colour: fills, focus, current step",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-accent-ink",
+   "meaning": "Accent used as TEXT on the ground (must pass 4.5:1)",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-on-accent",
+   "meaning": "Text that sits on a filled accent",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-accent-soft",
+   "meaning": "Accent as a quiet fill (chips, selected row)",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-danger",
+   "meaning": "Errors and destructive actions",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-ok",
+   "meaning": "Done, ready, saved",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-warn",
+   "meaning": "Needs attention",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-scrim",
+   "meaning": "Backdrop behind a popup",
+   "kind": "rgba",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-kind",
+   "meaning": "Accent of the thing being shown; set per element by data-kind",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-on-kind",
+   "meaning": "Text on a filled kind colour",
+   "kind": "color",
+   "layer": "foundations",
+   "group": "Colour roles"
+  },
+  {
+   "token": "--eac-font-title",
+   "meaning": "Titles and mastheads (Site style role: heading)",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-font-body",
+   "meaning": "Running text and controls",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-font-record",
+   "meaning": "Kickers, facts, datelines: the registry voice",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-font-nav",
+   "meaning": "Navigation",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-font-caption",
+   "meaning": "Captions",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-font-reading",
+   "meaning": "Long-form reading",
+   "kind": "font",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-text-scale",
+   "meaning": "Overall text size multiplier",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-label-weight",
+   "meaning": "Weight of field labels",
+   "kind": "choice",
+   "layer": "foundations",
+   "group": "Type roles"
+  },
+  {
+   "token": "--eac-gap-1",
+   "meaning": "4px: inside a chip",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-gap-2",
+   "meaning": "8px: between a label and its field",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-gap-3",
+   "meaning": "12px: between fields",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-gap-4",
+   "meaning": "18px: between groups, face grid gap",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-gap-5",
+   "meaning": "24px: between columns (wizard two-pane gap)",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-measure",
+   "meaning": "Reading line length",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-width-compact",
+   "meaning": "440px popup",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-width-standard",
+   "meaning": "640px popup",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-width-wide",
+   "meaning": "940px popup",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-width-full",
+   "meaning": "1180px popup / stage",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-radius",
+   "meaning": "Panels, cards, faces",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-radius-control",
+   "meaning": "Inputs and buttons",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-radius-mark",
+   "meaning": "Medallions, chips",
+   "kind": "length",
+   "layer": "foundations",
+   "group": "Space and shape"
+  },
+  {
+   "token": "--eac-shadow-rest",
+   "meaning": "A face at rest: a whisper of lift",
+   "kind": "shadow",
+   "layer": "foundations",
+   "group": "Elevation"
+  },
+  {
+   "token": "--eac-shadow-lift",
+   "meaning": "A face on hover",
+   "kind": "shadow",
+   "layer": "foundations",
+   "group": "Elevation"
+  },
+  {
+   "token": "--eac-shadow-panel",
+   "meaning": "A sheet over the page",
+   "kind": "shadow",
+   "layer": "foundations",
+   "group": "Elevation"
+  },
+  {
+   "token": "--eac-shadow-pop",
+   "meaning": "A menu or tooltip",
+   "kind": "shadow",
+   "layer": "foundations",
+   "group": "Elevation"
+  },
+  {
+   "token": "--eac-ease",
+   "meaning": "cubic-bezier(0.2,0.7,0.3,1): the face-to-sheet morph and hover lift",
+   "kind": "easing",
+   "layer": "foundations",
+   "group": "Motion"
+  },
+  {
+   "token": "--eac-dur-fast",
+   "meaning": "120ms: hover, focus",
+   "kind": "duration",
+   "layer": "foundations",
+   "group": "Motion"
+  },
+  {
+   "token": "--eac-dur-base",
+   "meaning": "180ms: lift, step change",
+   "kind": "duration",
+   "layer": "foundations",
+   "group": "Motion"
+  },
+  {
+   "token": "--eac-dur-slow",
+   "meaning": "320ms: face to sheet morph",
+   "kind": "duration",
+   "layer": "foundations",
+   "group": "Motion"
+  },
+  {
+   "token": "--eac-face-wash",
+   "meaning": "Strength of the kind tint at a face corner (5%)",
+   "kind": "length",
+   "layer": "surfaces",
+   "group": "Surfaces"
+  },
+  {
+   "token": "--eac-face-min",
+   "meaning": "Minimum face height (210px)",
+   "kind": "length",
+   "layer": "surfaces",
+   "group": "Surfaces"
+  },
+  {
+   "token": "--eac-sheet-w",
+   "meaning": "Which width a sheet opens at: compact, standard, wide, full, stage, bare",
+   "kind": "choice",
+   "layer": "surfaces",
+   "group": "Surfaces"
+  },
+  {
+   "token": "--eac-strip-h",
+   "meaning": "Height of the strip face used by the stage",
+   "kind": "length",
+   "layer": "surfaces",
+   "group": "Surfaces"
+  },
+  {
+   "token": "--eac-pane-main",
+   "meaning": "Wizard main pane share: 1.2fr",
+   "kind": "choice",
+   "layer": "flows",
+   "group": "Flows"
+  },
+  {
+   "token": "--eac-pane-side",
+   "meaning": "Wizard side pane share (preview, readiness, map): 1fr",
+   "kind": "choice",
+   "layer": "flows",
+   "group": "Flows"
+  },
+  {
+   "token": "--eac-step-pill",
+   "meaning": "Current step pill fill (= accent)",
+   "kind": "color",
+   "layer": "flows",
+   "group": "Flows"
+  },
+  {
+   "token": "--eac-row-card-bg",
+   "meaning": "Expandable row card background",
+   "kind": "color",
+   "layer": "flows",
+   "group": "Flows"
+  },
+  {
+   "token": "--eac-ready-ok",
+   "meaning": "Readiness item met (= ok)",
+   "kind": "color",
+   "layer": "flows",
+   "group": "Flows"
+  },
+  {
+   "token": "--eac-header-h",
+   "meaning": "Header height (today --pts-header-h on sunjay)",
+   "kind": "length",
+   "layer": "chrome",
+   "group": "Page chrome"
+  },
+  {
+   "token": "--eac-chrome-ground",
+   "meaning": "Header/footer background; owner-editable per part",
+   "kind": "color",
+   "layer": "chrome",
+   "group": "Page chrome"
+  }
+ ],
+ "notes": [
+  "Apps lists are indicative (from a package-level read), not a per-app audit; C's theme table will refine them.",
+  "light/dark values are not set: the proposed --eac-* roles are not defined anywhere yet. Resolve live via getComputedStyle on the alias's from name.",
+  "Full prose: design-system.md in this folder."
+ ]
+}

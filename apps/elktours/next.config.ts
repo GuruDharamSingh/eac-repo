@@ -31,6 +31,7 @@ const nextConfig: NextConfig = {
     // Puck page builder (studio routes) and the block library it draws from, as danamccool does.
     "@elkdonis/page-builder",
     "@elkdonis/direct-edit",
+    "@elkdonis/house-editor",
     "@elkdonis/blocks",
   ],
   // Build concurrency. Next defaults to one worker per CPU; this host has 32

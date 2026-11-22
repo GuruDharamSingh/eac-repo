@@ -4,7 +4,7 @@ import { isValidSlug } from "@elkdonis/page-builder";
 import { templateDocument } from "@elkdonis/blocks";
 import type { PuckDoc } from "@elkdonis/direct-edit/block";
 import { requireOrgEditor } from "@/lib/auth";
-import { HOME_SLUG, loadPage } from "@/lib/puck/store";
+import { HOME_SLUG, loadPageWithVersion } from "@/lib/puck/store";
 import { LANDING_SLUG } from "@/lib/puck/landing";
 import { slugProblem } from "@/lib/puck/actions";
 import { startingTemplate } from "@/lib/puck/templates";
@@ -56,7 +56,7 @@ export default async function StudioPage({
     );
   }
 
-  const stored = await loadPage(slug);
+  const stored = await loadPageWithVersion(slug);
   // A page with no row opens as its starting document (the New page form's choice), saved only on Save.
   const initial = stored
     ? (stored.data as PuckDoc)
@@ -64,5 +64,5 @@ export default async function StudioPage({
   // Puck's editor opens the same starting document while nothing is saved.
   const blocks = `/studio/${slug}/blocks${recordQuery(record, { template: !stored ? template : undefined })}`;
 
-  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={initial} blockEditorHref={blocks} record={record} />;
+  return <CanvasEditor slug={slug} orgId={siteConfig.orgId} initial={initial} version={stored?.updatedAt} blockEditorHref={blocks} record={record} />;
 }

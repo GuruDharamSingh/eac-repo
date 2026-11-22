@@ -15,6 +15,7 @@ import type { Answers, FormContext, FormKindSchema } from '../../contract';
 import { materialsSummary } from '../../fields/MaterialsRow';
 import { POST_RULES } from '../../rules/post';
 import type { KindLayout } from './parts';
+import { goesOnRowSummary } from './parts';
 import { AlsoShowOn, PostCover, PostExcerpt, PostGoesOn, PostMaterials, alsoShowOnSummary, excerptSummary, hasAlsoShowOn } from './sections';
 
 /** The cms-ui context a post's fields are built with. */
@@ -45,8 +46,8 @@ export const postKind: FormKindSchema & { layout: KindLayout } = {
     { id: 'title', label: 'Title', tier: 'essentials', fields: ['title'], quick: true },
     // The host's body slot (POST_LAYOUT.body). In focus mode the Canvas also writes body_doc, which wins on save.
     { id: 'body', label: 'What', tier: 'essentials', fields: ['body'], quick: true },
-    { id: 'cover', label: 'Cover', tier: 'essentials', fields: ['cover_image_url'], render: 'postCover', quick: true },
-    { id: 'goesOn', label: 'Goes on', tier: 'essentials', fields: ['feed_slug', 'visibility'], render: 'goesOn' },
+    { id: 'cover', label: 'Cover', tier: 'essentials', fields: ['cover_image_url'], render: 'postCover', quick: true, rowSummary: (a) => (typeof a.cover_image_url === 'string' && a.cover_image_url ? 'A cover picture' : undefined), rowPlaceholder: 'Add a picture' },
+    { id: 'goesOn', label: 'Goes on', tier: 'essentials', fields: ['feed_slug', 'visibility'], render: 'goesOn', rowSummary: (a, ctx) => goesOnRowSummary(a, ctx) },
     // ── More ──
     { id: 'excerpt', label: 'Why', tier: 'more', fields: ['excerpt'], render: 'excerpt', summary: (a) => excerptSummary(a) },
     {

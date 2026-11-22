@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useGetPuck, type Data, type Plugin } from "@puckeditor/core";
-import type { PageTemplate, TemplateNode } from "@elkdonis/blocks";
+import type { PageTemplate } from "@elkdonis/blocks";
+import { instantiate } from "./instantiate";
 
 // ============================================================================
 // A "Templates" tab for the editor's left rail.
@@ -17,30 +18,6 @@ import type { PageTemplate, TemplateNode } from "@elkdonis/blocks";
 // drag. Data-driven blocks are then asked to fetch, so a store shelf shows the
 // person's real pieces straight away instead of waiting for a field change.
 // ============================================================================
-
-function freshId(type: string): string {
-  const rand =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  return `${type}-${rand}`;
-}
-
-/** Copy a template's nodes with new ids, collecting every id on the way. */
-function instantiate(nodes: TemplateNode[], ids: string[]): Data["content"] {
-  return nodes.map((node) => {
-    const id = freshId(node.type);
-    ids.push(id);
-    const props: Record<string, unknown> = { ...node.props, id };
-    // Slots hold arrays of nodes inside a block's props.
-    for (const [key, value] of Object.entries(props)) {
-      if (Array.isArray(value) && value.every((v) => v && typeof v === "object" && "type" in v && "props" in v)) {
-        props[key] = instantiate(value as TemplateNode[], ids);
-      }
-    }
-    return { type: node.type, props } as Data["content"][number];
-  });
-}
 
 function Thumb({ t }: { t: PageTemplate }) {
   const { ground, ink, accent } = t.swatch;

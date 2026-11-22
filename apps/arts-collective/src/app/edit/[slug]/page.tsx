@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { canEditOrgSite, getOrgBySlug } from "@/lib/org";
 import { networkHostWithPort } from "@/lib/domain";
 import { requireUser } from "@/lib/session";
+import { SILEX_EDITOR_ENABLED } from "@/lib/silex-flag";
 import { Button } from "@/components/ui/button";
 import { buildSilexEditorUrl, resolveSilexEditorUrl } from "@elkdonis/silex-render";
 
@@ -28,6 +29,10 @@ export default async function SilexEditPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<SearchParams>;
 }) {
+  if (!SILEX_EDITOR_ENABLED) {
+    const { slug: offSlug } = await params;
+    redirect(`/hub/sites/${offSlug}`);
+  }
   const [{ slug }, query, user, h] = await Promise.all([
     params,
     searchParams,

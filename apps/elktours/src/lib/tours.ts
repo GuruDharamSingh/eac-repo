@@ -1,10 +1,11 @@
+import { readTourType, type TourType } from "@/lib/tour-type";
 import { db } from "@elkdonis/db";
 import {
-  listTourDepartures,
   listTourStops,
   type TourDeparture,
   type TourStop,
 } from "@elkdonis/commerce/server";
+import { departuresSql, listTourDepartures } from "@/lib/departures";
 import { siteConfig } from "@/config/site";
 import { publicTourAssets } from "@/lib/assets";
 import type { PublicTourAssets, StopExtras } from "@/lib/catalogue-types";
@@ -48,6 +49,10 @@ export interface TourDetails {
   effort: string | null;
   /** Cached walking route, or null until the stops have been saved once. */
   route: TourRoute | null;
+  /** The city the tour runs in (Create Tour wizard, 2026-11-19); absent on older tours, which are all Paris. */
+  city?: string | null;
+  /** Points the editor dragged the walking path through, per leg "<from>><to>" ("meet" or a stop id), [lng, lat]. */
+  via?: Record<string, [number, number][]> | null;
 }
 
 export const EMPTY_DETAILS: TourDetails = {
@@ -83,7 +88,11 @@ export interface Tour {
   body: string | null;
   excerpt: string | null;
   coverImageUrl: string | null;
+  /** How the cover sits in its box (metadata.coverFrame: focal point and zoom, cms-ui CoverFrame); null = centred. */
+  coverFrame: { fx: number; fy: number; zoom: number } | null;
   film: TourFilm | null;
+  /** Tours chip type (metadata.tourType); null = not set. */
+  tourType: TourType | null;
   /** Price per person, major units. Null or 0 = not bookable yet. */
   price: number | null;
   currency: string;
@@ -91,6 +100,10 @@ export interface Tour {
   /** Meeting point, as a sentence. */
   location: string | null;
   details: TourDetails;
+  /** "Good to know" points the guide wrote on the tour's page (metadata.goodToKnow, a top-level key the office form leaves alone). */
+  goodToKnow?: string[];
+  /** The contact line the guide set for this tour (metadata.contact); null = the office's address shows. */
+  contact?: string | null;
   pinned: boolean;
   authorId: string | null;
   authorName: string | null;
@@ -165,7 +178,20 @@ export function readDetails(metadata: Record<string, unknown> | null | undefined
     maxParty,
     effort: typeof raw.effort === "string" && raw.effort.trim() ? raw.effort.trim() : null,
     route: readRoute(raw.route),
+    city: typeof raw.city === "string" && raw.city.trim() ? raw.city.trim() : null,
+    via: readVia(raw.via),
   };
+}
+
+function readVia(v: unknown): Record<string, [number, number][]> | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const out: Record<string, [number, number][]> = {};
+  for (const [k, list] of Object.entries(v as Record<string, unknown>)) {
+    if (!Array.isArray(list)) continue;
+    const pts = list.filter((p): p is [number, number] => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "number" && Number.isFinite(x)));
+    if (pts.length) out[k] = pts;
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 function readRoute(v: unknown): TourRoute | null {
@@ -199,12 +225,16 @@ function mapTour(r: TourRow): Tour {
     body: r.body,
     excerpt: r.excerpt,
     coverImageUrl: typeof meta.coverImageUrl === "string" ? meta.coverImageUrl : null,
+    coverFrame: readCoverFrame(meta.coverFrame),
     film: readFilm(meta.film),
+    tourType: readTourType(meta.tourType),
     price: price != null && Number.isFinite(price) ? price : null,
     currency: r.currency ?? siteConfig.currency,
     durationMinutes: r.duration_minutes,
     location: r.location,
     details: readDetails(meta),
+    goodToKnow: strings(meta.goodToKnow),
+    contact: typeof meta.contact === "string" && meta.contact.trim() ? meta.contact.trim() : null,
     pinned: r.pinned,
     authorId: r.author_id,
     authorName: r.author_name,
@@ -216,13 +246,26 @@ function mapTour(r: TourRow): Tour {
   };
 }
 
-/** Published tours for the public pages, pinned first. */
-export async function listTours(opts: { includeDrafts?: boolean } = {}): Promise<Tour[]> {
+/**
+ * Published tours for the public pages, pinned first. The public list holds only tours with at least one
+ * upcoming scheduled departure (developer, 2026-11-19); a tour without one stays reachable by its link.
+ * `includeDrafts` (office pages) lists every tour that is not archived, dated or not.
+ */
+export async function listTours(opts: { includeDrafts?: boolean; /** Published and public tours even without a coming date (the page blocks' "All published tours"); never a draft. */ undated?: boolean } = {}): Promise<Tour[]> {
   try {
     const rows = await db<TourRow[]>`
       SELECT ${COLUMNS}
       WHERE t.org_id = ${ORG} AND t.kind = 'tour'
-        ${opts.includeDrafts ? db`AND t.status <> 'archived'` : db`AND t.status = 'published' AND t.visibility = 'PUBLIC'`}
+        ${
+          opts.includeDrafts
+            ? db`AND t.status <> 'archived'`
+            : opts.undated
+              ? db`AND t.status = 'published' AND t.visibility = 'PUBLIC'`
+              : db`AND t.status = 'published' AND t.visibility = 'PUBLIC'
+                 AND EXISTS (SELECT 1 FROM ${departuresSql()} d
+                             WHERE d.thread_id = t.id AND d.org_id = ${ORG}
+                               AND d.status = 'scheduled' AND d.starts_at >= NOW())`
+        }
       ORDER BY t.pinned DESC, t.published_at DESC NULLS LAST, t.created_at DESC
       LIMIT 100
     `;
@@ -328,4 +371,13 @@ export async function stopExtrasFor(threadId: string, stops: TourStop[]): Promis
     console.error("[elktours] stopExtrasFor:", err);
   }
   return out;
+}
+
+/** metadata.coverFrame as stored by setTourCoverAction: a focal point (0-100) and a zoom (1-4), else null. */
+export function readCoverFrame(v: unknown): { fx: number; fy: number; zoom: number } | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const n = (x: unknown, lo: number, hi: number) => (typeof x === "number" && Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : null);
+  const fx = n(o.fx, 0, 100), fy = n(o.fy, 0, 100), zoom = n(o.zoom, 1, 4);
+  return fx == null || fy == null || zoom == null ? null : { fx, fy, zoom };
 }

@@ -10,7 +10,7 @@ type Kind = "confirm" | "ship" | "cancel" | "refund";
 const CONFIRM_COPY: Record<Kind, string> = {
   confirm: "Mark this order as paid? Do this only once the eTransfer has arrived in your bank.",
   ship: "Mark this order as shipped?",
-  cancel: "Cancel this order? The piece goes back on sale and the buyer's reservation is released.",
+  cancel: "Cancel this order? Nothing is refunded here; a cancelled order has no payment to refund.",
   refund: "Record this eTransfer order as refunded? Do this only after you have sent the money back.",
 };
 

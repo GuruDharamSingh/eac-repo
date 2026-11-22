@@ -42,6 +42,8 @@ export function sunjaySiteForms(feeds: Array<{ slug: string; name: string }>): S
     orgId: siteConfig.orgId,
     orgName: siteConfig.orgName,
     timeZone: "America/Toronto",
+    // The forms follow the site's own surface tokens and fonts (site-look.css; pins in globals.css).
+    look: "site",
     feeds,
     network: { origin: NETWORK_ORIGIN, carry: (url) => `/api/auth/handoff?to=${encodeURIComponent(url)}` },
     materials: { upload: uploadMaterial },

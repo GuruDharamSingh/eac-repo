@@ -30,7 +30,8 @@ export default async function NewContentPage({ searchParams }: NewContentPagePro
     return (
       <>
         <h2 className="sr-only">New {kind}</h2>
-        <div className="mt-6 max-w-3xl">
+        {/* 940px: the site-form look draws the full form in two columns (main + rail) from about 890px. */}
+        <div className="mt-6 max-w-[940px]">
           <MeetingFormPage kind={kind} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} />
         </div>
       </>

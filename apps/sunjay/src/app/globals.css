@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@elkdonis/commerce/commerce.css";
+@import "@elkdonis/direct-edit/site/shared-accents.css";
 
 @source "../../../../packages/pipeline/src";
 @source "../../../../packages/chat/src";
@@ -73,8 +74,8 @@
    The library DARKENS the accent with color-mix to make it usable as ink on
    paper — which is exactly the wrong direction on a dark ground, and Lightning
    CSS compiles it behind a @supports guard whose fallback is the raw accent
-   anyway. Pinned here to the lifted bronze, which is already ink: #c9ae79
-   measures 7.83:1 on the ground and 6.95:1 on a card.
+   anyway. Pinned here to the lifted bronze, which is already ink: #c8a45b
+   measures 7.12:1 on the ground and 6.32:1 on a card.
 
    This value INVERTED when the site went dark. The light-mode #7c6a46 is
    2.84:1 on the card — it was left behind by the palette swap and would have
@@ -88,7 +89,7 @@
   --eac-control-line: hsl(var(--border));
   --eac-control-accent: hsl(var(--primary));
   --eac-control-accent-on: hsl(var(--primary-foreground));
-  --eac-control-accent-ink: #c9ae79;   /* lifted bronze — 7.83:1 on ground, 6.95:1 on card */
+  --eac-control-accent-ink: var(--eac-accent-bronze-hex);   /* shared bronze — 7.12:1 on ground, 6.32:1 on card */
   --eac-control-danger: hsl(var(--destructive));
   --eac-control-radius: var(--radius);
 
@@ -156,9 +157,9 @@
   --popover: 200 8% 15%;
   --popover-foreground: 40 21% 89%;
 
-  --primary: 40 43% 63%;             /* lifted bronze #C9AE79 — 7.83:1 as ink */
+  --primary: var(--eac-accent-bronze); /* the shared bronze #C8A45B (shared-accents.css) — 7.12:1 as ink */
   /* The ink ON a filled primary is the GROUND, not the card: #1B1E20 on
-     #C9AE79 is 7.83:1, while the bone would be 1.70:1 and unreadable. */
+     #C8A45B is 7.12:1, while the bone would be 1.70:1 and unreadable. */
   --primary-foreground: 204 8% 12%;
 
   --secondary: 200 7% 21%;
@@ -185,7 +186,7 @@
      3.11:1 on a card, so a text field reads as a field on both. */
   --border: 203 7% 23%;              /* #373C3F */
   --input: 200 5% 45%;               /* #6B7478 */
-  --ring: 40 43% 63%;
+  --ring: var(--eac-accent-bronze);
 
   /* Per-feed accents. org_feeds.accent is the source of truth and is applied
      inline as --feed on the page wrapper. These are the fallbacks, lifted for
@@ -193,7 +194,7 @@
      would sit at ~2:1 here, so a feed page that sets --feed inline is the one
      place this site can still go dim. Worth revisiting if feeds get pages
      with heavy accent fills. */
-  --feed-gatherings: 40 43% 63%;     /* #C9AE79 — ground on it 7.83:1 */
+  --feed-gatherings: var(--eac-accent-bronze); /* #C8A45B — ground on it 7.12:1 */
   --feed-writing: 32 52% 60%;        /* #CE9A62 */
   --feed-materials: 102 18% 60%;     /* #8DA882 */
 
@@ -247,6 +248,25 @@
   /* The hub's band headings — the bone ink, 13.34:1. Not the bronze accent,
      which is decorative at rubric size. */
   --eac-hub-rubric: hsl(var(--foreground));
+
+  /*
+    Site forms (@elkdonis/site-forms, look "site", 2026-11-15): the look derives from --sf-* and these pin
+    Para Theater's exact values (the design boards). Ground #1B1E20 on the panel #24282A.
+    Rule #8E8B85 (the strong rule, 4.4:1 on the panel; --sf-rule would compute to about #999996).
+  */
+  --eac-surface-rule: #8E8B85;
+  --eac-form-color-scheme: dark;
+  --eac-form-field: hsl(var(--background));              /* #1B1E20 */
+  --eac-form-field-line: #454A4D;
+  --eac-form-input-line: hsl(var(--input));              /* #6B7478, 3.5:1 on the ground */
+  --eac-form-warn: #D9895A;                              /* on #2E2219 */
+  --eac-form-warn-line: #5C3A26;
+  --eac-form-warn-soft: #2E2219;
+  --eac-form-shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+  --eac-form-shadow-panel: 0 14px 30px rgba(0, 0, 0, 0.55);
+  --eac-form-row-panel-bg: #2F3437;                      /* muted #A3A09A 4.83:1 on it */
+  --eac-form-row-panel-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  --eac-form-row-press-bg: #33383B;                      /* bone 9.45:1; gold bar 6.95:1 on the panel */
 }
 
 /*
@@ -402,7 +422,7 @@ body {
    both stops are dark enough on stone to stand alone: bronze 4.65:1,
    rust 5.72:1. */
 .gradient-text {
-  background: linear-gradient(135deg, #c9ae79, #ce8b62);
+  background: linear-gradient(135deg, var(--eac-accent-bronze-hex), #ce8b62);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -578,7 +598,7 @@ h4 {
   --eac-bq-parchment-deep: #1B1E20;
   --eac-bq-ink: #e9e5dd;         /* bone — 11.84:1 on the card above */
   --eac-bq-ink-soft: #a3a09a;    /* 5.70:1 */
-  --eac-bq-gilt: #c9ae79;        /* lifted bronze — 6.95:1 as ink on the card */
+  --eac-bq-gilt: var(--eac-accent-bronze-hex);        /* shared bronze — 6.32:1 as ink on the card */
   --eac-bq-gilt-bright: #ddc79a;
   --eac-bq-violet: #ce8b62;      /* rust, not violet: this site has no purple */
   --eac-bq-vermilion: #d97070;
@@ -618,7 +638,7 @@ h4 {
   --read-muted: #b4b0a8;
   --read-faint: #9b978f;
   --read-rule: #3a4043;
-  --read-accent: #c9ae79;
+  --read-accent: var(--eac-accent-bronze-hex);
   --read-face-title: var(--font-fraunces), Georgia, serif;
   --read-face-prose: var(--font-spectral), Georgia, serif;
 }

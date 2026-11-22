@@ -1,0 +1,55 @@
+/* ---------------------------------------------------------------------------
+   @elkdonis/page-builder — optional editor theme (2026-11-20).
+
+   Puck 0.22+ draws its whole editor from `--puck-*` custom properties; a theme
+   is a set of those on an ancestor of <Puck />. PuckEditor puts this class on
+   its wrapper only when a host passes `theme="studio"`. Without it nothing here
+   applies, so a host that does not opt in looks as before.
+
+   "studio" is the light Studio palette (docs: memory feedback_studio_light_style,
+   2026-11-11): paper ground, white surfaces, one blue accent, 6-10px radii.
+   Only semantic tokens are set. The palette tokens (`--puck-color-azure-*`,
+   `--puck-color-grey-*`) are Puck internals and are not themed from here;
+   editor.css reads `--puck-color-interactive` / `-soft` for its own marks so
+   they follow the theme (same values as azure-04 / azure-11 in Puck's default).
+
+   Contrast, measured 2026-11-20 (WCAG relative luminance):
+     text #1c1c21 on surface #fff 16.97, on muted #faf9f6 16.12, on subtle #f4f3ef 15.28
+     text-secondary #55555f on surface 7.37, on subtle 6.63
+     interactive #2d55c8 on surface 6.47, on soft #e5ebfb 5.43, on subtle 5.83
+     white on interactive 6.47 (primary button), on interactive-hover 8.12
+     focus ring #5b7fe0 on surface 3.78 (needs 3:1)
+   Panel and field borders: #e2e0da on white is 1.32:1 (Puck's stock #dcdcdc is
+   about 1.37:1). Not raised here: a restyle keeps the stock border weight.
+   -------------------------------------------------------------------------- */
+/* `.eac-puck-theme` is the wrapper in the host document; the attribute is set on
+   the canvas iframe's root by PuckEditor (custom properties do not cross the iframe). */
+.eac-puck-theme,
+:root[data-eac-puck-theme="studio"] {
+  --puck-color-surface: #ffffff;
+  --puck-color-surface-muted: #faf9f6;
+  --puck-color-surface-subtle: #f4f3ef;
+
+  --puck-color-border: #e2e0da;
+  --puck-color-border-hover: #c9c6bd;
+  --puck-color-border-muted: #ecebe6;
+
+  --puck-color-text: #1c1c21;
+  --puck-color-text-secondary: #55555f;
+
+  --puck-color-interactive: #2d55c8;
+  --puck-color-interactive-hover: #2447ae;
+  --puck-color-interactive-active: #1c3a8f;
+  --puck-color-interactive-subtle: #dbe3f8;
+  --puck-color-interactive-soft: #e5ebfb;
+  --puck-color-interactive-soft-hover: #d8e1f9;
+  --puck-color-focus-ring: #5b7fe0;
+
+  --puck-color-selection-border: color-mix(in srgb, #2d55c8 70%, #ffffff);
+  --puck-color-selection-bg: color-mix(in srgb, #2d55c8 14%, transparent);
+  --puck-color-line-placeholder: #2d55c8;
+
+  --puck-radius-s: 4px;
+  --puck-radius-m: 6px;
+  --puck-radius-l: 10px;
+}

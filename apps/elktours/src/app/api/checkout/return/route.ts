@@ -1,4 +1,4 @@
-import { getTourBookingTokenForOrder } from "@elkdonis/commerce/server";
+import { getBookingTokenForAnyOrder } from "@/lib/booking-lookup";
 import { publicOriginFrom } from "@elkdonis/checkout/booking";
 import { syncStripeOrder } from "@elkdonis/checkout/stripe";
 
@@ -19,7 +19,7 @@ export async function GET(request: Request): Promise<Response> {
   let token: string | null = null;
   if (orderId && /^[0-9a-f-]{36}$/i.test(orderId)) {
     await syncStripeOrder(orderId).catch((err) => console.error(`[elktours] checkout return ${orderId}:`, err));
-    token = await getTourBookingTokenForOrder(orderId).catch(() => null);
+    token = await getBookingTokenForAnyOrder(orderId).catch(() => null);
   }
 
   const target = new URL(token ? `${base}/bookings/${token}` : `${base}${path}`);

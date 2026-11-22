@@ -10,4 +10,5 @@
 export * from "./core";
 export * from "./server/offers";
 export * from "./server/bookings";
+export * from "./server/slots";
 export { bookerUrl, hostUrl } from "./server/notify";

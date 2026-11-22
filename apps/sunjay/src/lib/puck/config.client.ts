@@ -180,7 +180,9 @@ export const canvasConfig = buildPuckConfig({ resolvers: canvasResolvers, blocks
 /** What each sealed block declares: its settings in the right column, and its parts to click into. */
 export const canvasContract = contractOf(CATALOGUE);
 
-export const puckConfig = buildEditorConfig({
+function makePuckConfig(tabs: boolean) {
+  return buildEditorConfig({
+  tabs,
   resolvers: clientResolvers,
   blocks,
   morph: MorphMark,
@@ -223,4 +225,15 @@ export const puckConfig = buildEditorConfig({
       { key: "mine", label: "My files", endpoint: "/api/media/library/mine" },
     ],
   },
-});
+  });
+}
+
+/** Flat field list: what the canvas's block-settings popup (CanvasEditor) draws. */
+export const puckConfig = makePuckConfig(false);
+
+/**
+ * The whole-page editor's config (2026-11-21): the same blocks with each block's fields in Content and Style tabs
+ * (Puck 0.24 FieldTab, `buildEditorConfig({ tabs })`). Kept apart from `puckConfig`: the settings popup and the
+ * tab memory across block types are not yet checked with tabs.
+ */
+export const wholePageConfig = makePuckConfig(true);

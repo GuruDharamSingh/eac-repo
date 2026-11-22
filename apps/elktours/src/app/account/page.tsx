@@ -7,7 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { ProfileEditForm } from "@/components/profile-edit-form";
 import { StoreSectionToggle } from "@/components/store-section-toggle";
 import { getStoreForUser, hasProfileSection } from "@elkdonis/commerce/queries";
-import { listBuyerTourBookings } from "@elkdonis/commerce/server";
+import { listBuyerTourBookings } from "@/lib/departures";
 import { formatDeparture } from "@/lib/tours";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";

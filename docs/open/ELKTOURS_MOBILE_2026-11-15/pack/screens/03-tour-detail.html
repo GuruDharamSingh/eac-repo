@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03-tour-detail</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 181-306. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.detail }}" hint-placeholder-val="{{ false }}">
+<div ref="{{ detailRef }}" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 0 130px;animation:elkIn .32s ease both">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:#f1ece2;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">←</button>
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#b9b2a5">{{ detail.typeLabel }}</span>
+<button onClick="{{ detail.toggleSave }}" style="flex:none;width:44px;height:44px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:rgba(241,236,226,.04);color:{{ detail.heartColor }};font-size:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">{{ detail.heart }}</button>
+</div>
+<sc-if value="{{ hero.has }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;margin:14px 16px 0;height:330px;border-radius:179px 179px 26px 26px;overflow:hidden;border:1px solid rgba(201,162,92,.4);outline:1px solid rgba(201,162,92,.16);outline-offset:4px;background:#16181c;perspective:640px">
+<sc-if value="{{ hero.isFilm }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(201,162,92,.05) 0 1px,transparent 1px 12px),#16181c"></div>
+<div style="position:absolute;left:0;right:0;top:50px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Fly-over film</span>
+<span style="font-size:13px;color:#b9b2a5">The route from the air, stop by stop</span>
+<div style="display:flex;gap:4px;margin-top:8px"><sc-for list="{{ film.segs }}" as="g" hint-placeholder-count="5"><span style="width:28px;height:3px;border-radius:2px;background:{{ g.bg }};transition:background .4s"></span></sc-for></div>
+</div>
+<div style="position:absolute;left:16px;right:16px;bottom:16px;height:183px;overflow:hidden;background:#0d0e10;border:1px solid rgba(201,162,92,.35);border-radius:3px;perspective:520px">
+<div style="position:absolute;left:calc(50% - 380px);top:calc(56% - 380px);width:760px;height:760px;transform-style:preserve-3d;transform:{{ film.plane }};transition:transform 2.2s cubic-bezier(.45,.05,.2,1);background:repeating-linear-gradient(14deg,rgba(241,236,226,.07) 0 2px,transparent 2px 38px),repeating-linear-gradient(104deg,rgba(241,236,226,.07) 0 2px,transparent 2px 30px),radial-gradient(closest-side,#3b4048 0%,#2b2f36 62%,#1b1d22 100%)">
+<sc-for list="{{ geo.river }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:#2b3b40;transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ geo.glow }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:rgba(201,162,92,.2);transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ geo.line }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:#c9a25c;transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ film.pins }}" as="p" hint-placeholder-count="0"><div style="position:absolute;left:{{ p.x }};top:{{ p.y }};width:0;height:0;transform-style:preserve-3d;transform-origin:0 0;transform:{{ p.t }};transition:transform 2.2s cubic-bezier(.45,.05,.2,1)"><div style="position:absolute;left:-16px;bottom:0;width:32px;display:flex;flex-direction:column;align-items:center"><span style="width:32px;height:32px;border-radius:16px;border:1.5px solid {{ p.ring }};background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:14px;box-shadow:0 6px 14px rgba(0,0,0,.45)">{{ p.num }}</span><span style="width:2px;height:26px;background:{{ p.ring }}"></span></div></div></sc-for>
+</div>
+<div style="position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,#0d0e10 0%,rgba(13,14,16,0) 40%),radial-gradient(ellipse at 50% 60%,transparent 55%,rgba(0,0,0,.45) 100%)"></div>
+<span style="position:absolute;top:9px;left:10px;z-index:3;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:rgba(241,236,226,.75)">{{ film.time }}</span>
+<button onClick="{{ film.toggle }}" style="position:absolute;top:6px;right:6px;z-index:3;width:30px;height:30px;border-radius:15px;border:1px solid rgba(241,236,226,.25);background:rgba(13,14,16,.6);color:#f1ece2;font-size:10px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center">{{ film.btn }}</button>
+<span style="position:absolute;left:8px;bottom:5px;z-index:3;font-family:ui-monospace,Menlo,monospace;font-size:7.5px;letter-spacing:.04em;color:rgba(241,236,226,.6)">map credit</span>
+<span style="position:absolute;right:8px;bottom:5px;z-index:3;font-family:ui-monospace,Menlo,monospace;font-size:7.5px;letter-spacing:.04em;color:rgba(241,236,226,.6)">promotional use only</span>
+</div>
+</sc-if>
+<sc-if value="{{ hero.mapPoster }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(201,162,92,.08) 0 1px,transparent 1px 12px),linear-gradient(165deg,#4a4f59 0%,#2e3238 100%)"></div>
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,24,28,.1) 0%,rgba(22,24,28,.8) 100%)"></div>
+<span style="position:absolute;left:0;right:0;top:84px;text-align:center;padding:0 40px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,236,226,.5)">photo · {{ mp.poster }}</span>
+<div style="position:absolute;left:0;right:0;bottom:30px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 28px;text-align:center">
+<button onClick="{{ mp.start }}" style="display:flex;align-items:center;gap:10px;height:50px;padding:0 22px;border:0;background:#c9a25c;color:#1b1e23;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15.5px;cursor:pointer;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)"><span style="font-size:11px">▶</span>Preview the route</button>
+<span style="font-size:13px;line-height:1.4;color:#e6e0d4">{{ mp.posterLine }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ hero.mapLive }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:calc(50% - 380px);top:calc(44% - 380px);width:760px;height:760px;transform-style:preserve-3d;transform:{{ mp.plane }};transition:transform 2.2s cubic-bezier(.45,.05,.2,1);background:repeating-linear-gradient(14deg,rgba(241,236,226,.07) 0 2px,transparent 2px 38px),repeating-linear-gradient(104deg,rgba(241,236,226,.07) 0 2px,transparent 2px 30px),radial-gradient(closest-side,#3b4048 0%,#2b2f36 62%,#1b1d22 100%)">
+<sc-for list="{{ geo.river }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:#2b3b40;transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ geo.glow }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:rgba(201,162,92,.2);transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ geo.line }}" as="g" hint-placeholder-count="0"><span style="position:absolute;left:{{ g.l }};top:{{ g.t }};width:{{ g.w }};height:{{ g.h }};border-radius:999px;background:#c9a25c;transform-origin:{{ g.o }};transform:{{ g.r }}"></span></sc-for>
+<sc-for list="{{ mp.pins }}" as="p" hint-placeholder-count="0"><div style="position:absolute;left:{{ p.x }};top:{{ p.y }};width:0;height:0;transform-style:preserve-3d;transform-origin:0 0;transform:{{ p.t }};transition:transform 2.2s cubic-bezier(.45,.05,.2,1)"><div style="position:absolute;left:-16px;bottom:0;width:32px;display:flex;flex-direction:column;align-items:center"><span style="width:32px;height:32px;border-radius:16px;border:1.5px solid {{ p.ring }};background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:14px;box-shadow:0 6px 14px rgba(0,0,0,.45)">{{ p.num }}</span><span style="width:2px;height:26px;background:{{ p.ring }}"></span></div></div></sc-for>
+</div>
+<div style="position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,#16181c 0%,rgba(22,24,28,.8) 12%,rgba(22,24,28,0) 34%)"></div>
+<span style="position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;border:1px solid rgba(241,236,226,.2);background:rgba(22,24,28,.6);font-family:Venture,Georgia,serif;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#e6e0d4;white-space:nowrap"><span style="width:6px;height:6px;border-radius:3px;background:#c9a25c"></span>Live 3D map</span>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;padding:36px 16px 14px;background:linear-gradient(180deg,rgba(22,24,28,0) 0%,rgba(22,24,28,.9) 40%);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-direction:column;gap:3px;min-height:56px;justify-content:flex-end">
+<span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#c9a25c">{{ mp.kicker }}</span>
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;line-height:1.25">{{ mp.name }}</span>
+<sc-if value="{{ mp.hasExp }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;line-height:1.35;color:#86b9ab">{{ mp.expLine }}</span></sc-if>
+</div>
+<div style="display:flex;align-items:center;gap:6px">
+<sc-for list="{{ mp.chips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.pick }}" style="flex:none;width:32px;height:32px;border-radius:16px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Brothers,Georgia,serif;font-size:13px;cursor:pointer;padding:0">{{ c.num }}</button></sc-for>
+<span style="flex:1"></span>
+<button onClick="{{ mp.play }}" style="flex:none;height:32px;padding:0 14px;border-radius:16px;border:1px solid #c9a25c;background:{{ mp.playBg }};color:{{ mp.playFg }};font-family:Basteleur,Georgia,serif;font-weight:700;font-size:13px;cursor:pointer">{{ mp.playLabel }}</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ hero.isPhotos }}" hint-placeholder-val="{{ true }}">
+<div onScroll="{{ gal.onScroll }}" style="position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none">
+<sc-for list="{{ gal.items }}" as="g" hint-placeholder-count="1"><div style="flex:none;width:100%;height:100%;scroll-snap-align:start;background:repeating-linear-gradient(135deg,rgba(201,162,92,.08) 0 1px,transparent 1px 12px),linear-gradient(165deg,#4a4f59 0%,#2e3238 100%);display:flex;align-items:flex-end;justify-content:center;padding:0 28px 54px;text-align:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,236,226,.55)">photo · {{ g.cap }}</span></div></sc-for>
+</div>
+<sc-if value="{{ gal.many }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:4px 12px;border-radius:14px;background:rgba(22,24,28,.7);border:1px solid rgba(201,162,92,.45);font-family:Brothers,Georgia,serif;font-size:14px;color:#dcc08a;pointer-events:none;white-space:nowrap">{{ gal.count }}</span></sc-if>
+</sc-if>
+</div>
+<sc-if value="{{ hero.tabsOn }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;justify-content:center;gap:8px;margin:18px 16px 0">
+<sc-for list="{{ hero.tabs }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.pick }}" style="flex:none;height:36px;padding:0 14px;border-radius:18px;border:1px solid {{ m.border }};background:{{ m.bg }};color:{{ m.fg }};font-family:Basteleur,Georgia,serif;font-size:13.5px;cursor:pointer;white-space:nowrap">{{ m.label }}</button></sc-for>
+</div>
+</sc-if>
+</sc-if>
+<h1 style="margin:26px 20px 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:40px;line-height:1.02;text-wrap:balance">{{ detail.title }}</h1>
+<div style="display:flex;align-items:center;gap:12px;margin:16px 20px 0">
+<div style="flex:none;width:40px;height:40px;border-radius:20px;border:1px solid #c9a25c;background:#3d424a;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:18px;color:#dcc08a">{{ detail.initial }}</div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px">{{ detail.guideName }}</span><span style="font-size:13px;color:#b9b2a5">{{ detail.craft }} · leads in {{ detail.langs }}</span></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:22px 20px 0;border-top:1px solid rgba(201,162,92,.45);border-bottom:1px solid rgba(201,162,92,.45)">
+<sc-for list="{{ detail.facts }}" as="f" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:5px;padding:14px 4px;text-align:center;border-left:{{ f.rule }}">
+<span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#b9b2a5">{{ f.k }}</span>
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px">{{ f.v }}</span>
+</div>
+</sc-for>
+</div>
+<p style="margin:22px 20px 0;font-size:16px;line-height:1.6;color:#e6e0d4;text-wrap:pretty"><span style="float:left;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:60px;line-height:.82;margin:6px 10px 0 0;color:#c9a25c">{{ detail.first }}</span>{{ detail.rest }}</p>
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 16px">
+<div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,162,92,.7))"></div>
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">The route</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.7),transparent)"></div>
+</div>
+<sc-if value="{{ detail.flyHint }}" hint-placeholder-val="{{ false }}"><p style="margin:-4px 20px 14px;font-size:13.5px;color:#b9b2a5">Tap a stop for what you'll see there.</p></sc-if>
+<div style="display:flex;flex-direction:column;padding:0 20px">
+<sc-for list="{{ detail.stops }}" as="st" hint-placeholder-count="4">
+<div style="display:flex;gap:14px;align-items:stretch">
+<div style="flex:none;display:flex;flex-direction:column;align-items:center;width:36px">
+<span style="width:36px;height:36px;border-radius:18px;border:1px solid #c9a25c;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:15px;color:#dcc08a">{{ st.num }}</span>
+<sc-if value="{{ st.more }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:1px;min-height:14px;background:rgba(201,162,92,.45)"></span></sc-if>
+</div>
+<div style="flex:1;min-width:0;display:flex;gap:12px;padding:8px 0 18px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"><button onClick="{{ st.toggle }}" style="padding:0;border:0;background:transparent;color:#f1ece2;text-align:left;font-family:Basteleur,Georgia,serif;font-size:15.5px;line-height:1.3;cursor:pointer">{{ st.name }}</button><sc-if value="{{ st.isHere }}" hint-placeholder-val="{{ false }}"><span style="margin-top:-4px;font-family:Venture,Georgia,serif;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#c9a25c">On the map above</span></sc-if><sc-if value="{{ st.open }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;animation:elkFade .25s ease both"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c9a25c">{{ st.when }}</span><p style="margin:0;font-size:14px;line-height:1.55;color:#e6e0d4;text-wrap:pretty">{{ st.note }}</p><sc-if value="{{ st.hasStill }}" hint-placeholder-val="{{ false }}"><div style="height:150px;border-radius:14px;border:1px solid rgba(241,236,226,.12);background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 8px),linear-gradient(165deg,#474c56,#2e3238);display:flex;align-items:flex-end;padding:10px 12px"><span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:rgba(241,236,226,.55)">street view · {{ st.name }}</span></div></sc-if><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-if value="{{ st.hasPlace }}" hint-placeholder-val="{{ false }}"><button onClick="{{ st.openPlace }}" style="height:36px;padding:0 14px;border-radius:18px;border:1px solid rgba(201,162,92,.6);background:transparent;color:#dcc08a;font-family:Basteleur,Georgia,serif;font-size:13.5px;cursor:pointer">About this place</button></sc-if></div></div></sc-if><sc-if value="{{ st.hasExp }}" hint-placeholder-val="{{ false }}"><button onClick="{{ st.openExp }}" style="display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:18px;border:1px solid rgba(134,185,171,.5);background:rgba(134,185,171,.08);color:#f1ece2;text-align:left;cursor:pointer"><span style="flex:none;width:32px;height:32px;border-radius:16px;border:1px solid #86b9ab;background:repeating-linear-gradient(135deg,rgba(134,185,171,.12) 0 1px,transparent 1px 6px),#3d424a"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#86b9ab">Experience at this stop</span><span style="font-size:13.5px;line-height:1.3">{{ st.expLine }}</span></span><span style="color:#86b9ab;font-size:17px">›</span></button></sc-if></div><sc-if value="{{ st.thumb }}" hint-placeholder-val="{{ false }}"><span onClick="{{ st.toggle }}" style="flex:none;width:76px;height:56px;border-radius:12px;border:1px solid rgba(241,236,226,.12);background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 7px),#3d424a;display:flex;align-items:flex-end;padding:5px 7px;font-family:ui-monospace,Menlo,monospace;font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:rgba(241,236,226,.55);cursor:pointer">street view</span></sc-if><button onClick="{{ st.toggle }}" style="flex:none;width:28px;height:28px;margin-top:2px;border-radius:14px;border:1px solid rgba(201,162,92,.5);background:transparent;color:#dcc08a;font-size:15px;line-height:1;cursor:pointer;padding:0">{{ st.mark }}</button></div>
+</div>
+</sc-for>
+</div>
+<p style="margin:4px 20px 0;font-size:13.5px;color:#b9b2a5">Meet at {{ detail.meet }}</p>
+<sc-if value="{{ detail.hasNext }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;margin:28px 20px 12px">
+<span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">Next dates</span>
+<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div>
+</div>
+<div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 20px">
+<sc-for list="{{ detail.next }}" as="n" hint-placeholder-count="3">
+<button onClick="{{ n.pick }}" style="flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 16px;border-radius:18px;border:1px solid rgba(241,236,226,.14);background:#31353c;color:#f1ece2;cursor:pointer;text-align:left">
+<span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px">{{ n.day }}</span>
+<span style="font-size:13px;color:#b9b2a5">{{ n.time }} · <span style="color:#dcc08a">{{ n.left }}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 20px 30px;background:linear-gradient(180deg,rgba(40,43,49,0) 0%,#282b31 32%);display:flex;align-items:center;gap:16px;animation:elkFade .3s ease both">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:24px;color:#dcc08a">{{ detail.priceLabel }}</span><span style="font-size:12.5px;color:#b9b2a5">per person</span></div>
+<button onClick="{{ toDates }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:56px;padding:0 24px;border:0;background:#c9a25c;color:#1b1e23;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:16px;cursor:pointer;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)">Choose a date →</button>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

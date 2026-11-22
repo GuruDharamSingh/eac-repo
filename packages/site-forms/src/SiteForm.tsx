@@ -15,6 +15,7 @@ import {
   seriesKind,
   sitePostKind,
   workshopKind,
+  lucideFormIcons,
   quickFormTheme,
   readiness,
   serviceKind,
@@ -27,9 +28,11 @@ import {
   type FormKindSchema,
   type FormPreset,
   type FormState,
+  type FormTheme,
 } from "@elkdonis/studio-forms";
 import "@elkdonis/studio-forms/forms.css";
 import "@elkdonis/studio-forms/ledger.css";
+import "./site-look.css";
 import { audienceAnswers, type SiteFormSite } from "./host";
 
 // ============================================================================
@@ -57,6 +60,17 @@ export function schemaOf(kind: FormKindId): FormKindSchema | null {
 /** The Quick-Form theme's fonts (ledger.css names them; the host loads them). */
 const QUICK_FONTS =
   "https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap";
+
+/**
+ * The site look (2026-11-15, `SiteFormSite.look === "site"`): attr `site`, styled by ./site-look.css from the
+ * site's `--sf-*` surface tokens. ledger.css selects only `ledger*` attrs, so none of it applies here.
+ */
+export const siteFormTheme: FormTheme = { id: "site", attr: "site", icons: lucideFormIcons };
+
+/** The FormTheme for a site's look. */
+export function formThemeOf(look: SiteFormSite["look"]): FormTheme {
+  return look === "site" ? siteFormTheme : quickFormTheme;
+}
 
 export type Boot = { ctx: FormContext; init?: Partial<FormState> };
 
@@ -151,6 +165,8 @@ export function SiteFormInner({
   boot,
   onPublished,
   onDone,
+  look,
+  initialTier = "quick",
   frame,
 }: {
   kind: FormKindId;
@@ -161,11 +177,15 @@ export function SiteFormInner({
   onPublished?: () => void;
   /** The frame's way out, for AfterPublish's "Done" (a frame draws it). */
   onDone?: () => void;
+  /** The site's look (`SiteFormSite.look`); unset is the Ledger quick look. */
+  look?: SiteFormSite["look"];
+  /** The tier the form opens at (default quick). A page opens at focus under the site look. */
+  initialTier?: "quick" | "focus";
   /** Draws the frame around the form: `children` is the form body. */
   frame: (c: SiteFormControls, children: React.ReactNode) => React.ReactNode;
 }) {
   const { ctx } = boot;
-  const [tier, setTier] = React.useState<"quick" | "focus">("quick");
+  const [tier, setTier] = React.useState<"quick" | "focus">(initialTier);
   const [stage, setStage] = React.useState<"edit" | "published">("edit");
   const [pending, setPending] = React.useState<null | "draft" | "publish">(null);
   // A series is made here and planned elsewhere: remember where its save said the planner is.
@@ -268,8 +288,8 @@ export function SiteFormInner({
 
   const form = (
     <>
-      <link rel="stylesheet" href={QUICK_FONTS} precedence="default" />
-      <FormRoot theme={quickFormTheme} className="frm-site" data-tier={tier}>
+      {look === "site" ? null : <link rel="stylesheet" href={QUICK_FONTS} precedence="default" />}
+      <FormRoot theme={formThemeOf(look)} className="frm-site" data-tier={tier}>
         {/* The label column folds away; pointing at this strip on the left edge opens it (ledger.css, "Site forms"). */}
         <span className="frm-site-edge" aria-hidden="true" />
         {stage === "published" ? (
@@ -281,6 +301,7 @@ export function SiteFormInner({
             host={host}
             ctx={ctx}
             tier={tier}
+            layout={look === "site" ? "rows" : undefined}
             scope={scope}
             patch={ctl.patch}
             toggleSection={ctl.toggleSection}
@@ -304,4 +325,12 @@ export function SiteFormInner({
     </>
   );
   return <>{frame(controls, form)}</>;
+}
+
+/**
+ * Where "⤢ Focus" lands correctly (2026-11-15): the Studio form of the kind. Event, series and workshop have no
+ * Studio form (host.ts STUDIO_KIND is ""), and a new post would open the Studio's default: a post needs an id.
+ */
+export function canFocusInStudio(kind: FormKindId, id: string | null | undefined): boolean {
+  return kind === "meeting" || kind === "artwork" || kind === "service" || (kind === "post" && Boolean(id));
 }

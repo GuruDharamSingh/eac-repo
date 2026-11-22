@@ -63,6 +63,8 @@ export async function forumSnapshot(opts: ForumSnapshotOptions): Promise<Surface
             unreadCount: f.unreadCount,
             accent: f.accent,
             href: hrefs.feed(boards[0].slug, f.slug),
+            parentSlug: f.parentSlug,
+            closed: Boolean(f.minRole),
           }))
       : boards
           .filter((b) => b.feeds.some((f) => f.topicCount > 0))
@@ -101,7 +103,7 @@ export async function forumSnapshot(opts: ForumSnapshotOptions): Promise<Surface
   return {
     title,
     href: hrefs.root(),
-    feeds: feeds.slice(0, opts.feedLimit ?? 8),
+    feeds: feeds.slice(0, opts.feedLimit ?? 30),
     recent,
     topicCount,
     postCount,

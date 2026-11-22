@@ -32,6 +32,12 @@ export interface TreePageOptions {
   blockEditorHref?: string;
   pageName?: string;
   onRestore?(): void;
+  /** A page switcher in the canvas's page menu (tree-editor `pages`). Absent: as before. */
+  pages?: TreeEditorOptions["pages"];
+  /** Free placement: a Free move tool in the canvas (tree-editor `freeMove`). Absent: as before. */
+  freeMove?: boolean;
+  /** Style against look (tree-editor `blkStyleDecls`): the host's `blkStyle` reader. Absent: as before. */
+  blkStyleDecls?: TreeEditorOptions["blkStyleDecls"];
   /** What each sealed block declares (contractOf). Absent: as before. */
   contract?: EditorContract;
   /** This mount is the popup's (canvas/popup.ts). */
@@ -47,6 +53,19 @@ export interface TreePageOptions {
    * its resolver draws with them where the block sits (by node id, like `resolved`; never saved). Absent: as before.
    */
   editSettings?(node: PuckNode): Promise<{ props: Record<string, unknown>; resolved?: Record<string, unknown> | null } | null>;
+  /** The Content tab: a block's settings first in the side panel (tree-editor `contentTab`). Absent: as before. */
+  contentTab?: boolean;
+  /** The host's checked door for a setting (tree-editor `setProp`). Used with `contentTab`. */
+  setProp?: TreeEditorOptions["setProp"];
+  /**
+   * The rows a data block's resolver draws with these props, by node (like `editSettings`' `resolved`; never saved). Asked after a
+   * setting of the block changed in the Content tab. Absent: the rows stay as they were.
+   */
+  resolveRows?(node: PuckNode): Promise<Record<string, unknown> | null>;
+  /** A live site page: drawn scaled beside the panel, not narrowed by it (tree-editor `fitToPanel`). Set by openPageAsTree and openVisitorPage. */
+  fitToPanel?: TreeEditorOptions["fitToPanel"];
+  /** What the panel says about a live part, by name (tree-editor `liveNote`). */
+  liveNote?: TreeEditorOptions["liveNote"];
   /**
    * Inception (2026-11-14, tree-editor `inception`): `editSettings` also inside the block popup and from a part's menu,
    * each layer over the last (canvas/stack.ts), the selection handed back on close. Absent: as before.
@@ -159,6 +178,17 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
       return r.props;
     }
     : undefined;
+  // The Content tab's settings change a data block's rows too: resolved again, remembered by settings like editSettings' rows.
+  const resolveRows: TreeEditorOptions["resolveRows"] = o.contentTab && o.resolveRows && (!o.nested || o.inception)
+    ? async (node, before) => {
+      const id = node.props.id;
+      const was = settingsRows.get(id) ?? new Map<string, Record<string, unknown> | null>();
+      if (before && !was.has(settingsKey(before))) was.set(settingsKey(before), resolved[id] ?? null);
+      const rows = await o.resolveRows!(node);
+      was.set(settingsKey(node.props), rows ?? null);
+      settingsRows.set(id, was);
+    }
+    : undefined;
   const zones = new Map();
   const slots = slotsOf(o.config);
   const labels: Record<string, string> = {};
@@ -181,9 +211,9 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
   const drawsSample = (n: PuckNode) => sampleKeysOf(o.contract, n.type).length > 0 && !resolved[n.props.id];
   // The popup is this same mount on a working copy of one block. Only with a contract, and never inside itself.
   const mountNested: Parameters<typeof mountTreeEditor>[0]["mountNested"] = o.contract && !o.nested
-    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: o.inception ? o.editSettings : undefined, settingsCache: o.inception ? settingsRows : undefined })
+    ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: o.inception ? o.editSettings : undefined, settingsCache: o.inception ? settingsRows : undefined, resolveRows: o.inception ? o.resolveRows : undefined })
     : undefined;
-  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, designTools: o.designTools, inception: o.inception });
+  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, pages: o.pages, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, liveNote: o.liveNote, fitToPanel: o.fitToPanel, designTools: o.designTools, inception: o.inception, freeMove: o.freeMove, blkStyleDecls: o.blkStyleDecls, contentTab: o.contentTab, setProp: o.setProp, resolveRows });
   return {
     ...editor,
     dispose() {

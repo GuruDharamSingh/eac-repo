@@ -34,6 +34,7 @@ import { CycleBadge } from "@elkdonis/blocks";
 import { EventPageToggle } from "@/components/event-page-toggle";
 import { renderPuckPage } from "@/lib/puck/render";
 import { readDetailPage } from "@/lib/puck/event-flag";
+import { MoreDetails } from "@/components/thread/more-details";
 import { LayoutDoor } from "@/components/studio/layout-door";
 
 interface ThreadPageProps {
@@ -264,6 +265,8 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         }
       >
         {parts.main}
+
+        <MoreDetails notes={thread.sectionNotes} />
 
         {materials.length > 0 && (
           <section className="eac-surface-section" style={{ marginTop: 24 }}>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06-experiences</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 1036-1061. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ is.exps }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:62px 0 124px;animation:elkIn .32s ease both">
+<div style="display:flex;flex-direction:column;gap:6px;padding:0 20px">
+<span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">Paris · hosted by local artists</span>
+<h1 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:40px;line-height:1">Experiences</h1>
+</div>
+<p style="margin:12px 20px 0;font-size:15px;line-height:1.5;color:#b9b2a5;text-wrap:pretty">Something strange on the way, hosted by artists who live here. <button onClick="{{ toAbout }}" style="padding:0;border:0;background:transparent;color:#86b9ab;font-family:inherit;font-size:15px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Read more</button></p>
+<div style="display:flex;flex-direction:column;gap:12px;padding:20px 16px 0">
+<sc-for list="{{ xlist }}" as="c" hint-placeholder-count="3">
+<div onClick="{{ c.open }}" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:24px;background:#31353c;border:1px solid rgba(134,185,171,.25);cursor:pointer">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="flex:none;width:76px;height:76px;border-radius:50%;border:1px solid #86b9ab;outline:1px solid rgba(134,185,171,.25);outline-offset:3px;background:repeating-linear-gradient(135deg,rgba(134,185,171,.12) 0 1px,transparent 1px 7px),radial-gradient(circle at 40% 35%,#4f585e,#2c3036)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b9b2a5">{{ c.meta }}</span><span style="font-family:Basteleur,Georgia,serif;font-weight:700;font-size:17px;line-height:1.2">{{ c.title }}</span><span style="font-size:13px;color:#b9b2a5">{{ c.artistName }} · {{ c.craft }}</span></div>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:#e6e0d4;text-wrap:pretty">{{ c.strange }}</p>
+<span style="font-size:12.5px;color:#86b9ab">{{ c.where }}</span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:30px 20px 14px"><span style="font-family:Venture,Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#86b9ab">The artists</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(134,185,171,.6),transparent)"></div><button onClick="{{ lc.goArtists }}" style="flex:none;padding:0;border:0;background:transparent;color:#86b9ab;font-family:Basteleur,Georgia,serif;font-size:13px;cursor:pointer">All ›</button></div>
+<div style="display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:0 20px">
+<sc-for list="{{ artistsX }}" as="a" hint-placeholder-count="3"><div onClick="{{ a.open }}" style="flex:none;width:104px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer"><span style="width:84px;height:84px;border-radius:50%;border:1px solid #86b9ab;outline:1px solid rgba(134,185,171,.25);outline-offset:3px;background:repeating-linear-gradient(135deg,rgba(134,185,171,.12) 0 1px,transparent 1px 7px),radial-gradient(circle at 40% 35%,#4f585e,#2c3036);display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:28px;color:#cfe3dc">{{ a.initial }}</span><span style="margin-top:4px;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:14.5px">{{ a.name }}</span><span style="font-size:12px;color:#b9b2a5">{{ a.craft }}</span><span style="font-size:11.5px;color:#86b9ab">{{ a.status }}</span></div></sc-for>
+</div>
+<button onClick="{{ suggestGo }}" style="display:block;width:calc(100% - 32px);height:50px;margin:18px 16px 0;border-radius:25px;border:1px dashed rgba(134,185,171,.7);background:transparent;color:#86b9ab;font-family:Basteleur,Georgia,serif;font-size:14.5px;cursor:pointer">Know an artist we should meet?</button>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

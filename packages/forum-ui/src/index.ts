@@ -18,7 +18,7 @@ export { renderForumRoute } from "./routes";
 export type { ForumRouteContext } from "./routes";
 
 export { serviceConnectors, networkHrefs, orgHrefs } from "./connectors";
-export type { ForumConnectors, ForumHrefs, ForumLayout, ForumTextSize, ForumWriteConnectors, ServiceConnectorOptions } from "./connectors";
+export type { ForumComposeOptions, ForumConnectors, ForumHrefs, ForumLayout, ForumTextSize, ForumWriteConnectors, ServiceConnectorOptions } from "./connectors";
 export type {
   ForumWikiConnectors,
   ForumWikiEditorProps,
@@ -45,3 +45,5 @@ export { ConstellationSvg, MapEdgeList, MapLegend } from "./map";
 
 export { forumFeedThreads, forumSnapshot } from "./snapshot";
 export type { ForumSnapshotOptions } from "./snapshot";
+
+export { AttachPicker, type AttachPickerProps } from "./attach";

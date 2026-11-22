@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/blocks",
     "@elkdonis/page-builder",
     "@elkdonis/direct-edit",
+    "@elkdonis/house-editor",
     "@elkdonis/analytics",
     "@elkdonis/redis",
     // The authoring Studio at /publish (round 4, 2026-11-07).

@@ -230,6 +230,24 @@ export interface PropDef {
   format?: "color";
 }
 
+/**
+ * One thing a block reads from its surroundings.
+ *
+ *   route   the record in the address (`routeRecord`); `kinds` limits which kinds of record
+ *   site    the organisation, theme or menu of the site it is drawn on
+ *   viewer  who is looking: signed in, their role, their membership
+ *   record  a `binds` setting (`via`) names a record of one of `kinds`; the record fills what was left blank
+ *   place   where it sits on the page (`metadata.placement`)
+ *   flow    a step of a journey it knows (rsvp, checkout, booking)
+ */
+export type BlockRead =
+  | { from: "route"; what: "record"; kinds?: readonly string[] }
+  | { from: "site"; what: "org" | "theme" | "menu" }
+  | { from: "viewer"; what: "signed-in" | "role" | "membership" }
+  | { from: "record"; via: string; kinds: readonly string[] }
+  | { from: "place"; what: "placement" }
+  | { from: "flow"; what: string };
+
 /** One inner element of a block that a page may restyle. Declared here, never stored. */
 export interface PartDef {
   /** In the layer tree and the panel heading. For artists. */
@@ -404,6 +422,14 @@ export interface BlockDef {
    * (`"react": "@elkdonis/cms-ui/pens SpotlightGrid"`).
    */
   silexRoot?: string;
+
+  /**
+   * What this block works out for itself from where it sits, before it asks for a setting
+   * (doctrine rule 8; BUILD_SPEC C5, 2026-11-20). Data only: declaring it changes no block's
+   * behaviour. The live editor says "From the gathering in the address" for a value that comes
+   * from here, and the block manifest tells an assistant (`describe_block`).
+   */
+  reads?: readonly BlockRead[];
 }
 
 /**

@@ -2,21 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { cleanBoxDoc } from "@elkdonis/direct-edit/block";
-import { isValidSlug } from "@elkdonis/page-builder/server";
-import { listOrgFeeds } from "@elkdonis/services";
+import { createSavePageAction } from "@elkdonis/house-editor/server";
+import { isValidSlug, savePage as savePageFor } from "@elkdonis/page-builder/server";
+import { listOrgFeeds, listSitePages } from "@elkdonis/services";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { deletePage, savePage } from "./store";
+import { deletePage, listPages, savePage } from "./store";
 import { LANDING_SLUG } from "./landing";
-import { RESERVED_SLUGS } from "./reserved";
+import { RESERVED_SLUGS, TEMPLATE_SLUGS } from "./reserved";
+import { isMobileKey } from "./mobile-keys";
 import { stripResolvedKeys } from "@elkdonis/blocks/record";
 import { RESOLVED_KEYS } from "./resolved";
 
 /** Save the landing page. The check is here because a client component is not an authorisation boundary. */
-export async function saveLandingAction(data: unknown): Promise<{ ok: boolean; error?: string }> {
+export async function saveLandingAction(data: unknown, expectedUpdatedAt?: string): Promise<{ ok: boolean; error?: string; stale?: boolean; updatedAt?: string }> {
   const editor = await getApiEditor();
   if (!editor) return { ok: false, error: "Only owners and guides can change this page." };
-  return savePage(LANDING_SLUG, cleanBoxDoc(stripResolvedKeys(data, RESOLVED_KEYS)));
+  // `expectedUpdatedAt`: the landing page's version as the editor read it (then as each save returned it); a changed row is refused, not overwritten. Absent (the page was still drawn by code): unguarded, as before.
+  return savePage(LANDING_SLUG, cleanBoxDoc(stripResolvedKeys(data, RESOLVED_KEYS)), expectedUpdatedAt);
 }
 
 /** Back to the landing page as it is written in code. Same gate as saving. */
@@ -35,15 +38,35 @@ export async function slugProblem(slug: string): Promise<string | null> {
   return null;
 }
 
-/** Publish a page from /studio/<slug> (2026-11-06). Owners and guides; checked here, not in the editor. */
-export async function savePageAction(slug: string, data: unknown): Promise<{ ok: boolean; error?: string }> {
+const publishPage = createSavePageAction({
+  orgId: siteConfig.orgId,
+  // Owners and guides; checked here, not in the editor.
+  gate: getApiEditor,
+  denied: "Only owners and guides can publish pages.",
+  slugProblem,
+  resolvedKeys: RESOLVED_KEYS,
+  store: savePageFor,
+  revalidate: (slug) => revalidatePath(`/${slug}`),
+});
+
+/**
+ * Publish a page from /studio/<slug> (2026-11-06). Owners and guides; checked here, not in the editor.
+ * `expectedUpdatedAt` is the page's version as the editor loaded it (then as each save returned it): when the row has
+ * changed since, nothing is written and the answer has `stale: true`. Absent: unguarded, as before.
+ */
+export async function savePageAction(slug: string, data: unknown, expectedUpdatedAt?: string): Promise<{ ok: boolean; error?: string; stale?: boolean; updatedAt?: string }> {
+  return publishPage(slug, data, expectedUpdatedAt);
+}
+
+/** The page switcher in the canvas's name pill: this site's saved pages, minus the landing page and the phone layouts. Gated like a save. */
+export async function listEditablePagesAction(): Promise<Array<{ slug: string; title: string; href: string }>> {
   const editor = await getApiEditor();
-  if (!editor) return { ok: false, error: "Only owners and guides can publish pages." };
-  const problem = await slugProblem(slug);
-  if (problem) return { ok: false, error: problem };
-  const result = await savePage(slug, cleanBoxDoc(stripResolvedKeys(data, RESOLVED_KEYS)));
-  if (result.ok) revalidatePath(`/${slug}`);
-  return result;
+  if (!editor) return [];
+  // Titles from each page's root title (shared services list); layouts and phone docs are not pages.
+  const pages = await listSitePages(siteConfig.orgId);
+  return pages
+    .filter((p) => !TEMPLATE_SLUGS.has(p.slug) && !isMobileKey(p.slug) && !p.slug.startsWith("m-") && isValidSlug(p.slug))
+    .map((p) => ({ slug: p.slug, title: p.title, href: `/studio/${p.slug}` }));
 }
 
 /** "New page" on /manage/builder: checks the name, then the form opens the editor. */

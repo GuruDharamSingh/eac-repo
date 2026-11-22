@@ -31,6 +31,8 @@ export interface ResizeOptions {
   sides?: boolean;
   /** Snap a moving edge to its neighbours' and the parent's edges, and a size to a neighbour's, with a guide line. Alt or Ctrl pulls free. */
   snap?: boolean;
+  /** Screen pixels per page pixel when the page is drawn scaled (CSS zoom): sizes handed back are page pixels. Default 1. */
+  zoom?: number;
   onChange(c: ResizeChange): void;
   /** commit false: Esc was pressed; restore what was there. */
   onEnd(commit: boolean): void;
@@ -49,7 +51,7 @@ function gridInfo(el: HTMLElement): { cols: number; step: number } | null {
 /** Within this many pixels a moving edge or a size snaps. */
 const SNAP = 6;
 
-interface SnapTargets { xs: number[]; ys: number[]; ws: number[]; hs: number[]; top: number; bottom: number; left: number; right: number }
+export interface SnapTargets { xs: number[]; ys: number[]; ws: number[]; hs: number[]; top: number; bottom: number; left: number; right: number }
 
 const contents = (e: Element) => getComputedStyle(e).display === "contents";
 /** The boxes a parent lays out, through `display: contents` wrappers (the tree canvas wraps every node in one). */
@@ -58,7 +60,7 @@ function laidOut(p: Element): HTMLElement[] {
 }
 
 /** Edges and sizes worth snapping to, read once at the start: the neighbours' and the parent's inner edges. */
-function snapTargets(el: HTMLElement): SnapTargets | null {
+export function snapTargets(el: HTMLElement): SnapTargets | null {
   let p = el.parentElement;
   while (p && contents(p)) p = p.parentElement;
   if (!p) return null;
@@ -75,7 +77,7 @@ function snapTargets(el: HTMLElement): SnapTargets | null {
 }
 
 /** The nearest candidate within SNAP of `v`, or null. */
-function nearest(v: number, list: number[]): number | null {
+export function nearest(v: number, list: number[]): number | null {
   let best: number | null = null;
   for (const c of list) if (Math.abs(c - v) <= SNAP && (best === null || Math.abs(c - v) < Math.abs(best - v))) best = c;
   return best;
@@ -90,6 +92,7 @@ export function startBoxResize(o: ResizeOptions): void {
   const dy = handle.includes("s") ? 1 : o.sides && handle.includes("n") ? -1 : 0;
   const grid = dx ? gridInfo(el) : null;
   const gap = el.parentElement ? px(getComputedStyle(el.parentElement).columnGap) : 0;
+  const z = o.zoom && o.zoom > 0 ? o.zoom : 1;
   const targets = o.snap ? snapTargets(el) : null;
   const guides: HTMLElement[] = [];
   const guide = (vertical: boolean, at: number, from: number, to: number) => {
@@ -127,10 +130,10 @@ export function startBoxResize(o: ResizeOptions): void {
         }
       }
       if (grid) {
-        c.cspan = Math.max(1, Math.min(grid.cols, Math.round((w + gap) / grid.step)));
+        c.cspan = Math.max(1, Math.min(grid.cols, Math.round((w / z + gap) / grid.step)));
         parts.push(`${c.cspan} of ${grid.cols} columns`);
       } else {
-        c.w = Math.round(clamp(w, BOUNDS.w));
+        c.w = Math.round(clamp(w / z, BOUNDS.w));
         parts.push(`${c.w}px wide`);
       }
     }
@@ -147,7 +150,7 @@ export function startBoxResize(o: ResizeOptions): void {
           guide(true, r0.right + 6, r0.top, r0.top + h);
         }
       }
-      c.h = Math.round(clamp(h, BOUNDS.h));
+      c.h = Math.round(clamp(h / z, BOUNDS.h));
       parts.push(`${c.h}px tall`);
     }
     c.label = parts.join(" · ") + (snapped ? " · snapped" : "");

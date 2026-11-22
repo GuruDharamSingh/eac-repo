@@ -29,6 +29,7 @@ import { db } from "@elkdonis/db";
 import type { ActResult, Booking, BookerBooking, BookingOffer, BookingStatus, OpenSlot, Party } from "../core/types";
 import { computeOpenSlots, slotKey, type BusyInterval } from "../core/open-hours";
 import { zonedParts } from "../core/time";
+import { closedAlready, slotState, type BelowMinimumRule, type SlotState } from "../core/slots";
 import { cleanAnswers } from "../core/validate";
 import { refundShare, describePolicy } from "../core/policy";
 import { getOfferById } from "./offers";
@@ -124,6 +125,90 @@ export async function listOpenSlots(
   const { busy, taken, cancelled } = await loadTaken(db, offer, now.getTime(), now.getTime() + offer.maxAheadDays * 86400000);
   const slots = computeOpenSlots({ offer, busy, taken, cancelled, now, fromDate: opts.fromDate, days: opts.days, partySize: opts.partySize });
   return { offer, slots };
+}
+
+/** Statuses whose party takes places on a slot: answered, waiting for an answer, or a live hold. */
+export const SEATS_SQL = db`(
+  b.status IN ('confirmed', 'requested', 'awaiting_seller', 'awaiting_booker')
+  OR (b.status IN ('held', 'awaiting_payment') AND b.hold_expires_at > now())
+)`;
+
+/** A dated slot of a set_dates offer (a tour departure), with its places and state. */
+export interface DatedSlot {
+  slotId: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  /** Places taken: confirmed, waiting for an answer, or on a live hold. */
+  seatsTaken: number;
+  seatsLeft: number;
+  guideUserId: string | null;
+  status: "scheduled" | "cancelled";
+  note: string | null;
+  waitlistCount: number;
+  state: SlotState;
+}
+
+/**
+ * Slots of a set_dates offer of `orgId`, by start. `rule` is the site's
+ * below-minimum rule (default: the guide decides). Past and cancelled slots
+ * are left out unless asked for.
+ */
+export async function listSlots(
+  orgId: string,
+  offerId: string,
+  opts: { from?: Date; to?: Date; includeCancelled?: boolean; includePast?: boolean; rule?: BelowMinimumRule; now?: Date } = {}
+): Promise<{ offer: BookingOffer; slots: DatedSlot[] } | null> {
+  const offer = await getOfferById(orgId, offerId);
+  if (!offer) return null;
+  if (offer.mode !== "set_dates") return { offer, slots: [] };
+  const now = opts.now ?? new Date();
+  const from = opts.from ?? (opts.includePast ? new Date(0) : now);
+  const rows = (await db`
+    SELECT s.id, s.starts_at, s.ends_at, s.capacity, s.guide_user_id, s.status, s.note,
+           COALESCE((SELECT SUM(b.party_size) FROM bookings b WHERE b.slot_id = s.id AND ${SEATS_SQL}), 0) AS taken,
+           (SELECT COUNT(*) FROM bookings b WHERE b.slot_id = s.id AND b.status = 'waitlisted') AS waiting
+    FROM booking_slots s
+    WHERE s.offer_id = ${offerId} AND s.org_id = ${orgId}
+      AND s.ends_at >= ${from}
+      ${opts.to ? db`AND s.starts_at < ${opts.to}` : db``}
+      ${opts.includeCancelled ? db`` : db`AND s.status = 'scheduled'`}
+    ORDER BY s.starts_at
+    LIMIT 500
+  `) as unknown as Row[];
+  return {
+    offer,
+    slots: rows.map((r) => {
+      const capacity = Number(r.capacity);
+      const taken = Number(r.taken ?? 0);
+      const startsAt = iso(r.starts_at)!;
+      const endsAt = iso(r.ends_at)!;
+      const status = r.status as "scheduled" | "cancelled";
+      return {
+        slotId: r.id as string,
+        startsAt,
+        endsAt,
+        capacity,
+        seatsTaken: taken,
+        seatsLeft: Math.max(0, capacity - taken),
+        guideUserId: (r.guide_user_id as string | null) ?? null,
+        status,
+        note: (r.note as string | null) ?? null,
+        waitlistCount: Number(r.waiting ?? 0),
+        state: slotState({
+          startsAt,
+          endsAt,
+          status,
+          booked: taken,
+          capacity,
+          minToRun: offer.minToRun,
+          closeBeforeMinutes: offer.closeBeforeMinutes,
+          rule: opts.rule ?? "guide_decides",
+          now,
+        }),
+      };
+    }),
+  };
 }
 
 async function lockHost(tx: Tx, offer: Pick<BookingOffer, "id" | "hostUserId">): Promise<void> {
@@ -302,6 +387,8 @@ export interface CreateBookingInput {
   startsAt?: string | null;
   /** request_time: up to three proposed starts (ISO). */
   proposedTimes?: unknown;
+  /** set_dates: the booking_slots row (a tour departure). */
+  slotId?: string | null;
   partySize?: number;
   booker: { userId?: string | null; email: string; name?: string | null; timeZone?: string | null };
   notes?: unknown;
@@ -352,8 +439,10 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
       const notes = cleanText(input.notes, 2000);
       const holdExpires = new Date(now.getTime() + offer.holdMinutes * 60000);
 
-      await lockHost(tx, offer);
+      // Host time is shared across a host's offers; a departure is not (its own slot row is the lock).
+      if (offer.mode !== "set_dates") await lockHost(tx, offer);
 
+      let durationMinutes: number | null = offer.durationMinutes;
       let slotId: string | null = null;
       let scheduledAt: Date | null = null;
       let proposed: Date[] = [];
@@ -391,6 +480,32 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
         if (parsed.ok === false) return parsed;
         proposed = parsed.times;
         status = input.paid ? "awaiting_payment" : "awaiting_seller";
+      } else if (offer.mode === "set_dates") {
+        if (!input.slotId || !/^[0-9a-f-]{36}$/i.test(input.slotId)) return { ok: false as const, error: "Choose a date." };
+        const slotRows = (await tx`
+          SELECT id, status, starts_at, ends_at, capacity, close_before_minutes FROM booking_slots
+          WHERE id = ${input.slotId} AND offer_id = ${offer.id} AND org_id = ${input.orgId}
+          FOR UPDATE
+        `) as unknown as Row[];
+        const slot = slotRows[0];
+        if (!slot || slot.status !== "scheduled") return { ok: false as const, error: "That date is not open for booking." };
+        const start = new Date(slot.starts_at as string);
+        // close_before_minutes is a column of the per-slot migration; only set_dates offers reach this branch.
+        const slotClose = slot.close_before_minutes == null ? offer.closeBeforeMinutes : Number(slot.close_before_minutes);
+        if (closedAlready(start, slotClose, now)) return { ok: false as const, error: "Booking for that date has closed." };
+        // Seats are counted against this slot only, under the slot lock; no host overlap applies.
+        const takenRows = (await tx`
+          SELECT COALESCE(SUM(b.party_size), 0) AS taken FROM bookings b
+          WHERE b.slot_id = ${slot.id as string} AND ${SEATS_SQL}
+        `) as unknown as Row[];
+        const left = Number(slot.capacity) - Number(takenRows[0]?.taken ?? 0);
+        if (left < partySize) {
+          return { ok: false as const, error: left <= 0 ? "That date is full." : `Only ${left} place${left === 1 ? "" : "s"} left on that date.` };
+        }
+        slotId = slot.id as string;
+        scheduledAt = start;
+        durationMinutes = Math.max(1, Math.round((new Date(slot.ends_at as string).getTime() - start.getTime()) / 60000));
+        status = input.paid ? "awaiting_payment" : "confirmed";
       } else {
         return { ok: false as const, error: "This kind of booking is not open yet." };
       }
@@ -407,7 +522,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
           ${bookerZone}, ${partySize}, ${status}, 'web', ${holds ? holdExpires : null},
           ${proposed.length ? "booker" : null}, ${proposed.map((d) => d.toISOString())}::timestamptz[],
           ${notes}, ${notes ? "booker" : null},
-          ${scheduledAt}, ${offer.durationMinutes}, ${notes}, ${tx.json(answers.answers)}, ${token},
+          ${scheduledAt}, ${durationMinutes}, ${notes}, ${tx.json(answers.answers)}, ${token},
           ${status === "confirmed" ? now : null}, ${cleanText(input.siteUrl, 300)}
         )
         RETURNING id
@@ -461,10 +576,10 @@ export async function markBookingPaid(orderId: string): Promise<void> {
   const rows = (await db`
     UPDATE bookings b
     SET status = CASE
-          WHEN o.mode = 'open_hours' AND o.approval = 'instant' THEN 'confirmed'
+          WHEN o.mode IN ('open_hours', 'set_dates') AND o.approval = 'instant' THEN 'confirmed'
           ELSE 'awaiting_seller'
         END,
-        confirmed_at = CASE WHEN o.mode = 'open_hours' AND o.approval = 'instant' THEN now() ELSE NULL END,
+        confirmed_at = CASE WHEN o.mode IN ('open_hours', 'set_dates') AND o.approval = 'instant' THEN now() ELSE NULL END,
         hold_expires_at = NULL,
         cancelled_at = NULL, cancelled_by = NULL, cancel_reason = NULL,
         updated_at = now()
@@ -503,7 +618,10 @@ export async function expireLapsedHolds(): Promise<number> {
 
 // ── answering (host and booker) ───────────────────────────────────────────
 
-type Where = { kind: "host"; orgId: string; hostUserId: string; bookingId: string } | { kind: "token"; token: string };
+type Where =
+  | { kind: "host"; orgId: string; hostUserId: string; bookingId: string }
+  | { kind: "org"; orgId: string; bookingId: string }
+  | { kind: "token"; token: string };
 
 async function lockBooking(tx: Tx, where: Where): Promise<Row | null> {
   const rows = (where.kind === "host"
@@ -513,7 +631,14 @@ async function lockBooking(tx: Tx, where: Where): Promise<Row | null> {
         WHERE b.id = ${where.bookingId} AND b.org_id = ${where.orgId} AND o.host_user_id = ${where.hostUserId}
         FOR UPDATE OF b
       `
-    : await tx`
+    : where.kind === "org"
+      ? await tx`
+        SELECT b.*, o.host_user_id, o.mode, o.duration_minutes AS offer_duration, o.buffer_minutes
+        FROM bookings b JOIN booking_offers o ON o.id = b.offer_id
+        WHERE b.id = ${where.bookingId} AND b.org_id = ${where.orgId}
+        FOR UPDATE OF b
+      `
+      : await tx`
         SELECT b.*, o.host_user_id, o.mode, o.duration_minutes AS offer_duration, o.buffer_minutes
         FROM bookings b JOIN booking_offers o ON o.id = b.offer_id
         WHERE b.buyer_token = ${where.token}
@@ -649,6 +774,13 @@ export async function hostProposeTimes(orgId: string, hostUserId: string, bookin
 
 export async function hostCancelBooking(orgId: string, hostUserId: string, bookingId: string, reason?: unknown): Promise<ActResult> {
   const r = await cancelAs("seller", hostWhere(orgId, hostUserId, bookingId), reason);
+  if (r.ok) void announceCancelled(r.id, "seller");
+  return r;
+}
+
+/** Cancel a booking as the site (an org editor, any host): the booker is told; a paid one is flagged refund-due. */
+export async function orgCancelBooking(orgId: string, bookingId: string, reason?: unknown): Promise<ActResult> {
+  const r = await cancelAs("seller", { kind: "org", orgId, bookingId }, reason);
   if (r.ok) void announceCancelled(r.id, "seller");
   return r;
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13-place-sheet</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 1354-1376. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ ps.open }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ ps.close }}" style="position:absolute;inset:0;z-index:50;background:rgba(10,11,13,.55);animation:elkFade .2s ease both"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:51;max-height:720px;overflow-y:auto;scrollbar-width:none;padding:12px 18px 34px;border-radius:30px 30px 0 0;background:#2f3339;border-top:1px solid rgba(201,162,92,.5);animation:elkUp .28s cubic-bezier(.2,.8,.2,1) both">
+<div style="width:40px;height:4px;border-radius:2px;background:rgba(241,236,226,.25);margin:0 auto 16px"></div>
+<div style="display:flex;gap:14px;align-items:flex-end">
+<div style="flex:none;width:92px;height:112px;border-radius:46px 46px 12px 12px;border:1px solid rgba(201,162,92,.5);background:repeating-linear-gradient(135deg,rgba(201,162,92,.1) 0 1px,transparent 1px 8px),linear-gradient(165deg,#474c56,#2e3238)"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-bottom:4px"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#c9a25c">{{ ps.kicker }}</span><h2 style="margin:0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:30px;line-height:1">{{ ps.name }}</h2></div>
+</div>
+<p style="margin:16px 0 0;font-size:14.5px;line-height:1.55;color:#e6e0d4;text-wrap:pretty">{{ ps.blurb }}</p>
+<sc-if value="{{ ps.hasTags }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><sc-for list="{{ ps.tags }}" as="g" hint-placeholder-count="2"><span style="padding:4px 10px;border-radius:12px;border:1px solid rgba(201,162,92,.45);font-size:12px;color:#dcc08a">{{ g.t }}</span></sc-for></div></sc-if>
+<sc-if value="{{ ps.hasBy }}" hint-placeholder-val="{{ false }}"><p style="margin:8px 0 0;font-size:13px;color:#dcc08a">{{ ps.byLine }}</p></sc-if>
+<div style="display:flex;flex-direction:column;margin-top:14px;border-top:1px solid rgba(241,236,226,.08)">
+<sc-for list="{{ ps.rows }}" as="r" hint-placeholder-count="2"><div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(241,236,226,.08)"><span style="flex:none;width:72px;font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b9b2a5;padding-top:2px">{{ r.k }}</span><span style="font-size:14px">{{ r.v }}</span></div></sc-for>
+</div>
+<sc-if value="{{ ps.hasTour }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ps.openTour }}" style="display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding:12px 14px;border-radius:18px;border:1px solid rgba(201,162,92,.4);background:rgba(201,162,92,.06);color:#f1ece2;text-align:left;cursor:pointer"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c9a25c">On a tour</span><span style="font-size:14px">{{ ps.tourLine }}</span></span><span style="color:#c9a25c;font-size:18px">›</span></button></sc-if>
+<div style="display:flex;gap:8px;margin-top:14px">
+<sc-if value="{{ ps.hasSite }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ps.site }}" style="flex:1;min-width:0;height:44px;padding:0 12px;border-radius:22px;border:1px solid rgba(241,236,226,.25);background:transparent;color:#f1ece2;font-size:13.5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ps.siteLabel }}</button></sc-if>
+<button onClick="{{ ps.directions }}" style="flex:1;height:44px;padding:0 12px;border-radius:22px;border:1px solid rgba(241,236,226,.25);background:transparent;color:#f1ece2;font-size:13.5px;cursor:pointer">Directions ↗</button>
+</div>
+<sc-if value="{{ ps.biz }}" hint-placeholder-val="{{ false }}"><p style="margin:14px 0 0;padding:12px 14px;border-radius:14px;border:1px dashed rgba(241,236,226,.25);font-size:13px;line-height:1.45;color:#b9b2a5">Business profile coming soon: opening hours, menus and offers from the business itself.</p></sc-if>
+<sc-if value="{{ ps.showAll }}" hint-placeholder-val="{{ true }}"><button onClick="{{ ps.all }}" style="display:block;width:100%;height:50px;margin-top:16px;border:0;background:#c9a25c;color:#1b1e23;font-family:Basteleur,Georgia,serif;font-weight:700;font-size:15px;cursor:pointer;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)">See all places →</button></sc-if>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

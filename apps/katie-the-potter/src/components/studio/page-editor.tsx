@@ -1,7 +1,7 @@
 "use client";
 
 import type { Data } from "@puckeditor/core";
-import { PuckEditor, partsPlugin } from "@elkdonis/page-builder";
+import { PuckEditor, partsPlugin, templatesPlugin } from "@elkdonis/page-builder";
 import { partLookOf, partSafeDecls, setPartLook } from "@elkdonis/direct-edit/puck/morph";
 import { mountLookPanel, openStudioPopup } from "@elkdonis/direct-edit/puck";
 // The look panel's own sheet (every rule is prefixed de-). Editor only: this
@@ -9,6 +9,7 @@ import { mountLookPanel, openStudioPopup } from "@elkdonis/direct-edit/puck";
 import "@elkdonis/direct-edit/direct-edit.css";
 import { canvasConfig, canvasContract, puckConfig, setCanvasSiteLook } from "@/lib/puck/config.client";
 import { savePageAction } from "@/lib/puck/actions";
+import { PAGE_TEMPLATES } from "@/lib/puck/templates";
 
 /**
  * The look layer (as on sunjay, 2026-11-06): click into a block and change the
@@ -26,9 +27,10 @@ const PARTS = partsPlugin({
   developer: false,
   popup: (ctx) => openStudioPopup({ config: canvasConfig, contract: canvasContract }, ctx),
 });
-const PLUGINS = [PARTS];
+// Templates tab first (starting designs, e.g. About), then the look layer. Module scope: see above.
+const PLUGINS = [templatesPlugin(PAGE_TEMPLATES), PARTS];
 
-const TITLES: Record<string, string> = { home: "Home page", "piece-detail": "Template: a piece's page (/pieces/…)" };
+const TITLES: Record<string, string> = { home: "Home page", about: "About page", "piece-detail": "Template: a piece's page (/pieces/…)" };
 
 /** The editor with this site's catalogue and save action bound to it. */
 export function PageEditor({ slug, orgId, initial, siteLook = null }: { slug: string; orgId: string; initial: Data; siteLook?: string | null }) {

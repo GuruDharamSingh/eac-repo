@@ -94,3 +94,16 @@ export const tokenKey = (name: string) => `t:${name}`;
 export const tokenNameOf = (key: string): string | null => (key.startsWith("t:") ? key.slice(2) : null);
 /** Panel slot id. `t-blk-accent`, not `t:--blk-accent`, because slot ids also become element ids. */
 export const tokenSlotId = (name: string) => `t-${name.replace(/^-+/, "")}`;
+
+// ---------------------------------------------------------------------------
+// The reserved look keys on a block's props (BUILD_SPEC C1, 2026-11-20). No content step may write them and no
+// look step may write anything else. `morph`: the look of a sealed block on a page; `look`: a canvas box's own.
+// ---------------------------------------------------------------------------
+export const LOOK_KEYS = ["morph", "look"] as const;
+
+/** The look keys `prev` holds that `next` (what a host editor handed back) does not: they stay with the block. */
+export function keepLookKeys(prev: Record<string, unknown>, next: Record<string, unknown>): Record<string, unknown> {
+  const keep: Record<string, unknown> = {};
+  for (const k of LOOK_KEYS) if (prev[k] !== undefined && !(k in next)) keep[k] = prev[k];
+  return keep;
+}

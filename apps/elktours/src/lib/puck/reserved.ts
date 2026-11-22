@@ -1,4 +1,5 @@
 import { LANDING_SLUG } from "./landing";
+import { MOBILE_KEYS } from "./mobile-keys";
 
 // ============================================================================
 // Top-level paths a page may not take (2026-11-06). A page at `/<slug>` is
@@ -8,7 +9,7 @@ import { LANDING_SLUG } from "./landing";
 // ============================================================================
 
 /** Documents that are layouts for generated pages, edited in their own studios, never served at /<slug>. */
-export const TEMPLATE_SLUGS: ReadonlySet<string> = new Set(["tour-detail", "experience-detail", LANDING_SLUG]);
+export const TEMPLATE_SLUGS: ReadonlySet<string> = new Set(["tour-detail", "experience-detail", LANDING_SLUG, ...MOBILE_KEYS]);
 
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   ...TEMPLATE_SLUGS,

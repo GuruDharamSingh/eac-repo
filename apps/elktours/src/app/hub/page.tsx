@@ -22,6 +22,7 @@ import { formatDeparture, listTours, nextDepartures } from "@/lib/tours";
 import { EmailFace } from "@/components/hub/EmailFace";
 import { PayoutsCard } from "@/components/manage/payouts-card";
 import { TourScheduleCard } from "@/components/hub/tour-schedule-card";
+import { OfficeFaces } from "@/components/office/office-faces";
 import { listSuggestionsAction } from "@/lib/suggestion-actions";
 
 export const metadata: Metadata = { title: "Hub" };
@@ -118,6 +119,18 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
         </div>
 
         <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
+
+        {/* The office (2026-11-19): staff tasks open as popups here, on a phone and a desktop. */}
+        {viewer.canEdit ? (
+          <section className="eac-hp-section" aria-labelledby="c2-office">
+            <h2 id="c2-office" className="eac-hp-section-title">
+              Office
+            </h2>
+            <SurfaceCardGrid>
+              <OfficeFaces />
+            </SurfaceCardGrid>
+          </section>
+        ) : null}
 
         <HubCardGrid label="Hub" className="el-row-3">
           {viewer.canEdit ? (

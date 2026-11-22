@@ -131,7 +131,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
                 <b>Checkout</b>: your details here, then card or Interac eTransfer. <b>Pay now</b>: straight to Stripe&rsquo;s secure page (card, Google Pay or Apple Pay), which asks for your email and shipping address.{" "}
               </>
             ) : null}
-            Each piece is one of a kind. It is held for you once you place your order. Shipping is arranged after you buy: you&rsquo;ll choose the carrier and pay for the label.
+            Each piece is one of a kind. It goes to whoever pays first, and is not held while you check out. Shipping is added at checkout, or arranged with Katie.
           </p>
         </>
       )}

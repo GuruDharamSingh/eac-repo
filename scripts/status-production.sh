@@ -28,6 +28,5 @@ echo ""
 
 echo "📝 View Logs:"
 echo "  - All:    docker compose -f docker-compose.prod.yml logs -f"
-echo "  - App:    docker compose -f docker-compose.prod.yml logs -f inner-gathering-prod"
 echo "  - DB:     docker compose -f docker-compose.prod.yml logs -f postgres-prod"
 echo ""

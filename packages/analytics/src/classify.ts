@@ -6,7 +6,12 @@ import type { SourceKind } from './index';
 // ---------------------------------------------------------------------------
 
 const BOT_UA =
-  /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|monitor|curl\/|wget|python-requests|python-urllib|go-http-client|java\/|okhttp|headless|lighthouse|pingdom|uptime|scrapy|httpclient|axios|node-fetch|undici|phantomjs|puppeteer|playwright|selenium|gptbot|claude-web|perplexity|bytespider|ahrefs|semrush|mj12/i;
+  /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|monitor|curl\/|wget|python-requests|python-urllib|go-http-client|java\/|okhttp|headless|lighthouse|pingdom|uptime|scrapy|httpclient|axios|node-fetch|undici|phantomjs|puppeteer|playwright|selenium|gptbot|claude-web|perplexity|bytespider|ahrefs|semrush|mj12|^"/i; // ^": a UA wrapped in quotes (the Tor bot of Oct-Nov 2026)
+
+/** True for crawlers, scripts and an empty agent. Used by server-side view counters too. */
+export function isBotUserAgent(ua: string | null | undefined): boolean {
+  return !ua || BOT_UA.test(ua);
+}
 
 export interface ParsedUa {
   bot: boolean;
@@ -16,7 +21,7 @@ export interface ParsedUa {
 }
 
 export function parseUserAgent(ua: string): ParsedUa {
-  if (!ua || BOT_UA.test(ua)) return { bot: true, device: 'desktop', browser: 'Other', os: 'Other' };
+  if (isBotUserAgent(ua)) return { bot: true, device: 'desktop', browser: 'Other', os: 'Other' };
 
   const tablet = /ipad|tablet|kindle|silk|(android(?!.*mobile))/i.test(ua);
   const mobile = !tablet && /mobi|iphone|ipod|android.*mobile|windows phone/i.test(ua);

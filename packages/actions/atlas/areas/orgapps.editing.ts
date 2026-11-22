@@ -99,6 +99,7 @@ export default {
         'one shared action in the planned org-site kit: gate getApiEditor, services/page-builder savePageContent that does cleanBoxDoc + stripResolved(config RESOLVED_KEYS) + reserved-slug and feed check (hooks per app), then savePage and revalidate by a per-app route map.',
       open: "danamccool, innergathering and katie skip the reserved-slug check and (danamccool) the cleaning step; art-auction uses its own editor gate. Is any of that deliberate?\nelktours (elktours-experience-page-save): The action layer allows a linked artist to write the layout (lib/experience-actions.ts:190) while the studio wrapper is editor-only (app/studio/actions.ts:47); size is capped at 1 MB. Layout JSON is passed through readExperienceLayout in the wrapper only, so a direct caller of the inner action stores the Puck data as sent (structure checked, blocks not).",
       verified: V,
+      updated: '2026-11-21',
     },
     {
       id: 'landing-save',
@@ -126,6 +127,7 @@ export default {
       canonical: 'the page-save kit action with slug = LANDING_SLUG.',
       open: 'elktours saveLandingAction has no revalidatePath: is the home page uncached?',
       verified: V,
+      updated: '2026-11-21',
     },
     {
       id: 'landing-restore',
@@ -164,7 +166,6 @@ export default {
       actors: ['owner', 'guide'],
       scope: 'org',
       hosts: [
-        h(sa('innergathering/src/lib/page-edits-actions.ts', 'savePageEditsAction'), 'innergathering', '/?edit', 'Save in the page-edits direct editor', ['(getViewer().canEdit)', '(page allow-list: home only)', '@elkdonis/direct-edit/block#cleanPatches', 'local savePageEdits']),
         h(sq('innergathering/src/lib/page-edits.ts', 'savePageEdits'), 'innergathering', '/?edit', 'page-edits.ts', ['@elkdonis/db#withOrg', '(raw INSERT site_config ON CONFLICT)'], 'called by savePageEditsAction'),
       ],
       entry: null,

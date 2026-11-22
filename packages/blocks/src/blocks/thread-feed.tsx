@@ -233,6 +233,7 @@ export const threadFeed = defineBlock(
       "A list of gatherings, workshops or writing from this organisation, newest or soonest first.",
     props,
     memberSafe: true,
+    reads: [{ from: "site", what: "org" }],
     styling: "tokens",
     dataDriven: true,
   },

@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useSurfaceOptional } from "@elkdonis/cms-ui/surface";
 import { tourDescriptor } from "@/components/tours/tour-popup";
+import { tourStageDescriptor } from "@/components/tours/stage/tour-stage-popup";
 import type { TourDeparture } from "@elkdonis/commerce/server";
 import type { Tour } from "@/lib/tours";
 import { formatDeparture, formatDuration, formatPrice } from "@/lib/tour-format";
 
 /**
  * A tour on the index and the landing page. With a film, hovering the picture plays it (muted).
- * A plain click opens the tour popup (Overview · Stops · Dates); ctrl/cmd-click, middle-click and
+ * On a phone a tap follows the link. Elsewhere a plain click opens the tour popup; ctrl/cmd-click, middle-click and
  * no-JS still follow the link to /tours/[slug].
  */
 export function TourCard({ tour, next }: { tour: Tour; next?: TourDeparture | null }) {
@@ -22,13 +23,18 @@ export function TourCard({ tour, next }: { tour: Tour; next?: TourDeparture | nu
   const surface = useSurfaceOptional();
   const openPopup = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!surface || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    // Phone: no popup, the tap goes to the tour page (developer, 2026-11-21).
+    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 767px)").matches) return;
     e.preventDefault();
     stop();
-    surface.open(tourDescriptor(tour), e.currentTarget);
+    // Desktop: the tour page's stage as the popup (2026-11-20). Narrower windows keep the Stops / Overview / Dates popup.
+    const wide = typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches;
+    surface.open(wide ? tourStageDescriptor({ ...tour, cover: poster }) : tourDescriptor(tour), e.currentTarget);
   };
   return (
     <Link
       href={`/tours/${tour.slug}`}
+      prefetch={false}
       className="tour-card group block overflow-hidden border border-border bg-card"
       onClick={openPopup}
       onMouseEnter={tour.film ? play : undefined}

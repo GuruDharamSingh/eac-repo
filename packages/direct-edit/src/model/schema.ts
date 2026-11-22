@@ -56,7 +56,8 @@ export type Control =
   | "css-prop"     // one property inside the part's raw `css` override
   | "text"         // one line of text, stored as typed
   | "textarea"     // several lines of text, stored as typed
-  | "readout";     // a fact about the value, not a field (`readout` holds the words)
+  | "readout"      // a fact about the value, not a field (`readout` holds the words)
+  | "host";        // the host draws the control itself (`html`): the Content tab's picture, record and fall-back rows
 
 export interface SlotSpec<E = unknown> {
   /** The style key it edits (a key of the host's part style). */
@@ -111,6 +112,8 @@ export interface ResolvedSlot<E = unknown> extends SlotSpec<E> {
   id: string;
   /** null when the slot is hidden at this level. */
   allowed: Allowed | null;
+  /** For a `host` control: the host's own markup (already escaped). */
+  html?: string;
 }
 
 function levelValue<E>(spec: SlotSpec<E>, freedom: Freedom): Level<E> | undefined {

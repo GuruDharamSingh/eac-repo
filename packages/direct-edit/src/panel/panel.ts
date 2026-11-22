@@ -22,6 +22,7 @@ import { SECTION_ORDER, SECTION_TITLE, FREEDOM_LABEL, fits, type Freedom, type R
 import { getDecl, setDecl, droppedDecls, type Decl } from "../model/css";
 import { contrastVerdict, normHex } from "../model/color";
 import { icon } from "./icons";
+import { nextWhere, whereHtml, type LookWhere, type PanelWhere } from "./where";
 
 export interface Swatch { value: string; label?: string }
 export interface TextStylePreset { id: string; label: string; group?: string; style: Record<string, Scalar | undefined> }
@@ -38,7 +39,7 @@ export interface LayerRow {
   draggable?: boolean;
 }
 export interface FontGroups { inPage: string[]; family: string[]; borrow?: string[]; library?: boolean }
-export type TabId = "props" | "code" | "tweaks" | "saved";
+export type TabId = "content" | "props" | "code" | "tweaks" | "saved";
 
 export interface PanelContext {
   /** Tabs to offer. Default: all four. */
@@ -115,6 +116,14 @@ export interface PanelContext {
   notice?: string;
   /** Heading and notice stay in view while the panel scrolls: a part is named nowhere else once the tree has scrolled away. */
   stickHead?: boolean;
+  /** Which look this panel is editing (a part's look): the When and Screen switches, with a dot on each place that holds one. Absent: no switches, as before. */
+  where?: PanelWhere;
+  /** One line when two sources set the same thing on the block's root (Style and the look), saying which wins. */
+  clash?: string;
+  /** The Content tab (opt-in, with "content" in `tabs`): a block's declared settings, drawn like any slots. The panel opens on it when the selection moves to a block that has it. */
+  content?: { slots: ResolvedSlot<any>[]; values: Record<string, unknown>; overridden: Record<string, boolean>; top?: string; bottom?: string };
+  /** The name of the Properties tab when a Content tab is beside it ("Look"). */
+  propsLabel?: string;
 }
 
 export interface PanelHandlers {
@@ -129,6 +138,8 @@ export interface PanelHandlers {
   hover?(ref: string | null): void;
   /** A draggable layer row was pulled: start the drag (the host draws the line and drops). */
   dragLayer?(ref: string, ev: PointerEvent): void;
+  /** A switch was pressed: the look to edit now (always, one state, or one screen size). */
+  where?(next: LookWhere): void;
 }
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
@@ -139,7 +150,7 @@ const TEXTLIKE = 'input[type="text"], input:not([type]), input[type="color"], in
 const COLLAPSIBLE: SectionId[] = ["effects", "advanced"];
 /** Layer-row icons by kind (pass 3 adds containers, pictures, dividers). */
 const KIND_ICON: Record<string, string> = { frame: "stack", text: "text", row: "dir-row", column: "dir-col", grid: "k-grid", image: "k-image", rule: "k-rule" };
-const TAB_LABEL: Record<TabId, string> = { props: "Properties", code: "Code", tweaks: "Tweaks", saved: "Saved" };
+const TAB_LABEL: Record<TabId, string> = { content: "Content", props: "Properties", code: "Code", tweaks: "Tweaks", saved: "Saved" };
 
 type Pop = { kind: "color" | "font"; id: string; key: string; tab?: "theme" | "custom"; q?: string } | null;
 const RECENT_KEY = "de-recent-colours";
@@ -162,6 +173,8 @@ export class Panel {
   /** The selection moved: bring its row into view in the tree. */
   private scrollToRow = false;
   private lastSelRef: string | null = null;
+  /** The last selection drawn had a Content tab. */
+  private hadContent = false;
   private suppressClick = false;
   /** What the member typed in the Code tab (the host stores only what survives sanitising). */
   private rawCss: { key: string; text: string } | null = null;
@@ -264,14 +277,31 @@ export class Panel {
   private html(c: PanelContext): string {
     // The selection moved to something without this tab.
     if (c.tabs && !c.tabs.includes(this.tab)) { this.tab = "props"; this.pop = null; }
+    // Content comes first: a selection that has it opens on it, unless the person was already on a block and chose another tab.
+    const hasContent = !!c.tabs?.includes("content") && !!c.content;
+    if (hasContent && !this.hadContent) { this.tab = "content"; this.pop = null; }
+    this.hadContent = hasContent;
     const tabs = `<div class="de-tabs" role="tablist">` +
-      (c.tabs ?? (["props", "code", "tweaks", "saved"] as const)).map((t) => `<button role="tab" data-tab="${t}" aria-selected="${this.tab === t}" data-f="tab-${t}">${TAB_LABEL[t]}</button>`).join("") + "</div>";
+      (c.tabs ?? (["props", "code", "tweaks", "saved"] as const)).map((t) => `<button role="tab" data-tab="${t}" aria-selected="${this.tab === t}" data-f="tab-${t}">${t === "props" && c.propsLabel ? esc(c.propsLabel) : TAB_LABEL[t]}</button>`).join("") + "</div>";
     let body = "";
-    if (this.tab === "code") body = (c.layersOnCode && c.layers?.length ? this.layers(c.layers) : "") + this.codeTab(c);
+    if (this.tab === "content" && c.content) body = this.contentTab(c, c.content);
+    else if (this.tab === "code") body = (c.layersOnCode && c.layers?.length ? this.layers(c.layers) : "") + this.codeTab(c);
     else if (this.tab === "tweaks") body = this.tweaksTab(c);
     else if (this.tab === "saved") body = c.saved ?? "";
     else body = this.propsTab(c);
     return `${tabs}<div class="de-body">${body}</div>`;
+  }
+
+  /** A block's settings: the sections a block's groups map to, as the Properties tab draws them, then the host's closing lines. */
+  private contentTab(c: PanelContext, k: NonNullable<PanelContext["content"]>): string {
+    let h = `<div class="de-head"><b>${esc(c.heading)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ""}</div>`;
+    h += c.notice ? `<p class="de-note de-notice" data-f="notice" data-sync="notice">${esc(c.notice)}</p>` : `<div data-sync="notice" hidden></div>`;
+    if (k.top) h += k.top;
+    const sub: PanelContext = { ...c, slots: k.slots, values: k.values, overridden: k.overridden, outside: [], sectionTop: undefined, extra: undefined, layers: undefined };
+    for (const sec of ["content", "layout", "appearance", "behaviour"] as const) h += this.section(sec, sub);
+    if (!k.slots.length) h += `<p class="de-note" data-f="content-none">This block has no settings of its own.</p>`;
+    if (k.bottom) h += `<div class="de-bottom">${k.bottom}</div>`;
+    return h;
   }
 
   private propsTab(c: PanelContext): string {
@@ -282,6 +312,10 @@ export class Panel {
         `<button data-act="snap" data-f="snap">Snap to family</button></div>`;
     } else h += `<div data-sync="outside" hidden></div>`;
     h += c.notice ? `<p class="de-note de-notice" data-f="notice" data-sync="notice">${esc(c.notice)}</p>` : `<div data-sync="notice" hidden></div>`;
+    if (c.where) {
+      h += c.clash ? `<p class="de-note de-notice de-clash" data-f="clash" data-sync="clash">${esc(c.clash)}</p>` : `<div data-sync="clash" hidden></div>`;
+      h += whereHtml(c.where, esc);
+    }
     if (c.stickHead) h += "</div>";
     const order = c.leadSection ? ["layers" as SectionId, c.leadSection, ...SECTION_ORDER.filter((s) => s !== "layers" && s !== c.leadSection)] : SECTION_ORDER;
     for (const sec of order) h += this.section(sec, c);
@@ -350,7 +384,7 @@ export class Panel {
     const ctl = this.control(s, v, c, own === undefined && comp !== undefined);
     const tip = s.hint ? ` title="${esc(s.hint)}"` : "";
     // A readout is not a field, so there is nothing for a label to point at.
-    const lab = bare ? "" : s.control === "readout" ? `<span class="de-label"${tip}>${esc(s.label)}</span>` : `<label class="de-label" for="de-${esc(s.id)}"${tip}>${esc(s.label)}</label>`;
+    const lab = bare ? "" : s.control === "readout" || s.control === "host" ? `<span class="de-label"${tip}>${esc(s.label)}</span>` : `<label class="de-label" for="de-${esc(s.id)}"${tip}>${esc(s.label)}</label>`;
     let after = "";
     if (s.control === "color" && s.key === "color" && c.contrast) {
       const ver = contrastVerdict(c.contrast.fg, c.contrast.bg, c.contrast.size, c.contrast.weight);
@@ -427,6 +461,8 @@ export class Panel {
         return `<textarea id="${id}" data-k="${esc(s.key)}" data-text rows="3" placeholder="${esc(s.placeholder ?? "")}" spellcheck="false" data-f="${esc(s.id)}">${esc(v ?? "")}</textarea>`;
       case "readout":
         return `<span class="de-readout" data-f="${esc(s.id)}">${esc(s.readout ?? "")}</span>`;
+      case "host":
+        return s.html ?? "";
       default:
         return "";
     }
@@ -575,6 +611,7 @@ export class Panel {
     const t = (e.target as HTMLElement).closest("button") as HTMLButtonElement | null;
     if (!t || !this.ctx) return;
     const d = t.dataset;
+    if (d.where !== undefined) { if (this.ctx.where) this.h.where?.(nextWhere(this.ctx.where.now, d.where)); return; }
     if (d.tab) { this.tab = d.tab as TabId; this.pop = null; this.redraw(); return; }
     if (d.sec) { const s = d.sec as SectionId; this.open.has(s) ? this.open.delete(s) : this.open.add(s); this.redraw(); return; }
     if (d.more) { const s = d.more as SectionId; this.more.has(s) ? this.more.delete(s) : this.more.add(s); this.redraw(); return; }

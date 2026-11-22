@@ -1,6 +1,7 @@
 import {
   listPages as listPagesFor,
   loadPage as loadPageFor,
+  loadPageWithVersion as loadPageWithVersionFor,
   savePage as savePageFor,
 } from "@elkdonis/page-builder/server";
 import { withOrg } from "@elkdonis/db";
@@ -20,8 +21,12 @@ import { siteConfig } from "@/config/site";
 export const loadPage = (slug: string, knownTypes?: Set<string>) =>
   loadPageFor(siteConfig.orgId, slug, knownTypes);
 
-export const savePage = (slug: string, data: unknown) =>
-  savePageFor(siteConfig.orgId, slug, data);
+/** A page and the version it was read at, for the editors' stale-save guard (`savePage`'s `expectedUpdatedAt`). */
+export const loadPageWithVersion = (slug: string, knownTypes?: Set<string>) =>
+  loadPageWithVersionFor(siteConfig.orgId, slug, knownTypes);
+
+export const savePage = (slug: string, data: unknown, expectedUpdatedAt?: string) =>
+  savePageFor(siteConfig.orgId, slug, data, expectedUpdatedAt);
 
 export const listPages = () => listPagesFor(siteConfig.orgId);
 

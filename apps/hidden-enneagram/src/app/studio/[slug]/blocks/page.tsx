@@ -4,7 +4,7 @@ import type { Data } from "@puckeditor/core";
 // Server-safe entries only: the package's main entry carries editor hooks.
 import { isValidSlug } from "@elkdonis/page-builder/server";
 import { requireOrgEditor } from "@/lib/auth";
-import { BUILT_IN_SLUGS, listPages, loadPage, ROUTE_SLUGS } from "@/lib/puck/store";
+import { BUILT_IN_SLUGS, listPages, loadPageWithVersion, ROUTE_SLUGS } from "@/lib/puck/store";
 import { startingPoint } from "@/lib/puck/starting-point";
 import { PageEditor } from "@/components/studio/page-editor";
 import { siteConfig } from "@/config/site";
@@ -34,7 +34,7 @@ export default async function StudioPage({
 
   await requireOrgEditor(`/studio/${slug}/blocks`);
 
-  const [page, published] = await Promise.all([loadPage(slug), listPages().catch(() => [])]);
+  const [page, published] = await Promise.all([loadPageWithVersion(slug), listPages().catch(() => [])]);
   const initial = (page?.data as Data | undefined) ?? startingPoint(slug, template);
   // Round 3: the page switcher (the "Pages" tab): the built-in set, then the published pages.
   const builtIn = new Set(BUILT_IN_SLUGS.map((b) => b.slug));
@@ -45,5 +45,5 @@ export default async function StudioPage({
       .filter((s) => !builtIn.has(s))
       .map((s) => ({ slug: s, label: `/${s}` })),
   ];
-  return <PageEditor slug={slug} orgId={siteConfig.orgId} initial={initial} pages={pages} />;
+  return <PageEditor slug={slug} orgId={siteConfig.orgId} initial={initial} version={page?.updatedAt} pages={pages} />;
 }

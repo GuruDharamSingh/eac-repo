@@ -1,7 +1,7 @@
 // @elkdonis/studio/forms: the shell (pass 1, Tendons).
 export { FormShell } from './FormShell';
 export type { FormShellProps, FormShellHandlers } from './FormShell';
-export { FormSections, useFieldSpecs, shownIssues } from './Sections';
+export { FormSections, useFieldSpecs, shownIssues, ROWS_FIELD_SECTIONS, WIDE_MAIN_SECTIONS } from './Sections';
 export type { FormSectionsProps } from './Sections';
 export { Rail, PresetSlot } from './Rail';
 export type { RailProps } from './Rail';

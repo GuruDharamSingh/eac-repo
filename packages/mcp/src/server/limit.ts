@@ -37,3 +37,6 @@ export class Limiter {
     for (const [k, v] of this.hits) if (!v.length || v[v.length - 1] < now - 3600_000) this.hits.delete(k);
   }
 }
+
+/** Draft proposals (propose_page_patch, set_field), per grant: a proposal is a write, so its window is the tightest. */
+export const WRITE_LIMIT: Window = { max: 30, ms: 60_000 };

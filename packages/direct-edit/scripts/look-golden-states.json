@@ -1,0 +1,128 @@
+{
+ "hover on the title": {
+  "clean": "{\"v\":1,\"parts\":{\"title\":{\"size\":30,\"states\":{\"hover\":{\"color\":\"#ffffff\",\"fill\":\"#cc0000\"}}}}}",
+  "pub": {
+   "scope": "cabp4k7xo8ae",
+   "css": "template[data-morph=\"cabp4k7xo8ae\"] + .blk-hero .blk-hero-title{font-size:30px !important}\ntemplate[data-morph=\"cabp4k7xo8ae\"] + .blk-hero .blk-hero-title:hover{color:#ffffff !important;background:#cc0000 !important}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "cabp4k7xo8ae",
+   "css": "template[data-morph=\"cabp4k7xo8ae\"] + .blk-hero .blk-hero-title{font-size:30px !important}\ntemplate[data-morph=\"cabp4k7xo8ae\"] + .blk-hero .blk-hero-title:hover{color:#ffffff !important;background:#cc0000 !important}",
+   "fonts": []
+  }
+ },
+ "focus and active on the button": {
+  "clean": "{\"v\":1,\"parts\":{\"cta\":{\"fill\":\"#00a\",\"states\":{\"focus\":{\"bstyle\":\"solid\",\"bcolor\":\"#0a0\",\"bwidth\":3},\"active\":{\"opacity\":0.6}}}}}",
+  "pub": {
+   "scope": "10ahu531g6lkn7",
+   "css": "template[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn{background:#00a !important}\ntemplate[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn:focus-visible{border-style:solid !important;border-width:3px !important;border-color:#0a0 !important}\ntemplate[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn:active{opacity:0.6 !important}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "10ahu531g6lkn7",
+   "css": "template[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn{background:#00a !important}\ntemplate[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn:focus-visible{border-style:solid !important;border-width:3px !important;border-color:#0a0 !important}\ntemplate[data-morph=\"10ahu531g6lkn7\"] + .blk-hero .blk-hero a.blk-btn:active{opacity:0.6 !important}",
+   "fonts": []
+  }
+ },
+ "all three states on the root": {
+  "clean": "{\"v\":1,\"parts\":{\"root\":{\"radius\":6,\"states\":{\"hover\":{\"fill\":\"#eee\"},\"focus\":{\"fill\":\"#ddd\"},\"active\":{\"fill\":\"#ccc\"}}}}}",
+  "pub": {
+   "scope": "11n67e0u4ic9k",
+   "css": "template[data-morph=\"11n67e0u4ic9k\"] + .blk-hero{border-radius:6px !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:hover{background:#eee !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:focus-visible{background:#ddd !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:active{background:#ccc !important}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "11n67e0u4ic9k",
+   "css": "template[data-morph=\"11n67e0u4ic9k\"] + .blk-hero{border-radius:6px !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:hover{background:#eee !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:focus-visible{background:#ddd !important}\ntemplate[data-morph=\"11n67e0u4ic9k\"] + .blk-hero:active{background:#ccc !important}",
+   "fonts": []
+  }
+ },
+ "phones and tablets on the title": {
+  "clean": "{\"v\":1,\"parts\":{\"title\":{\"size\":40,\"at\":{\"sm\":{\"size\":20},\"md\":{\"size\":30}}}}}",
+  "pub": {
+   "scope": "olwzvg111gehc",
+   "css": "template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:min(40px, 11vw) !important}\n@media (max-width:820px){template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:30px !important}}\n@media (max-width:480px){template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:20px !important}}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "olwzvg111gehc",
+   "css": "template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:min(40px, 11vw) !important}\n@media (max-width:820px){template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:30px !important}}\n@media (max-width:480px){template[data-morph=\"olwzvg111gehc\"] + .blk-hero .blk-hero-title{font-size:20px !important}}",
+   "fonts": []
+  }
+ },
+ "hide on phones": {
+  "clean": "{\"v\":1,\"parts\":{\"media\":{\"at\":{\"sm\":{\"hide\":true}}},\"cta\":{\"at\":{\"sm\":{\"w\":100}}}}}",
+  "pub": {
+   "scope": "1fxiypf16xawmh",
+   "css": "@media (max-width:480px){template[data-morph=\"1fxiypf16xawmh\"] + .blk-hero .blk-hero a.blk-btn{width:100px !important;max-width:100% !important;box-sizing:border-box !important}template[data-morph=\"1fxiypf16xawmh\"] + figure img{display:none !important}}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "1fxiypf16xawmh",
+   "css": "@media (max-width:480px){template[data-morph=\"1fxiypf16xawmh\"] + .blk-hero .blk-hero a.blk-btn{width:100px !important;max-width:100% !important;box-sizing:border-box !important}template[data-morph=\"1fxiypf16xawmh\"] + figure img{display:none !important}}",
+   "fonts": []
+  }
+ },
+ "state and size on different parts": {
+  "clean": "{\"v\":1,\"parts\":{\"title\":{\"states\":{\"hover\":{\"color\":\"#c00\"}}},\"body\":{\"at\":{\"sm\":{\"size\":14}}}}}",
+  "pub": {
+   "scope": "qbaeckjqoqq",
+   "css": "template[data-morph=\"qbaeckjqoqq\"] + .blk-hero .blk-hero-title:hover{color:#c00 !important}\n@media (max-width:480px){template[data-morph=\"qbaeckjqoqq\"] + .blk-hero-body > p{font-size:14px !important}}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "qbaeckjqoqq",
+   "css": "template[data-morph=\"qbaeckjqoqq\"] + .blk-hero .blk-hero-title:hover{color:#c00 !important}\n@media (max-width:480px){template[data-morph=\"qbaeckjqoqq\"] + .blk-hero-body > p{font-size:14px !important}}",
+   "fonts": []
+  }
+ },
+ "a state of a part with a pseudo-element selector": {
+  "clean": "{\"v\":1,\"parts\":{\"x\":{\"states\":{\"hover\":{\"fill\":\"#fff\"}}}}}",
+  "pub": null,
+  "pubExplicitFalse": null
+ },
+ "tokens with states and sizes": {
+  "clean": "{\"v\":1,\"parts\":{\"title\":{\"size\":30,\"states\":{\"hover\":{\"fill\":\"#fee\"}},\"at\":{\"sm\":{\"size\":22}}}},\"tokens\":{\"--blk-accent\":\"#a33\"}}",
+  "pub": {
+   "scope": "1l3rs9xecsktr",
+   "css": "template[data-morph=\"1l3rs9xecsktr\"] + .blk-hero{--blk-accent:#a33 !important;--blk-accent-ink:color-mix(in srgb, var(--blk-accent) 60%, black) !important}\ntemplate[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title{font-size:30px !important}\ntemplate[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title:hover{background:#fee !important}\n@media (max-width:480px){template[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title{font-size:22px !important}}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "1l3rs9xecsktr",
+   "css": "template[data-morph=\"1l3rs9xecsktr\"] + .blk-hero{--blk-accent:#a33 !important;--blk-accent-ink:color-mix(in srgb, var(--blk-accent) 60%, black) !important}\ntemplate[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title{font-size:30px !important}\ntemplate[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title:hover{background:#fee !important}\n@media (max-width:480px){template[data-morph=\"1l3rs9xecsktr\"] + .blk-hero .blk-hero-title{font-size:22px !important}}",
+   "fonts": []
+  }
+ },
+ "a state of a part the block does not declare": {
+  "clean": "{\"v\":1,\"parts\":{\"ghost\":{\"states\":{\"hover\":{\"fill\":\"#fff\"}}},\"title\":{\"size\":20}}}",
+  "pub": {
+   "scope": "ziyu5911uxzav",
+   "css": "template[data-morph=\"ziyu5911uxzav\"] + .blk-hero .blk-hero-title{font-size:20px !important}",
+   "fonts": []
+  },
+  "pubExplicitFalse": {
+   "scope": "ziyu5911uxzav",
+   "css": "template[data-morph=\"ziyu5911uxzav\"] + .blk-hero .blk-hero-title{font-size:20px !important}",
+   "fonts": []
+  }
+ },
+ "a font in a state": {
+  "clean": "{\"v\":1,\"parts\":{\"title\":{\"states\":{\"hover\":{\"font\":\"Lora\"}},\"at\":{\"sm\":{\"font\":\"Lora\"}}}}}",
+  "pub": {
+   "scope": "6wkz9h1977wv5",
+   "css": "template[data-morph=\"6wkz9h1977wv5\"] + .blk-hero .blk-hero-title:hover{font-family:\"Lora\", Georgia, \"Times New Roman\", serif !important}\n@media (max-width:480px){template[data-morph=\"6wkz9h1977wv5\"] + .blk-hero .blk-hero-title{font-family:\"Lora\", Georgia, \"Times New Roman\", serif !important}}",
+   "fonts": [
+    "Lora"
+   ]
+  },
+  "pubExplicitFalse": {
+   "scope": "6wkz9h1977wv5",
+   "css": "template[data-morph=\"6wkz9h1977wv5\"] + .blk-hero .blk-hero-title:hover{font-family:\"Lora\", Georgia, \"Times New Roman\", serif !important}\n@media (max-width:480px){template[data-morph=\"6wkz9h1977wv5\"] + .blk-hero .blk-hero-title{font-family:\"Lora\", Georgia, \"Times New Roman\", serif !important}}",
+   "fonts": [
+    "Lora"
+   ]
+  }
+ }
+}

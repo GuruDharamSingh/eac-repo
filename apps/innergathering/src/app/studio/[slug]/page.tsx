@@ -3,7 +3,7 @@ import { LANDING_SLUG } from "@/lib/puck/landing";
 import type { Data } from "@puckeditor/core";
 import { requireOrgEditor } from "@/lib/auth";
 import { EMPTY_PAGE, isValidSlug } from "@elkdonis/page-builder";
-import { loadPage } from "@/lib/puck/store";
+import { loadPageWithVersion } from "@/lib/puck/store";
 import { PuckEditor } from "@/components/studio/PuckEditor";
 
 /**
@@ -26,8 +26,8 @@ export default async function StudioPage({
 
   await requireOrgEditor(`/studio/${slug}`);
 
-  const page = await loadPage(slug);
+  const page = await loadPageWithVersion(slug);
   // A page that does not exist yet opens as an empty canvas rather than a 404 —
   // creating one should be visiting its address, not a separate ceremony.
-  return <PuckEditor slug={slug} initial={(page?.data as Data) ?? (EMPTY_PAGE as Data)} />;
+  return <PuckEditor slug={slug} initial={(page?.data as Data) ?? (EMPTY_PAGE as Data)} version={page?.updatedAt} />;
 }

@@ -24,7 +24,7 @@
     "@elkdonis/blocks": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/db": "workspace:*",
-    "@puckeditor/core": "0.23.0"
+    "@puckeditor/core": "0.24.0"
   },
   "devDependencies": {
     "@types/node": "^20",

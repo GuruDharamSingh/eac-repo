@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { PuckDoc } from "@elkdonis/direct-edit/block";
 
 /** Owners and guides see this; the server decides that, and checks again on save. */
-export function EditPageButton({ tree, resolved }: { tree: PuckDoc | null; /** What stored Featured people drew, by node id. */ resolved?: Record<string, Record<string, unknown>> }) {
+export function EditPageButton({ tree, resolved, version, orgId }: { tree: PuckDoc | null; /** What stored Featured people drew, by node id. */ resolved?: Record<string, Record<string, unknown>>; /** The stored page's version, for the stale-save guard. */ version?: string; orgId?: string }) {
   const [editing, setEditing] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -12,7 +12,7 @@ export function EditPageButton({ tree, resolved }: { tree: PuckDoc | null; /** W
     setFailed(false);
     try {
       const { openLandingEditor } = await import("./page-editor-mount");
-      await openLandingEditor({ tree, resolved });
+      await openLandingEditor({ tree, resolved, version, orgId });
       setEditing(true);
     } catch (err) {
       console.error("[page-edits] open:", err);

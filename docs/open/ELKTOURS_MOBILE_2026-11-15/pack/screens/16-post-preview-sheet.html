@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16-post-preview-sheet</title>
+<!--
+Design reference, not production code.
+Markup for one screen, cut from "Elkdonis App.dc.html" lines 1378-1392. All sizes, colours and radii are in the inline styles.
+{{ name }}  a value filled in at runtime (see renderVals() in Elkdonis App.dc.html for what it holds)
+<sc-if>     shows its children when the value is true
+<sc-for>    repeats its children once per item in the list
+Described in screens-guest.md. For the live, working version open "Elkdonis Experiences.dc.html".
+-->
+<style>@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}@font-face{font-family:"Basteleur";src:url("../fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}@font-face{font-family:"Brothers";src:url("../fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}@font-face{font-family:"Venture";src:url("../fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}@keyframes elkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes elkUp{from{transform:translateY(100%)}to{transform:none}}@keyframes elkFade{from{opacity:0}to{opacity:1}}@keyframes elkToast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}*{box-sizing:border-box}html,body{background:#1c1f24}body{margin:0}button,input,textarea{font-family:inherit}a{color:#dcc08a}a:hover{color:#f1ece2}input::placeholder,textarea::placeholder{color:#857f76}sc-if,sc-for{display:contents}body{background:#16181c;display:flex;justify-content:center;padding:24px}</style>
+</head>
+<body>
+<div style="position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:linear-gradient(180deg,#25282e 0%,#2b2f36 55%,#282b31 100%);color:#f1ece2;font-family:Basteleur,Georgia,serif;font-size:15px">
+<sc-if value="{{ pv.open }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ pv.close }}" style="position:absolute;inset:0;z-index:52;background:rgba(10,11,13,.55);animation:elkFade .2s ease both"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 18px 0;border-radius:30px 30px 0 0;background:#2f3339;border-top:1px solid rgba(201,162,92,.5);animation:elkUp .28s cubic-bezier(.2,.8,.2,1) both;z-index:53;top:70px;display:flex;flex-direction:column">
+<div style="flex:none;width:40px;height:4px;border-radius:2px;background:rgba(241,236,226,.25);margin:0 auto 14px"></div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding-bottom:12px">
+<div style="display:flex;align-items:center;gap:10px"><span style="flex:none;width:34px;height:34px;border-radius:17px;border:1px solid #c9a25c;display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:15px;color:#dcc08a">{{ pv.initial }}</span><span style="flex:1;font-family:Venture,Georgia,serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b9b2a5">{{ pv.kicker }}</span><span style="font-size:12px;color:#8f8a82">{{ pv.when }}</span></div>
+<h2 style="margin:12px 0 0;font-family:Brothers,Georgia,serif;font-weight:400;font-size:28px;line-height:1.05">{{ pv.title }}</h2>
+<p style="margin:10px 0 0;font-size:14.5px;line-height:1.55;color:#e6e0d4;text-wrap:pretty">{{ pv.body }}</p>
+<sc-if value="{{ pv.isLink }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;border-radius:16px;overflow:hidden;border:1px solid rgba(201,162,92,.45)"><div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#25282e"><span style="flex:1;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#dcc08a">{{ pv.host }}</span><button onClick="{{ pv.openWeb }}" style="padding:0;border:0;background:transparent;color:#f1ece2;font-size:12.5px;cursor:pointer">Full screen ⤢</button></div><iframe src="{{ pv.frameUrl }}" title="Preview" style="display:block;width:100%;height:240px;border:0;background:#f1ece2"></iframe></div><p style="margin:6px 0 0;font-size:11.5px;color:#8f8a82">Some sites don't allow previews. If it stays blank, open it full screen or in your browser.</p></sc-if>
+<div style="display:flex;align-items:center;gap:10px;margin:18px 0 4px"><span style="font-family:Venture,Georgia,serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#c9a25c">{{ pv.count }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,92,.6),transparent)"></div><button onClick="{{ pv.toForum }}" style="padding:0;border:0;background:transparent;color:#dcc08a;font-size:12.5px;cursor:pointer">In the forum ›</button></div>
+<sc-for list="{{ pv.comments }}" as="r" hint-placeholder-count="1"><div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(241,236,226,.07)"><span style="flex:none;width:28px;height:28px;border-radius:14px;border:1px solid {{ r.ring }};display:flex;align-items:center;justify-content:center;font-family:Brothers,Georgia,serif;font-size:13px;color:#e6e0d4">{{ r.initial }}</span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><div style="display:flex;gap:8px;align-items:baseline"><span style="font-weight:700;font-size:13.5px">{{ r.name }}{{ r.you }}</span><span style="flex:1"></span><span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#8f8a82">{{ r.at }}</span></div><p style="margin:0;font-size:14px;line-height:1.45;color:#e6e0d4">{{ r.body }}</p></div></div></sc-for>
+</div>
+<div style="flex:none;display:flex;gap:8px;align-items:flex-end;padding:10px 0 28px;border-top:1px solid rgba(241,236,226,.08)"><textarea value="{{ pv.cmt }}" onChange="{{ pv.setCmt }}" rows="1" placeholder="Add a comment" style="flex:1;min-width:0;min-height:44px;max-height:100px;padding:11px 16px;border-radius:22px;border:1px solid rgba(241,236,226,.16);background:#31353c;color:#f1ece2;font-size:14.5px;line-height:1.4;outline:0;resize:none"></textarea><button onClick="{{ pv.send }}" style="flex:none;height:44px;padding:0 16px;border-radius:22px;border:0;background:{{ pv.sendBg }};color:{{ pv.sendFg }};font-family:Basteleur,Georgia,serif;font-weight:700;font-size:14px;cursor:pointer">Send</button></div>
+</div>
+</sc-if>
+</div>
+</body>
+</html>

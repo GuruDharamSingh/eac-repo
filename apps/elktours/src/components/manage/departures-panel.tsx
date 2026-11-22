@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { TourBooking, TourDeparture } from "@elkdonis/commerce/server";
-import { addDeparturesAction, cancelBookingAction, cancelDepartureAction, saveDepartureAction } from "@/lib/tour-actions";
+import { addDeparturesAction, cancelBookingAction, cancelDepartureAction, removeDepartureAction, saveDepartureAction } from "@/lib/tour-actions";
 import { formatDeparture, toParisInput } from "@/lib/tour-format";
 import { Button, Input, Label } from "@elkdonis/primitives";
 
@@ -15,6 +15,8 @@ interface Props {
   departures: TourDeparture[];
   guides: Guide[];
   manifests: Record<string, TourBooking[]>;
+  /** Owners may remove a cancelled departure. */
+  canRemove?: boolean;
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * day), edit one, cancel one (its buyers are emailed), and read each run's
  * manifest.
  */
-export function DeparturesPanel({ tourId, departures, guides, manifests }: Props) {
+export function DeparturesPanel({ tourId, departures, guides, manifests, canRemove = false }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [days, setDays] = useState("");
@@ -80,7 +82,7 @@ export function DeparturesPanel({ tourId, departures, guides, manifests }: Props
         ) : (
           <ul className="mt-3 divide-y divide-border border border-border">
             {upcoming.map((d) => (
-              <DepartureRow key={d.id} d={d} guides={guides} manifest={manifests[d.id] ?? []} />
+              <DepartureRow key={d.id} d={d} guides={guides} manifest={manifests[d.id] ?? []} canRemove={canRemove} />
             ))}
           </ul>
         )}
@@ -104,7 +106,7 @@ export function DeparturesPanel({ tourId, departures, guides, manifests }: Props
   );
 }
 
-function DepartureRow({ d, guides, manifest }: { d: TourDeparture; guides: Guide[]; manifest: TourBooking[] }) {
+function DepartureRow({ d, guides, manifest, canRemove }: { d: TourDeparture; guides: Guide[]; manifest: TourBooking[]; canRemove: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -131,6 +133,15 @@ function DepartureRow({ d, guides, manifest }: { d: TourDeparture; guides: Guide
       router.refresh();
     });
   }
+  function remove() {
+    if (!confirm("Remove this cancelled departure? This cannot be undone.")) return;
+    start(async () => {
+      const r = await removeDepartureAction(d.id);
+      if (!r.ok) return void toast.error(r.error);
+      toast.success("Removed");
+      router.refresh();
+    });
+  }
 
   return (
     <li className="px-4 py-3 text-sm">
@@ -144,6 +155,11 @@ function DepartureRow({ d, guides, manifest }: { d: TourDeparture; guides: Guide
           <span className="ml-auto flex gap-1">
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing((v) => !v)}>{editing ? "Close" : "Edit"}</Button>
             <Button type="button" variant="ghost" size="sm" className="text-destructive" disabled={pending} onClick={cancel}>Cancel</Button>
+          </span>
+        )}
+        {d.status === "cancelled" && canRemove && (
+          <span className="ml-auto">
+            <Button type="button" variant="ghost" size="sm" className="text-destructive" disabled={pending} onClick={remove}>Remove</Button>
           </span>
         )}
       </div>

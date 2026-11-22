@@ -6,10 +6,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { Button, Input, Label } from "@elkdonis/primitives";
-import { PlaceSearch } from "@/components/manage/place-search";
 import { StreetView } from "@/components/tours/street-view";
-import { savePlaceAction } from "@/lib/place-actions";
-import type { Place } from "@/lib/catalogue-types";
+import { PlaceNotes } from "@/components/places/place-notes";
+import { savePlaceAction, suggestPlacesAction } from "@/lib/place-actions";
+import type { Place, PlaceSuggestion } from "@/lib/catalogue-types";
 import "@/components/tours/tour-story.css";
 
 const TourMap = dynamic(() => import("@/components/tours/tour-map").then((m) => m.TourMap), { ssr: false });
@@ -26,14 +26,16 @@ export function PlaceForm({ place, googleMapsKey }: { place: Place; googleMapsKe
   const [tags, setTags] = useState(place.tags.join(", "));
   const [body, setBody] = useState(place.body ?? "");
   const [excerpt, setExcerpt] = useState(place.excerpt ?? "");
-  const [isPublic, setIsPublic] = useState(place.isPublic ?? true);
+  // Kept as stored: the form no longer offers the switch (developer, 2026-11-19).
+  const [isPublic] = useState(place.isPublic ?? true);
   const [notes, setNotes] = useState(place.privateNotes ?? "");
   const [lat, setLat] = useState(str(place.lat));
   const [lng, setLng] = useState(str(place.lng));
   const [heading, setHeading] = useState(str(place.heading));
   const [pitch, setPitch] = useState(str(place.pitch));
   const [fov, setFov] = useState(str(place.fov));
-  const [search, setSearch] = useState("");
+  // The panorama's spot when the editor walked it away from the place (migration 279); cleared when the place moves.
+  const [view, setView] = useState<{ lat: number; lng: number } | null>(place.viewLat != null && place.viewLng != null ? { lat: place.viewLat, lng: place.viewLng } : null);
 
   const pos = num(lat) != null && num(lng) != null ? { lat: num(lat)!, lng: num(lng)! } : null;
 
@@ -52,6 +54,8 @@ export function PlaceForm({ place, googleMapsKey }: { place: Place; googleMapsKe
         heading: num(heading),
         pitch: num(pitch),
         fov: num(fov),
+        viewLat: view?.lat ?? null,
+        viewLng: view?.lng ?? null,
         address: address.trim() || null,
         tags: [...new Set(tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean))],
       }).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "Could not save the place." }));
@@ -80,28 +84,33 @@ export function PlaceForm({ place, googleMapsKey }: { place: Place; googleMapsKe
         </div>
         <div>
           <Label>Position</Label>
-          <PlaceSearch
-            value={search}
-            onChange={setSearch}
-            onPick={(hit) => { setLat(String(hit.lat)); setLng(String(hit.lng)); if (!address) setAddress(hit.label); setSearch(""); }}
-            placeholder="Search to move the place"
+          <NearbyPlaces
+            pos={pos}
+            selfId={place.id}
+            onPick={(hit) => {
+              setLat(String(hit.lat));
+              setLng(String(hit.lng));
+              setView(null);
+              if (!address && hit.address) setAddress(hit.address);
+            }}
           />
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className={`mt-2 grid grid-cols-2 gap-2 ${googleMapsKey ? "" : "sm:grid-cols-5"}`}>
             <Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Lat" inputMode="decimal" aria-label="Latitude" />
             <Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Lng" inputMode="decimal" aria-label="Longitude" />
-            <Input value={heading} onChange={(e) => setHeading(e.target.value)} placeholder="Heading 0–360" inputMode="decimal" aria-label="Heading" />
-            <Input value={pitch} onChange={(e) => setPitch(e.target.value)} placeholder="Pitch" inputMode="decimal" aria-label="Pitch" />
-            <Input value={fov} onChange={(e) => setFov(e.target.value)} placeholder="FOV" inputMode="decimal" aria-label="Field of view" />
+            {!googleMapsKey && (
+              <>
+                <Input value={heading} onChange={(e) => setHeading(e.target.value)} placeholder="Heading 0–360" inputMode="decimal" aria-label="Heading" />
+                <Input value={pitch} onChange={(e) => setPitch(e.target.value)} placeholder="Pitch" inputMode="decimal" aria-label="Pitch" />
+                <Input value={fov} onChange={(e) => setFov(e.target.value)} placeholder="FOV" inputMode="decimal" aria-label="Field of view" />
+              </>
+            )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">The default Street View pose, copied into a stop when the place is picked.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {googleMapsKey
+              ? `Street View opens at ${num(heading) ?? 0}° · pitch ${num(pitch) ?? 0}° · view ${num(fov) ?? 90}°${view ? ", from the spot you walked to" : ""}. Turn, zoom or walk the panorama to change it, then save.`
+              : "The default Street View pose, copied into a stop when the place is picked."}
+          </p>
         </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="mt-1" />
-          <span>
-            <span className="font-medium">Public</span>
-            <span className="block text-muted-foreground">Shown on the public Places page. Off keeps it in the catalogue for tours only.</span>
-          </span>
-        </label>
         <div>
           <Label htmlFor="place-excerpt">Short excerpt <span className="text-muted-foreground">(one line for cards, up to 200 characters)</span></Label>
           <Input id="place-excerpt" value={excerpt} maxLength={200} onChange={(e) => setExcerpt(e.target.value)} className="mt-1" />
@@ -113,9 +122,15 @@ export function PlaceForm({ place, googleMapsKey }: { place: Place; googleMapsKe
           </div>
         </div>
         <div>
-          <Label>Private notes <span className="text-muted-foreground">(company knowledge, never shown to visitors)</span></Label>
+          <Label>Shared notes <span className="text-muted-foreground">(one text for the whole office, never shown to visitors)</span></Label>
           <div className="mt-1">
             <RichTextEditor value={notes} onChange={setNotes} toolbar="compact" />
+          </div>
+        </div>
+        <div>
+          <Label>Guides&apos; notes <span className="text-muted-foreground">(each signed by its author; every guide reads them; never shown to visitors)</span></Label>
+          <div className="mt-1">
+            <PlaceNotes placeId={place.id} />
           </div>
         </div>
         <Button type="button" onClick={save} disabled={pending}>{pending ? "Saving…" : "Save place"}</Button>
@@ -128,13 +143,59 @@ export function PlaceForm({ place, googleMapsKey }: { place: Place; googleMapsKe
         </div>
         <div className="tour-story__view h-48">
           <StreetView
-            pose={pos ? { ...pos, heading: num(heading), pitch: num(pitch), fov: num(fov) } : null}
+            pose={pos ? { ...pos, heading: num(heading), pitch: num(pitch), fov: num(fov), viewLat: view?.lat ?? null, viewLng: view?.lng ?? null } : null}
             title={title}
             apiKey={googleMapsKey}
             className="h-full w-full"
+            onViewChange={(v) => {
+              setHeading(String(v.heading));
+              setPitch(String(v.pitch));
+              setFov(String(v.fov));
+              if (v.lat != null && v.lng != null) setView({ lat: v.lat, lng: v.lng });
+            }}
           />
         </div>
       </aside>
+    </div>
+  );
+}
+
+/** Known places within 50 m of the pin (our places and OpenStreetMap), listed when the button is pressed. */
+function NearbyPlaces({ pos, selfId, onPick }: { pos: { lat: number; lng: number } | null; selfId: string; onPick: (hit: PlaceSuggestion) => void }) {
+  const [items, setItems] = useState<PlaceSuggestion[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function look() {
+    if (!pos) return;
+    setLoading(true);
+    const r = await suggestPlacesAction({ near: pos }).catch(() => null);
+    setLoading(false);
+    setItems((r?.items ?? []).filter((i) => i.placeId !== selfId && i.distanceM != null && i.distanceM <= 50));
+  }
+
+  return (
+    <div className="mt-1">
+      <Button type="button" size="sm" variant="outline" disabled={!pos || loading} onClick={look}>
+        {loading ? "Looking…" : "Known places within 50 m"}
+      </Button>
+      {items && (
+        <ul className="mt-2 divide-y divide-border border border-border text-sm">
+          {items.length === 0 && <li className="px-3 py-2 text-muted-foreground">Nothing known within 50 m.</li>}
+          {items.map((i) => (
+            <li key={i.key}>
+              <button type="button" onClick={() => { onPick(i); setItems(null); }} className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left hover:bg-accent/60">
+                <span>
+                  <span className="font-medium">{i.title}</span>
+                  {i.address && <span className="block text-xs text-muted-foreground">{i.address}</span>}
+                </span>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {Math.round(i.distanceM ?? 0)} m{i.source === "catalogue" ? " · ours" : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

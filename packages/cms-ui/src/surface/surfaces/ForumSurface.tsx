@@ -63,6 +63,112 @@ function ThreadRow({ t, onOpen }: { t: SurfaceForumThread; onOpen: (t: SurfaceFo
   );
 }
 
+/** Thread rows: a glyph, the title (bold when unread), who and how many replies, and when. A row is a preview, not a link. */
+export function ForumThreadRows({ threads, onOpen }: { threads: SurfaceForumThread[]; onOpen: (t: SurfaceForumThread) => void }) {
+  return (
+    <ul className="eac-forum-rows">
+      {threads.map((t) => (
+        <ThreadRow key={t.id} t={t} onOpen={onOpen} />
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The sections. A section with `parentSlug` is indented under its parent (when the parent is in the list), and the
+ * parent's counts include its children. Without any `parentSlug` this is the flat list it always was.
+ */
+export function ForumFeedList({ feeds, onOpen }: { feeds: SurfaceForumFeed[]; onOpen: (f: SurfaceForumFeed) => void }) {
+  const slugs = new Set(feeds.map((f) => f.slug));
+  const top = feeds.filter((f) => !f.parentSlug || !slugs.has(f.parentSlug));
+  const kids = (slug: string) => feeds.filter((f) => f.parentSlug === slug);
+  const sum = (f: SurfaceForumFeed, key: "topicCount" | "unreadCount") =>
+    (f[key] ?? 0) + kids(f.slug).reduce((n, c) => n + (c[key] ?? 0), 0);
+
+  const item = (f: SurfaceForumFeed, child: boolean) => {
+    const topics = child ? f.topicCount : sum(f, "topicCount");
+    const fresh = child ? (f.unreadCount ?? 0) : sum(f, "unreadCount");
+    return (
+      <li
+        key={f.slug}
+        className={`eac-forum-feed${fresh ? " is-unread" : ""}${child ? " eac-forum-feed--child" : ""}`}
+        style={f.accent ? ({ ["--eac-forum-feed" as string]: f.accent } as React.CSSProperties) : undefined}
+      >
+        {/* Opens IN the popup, the way a latest row does, rather than navigating to the board. */}
+        <button type="button" className="eac-forum-feed-name" onClick={() => onOpen(f)}>
+          {fresh ? <span className="eac-forum-dot" aria-label="unread" /> : null}
+          {child ? <span aria-hidden>↳ </span> : null}
+          {f.name}
+          {f.closed ? <span className="eac-forum-feed-closed"> · closed</span> : null}
+        </button>
+        <span className="eac-forum-feed-count">
+          {topics}
+          {fresh ? <b> · {fresh} new</b> : null}
+        </span>
+      </li>
+    );
+  };
+
+  return (
+    <ul className="eac-forum-feeds">
+      {top.flatMap((f) => [item(f, false), ...kids(f.slug).map((c) => item(c, true))])}
+    </ul>
+  );
+}
+
+/**
+ * The forum's list: the unread banner, the Sections, and Latest. The body of the popup, exported so a host can draw
+ * the same thing at page size. Behaviour comes in as callbacks; nothing here knows about layers or routes.
+ */
+export function ForumBoardView({
+  forum,
+  onOpenThread,
+  onOpenFeed,
+  onMarkAllRead,
+  marking = false,
+}: {
+  forum: SurfaceForum;
+  onOpenThread: (t: SurfaceForumThread) => void;
+  onOpenFeed: (f: SurfaceForumFeed) => void;
+  onMarkAllRead?: () => void;
+  marking?: boolean;
+}) {
+  const unread = forum.unreadCount ?? 0;
+  return (
+    <div className="eac-forum">
+      {unread > 0 && (
+        <div className="eac-forum-unread">
+          <span>
+            <b>{unread}</b> {unread === 1 ? "topic has" : "topics have"} something new
+          </span>
+          <span className="eac-forum-unread-tools">
+            {forum.unreadHref && <a className="eac-btn eac-btn--quiet" href={forum.unreadHref}>See them</a>}
+            {onMarkAllRead && (
+              <button type="button" className="eac-btn eac-btn--quiet" onClick={onMarkAllRead} disabled={marking}>
+                {marking ? "Marking…" : "Mark all read"}
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
+      {(forum.feeds?.length ?? 0) > 0 && (
+        <SurfaceSection title="Sections">
+          <ForumFeedList feeds={forum.feeds ?? []} onOpen={onOpenFeed} />
+        </SurfaceSection>
+      )}
+
+      <SurfaceSection title="Latest">
+        {(forum.recent?.length ?? 0) === 0 ? (
+          <p className="eac-surface-muted">Nothing has been posted yet.</p>
+        ) : (
+          <ForumThreadRows threads={forum.recent ?? []} onOpen={onOpenThread} />
+        )}
+      </SurfaceSection>
+    </div>
+  );
+}
+
 export function ForumSurface() {
   const { connectors, push } = useSurface();
   const layer = useLayer();
@@ -116,8 +222,6 @@ export function ForumSurface() {
     [push]
   );
 
-  const unread = forum?.unreadCount ?? 0;
-
   return (
     <SurfaceFrame
       kind="forum"
@@ -144,67 +248,13 @@ export function ForumSurface() {
       )}
 
       {state === "ready" && forum && (
-        <div className="eac-forum">
-          {unread > 0 && (
-            <div className="eac-forum-unread">
-              <span>
-                <b>{unread}</b> {unread === 1 ? "topic has" : "topics have"} something new
-              </span>
-              <span className="eac-forum-unread-tools">
-                {forum.unreadHref && <a className="eac-btn eac-btn--quiet" href={forum.unreadHref}>See them</a>}
-                {connectors.forum?.markAllRead && (
-                  <button type="button" className="eac-btn eac-btn--quiet" onClick={() => void markAllRead()} disabled={busy}>
-                    {busy ? "Marking…" : "Mark all read"}
-                  </button>
-                )}
-              </span>
-            </div>
-          )}
-
-          {(forum.feeds?.length ?? 0) > 0 && (
-            <SurfaceSection title="Sections">
-              <ul className="eac-forum-feeds">
-                {(forum.feeds ?? []).map((f) => (
-                  <li
-                    key={f.slug}
-                    className={`eac-forum-feed${f.unreadCount ? " is-unread" : ""}`}
-                    style={f.accent ? ({ ["--eac-forum-feed" as string]: f.accent } as React.CSSProperties) : undefined}
-                  >
-                    {/* Opens IN the popup, the way a latest row does, rather
-                        than navigating to the board. The full board is still
-                        one control away, inside the section. */}
-                    <button
-                      type="button"
-                      className="eac-forum-feed-name"
-                      onClick={() =>
-                        push({ type: "forumFeed", slug: f.slug, name: f.name, href: f.href })
-                      }
-                    >
-                      {f.unreadCount ? <span className="eac-forum-dot" aria-label="unread" /> : null}
-                      {f.name}
-                    </button>
-                    <span className="eac-forum-feed-count">
-                      {f.topicCount}
-                      {f.unreadCount ? <b> · {f.unreadCount} new</b> : null}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </SurfaceSection>
-          )}
-
-          <SurfaceSection title="Latest">
-            {(forum.recent?.length ?? 0) === 0 ? (
-              <p className="eac-surface-muted">Nothing has been posted yet.</p>
-            ) : (
-              <ul className="eac-forum-rows">
-                {(forum.recent ?? []).map((t) => (
-                  <ThreadRow key={t.id} t={t} onOpen={openThread} />
-                ))}
-              </ul>
-            )}
-          </SurfaceSection>
-        </div>
+        <ForumBoardView
+          forum={forum}
+          onOpenThread={openThread}
+          onOpenFeed={(f) => push({ type: "forumFeed", slug: f.slug, name: f.name, href: f.href })}
+          onMarkAllRead={connectors.forum?.markAllRead ? () => void markAllRead() : undefined}
+          marking={busy}
+        />
       )}
     </SurfaceFrame>
   );
@@ -393,11 +443,7 @@ export function ForumFeedSurface({
       {state === "error" && <p className="eac-surface-empty">Could not load this section.</p>}
       {state === "ready" &&
         (threads && threads.length > 0 ? (
-          <ul className="eac-forum-rows">
-            {threads.map((t) => (
-              <ThreadRow key={t.id} t={t} onOpen={openThread} />
-            ))}
-          </ul>
+          <ForumThreadRows threads={threads} onOpen={openThread} />
         ) : (
           <p className="eac-surface-empty">
             {connectors.forum?.listFeed

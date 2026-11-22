@@ -16,10 +16,25 @@ import { GENERIC_ROOT_SEL, hasOwn, PART_NAME, ROOT_PART } from "./contract";
 import { lookDecls } from "./patch";
 import { balancedCss, cleanStyle, declsToString, safeDecls, type Decl, type PartStyle } from "./style";
 
+/** The states a part's look may set: written as `:hover`, `:focus-visible` and `:active`. */
+export const LOOK_STATES = ["hover", "focus", "active"] as const;
+/** The screen sizes a part's look may set: `sm` is a viewport 480px wide or less, `md` 820px or less. */
+export const LOOK_SIZES = ["sm", "md"] as const;
+export type LookState = (typeof LOOK_STATES)[number];
+export type LookSize = (typeof LOOK_SIZES)[number];
+/** Where a look applies. Both absent = the base look. A state and a size together are not stored. */
+export interface LookWhere { state?: LookState; at?: LookSize }
+
+/** BUILD_SPEC C1: a part's look is PartStyle plus two optional reserved keys. A stored v1 look has neither. */
+export type PartLook = PartStyle & {
+  states?: Partial<Record<LookState, PartStyle>>;
+  at?: Partial<Record<LookSize, PartStyle>>;
+};
+
 export interface NodeMorph {
   v: 1;
   /** Part name → look. */
-  parts?: Record<string, PartStyle>;
+  parts?: Record<string, PartLook>;
   /** Custom property → value, on the block's root. A font token holds a library family's name. */
   tokens?: Record<string, string>;
 }
@@ -70,7 +85,7 @@ export function sheetSafe(value: string): boolean {
 }
 
 /** A look as a morph may hold it: the box vocabulary, minus what would take a part out of its block. */
-function cleanLook(raw: unknown): PartStyle | undefined {
+function cleanBase(raw: unknown): PartStyle | undefined {
   const s = cleanStyle(raw);
   if (!s) return undefined;
   if (s.pos === "absolute" || s.pos === "sticky") { delete s.pos; delete s.x; delete s.y; }
@@ -81,6 +96,36 @@ function cleanLook(raw: unknown): PartStyle | undefined {
   return Object.keys(s).length ? s : undefined;
 }
 
+const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * A part's look: the base look, plus its states and screen sizes. Each of those is the same vocabulary, cleaned the
+ * same way, and holds no states or sizes of its own. A state cannot hide its part: a part that vanishes on hover loses
+ * the hover and flickers. A screen size may (hide on phones).
+ */
+function cleanLook(raw: unknown): PartLook | undefined {
+  const base = cleanBase(raw);
+  const r = isObj(raw) ? raw : {};
+  const out: PartLook = { ...(base ?? {}) };
+  if (isObj(r.states)) {
+    const states: Partial<Record<LookState, PartStyle>> = {};
+    for (const k of LOOK_STATES) {
+      const c = hasOwn(r.states, k) ? cleanBase(r.states[k]) : undefined;
+      if (c) { delete c.hide; if (Object.keys(c).length) states[k] = c; }
+    }
+    if (Object.keys(states).length) out.states = states;
+  }
+  if (isObj(r.at)) {
+    const at: Partial<Record<LookSize, PartStyle>> = {};
+    for (const k of LOOK_SIZES) {
+      const c = hasOwn(r.at, k) ? cleanBase(r.at[k]) : undefined;
+      if (c) at[k] = c;
+    }
+    if (Object.keys(at).length) out.at = at;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 /** What a stored morph may be. Unknown shapes, names and values are dropped; past the byte cap the whole morph is. */
 export function cleanMorph(raw: unknown): NodeMorph | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -88,7 +133,7 @@ export function cleanMorph(raw: unknown): NodeMorph | null {
   if (m.v !== 1) return null;
   const out: NodeMorph = { v: 1 };
   if (m.parts && typeof m.parts === "object" && !Array.isArray(m.parts)) {
-    const parts: Record<string, PartStyle> = {};
+    const parts: Record<string, PartLook> = {};
     let n = 0;
     for (const [name, look] of Object.entries(m.parts as Record<string, unknown>)) {
       if (n >= MAX_PARTS) break;
@@ -138,8 +183,15 @@ const DERIVED: Readonly<Record<string, ReadonlyArray<readonly [string, string]>>
   "--blk-bg": [BG_SOFT, FIELD_BG, ["--blk-faint", "color-mix(in srgb, var(--blk-muted) 60%, var(--blk-bg))"]],
 };
 
+/** Screen sizes are viewport media queries, not container queries: a container query needs an ancestor with `container-type`, and a block's root has none the stylesheet could count on (it must not add one: size containment changes layout). */
+const WIDTH: Record<LookSize, number> = { sm: 480, md: 820 };
+const PSEUDO: Record<LookState, string> = { hover: ":hover", focus: ":focus-visible", active: ":active" };
+
 const SCOPE_MARK = "\u0000";
-const rule = (tail: string, decls: Decl[]) => `template[data-morph="${SCOPE_MARK}"] + ${tail}{${decls.map(([k, v]) => `${k}:${v} !important`).join(";")}}`;
+const ruleOf = (tails: string[], decls: Decl[]) => `${tails.map((t) => `template[data-morph="${SCOPE_MARK}"] + ${t}`).join(",")}{${decls.map(([k, v]) => `${k}:${v} !important`).join(";")}}`;
+const rule = (tail: string, decls: Decl[]) => ruleOf([tail], decls);
+/** A pseudo-class cannot follow a pseudo-element, and an attribute cannot either. */
+const PSEUDO_ELEMENT = /::|:(?:before|after|first-line|first-letter)\b/;
 
 /**
  * The stylesheet for one node. A stored part the block no longer declares draws nothing; a block with no declared
@@ -167,14 +219,63 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
   }
   if (tokenDecls.length) rules.push(rule(root, tokenDecls));
 
-  for (const name of Object.keys(m.parts ?? {}).sort()) {
+  const names = Object.keys(m.parts ?? {}).sort();
+  const tailOf = (name: string, sel: string) => (name === ROOT_PART ? root : sel.startsWith(">") ? sel.replace(/^>\s*/, "") : `${root} ${sel}`);
+  const declsOf = (look: PartStyle) => lookDecls(look, !!o.editor).map((d) => guarded(d, look));
+  const addFont = (look: PartStyle) => { if (look.font && isKnownFont(look.font)) fonts.add(look.font); };
+
+  // Base rules first, exactly as a v1 look compiled before states and sizes existed.
+  for (const name of names) {
     const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
     if (!sel) continue;
     const look = m.parts![name]!;
-    const decls = lookDecls(look, !!o.editor).map((d) => guarded(d, look));
+    const decls = declsOf(look);
     if (!decls.length) continue;
-    if (look.font && isKnownFont(look.font)) fonts.add(look.font);
-    rules.push(rule(name === ROOT_PART ? root : sel.startsWith(">") ? sel.replace(/^>\s*/, "") : `${root} ${sel}`, decls));
+    addFont(look);
+    rules.push(rule(tailOf(name, sel), decls));
+  }
+
+  // Editor only (`editor: true`; lane LIVE): the panel shows the look it is editing by marking that part's elements, because a
+  // hover or a phone look cannot be seen unless it is happening. `data-de-at` holds the sizes in force ("sm md": a phone is a
+  // tablet too). Written before the states, so a real hover still wins, as it does on the page. A public page never has these.
+  if (o.editor) {
+    for (const size of [...LOOK_SIZES].reverse()) {
+      for (const name of names) {
+        const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
+        const look = m.parts![name]!.at?.[size];
+        if (!sel || !look || PSEUDO_ELEMENT.test(sel)) continue;
+        const decls = declsOf(look);
+        if (decls.length) rules.push(rule(`${tailOf(name, sel)}[data-de-at~="${size}"]`, decls));
+      }
+    }
+  }
+
+  // Then states (hover, focus, active: a later one wins a tie), then screen sizes (md, then sm, so the narrower wins).
+  // A state rule is more specific than a base rule, so it wins over a size rule too, on purpose: hover stays hover.
+  for (const state of LOOK_STATES) {
+    for (const name of names) {
+      const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
+      const look = m.parts![name]!.states?.[state];
+      // A pseudo-class cannot follow a pseudo-element.
+      if (!sel || !look || /::|:(?:before|after|first-line|first-letter)\b/.test(sel)) continue;
+      const decls = declsOf(look);
+      if (!decls.length) continue;
+      addFont(look);
+      rules.push(ruleOf(o.editor ? [tailOf(name, sel) + PSEUDO[state], `${tailOf(name, sel)}[data-de-force~="${state}"]`] : [tailOf(name, sel) + PSEUDO[state]], decls));
+    }
+  }
+  for (const size of [...LOOK_SIZES].reverse()) {
+    const inner: string[] = [];
+    for (const name of names) {
+      const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
+      const look = m.parts![name]!.at?.[size];
+      if (!sel || !look) continue;
+      const decls = declsOf(look);
+      if (!decls.length) continue;
+      addFont(look);
+      inner.push(rule(tailOf(name, sel), decls));
+    }
+    if (inner.length) rules.push(`@media (max-width:${WIDTH[size]}px){${inner.join("")}}`);
   }
   if (!rules.length) return null;
 
@@ -196,17 +297,69 @@ function settle(props: Props, m: NodeMorph): void {
   if (m.parts || m.tokens) props.morph = m; else delete props.morph;
 }
 
-/** A part's look as stored, or an empty one to write on. */
-export function partLookOf(props: Props, part: string): PartStyle {
+const RESERVED = ["states", "at"] as const;
+/** A look without the reserved keys: what a base, state or size look is made of. */
+const bare = (look: PartStyle): PartStyle => {
+  const out: Record<string, unknown> = { ...look };
+  for (const k of RESERVED) delete out[k];
+  return out as PartStyle;
+};
+const hasKeys = (o: object | undefined): o is object => !!o && Object.keys(o).length > 0;
+
+/** A part's look at one place: the base look (no `where`, or an empty one), one state, or one screen size. `{}` when nothing is stored, or when both a state and a size are asked for. */
+export function partLookAt(props: Props, part: string, where: LookWhere = {}): PartStyle {
   const parts = stored(props)?.parts;
-  return parts && hasOwn(parts, part) ? parts[part]! : {};
+  const look = parts && hasOwn(parts, part) ? parts[part]! : undefined;
+  if (!look || (where.state && where.at)) return {};
+  if (where.state) return (hasOwn(look.states ?? {}, where.state) ? look.states![where.state] : undefined) ?? {};
+  if (where.at) return (hasOwn(look.at ?? {}, where.at) ? look.at![where.at] : undefined) ?? {};
+  return look.states || look.at ? bare(look) : look;
 }
 
-export function setPartLook(props: Props, part: string, look: PartStyle): void {
-  if (!PART_NAME.test(part)) return;
+/**
+ * Writes one look: the base look, one state, or one screen size; the others are kept. An empty `look` removes just that one.
+ * A state and a size together, or a bad part name, write nothing and return false. A given look's own `states` or `at` are ignored.
+ */
+export function setPartLookAt(props: Props, part: string, where: LookWhere, look: PartStyle): boolean {
+  if (!PART_NAME.test(part) || (where.state && where.at)) return false;
+  if (where.state && !(LOOK_STATES as readonly string[]).includes(where.state)) return false;
+  if (where.at && !(LOOK_SIZES as readonly string[]).includes(where.at)) return false;
   const m: NodeMorph = stored(props) ?? { v: 1 };
   const parts = { ...(m.parts ?? {}) };
-  if (Object.keys(look).length) parts[part] = look; else delete parts[part];
+  const cur: PartLook = hasOwn(parts, part) ? parts[part]! : {};
+  const given = bare(look);
+  let base = bare(cur), states = cur.states, at = cur.at;
+  if (where.state) {
+    states = { ...(states ?? {}) };
+    if (hasKeys(given)) states[where.state] = given; else delete states[where.state];
+  } else if (where.at) {
+    at = { ...(at ?? {}) };
+    if (hasKeys(given)) at[where.at] = given; else delete at[where.at];
+  } else base = given;
+  const next: PartLook = { ...base };
+  if (hasKeys(states)) next.states = states;
+  if (hasKeys(at)) next.at = at;
+  if (Object.keys(next).length) parts[part] = next; else delete parts[part];
+  settle(props, { ...m, v: 1, parts });
+  return true;
+}
+
+/** A part's base look as stored, or an empty one to write on. Its states and screen sizes are read with `partLookAt`. */
+export function partLookOf(props: Props, part: string): PartStyle {
+  return partLookAt(props, part, {});
+}
+
+/** Writes a part's base look; its states and screen sizes stay. An empty look removes the base look only (`clearPartLook` removes them all). */
+export function setPartLook(props: Props, part: string, look: PartStyle): void {
+  setPartLookAt(props, part, {}, look);
+}
+
+/** Removes a part's whole look: base, states and sizes. */
+export function clearPartLook(props: Props, part: string): void {
+  const m = stored(props);
+  if (!m?.parts || !hasOwn(m.parts, part)) return;
+  const parts = { ...m.parts };
+  delete parts[part];
   settle(props, { ...m, v: 1, parts });
 }
 

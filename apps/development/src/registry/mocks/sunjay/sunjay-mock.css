@@ -1,0 +1,640 @@
+/* Mock tiles for Sunjay (Para Theater) blocks. Every selector is under [data-mock-app="sunjay"]; tokens copied from apps/sunjay/src/app/globals.css (dark, flat stone and bronze) and the surface tokens from cms-ui surface.css. */
+
+[data-mock-app="sunjay"] {
+  --eac-control-bg: hsl(var(--background));
+  --eac-control-fg: hsl(var(--foreground));
+  --eac-control-muted: hsl(var(--muted-foreground));
+  --eac-control-line: hsl(var(--border));
+  --eac-control-accent: hsl(var(--primary));
+  --eac-control-accent-on: hsl(var(--primary-foreground));
+  --eac-control-accent-ink: #c9ae79;   /* lifted bronze — 7.83:1 on ground, 6.95:1 on card */
+  --eac-control-danger: hsl(var(--destructive));
+  --eac-control-radius: var(--radius);
+
+  --eac-card-bg: hsl(var(--card));
+  --eac-card-fg: hsl(var(--card-foreground));
+}
+[data-mock-app="sunjay"] {
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  --eac-block-danger: hsl(var(--destructive));
+  --eac-block-ok: hsl(var(--primary));
+
+  /* Flat and one step ABOVE the ground, matching .bg-header-footer: on a
+     dark page a banner separates by lifting, not by darkening. Bone on it
+     is 10.63:1. */
+  --eac-block-band: #2B3134;
+  --eac-block-band-fg: hsl(var(--background));
+
+  --eac-block-font-title: var(--font-fraunces), Georgia, serif;
+  --eac-block-radius: var(--radius);
+}
+[data-mock-app="sunjay"] {
+  --radius: 0rem;
+
+  --background: 204 8% 12%;          /* flat slate  #1B1E20 */
+  --foreground: 40 21% 89%;          /* warm bone   #E9E5DD — 13.34:1 */
+
+  --card: 200 8% 15%;                /* raised      #24282A — bone 11.84:1 */
+  --card-foreground: 40 21% 89%;
+
+  --popover: 200 8% 15%;
+  --popover-foreground: 40 21% 89%;
+
+  --primary: 40 43% 63%;             /* lifted bronze #C9AE79 — 7.83:1 as ink */
+  /* The ink ON a filled primary is the GROUND, not the card: #1B1E20 on
+     #C9AE79 is 7.83:1, while the bone would be 1.70:1 and unreadable. */
+  --primary-foreground: 204 8% 12%;
+
+  --secondary: 200 7% 21%;
+  --secondary-foreground: 40 21% 89%;
+
+  --muted: 200 7% 19%;
+  --muted-foreground: 40 5% 62%;     /* #A3A09A — 6.43:1 on ground */
+
+  --accent: 40 20% 28%;              /* a raised ground for hovers, not ink */
+  --accent-foreground: 40 21% 89%;
+
+  /* Rust, used on purpose: links, italic subheads, second-tier accents.
+     5.98:1 as ink on the ground; the ground on it as a fill is the same. */
+  --rust: 23 52% 60%;                /* #CE8B62 */
+  --rust-deep: 23 44% 52%;
+
+  --destructive: 0 58% 62%;
+  --destructive-foreground: 204 8% 12%;
+
+  /* Two different jobs, two different values.
+     --border is a DIVIDER: decoration, and 3:1 does not apply to it.
+     --input is the visible boundary of a form control, which WCAG 1.4.11
+     does require to be perceivable — #6B7478 is 3.51:1 on the ground and
+     3.11:1 on a card, so a text field reads as a field on both. */
+  --border: 203 7% 23%;              /* #373C3F */
+  --input: 200 5% 45%;               /* #6B7478 */
+  --ring: 40 43% 63%;
+
+  /* Per-feed accents. org_feeds.accent is the source of truth and is applied
+     inline as --feed on the page wrapper. These are the fallbacks, lifted for
+     the dark ground — the seeded database values are the LIGHT-mode ones and
+     would sit at ~2:1 here, so a feed page that sets --feed inline is the one
+     place this site can still go dim. Worth revisiting if feeds get pages
+     with heavy accent fills. */
+  --feed-gatherings: 40 43% 63%;     /* #C9AE79 — ground on it 7.83:1 */
+  --feed-writing: 32 52% 60%;        /* #CE9A62 */
+  --feed-materials: 102 18% 60%;     /* #8DA882 */
+
+  /* The surface system, in this site's voice. */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  /*
+    Pinned, not derived — and deliberately EQUAL to --eac-surface-muted.
+
+    surface.css computes `--sf-faint` as
+    `color-mix(in srgb, var(--sf-muted) 60%, var(--sf-bg))`. On a light ground
+    that mixes toward white and stays legible; here it mixes toward the dark
+    ground and lands on #706F6C, which is 2.58:1 on a calendar cell — past
+    dates, the "+" cue and the forum's timestamps were all effectively
+    invisible. Measured, not guessed.
+
+    Nothing dimmer works: the calendar cell (#2D3234) is the tightest ground on
+    the site, and #9B978F only reaches 4.46:1 on it. So the faint/muted
+    distinction collapses on this palette. The hierarchy it was carrying is
+    still drawn — surface.css gives a day WITH events `--sf-fg` and 600 weight
+    — so the difference survives in weight and colour-strength rather than in
+    a dimmer grey that cannot be read.
+  */
+  --eac-surface-faint: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-radius: var(--radius);
+  --eac-font-title: var(--font-fraunces), Georgia, serif;
+
+  /* Kind accents. Each is used as a FILL with a label on it, so each names
+     its own ink — and on a dark ground that ink is the GROUND, which is the
+     opposite of what the light palette needed. */
+  --eac-kind-meeting: hsl(var(--feed-gatherings));
+  --eac-kind-event: hsl(var(--feed-gatherings));
+  --eac-kind-post: hsl(var(--feed-writing));
+  --eac-kind-post-on: hsl(var(--background));
+  --eac-kind-workshop: hsl(var(--feed-materials));
+  --eac-kind-calendar: hsl(var(--foreground));
+  --eac-kind-calendar-on: hsl(var(--background));
+  --eac-kind-gallery: hsl(var(--rust));
+  --eac-kind-gallery-on: hsl(var(--background));
+  --eac-kind-forum-on: hsl(var(--background));
+  --eac-kind-compose: hsl(var(--foreground));
+  --eac-kind-compose-on: hsl(var(--background));
+  --eac-kind-board: hsl(var(--feed-materials));
+  --eac-kind-board-on: hsl(var(--background));
+
+  /* The hub's band headings — the bone ink, 13.34:1. Not the bronze accent,
+     which is decorative at rubric size. */
+  --eac-hub-rubric: hsl(var(--foreground));
+
+  /*
+    Site forms (@elkdonis/site-forms, look "site", 2026-11-15): the look derives from --sf-* and these pin
+    Para Theater's exact values (the design boards). Ground #1B1E20 on the panel #24282A.
+    Rule #8E8B85 (the strong rule, 4.4:1 on the panel; --sf-rule would compute to about #999996).
+  */
+  --eac-surface-rule: #8E8B85;
+  --eac-form-color-scheme: dark;
+  --eac-form-field: hsl(var(--background));              /* #1B1E20 */
+  --eac-form-field-line: #454A4D;
+  --eac-form-input-line: hsl(var(--input));              /* #6B7478, 3.5:1 on the ground */
+  --eac-form-warn: #D9895A;                              /* on #2E2219 */
+  --eac-form-warn-line: #5C3A26;
+  --eac-form-warn-soft: #2E2219;
+  --eac-form-shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+  --eac-form-shadow-panel: 0 14px 30px rgba(0, 0, 0, 0.55);
+  --eac-form-row-panel-bg: #2F3437;                      /* muted #A3A09A 4.83:1 on it */
+  --eac-form-row-panel-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  --eac-form-row-press-bg: #33383B;                      /* bone 9.45:1; gold bar 6.95:1 on the panel */
+}
+[data-mock-app="sunjay"] {
+  color-scheme: dark;
+}
+[data-mock-app="sunjay"] {
+  --eac-bq-parchment: #24282A;   /* the card, not paper — this site is dark */
+  --eac-bq-parchment-deep: #1B1E20;
+  --eac-bq-ink: #e9e5dd;         /* bone — 11.84:1 on the card above */
+  --eac-bq-ink-soft: #a3a09a;    /* 5.70:1 */
+  --eac-bq-gilt: #c9ae79;        /* lifted bronze — 6.95:1 as ink on the card */
+  --eac-bq-gilt-bright: #ddc79a;
+  --eac-bq-violet: #ce8b62;      /* rust, not violet: this site has no purple */
+  --eac-bq-vermilion: #d97070;
+  --eac-bq-display: var(--font-fraunces), Georgia, serif;
+}
+[data-mock-app="sunjay"] {
+  --read-ink: #e9e5dd;
+  --read-muted: #b4b0a8;
+  --read-faint: #9b978f;
+  --read-rule: #3a4043;
+  --read-accent: #c9ae79;
+  --read-face-title: var(--font-fraunces), Georgia, serif;
+  --read-face-prose: var(--font-spectral), Georgia, serif;
+}
+
+[data-mock-app="sunjay"] {
+  --sf-bg: var(--eac-surface-bg, var(--paper, var(--surface, #ffffff)));
+  --sf-bg-soft: var(--eac-surface-bg-soft, color-mix(in srgb, var(--sf-fg) 4%, var(--sf-bg)));
+  --sf-fg: var(--eac-surface-fg, var(--ink, #16181d));
+  --sf-muted: var(--eac-surface-muted, var(--ink-soft, #5e667a));
+  --sf-faint: var(--eac-surface-faint, color-mix(in srgb, var(--sf-muted) 60%, var(--sf-bg)));
+  --sf-line: var(--eac-surface-line, var(--line, #cfd4db));
+  --sf-accent: var(--eac-surface-accent, var(--eac-accent, #5b45a8));
+  /* Text that sits ON the accent (a filled button, a count bubble). The
+     per-kind equivalents below have always had this; the root accent did
+     not, so callers hardcoded #fff — which fails badly on a light accent
+     (white on IFAC's gold is 2.58:1). Default stays #fff so hosts that
+     never set it are unchanged; a host with a light accent sets
+     --eac-surface-on-accent and every filled control follows. */
+  --sf-on-accent: var(--eac-surface-on-accent, #fff);
+  --sf-scrim: var(--eac-surface-scrim, rgba(20, 18, 16, 0.46));
+  --sf-danger: var(--eac-surface-danger, #ae3a31);
+
+  --sf-radius: var(--eac-surface-radius, 6px);
+  --sf-radius-sm: max(2px, calc(var(--sf-radius) - 3px));
+  /* Strong rule: heads, feet and section titles sit on this, not on --sf-line. */
+  --sf-rule: var(--eac-surface-rule, color-mix(in srgb, var(--sf-fg) 55%, var(--sf-line)));
+  --sf-shadow: var(
+    --eac-surface-shadow,
+    0 28px 70px -24px rgba(0, 0, 0, 0.38),
+    0 2px 10px rgba(0, 0, 0, 0.08)
+  );
+
+  /* Type. The record voice is monospace, like article.css's apparatus: the
+     kicker, the facts and the dateline are registry entries around the thing,
+     not the thing. */
+  --sf-font-record: var(--eac-font-record, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --sf-font-title: var(--eac-font-title, var(--font-serif, inherit));
+  --sf-font-body: var(--eac-font-body, inherit);
+
+  /* The four widths. A surface declares which one it is; it never picks a
+     number. */
+  --sf-w-compact: 440px;
+  --sf-w-standard: 640px;
+  --sf-w-wide: 940px;
+  --sf-w-full: 1180px;
+
+  /* Per-kind accents. Unset ones fall back to the surface accent. */
+  --sf-kind-post: var(--eac-kind-post, var(--sf-accent));
+  --sf-kind-event: var(--eac-kind-event, var(--sf-accent));
+  --sf-kind-meeting: var(--eac-kind-meeting, var(--sf-accent));
+  --sf-kind-workshop: var(--eac-kind-workshop, var(--sf-accent));
+  --sf-kind-service: var(--eac-kind-service, var(--sf-accent));
+  --sf-kind-product: var(--eac-kind-product, var(--sf-accent));
+  --sf-kind-questionnaire: var(--eac-kind-questionnaire, var(--sf-accent));
+  --sf-kind-poll: var(--eac-kind-poll, var(--sf-accent));
+  --sf-kind-calendar: var(--eac-kind-calendar, var(--sf-accent));
+  --sf-kind-gallery: var(--eac-kind-gallery, var(--sf-accent));
+  --sf-kind-board: var(--eac-kind-board, var(--sf-accent));
+  --sf-kind-forum: var(--eac-kind-forum, var(--sf-accent));
+  --sf-kind-compose: var(--eac-kind-compose, var(--sf-accent));
+  --sf-kind-document: var(--eac-kind-document, var(--sf-accent));
+  --sf-kind-idea: var(--eac-kind-idea, var(--sf-accent));
+  --sf-kind-place: var(--eac-kind-place, #8fb3c4);
+  --sf-kind-neutral: var(--eac-kind-neutral, var(--sf-muted));
+}
+
+/* Wrapper: the page ground and ink; Tailwind color utilities that Sunjay defines in its own @theme */
+[data-mock-app="sunjay"] {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-spectral, "Spectral"), Georgia, serif;
+  padding: 28px;
+  -webkit-font-smoothing: antialiased;
+}
+[data-mock-app="sunjay"] *, [data-mock-app="sunjay"] *::before, [data-mock-app="sunjay"] *::after { border-radius: 0 !important; }
+[data-mock-app="sunjay"] .font-serif { font-family: var(--font-fraunces, "Fraunces"), Georgia, serif; }
+[data-mock-app="sunjay"] .text-foreground { color: hsl(var(--foreground)); }
+[data-mock-app="sunjay"] .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+[data-mock-app="sunjay"] .text-destructive { color: hsl(var(--destructive)); }
+[data-mock-app="sunjay"] .bg-background { background: hsl(var(--background)); }
+[data-mock-app="sunjay"] .bg-muted { background: hsl(var(--muted)); }
+[data-mock-app="sunjay"] .bg-card { background: hsl(var(--card)); }
+[data-mock-app="sunjay"] .border-border { border-color: hsl(var(--border)); }
+[data-mock-app="sunjay"] .border-border\/70 { border-color: hsl(var(--border) / 0.7); }
+[data-mock-app="sunjay"] .border-input { border-color: hsl(var(--input)); }
+[data-mock-app="sunjay"] .border-destructive\/60 { border-color: hsl(var(--destructive) / 0.6); }
+[data-mock-app="sunjay"] .divide-border\/70 > :not(:last-child) { border-bottom: 1px solid hsl(var(--border) / 0.7); }
+[data-mock-app="sunjay"] .border-y.border-border\/70 { border-top: 1px solid hsl(var(--border) / 0.7); border-bottom: 1px solid hsl(var(--border) / 0.7); }
+[data-mock-app="sunjay"] .card-natural {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+[data-mock-app="sunjay"] .saffron-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.65), transparent);
+  border: none;
+  margin: 2rem 0;
+}
+[data-mock-app="sunjay"] .landing-standing > .eac-face { min-height: 300px; padding: 40px 26px 26px; border-color: color-mix(in srgb, var(--sf-line), transparent 45%); }
+[data-mock-app="sunjay"] .landing-standing > .eac-face > .eac-face-glyph { top: 18px; left: 24px; }
+[data-mock-app="sunjay"] .mk-field {
+  margin-top: 4px; width: 100%; border: 1px solid hsl(var(--input)); background: hsl(var(--background));
+  padding: 8px 12px; font-size: 0.875rem; color: hsl(var(--foreground));
+}
+[data-mock-app="sunjay"] .mk-label { font-size: 0.68rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; color: hsl(var(--muted-foreground)); }
+[data-mock-app="sunjay"] .mk-btn-primary {
+  border: 1px solid hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.15); color: hsl(var(--primary));
+  padding: 8px 16px; font-size: 0.875rem; font-weight: 500;
+}
+[data-mock-app="sunjay"] .mk-btn-quiet {
+  border: 1px solid hsl(var(--input)); background: hsl(var(--background)); color: hsl(var(--foreground));
+  padding: 8px 16px; font-size: 0.875rem;
+}
+[data-mock-app="sunjay"] .mk-btn-solid {
+  width: 100%; background: hsl(var(--primary)); color: hsl(var(--background)); padding: 10px 16px;
+  font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; border: 0;
+}
+[data-mock-app="sunjay"] .mk-chip {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--card));
+  padding: 6px 12px; font-size: 0.875rem;
+}
+[data-mock-app="sunjay"] .mk-avatar {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  background: hsl(var(--primary) / 0.2); font-size: 0.75rem; font-weight: 500;
+}
+[data-mock-app="sunjay"] .mk-photo { display: block; width: 100%; object-fit: cover; }
+[data-mock-app="sunjay"] .mk-nolink a { color: inherit; text-decoration: none; }
+
+
+/* ---- copied from apps/sunjay/src/blocks/offering-card.css (classes are pt-offer-*) ---- */
+/* The offering card (offering-card.client.tsx): innergathering's "Current
+   Offerings" lead card in Para Theater's dark, square-cornered, bronze
+   identity. Tokens only; text pairs measured against the site tokens:
+   foreground on card 11.84:1, muted-foreground on card >= 5.5:1,
+   primary as ink on card >= 6.5:1, primary-foreground on primary 7.83:1. */
+
+.pt-offer-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) 1rem;
+}
+
+.pt-offer-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.pt-offer-eyebrow {
+  order: 2;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+.pt-offer-heading {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-empty {
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0;
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+}
+
+.pt-offer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* No cover: the body and the right column share the card. */
+.pt-offer-card:not(:has(.pt-offer-media)) {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+
+/* Call open: the cover steps aside, the body keeps the left, and the call
+   fills the rest edge to edge, as tall as the card. */
+.pt-offer-card--call {
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.75fr);
+  min-height: max(680px, 80vh);
+}
+
+.pt-offer-media {
+  display: block;
+  min-height: 260px;
+  background: hsl(var(--muted));
+}
+
+.pt-offer-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pt-offer-body {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.pt-offer-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+.pt-offer-title {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.15;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pt-offer-title a:hover {
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary));
+  text-underline-offset: 4px;
+}
+
+.pt-offer-blurb {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.pt-offer-facts dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-facts dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1rem;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-localtime {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.pt-offer-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 1.1rem;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pt-offer-btn:hover {
+  background: hsl(var(--primary) / 0.12);
+}
+
+.pt-offer-btn--primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.pt-offer-btn--primary:hover {
+  background: hsl(var(--primary) / 0.88);
+}
+
+.pt-offer-btn:focus-visible,
+.pt-offer-link:focus-visible,
+.pt-offer-call-tools button:focus-visible,
+.pt-offer-call-tools a:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+.pt-offer-link {
+  font-size: 0.85rem;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary) / 0.6);
+  text-underline-offset: 4px;
+}
+
+/* ── right column: the RSVP ── */
+
+.pt-offer-rsvp {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  background: hsl(var(--background));
+  border-left: 1px solid hsl(var(--border));
+  min-width: 0;
+}
+
+/* The shared RsvpPanel draws its own bordered card (.card-natural); inside
+   this column the column is the card. */
+.pt-offer-rsvp .card-natural {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pt-offer-rsvp .card-natural:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.pt-offer-rsvp h2 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-rsvp .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-rsvp .grid {
+  grid-template-columns: 1fr;
+}
+
+/* ── right column: the call ── */
+
+.pt-offer-call {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+  border-left: 1px solid hsl(var(--border));
+  /* Clear a fixed site header if the page scrolls the call into view. */
+  scroll-margin-top: 96px;
+}
+
+.pt-offer-call-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.85rem;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-call-tools {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pt-offer-call-tools button,
+.pt-offer-call-tools a {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--primary));
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pt-offer-call-tools button:hover,
+.pt-offer-call-tools a:hover {
+  background: hsl(var(--primary) / 0.12);
+}
+
+.pt-offer-call iframe {
+  display: block;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 600px;
+  border: 0;
+  background: hsl(var(--background));
+}
+
+/* ── narrow: stack ── */
+
+@media (max-width: 900px) {
+  .pt-offer-card,
+  .pt-offer-card:not(:has(.pt-offer-media)),
+  .pt-offer-card--call {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .pt-offer-media {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .pt-offer-rsvp,
+  .pt-offer-call {
+    border-left: 0;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .pt-offer-call iframe {
+    height: max(600px, 78vh);
+    flex: none;
+  }
+}

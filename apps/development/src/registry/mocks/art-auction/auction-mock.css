@@ -1,0 +1,44 @@
+/* Art Auction mock: tokens from apps/art-auction/src/app/globals.css (light set), every rule scoped. */
+[data-mock-app="art-auction"] {
+  --background: 36 22% 97%;
+  --foreground: 24 14% 11%;
+  --wall: 32 16% 93%;
+  --ink-faint: 28 7% 41%;
+  --live: 152 58% 30%;
+  --card: 0 0% 100%;
+  --card-foreground: 24 12% 12%;
+  --primary: 6 70% 44%;
+  --primary-foreground: 36 30% 98%;
+  --muted: 30 14% 94%;
+  --muted-foreground: 28 6% 38%;
+  --border: 28 12% 86%;
+  --read-ink: hsl(var(--foreground));
+  --read-muted: hsl(var(--muted-foreground));
+  --read-faint: hsl(var(--ink-faint));
+  --read-rule: hsl(var(--border));
+  --read-accent: hsl(var(--primary));
+  --eac-font-prose: Georgia, "Times New Roman", serif;
+  --eac-font-record: ui-sans-serif, system-ui, sans-serif;
+  --eac-font-body: ui-sans-serif, system-ui, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  padding: 32px 48px;
+  box-sizing: border-box;
+}
+[data-mock-app="art-auction"] .au-serif { font-family: Georgia, "Times New Roman", serif; }
+[data-mock-app="art-auction"] .au-h2 { margin: 0 0 12px; font-family: Georgia, serif; font-size: 1.5rem; font-weight: 400; }
+[data-mock-app="art-auction"] .au-list { margin: 0; padding: 0; list-style: none; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card)); color: hsl(var(--card-foreground)); }
+[data-mock-app="art-auction"] .au-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 16px; margin: 0; }
+[data-mock-app="art-auction"] .au-list li + li { border-top: 1px solid hsl(var(--border)); }
+[data-mock-app="art-auction"] .au-topic { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Georgia, serif; font-size: 1.125rem; color: hsl(var(--card-foreground)); text-decoration: none; }
+[data-mock-app="art-auction"] .au-count { flex-shrink: 0; font-size: 0.75rem; color: hsl(var(--muted-foreground)); }
+[data-mock-app="art-auction"] .au-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+[data-mock-app="art-auction"] .au-head .au-h2 { margin: 0; }
+[data-mock-app="art-auction"] .au-replies-n { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
+[data-mock-app="art-auction"] .au-join { border-radius: 6px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 8px 16px; font-size: 0.875rem; font-weight: 500; text-decoration: none; }
+[data-mock-app="art-auction"] .au-replies { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+[data-mock-app="art-auction"] .au-reply { margin: 0; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card)); color: hsl(var(--card-foreground)); padding: 16px; }
+[data-mock-app="art-auction"] .au-reply-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-size: 0.75rem; color: hsl(var(--muted-foreground)); }
+[data-mock-app="art-auction"] .au-reply-meta b { font-weight: 500; color: hsl(var(--foreground)); }
+[data-mock-app="art-auction"] .au-reply p { margin: 0; font-size: 0.875rem; line-height: 1.6; }

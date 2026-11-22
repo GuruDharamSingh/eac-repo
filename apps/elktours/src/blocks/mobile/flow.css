@@ -1,0 +1,78 @@
+/* The booking path screens (G3b): Date & time, Booking & payment. Code screens, drawn with the mobile primitives.
+   Desktop shows the same page in a centred 480px column. Variables only. */
+.m-flow { max-width: 480px; margin: 0 auto; padding-bottom: calc(150px + var(--shell-nav-h, 0px)); }
+@media (min-width: 768px) { .m-flow { margin: 32px auto; border-radius: 30px; min-height: 0; overflow: hidden; border: 1px solid var(--hair-1); } }
+.m-flow-top { display: flex; align-items: center; gap: 14px; padding: 58px 16px 0; }
+@media (min-width: 768px) { .m-flow-top { padding-top: 24px; } }
+.m-flow-top-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.m-flow-top-title { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-flow-card { margin: 20px 16px 0; padding: 18px 16px; border-radius: var(--radius-card); background: var(--m-card); border: 1px solid var(--hair-1); }
+.m-flow-note { margin: 14px 22px 0; font-size: 12.5px; line-height: 1.55; color: var(--faint); text-wrap: pretty; }
+.m-flow-empty { margin: 24px 20px 0; font-size: 14px; line-height: 1.5; color: hsl(var(--muted-foreground)); }
+.m-flow-empty a { color: hsl(var(--brass-light)); text-decoration: underline; text-underline-offset: 3px; }
+.m-flow-bar { position: fixed; left: 0; right: 0; bottom: var(--shell-nav-h, 0px); padding: 22px 20px 30px; display: flex; align-items: center; gap: 16px; background: linear-gradient(180deg, transparent, var(--m-sheet) 32%); z-index: 5; max-width: 480px; margin: 0 auto; }
+@media (min-width: 768px) { .m-flow-bar { position: sticky; bottom: 0; padding-bottom: 24px; } }
+.m-flow-bar .m-btn { flex: 1; }
+.m-flow-total { display: flex; flex-direction: column; gap: 2px; min-width: 92px; }
+.m-flow-total-amount { font-weight: 700; font-size: 22px; color: hsl(var(--brass-light)); }
+.m-flow-total-sub { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+
+/* month grid */
+.m-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.m-cal-month { font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-size: 26px; }
+.m-cal-year { font-size: 12px; letter-spacing: 0.16em; color: hsl(var(--muted-foreground)); }
+.m-cal-nav { display: flex; gap: 8px; }
+.m-cal-nav button { width: 34px; height: 34px; border-radius: 17px; border: 1px solid var(--hair-3); background: transparent; color: inherit; cursor: pointer; font-size: 16px; }
+.m-cal-nav button:disabled { opacity: 0.3; cursor: default; }
+.m-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 6px; text-align: center; }
+.m-cal-wd { font-size: 10.5px; letter-spacing: 0.12em; color: var(--faint); padding-bottom: 4px; }
+.m-cal-cell { display: flex; justify-content: center; }
+.m-cal-day { width: 38px; height: 38px; border-radius: 19px; border: 1px solid transparent; background: transparent; color: var(--faint); font-family: inherit; font-size: 14.5px; padding: 0; cursor: default; }
+.m-cal-day.has-slot { border-color: hsl(var(--primary)); color: hsl(var(--foreground)); cursor: pointer; }
+.m-cal-day.is-picked { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 700; }
+
+/* slot cards */
+.m-slots { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+.m-slot { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border-radius: 20px; border: 1px solid var(--hair-2); background: var(--m-card); color: inherit; font-family: inherit; text-align: left; cursor: pointer; }
+.m-slot.is-picked { border-color: hsl(var(--primary)); background: var(--m-card-raised); }
+.m-slot.is-off { opacity: 0.6; cursor: default; }
+.m-slot-time { display: flex; flex-direction: column; min-width: 56px; }
+.m-slot-start { font-weight: 700; font-size: 21px; line-height: 1.05; }
+.m-slot-end { font-size: 11px; letter-spacing: 0.1em; color: var(--faint); }
+.m-slot-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.m-slot-l1 { font-size: 14px; }
+.m-slot-l1.is-ok { color: hsl(var(--verdigris)); }
+.m-slot-l1.is-short { color: hsl(var(--brass-light)); }
+.m-slot-l2 { font-size: 12px; line-height: 1.35; color: var(--faint); }
+.m-slot-dot { flex: none; width: 22px; height: 22px; border-radius: 11px; border: 1.5px solid var(--hair-4); display: flex; align-items: center; justify-content: center; }
+.m-slot.is-picked .m-slot-dot { border-color: hsl(var(--primary)); }
+.m-slot.is-picked .m-slot-dot::after { content: ""; width: 10px; height: 10px; border-radius: 5px; background: hsl(var(--primary)); }
+
+/* party stepper */
+.m-party { display: flex; align-items: center; justify-content: space-between; margin: 18px 16px 0; padding: 14px 16px; border-radius: 20px; background: var(--m-card); border: 1px solid var(--hair-1); }
+.m-party-label { font-weight: 700; font-size: 15.5px; }
+.m-party-hint { font-size: 12.5px; color: var(--faint); display: block; }
+.m-party-ctl { display: flex; align-items: center; gap: 14px; }
+.m-party-ctl button { width: 38px; height: 38px; border-radius: 19px; border: 1px solid var(--hair-4); background: transparent; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+.m-party-ctl button:disabled { opacity: 0.3; cursor: default; }
+.m-party-n { min-width: 18px; text-align: center; font-weight: 700; font-size: 20px; }
+
+/* booking and payment */
+.m-sum-kicker { color: hsl(var(--brass-light)); }
+.m-sum-title { margin: 6px 0 0; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-weight: 400; font-size: 28px; line-height: 1.05; }
+.m-sum-when { margin-top: 10px; font-size: 14px; color: var(--foreground-soft); line-height: 1.5; }
+.m-pay-methods { display: flex; gap: 8px; margin-top: 12px; }
+.m-pay-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14.5px; }
+.m-pay-line.is-total { border-top: 1px solid var(--brass-line); margin-top: 6px; padding-top: 12px; font-weight: 700; font-size: 17px; }
+.m-pay-line.is-total span:last-child { color: hsl(var(--brass-light)); }
+.m-fields { display: flex; flex-direction: column; gap: 10px; margin: 18px 16px 0; }
+.m-field { height: 50px; border-radius: var(--radius-input); background: var(--m-card); border: 1px solid var(--hair-2); color: inherit; font-family: inherit; font-size: 14.5px; padding: 0 16px; outline: none; }
+.m-field:focus { border-color: hsl(var(--primary)); }
+textarea.m-field { height: 84px; padding: 14px 16px; resize: none; }
+.m-flow-error { margin: 14px 16px 0; padding: 12px 14px; border-radius: 16px; border: 1px solid hsl(var(--terracotta)); color: hsl(var(--terracotta)); font-size: 14px; line-height: 1.4; }
+
+/* booking page (success) */
+.m-done-title { margin: 8px 20px 0; font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); font-weight: 400; font-size: 40px; line-height: 1.02; }
+.m-done-ref { margin: 8px 20px 0; font-size: 14px; color: hsl(var(--muted-foreground)); }
+.m-done-actions { display: flex; flex-direction: column; gap: 12px; margin: 20px 16px 0; }
+.m-done-link { text-align: center; color: hsl(var(--brass-light)); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }

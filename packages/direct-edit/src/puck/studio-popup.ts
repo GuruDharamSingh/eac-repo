@@ -56,6 +56,12 @@ export interface StudioPopupHost {
    * popup (mount.ts `editSettings`), and hands back into the popup. Absent: the popup offers no settings, as before.
    */
   editSettings?: TreePageOptions["editSettings"];
+  /** Free placement (2026-11-20): the popup canvas offers the Free move tool. Absent: as before. */
+  freeMove?: boolean;
+  /** Style against look (2026-11-20): the host's `blkStyle` reader (tree-editor `blkStyleDecls`). Absent: as before. */
+  blkStyleDecls?: TreePageOptions["blkStyleDecls"];
+  /** The Content tab in the popup's panel (tree-editor `contentTab`). Absent: as before. */
+  contentTab?: boolean;
 }
 
 /** Keys Puck binds on Studio's document (undo, redo, interactive mode): kept from it while the popup is open. Delete and Backspace Puck already refuses under a dialog. */
@@ -87,6 +93,9 @@ export function openStudioPopup(host: StudioPopupHost, ctx: StudioPopupContext):
         resolved: ctx.resolved,
         pageName: ctx.label,
         developer: ctx.developer,
+        ...(host.freeMove ? { freeMove: true } : {}),
+        ...(host.contentTab ? { contentTab: true } : {}),
+        ...(host.blkStyleDecls ? { blkStyleDecls: host.blkStyleDecls } : {}),
         cleanRich: ctx.cleanRich,
         ...(host.editSettings ? { editSettings: host.editSettings, inception: true } : {}),
         nested: { chrome: h.chrome, layers: h.layers, blockId: id, fitWidth: h.fitWidth, applyZoom: h.applyZoom, onClose: h.close },

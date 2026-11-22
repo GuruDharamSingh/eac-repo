@@ -13,7 +13,7 @@ interface FeedBannerProps {
  * per section page.
  */
 export function FeedBanner({ eyebrow, title, subtitle, accent }: FeedBannerProps) {
-  const accentColor = accent ? `hsl(${accent})` : "#f4c430";
+  const accentColor = accent ? `hsl(${accent})` : "var(--ig-c-x-f4c430)";
 
   return (
     <div
@@ -35,7 +35,7 @@ export function FeedBanner({ eyebrow, title, subtitle, accent }: FeedBannerProps
         )}
         <h1
           className="mt-4 font-serif text-[clamp(1.8rem,5vw,2.8rem)] leading-tight"
-          style={{ color: accentColor, textShadow: "2px 2px 8px rgba(0,0,0,0.4)" }}
+          style={{ color: accentColor, textShadow: "2px 2px 8px var(--ig-a-000000-4)" }}
         >
           {title}
         </h1>

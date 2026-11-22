@@ -1,0 +1,867 @@
+{
+ "admin": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "amrit-canada": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "art-auction": {
+  "usesPuck": true,
+  "offeredShared": [
+   "hero-banner",
+   "section-banner",
+   "section-heading",
+   "split-row",
+   "grid",
+   "flow-column",
+   "card-grid",
+   "divider",
+   "prose",
+   "figure",
+   "text-image",
+   "quote",
+   "faq",
+   "video",
+   "entry-list",
+   "picture-wall",
+   "link-button"
+  ],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {
+   "au-lots": [
+    "lots",
+    "now"
+   ],
+   "au-timeline": [
+    "lots",
+    "now"
+   ],
+   "au-hero": [
+    "lots",
+    "now"
+   ],
+   "au-ticker": [
+    "bids",
+    "now"
+   ],
+   "au-stats": [
+    "stats",
+    "now"
+   ],
+   "au-countdown": [
+    "stats",
+    "now"
+   ],
+   "au-article": [
+    "post"
+   ],
+   "au-discussion": [
+    "discussion"
+   ],
+   "au-topics": [
+    "topics"
+   ]
+  },
+  "ownIds": [
+   "au-article",
+   "au-discussion",
+   "au-topics",
+   "au-lots",
+   "au-timeline",
+   "au-hero",
+   "au-ticker",
+   "au-stats",
+   "au-countdown",
+   "ha-announcement",
+   "ha-card-image",
+   "ha-card-ticket",
+   "ha-feature-list",
+   "ha-stat-band",
+   "ha-timeline"
+  ]
+ },
+ "artdirect": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "arts-collective": {
+  "usesPuck": true,
+  "offeredShared": [
+   "accordion-set",
+   "card-grid",
+   "contact-form",
+   "cycle-badge",
+   "divider",
+   "entry-list",
+   "faq",
+   "feature-card",
+   "featured-person",
+   "figure",
+   "flow-column",
+   "gallery-grid",
+   "grid",
+   "hero-banner",
+   "link-button",
+   "offering-spotlight",
+   "person-card",
+   "person-columns",
+   "person-galleries",
+   "person-header",
+   "person-memberships",
+   "person-portfolio",
+   "person-store",
+   "person-threads",
+   "person-writing",
+   "picture-wall",
+   "profile-feed",
+   "profile-galleries",
+   "profile-gallery",
+   "profile-record",
+   "profile-store",
+   "prose",
+   "quote",
+   "record-header",
+   "record-body",
+   "record-facts",
+   "checkout",
+   "rsvp",
+   "section-banner",
+   "section-heading",
+   "split-row",
+   "sticky-split",
+   "store-frame",
+   "store-header",
+   "store-shelf",
+   "tab-set",
+   "text-image",
+   "thread-feed",
+   "video"
+  ],
+  "allShared": true,
+  "hasBox": false,
+  "resolvedKeys": {
+   "thread-feed": [
+    "items"
+   ],
+   "ac-offering": [
+    "offering"
+   ],
+   "ac-people": [
+    "people"
+   ]
+  },
+  "ownIds": [
+   "ac-offering",
+   "ac-people"
+  ]
+ },
+ "blog-guru-dharam": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "blog-tester": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "danamccool": {
+  "usesPuck": true,
+  "offeredShared": [
+   "accordion-set",
+   "card-grid",
+   "contact-form",
+   "cycle-badge",
+   "divider",
+   "entry-list",
+   "faq",
+   "feature-card",
+   "featured-person",
+   "figure",
+   "flow-column",
+   "gallery-grid",
+   "grid",
+   "hero-banner",
+   "link-button",
+   "offering-spotlight",
+   "person-card",
+   "person-columns",
+   "person-galleries",
+   "person-header",
+   "person-memberships",
+   "person-portfolio",
+   "person-store",
+   "person-threads",
+   "person-writing",
+   "picture-wall",
+   "profile-feed",
+   "profile-galleries",
+   "profile-gallery",
+   "profile-record",
+   "profile-store",
+   "prose",
+   "quote",
+   "record-header",
+   "record-body",
+   "record-facts",
+   "checkout",
+   "rsvp",
+   "section-banner",
+   "section-heading",
+   "split-row",
+   "sticky-split",
+   "store-frame",
+   "store-header",
+   "store-shelf",
+   "tab-set",
+   "text-image",
+   "thread-feed",
+   "video"
+  ],
+  "allShared": true,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": [
+   "dm-artwork-wall",
+   "banner",
+   "career-timeline",
+   "dm-circle-text",
+   "dm-collection-nav",
+   "feature-grid",
+   "dm-gallery-grid",
+   "dm-image-set",
+   "invitation",
+   "opening",
+   "dm-plate",
+   "press-quotes",
+   "dm-star-diamond",
+   "dm-writing-shelf"
+  ]
+ },
+ "development": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "elastrocal": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "elkdonis-arts-collective": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "elktours": {
+  "usesPuck": true,
+  "offeredShared": [
+   "split-row",
+   "grid",
+   "flow-column",
+   "card-grid",
+   "divider",
+   "section-heading",
+   "prose",
+   "figure",
+   "text-image",
+   "quote",
+   "faq",
+   "video",
+   "entry-list",
+   "picture-wall",
+   "link-button",
+   "feature-card",
+   "featured-person"
+  ],
+  "allShared": false,
+  "hasBox": true,
+  "resolvedKeys": {
+   "featured-person": [
+    "who",
+    "opened"
+   ],
+   "link-button": [
+    "opened"
+   ],
+   "feature-card": [
+    "bound",
+    "opened"
+   ],
+   "m-page-title": [
+    "count",
+    "cover"
+   ],
+   "m-tour-list": [
+    "rows",
+    "count"
+   ],
+   "m-masthead": [
+    "viewer"
+   ],
+   "m-featured-tour": [
+    "featured"
+   ],
+   "m-places-shelf": [
+    "places",
+    "placesCount"
+   ],
+   "m-experiences-panel": [
+    "experiences"
+   ],
+   "m-guides": [
+    "guides"
+   ],
+   "m-link-rows": [
+    "feed",
+    "placesCount",
+    "viewer"
+   ],
+   "m-page-buttons": [
+    "shown",
+    "afterFeed"
+   ],
+   "m-phone-menu": [
+    "shown"
+   ],
+   "tour-cards": [
+    "cards"
+   ],
+   "m-tour-topbar": [
+    "tour"
+   ],
+   "m-tour-hero": [
+    "tour"
+   ],
+   "m-tour-head": [
+    "tour"
+   ],
+   "m-tour-blurb": [
+    "tour"
+   ],
+   "m-tour-meet": [
+    "tour"
+   ],
+   "m-tour-route": [
+    "tour"
+   ],
+   "m-tour-dates": [
+    "tour"
+   ],
+   "m-tour-bookbar": [
+    "tour"
+   ],
+   "m-places-catalogue": [
+    "rows",
+    "tags",
+    "favouriteCount"
+   ],
+   "m-feed-list": [
+    "rows"
+   ],
+   "m-experience-list": [
+    "experiences"
+   ],
+   "m-artists-row": [
+    "artists"
+   ],
+   "m-people-grid": [
+    "people"
+   ],
+   "m-people-slider": [
+    "people"
+   ],
+   "m-exp-hero": [
+    "exp"
+   ],
+   "m-exp-facts": [
+    "exp"
+   ],
+   "m-exp-body": [
+    "exp"
+   ],
+   "m-exp-tours": [
+    "exp"
+   ],
+   "m-exp-dates": [
+    "exp"
+   ],
+   "m-exp-private": [
+    "exp"
+   ]
+  },
+  "ownIds": [
+   "m-masthead",
+   "m-search-row",
+   "m-featured-tour",
+   "m-places-shelf",
+   "m-experiences-panel",
+   "m-guides",
+   "m-link-rows",
+   "m-page-title",
+   "m-tour-list",
+   "m-page-buttons",
+   "m-experience-list",
+   "m-artists-row",
+   "m-suggest-pill",
+   "m-people-grid",
+   "m-people-slider",
+   "m-about-photo",
+   "m-prose-sections",
+   "m-exp-hero",
+   "m-exp-facts",
+   "m-exp-body",
+   "m-exp-tours",
+   "m-exp-dates",
+   "m-exp-private",
+   "m-phone-menu",
+   "m-places-catalogue",
+   "m-feed-list",
+   "m-tour-topbar",
+   "m-tour-hero",
+   "m-tour-head",
+   "m-tour-blurb",
+   "m-tour-meet",
+   "m-tour-route",
+   "m-tour-dates",
+   "m-tour-bookbar",
+   "booking-options",
+   "locations",
+   "hero-city-title",
+   "tour-cards"
+  ]
+ },
+ "forum": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "fourthwayBookreaders": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "hidden-enneagram": {
+  "usesPuck": true,
+  "offeredShared": [
+   "split-row",
+   "grid",
+   "flow-column",
+   "sticky-split",
+   "tab-set",
+   "accordion-set",
+   "divider",
+   "section-heading",
+   "section-banner",
+   "hero-banner",
+   "prose",
+   "figure",
+   "text-image",
+   "quote",
+   "faq",
+   "video",
+   "entry-list",
+   "picture-wall",
+   "link-button",
+   "thread-feed",
+   "record-header",
+   "record-body",
+   "record-facts"
+  ],
+  "allShared": false,
+  "hasBox": true,
+  "resolvedKeys": {
+   "he-enneagram": [
+    "placement"
+   ],
+   "he-course": [
+    "course"
+   ],
+   "thread-feed": [
+    "items"
+   ],
+   "he-shelf": [
+    "items"
+   ],
+   "he-forum": [
+    "topics"
+   ],
+   "he-person": [
+    "person",
+    "page",
+    "routeSlug"
+   ],
+   "he-service": [
+    "service",
+    "booking",
+    "routeSlug",
+    "routeQuery"
+   ],
+   "he-post": [
+    "post",
+    "routeFeed",
+    "routeSlug"
+   ],
+   "record-header": [
+    "rec",
+    "routeRecord"
+   ],
+   "record-body": [
+    "rec",
+    "routeRecord"
+   ],
+   "record-facts": [
+    "rec",
+    "routeRecord"
+   ],
+   "checkout": [
+    "rec",
+    "pay",
+    "recordRef",
+    "routeRecord",
+    "routeQuery"
+   ]
+  },
+  "ownIds": [
+   "he-course",
+   "he-enneagram",
+   "he-hero",
+   "he-welcome",
+   "he-orb",
+   "he-works",
+   "he-music-web",
+   "he-passage",
+   "he-post",
+   "he-reading",
+   "he-contact",
+   "he-forum",
+   "he-person",
+   "he-service",
+   "he-shelf",
+   "he-sigil",
+   "he-type"
+  ]
+ },
+ "ifac": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "innergathering": {
+  "usesPuck": true,
+  "offeredShared": [
+   "accordion-set",
+   "card-grid",
+   "contact-form",
+   "cycle-badge",
+   "divider",
+   "entry-list",
+   "faq",
+   "feature-card",
+   "featured-person",
+   "figure",
+   "flow-column",
+   "gallery-grid",
+   "grid",
+   "hero-banner",
+   "link-button",
+   "offering-spotlight",
+   "person-card",
+   "person-columns",
+   "person-galleries",
+   "person-header",
+   "person-memberships",
+   "person-portfolio",
+   "person-store",
+   "person-threads",
+   "person-writing",
+   "picture-wall",
+   "profile-feed",
+   "profile-galleries",
+   "profile-gallery",
+   "profile-record",
+   "profile-store",
+   "prose",
+   "quote",
+   "record-header",
+   "record-body",
+   "record-facts",
+   "checkout",
+   "rsvp",
+   "section-banner",
+   "section-heading",
+   "split-row",
+   "sticky-split",
+   "store-frame",
+   "store-header",
+   "store-shelf",
+   "tab-set",
+   "text-image",
+   "thread-feed",
+   "video"
+  ],
+  "allShared": true,
+  "hasBox": true,
+  "resolvedKeys": {},
+  "ownIds": [
+   "grand-forum",
+   "offerings-band"
+  ]
+ },
+ "katie-the-potter": {
+  "usesPuck": true,
+  "offeredShared": [
+   "split-row",
+   "grid",
+   "flow-column",
+   "card-grid",
+   "divider",
+   "section-heading",
+   "section-banner",
+   "hero-banner",
+   "prose",
+   "figure",
+   "text-image",
+   "quote",
+   "faq",
+   "video",
+   "entry-list",
+   "picture-wall",
+   "link-button",
+   "thread-feed"
+  ],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {
+   "ktp-artwork-grid": [
+    "pieces",
+    "bound",
+    "hrefBase"
+   ],
+   "ktp-piece": [
+    "item",
+    "placement",
+    "sampled",
+    "ownPiece",
+    "cardOn",
+    "hrefBase"
+   ],
+   "ktp-piece-details": [
+    "item",
+    "nav",
+    "sampled"
+   ],
+   "thread-feed": [
+    "items"
+   ]
+  },
+  "ownIds": [
+   "ktp-about-hero",
+   "ktp-artwork-grid",
+   "ktp-piece",
+   "ktp-piece-details",
+   "ktp-piece-row",
+   "ktp-quick-landing",
+   "ktp-studio-feed",
+   "ktp-studio-strip"
+  ]
+ },
+ "pigeonshoot": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "sophia": {
+  "usesPuck": false,
+  "offeredShared": [],
+  "allShared": false,
+  "hasBox": false,
+  "resolvedKeys": {},
+  "ownIds": []
+ },
+ "sunjay": {
+  "usesPuck": true,
+  "offeredShared": [
+   "split-row",
+   "grid",
+   "flow-column",
+   "card-grid",
+   "divider",
+   "section-heading",
+   "prose",
+   "figure",
+   "text-image",
+   "quote",
+   "faq",
+   "video",
+   "entry-list",
+   "picture-wall",
+   "link-button",
+   "thread-feed",
+   "feature-card",
+   "sticky-split",
+   "tab-set",
+   "accordion-set",
+   "featured-person"
+  ],
+  "allShared": false,
+  "hasBox": true,
+  "resolvedKeys": {
+   "pt-standing": [
+    "standing",
+    "canEdit"
+   ],
+   "pt-calendar": [
+    "events"
+   ],
+   "pt-profile": [
+    "guide",
+    "links"
+   ],
+   "pt-threads": [
+    "threads",
+    "feedName"
+   ],
+   "pt-member": [
+    "me",
+    "orgName"
+   ],
+   "pt-forum": [
+    "forum"
+   ],
+   "pt-writing": [
+    "items"
+   ],
+   "pt-gallery": [
+    "images"
+   ],
+   "pt-event-header": [
+    "event"
+   ],
+   "pt-event-about": [
+    "event"
+   ],
+   "pt-talk-room": [
+    "event"
+   ],
+   "pt-event-rsvp": [
+    "event"
+   ],
+   "pt-event-materials": [
+    "event"
+   ],
+   "pt-offering-card": [
+    "event"
+   ],
+   "pt-services": [
+    "services"
+   ],
+   "pt-service": [
+    "chosen"
+   ],
+   "pt-booking": [
+    "booking"
+   ],
+   "pt-journal": [
+    "items"
+   ],
+   "pt-article": [
+    "post"
+   ],
+   "pt-series-nav": [
+    "items",
+    "series",
+    "current"
+   ],
+   "pt-post": [
+    "post"
+   ],
+   "featured-person": [
+    "who",
+    "opened"
+   ],
+   "link-button": [
+    "opened"
+   ],
+   "feature-card": [
+    "bound",
+    "opened"
+   ]
+  },
+  "ownIds": [
+   "pt-standing",
+   "pt-calendar",
+   "pt-profile",
+   "pt-threads",
+   "pt-member",
+   "pt-forum",
+   "pt-writing",
+   "pt-gallery",
+   "pt-event-header",
+   "pt-event-about",
+   "pt-talk-room",
+   "pt-event-rsvp",
+   "pt-event-materials",
+   "home-stage",
+   "home-standing",
+   "home-forum",
+   "home-join",
+   "pt-band",
+   "pt-banner",
+   "pt-heading",
+   "pt-link",
+   "pt-offering-card",
+   "pt-services",
+   "pt-service",
+   "pt-booking",
+   "pt-steps",
+   "pt-notice",
+   "pt-journal",
+   "pt-article",
+   "pt-series-nav",
+   "pt-post"
+  ]
+ }
+}

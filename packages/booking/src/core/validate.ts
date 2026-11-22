@@ -5,11 +5,11 @@
  */
 
 import {
-  PHASE1_MODES,
+  ACCEPTED_MODES,
   type BookingOfferInput,
   type HoursRange,
   type IntakeQuestion,
-  type Phase1Mode,
+  type AcceptedMode,
 } from "./types";
 import { formatClock, isValidTimeZone, parseClock } from "./time";
 
@@ -50,9 +50,9 @@ export function validateOfferInput(raw: unknown): ValidateResult {
   if (!raw || typeof raw !== "object") return { ok: false, error: "Booking settings are missing." };
   const r = raw as Record<string, unknown>;
 
-  const mode = r.mode as Phase1Mode;
-  if (!(PHASE1_MODES as readonly string[]).includes(mode as string)) {
-    return { ok: false, error: "Choose open hours or ask for a time." };
+  const mode = r.mode as AcceptedMode;
+  if (!(ACCEPTED_MODES as readonly string[]).includes(mode as string)) {
+    return { ok: false, error: "Choose open hours, set dates or ask for a time." };
   }
 
   const duration = int(r.durationMinutes);
@@ -98,6 +98,35 @@ export function validateOfferInput(raw: unknown): ValidateResult {
   const ahead = int(r.maxAheadDays) ?? DEFAULT_OFFER_INPUT.maxAheadDays!;
   if (ahead < 1 || ahead > 366) return { ok: false, error: "Booking ahead must be between 1 and 366 days." };
 
+  // Phase 2 fields. Omitted stays omitted (undefined) so an update keeps what is stored.
+  const minParty = r.minParty === undefined ? undefined : int(r.minParty);
+  const maxParty = r.maxParty === undefined ? undefined : int(r.maxParty);
+  if (minParty === null || (minParty !== undefined && (minParty < 1 || minParty > 500))) {
+    return { ok: false, error: "The smallest party must be between 1 and 500." };
+  }
+  if (maxParty === null || (maxParty !== undefined && (maxParty < 1 || maxParty > 500))) {
+    return { ok: false, error: "The largest party must be between 1 and 500." };
+  }
+  if (minParty !== undefined && maxParty !== undefined && maxParty < minParty) {
+    return { ok: false, error: "The largest party cannot be smaller than the smallest." };
+  }
+  if (r.priceUnit !== undefined && r.priceUnit !== "per_booking" && r.priceUnit !== "per_person") {
+    return { ok: false, error: "Price is per booking or per person." };
+  }
+  const minToRun = r.minToRun === undefined ? undefined : r.minToRun === null || r.minToRun === "" ? null : int(r.minToRun);
+  if (minToRun !== undefined && minToRun !== null && (minToRun < 1 || minToRun > 500)) {
+    return { ok: false, error: "The minimum to run must be between 1 and 500." };
+  }
+  if (minToRun != null && capacity != null && minToRun > capacity) {
+    return { ok: false, error: "The minimum to run cannot be more than the places." };
+  }
+  const closeBefore = r.closeBeforeMinutes === undefined ? undefined : int(r.closeBeforeMinutes);
+  if (closeBefore === null || (closeBefore !== undefined && (closeBefore < 0 || closeBefore > 60 * 24 * 60))) {
+    return { ok: false, error: "Booking must close less than 60 days before the start." };
+  }
+  if (r.waitlist !== undefined && typeof r.waitlist !== "boolean") return { ok: false, error: "The waitlist is on or off." };
+  if (mode === "set_dates" && capacity == null) return { ok: false, error: "Set the number of places for each date." };
+
   const approval = r.approval === "seller_confirms" ? "seller_confirms" : "instant";
 
   const freeUntil = int(r.cancelFreeUntilMinutes);
@@ -137,13 +166,20 @@ export function validateOfferInput(raw: unknown): ValidateResult {
       leadTimeMinutes: lead,
       maxAheadDays: ahead,
       // Ask-for-a-time is always the host's to confirm (design §2.1, approval).
-      approval: mode === "request_time" ? "seller_confirms" : approval,
+      // Set dates are booked instantly: nothing in this flow asks a host to confirm a departure.
+      approval: mode === "request_time" ? "seller_confirms" : mode === "set_dates" ? "instant" : approval,
       cancelFreeUntilMinutes: freeUntil,
       cancelRefundPercentAfter: percentAfter,
       cancelPolicyText: text(r.cancelPolicyText, 2000),
       questions,
       status,
       reminderMinutesBefore: reminder,
+      ...(minParty !== undefined ? { minParty } : {}),
+      ...(maxParty !== undefined ? { maxParty } : {}),
+      ...(r.priceUnit !== undefined ? { priceUnit: r.priceUnit as "per_booking" | "per_person" } : {}),
+      ...(minToRun !== undefined ? { minToRun } : {}),
+      ...(closeBefore !== undefined ? { closeBeforeMinutes: closeBefore } : {}),
+      ...(r.waitlist !== undefined ? { waitlist: r.waitlist as boolean } : {}),
     },
   };
 }

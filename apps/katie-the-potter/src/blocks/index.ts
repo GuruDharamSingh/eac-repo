@@ -23,13 +23,19 @@ import { pieceBlock } from "./piece-block";
 import { pieceRow } from "./piece-row";
 import { pieceDetails } from "./piece-details";
 import { studioFeed } from "./studio-feed";
+import { aboutHero } from "./about-hero";
+import { studioStrip } from "./studio-strip";
 
-export { quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed };
+export { quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed, aboutHero, studioStrip };
 
 //   ktp-piece           ONE piece as a smart card: layout by placement
 //                       (metadata.placement) and by width (container queries)
 //   ktp-piece-row       a slot of ktp-piece, arranged by hand
 //   ktp-piece-details   facts, description, previous/next (the detail template)
+//   ktp-about-hero      About opening: title, story, signature beside a shaped
+//                       portrait with an optional round inset (about-hero.tsx)
+//   ktp-studio-strip    studio pictures (mosaic or row) and a facts band
+//                       (studio-strip.tsx); both styled by about.css
 //   ktp-studio-feed     the org's public posts, gatherings, offerings, linking out
 //                       to the network (studio-feed.tsx); hidden when empty
-export const SITE_BLOCKS = [quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed] as unknown as Block<never>[];
+export const SITE_BLOCKS = [quickLanding, artworkGrid, pieceBlock, pieceRow, pieceDetails, studioFeed, aboutHero, studioStrip] as unknown as Block<never>[];

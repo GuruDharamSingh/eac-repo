@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Render, resolveAllData } from "@puckeditor/core/rsc";
+import type { Data } from "@puckeditor/core";
 import { getViewer } from "@/lib/auth";
 import { listPublicPlaces, placeBusinessesFor } from "@/lib/places";
 import { reviewSummaries } from "@/lib/reviews";
 import type { CataloguePlaceView } from "@/components/places/catalogue-view";
 import { PlacesCatalogue } from "@/components/places/places-catalogue";
 import { VisitorSuggest } from "@/components/places/visitor-suggest";
+import { Split } from "@/components/mobile/split";
+import { loadMobileDoc } from "@/lib/puck/mobile";
+import { mobileServerConfig } from "@/lib/puck/config.mobile.server";
+import { readMobilePlaces } from "@/lib/puck/mobile-places";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -27,6 +34,9 @@ function line(html: string | null, max = 160): string | null {
  * listing, which now redirects here). Reads `listPublicPlaces`: public, not
  * archived, without private notes, stats or provenance; tours are the
  * published, public ones that stop there.
+ *
+ * Phone tree (G5, 2026-11-15): the m-places document, drawn through Split beside the desktop tree below, which is
+ * unchanged. The place sheet (`?place=`) is opened by components/mobile/overlays.tsx.
  */
 export default async function PlacesPage() {
   const viewer = await getViewer().catch(() => null);
@@ -53,7 +63,25 @@ export default async function PlacesPage() {
     businesses: businesses.get(p.id) ?? [],
   }));
 
-  return (
+  // Phone tree: the m-places document with the places read once for it.
+  const mobilePlaces = await readMobilePlaces();
+  const { data } = await loadMobileDoc("m-places");
+  const metaForDoc = { orgId: siteConfig.orgId, slug: "m-places", mobilePlaces };
+  const filled = await resolveAllData(data, mobileServerConfig, metaForDoc);
+  const mobile = (
+    <>
+      <Render config={mobileServerConfig} data={filled as Data} metadata={metaForDoc} />
+      {viewer?.canEdit && (
+        <p style={{ padding: "20px 20px 0" }}>
+          <Link href="/studio/m-places" className="underline underline-offset-4" style={{ fontSize: 13 }}>
+            Edit phone layout
+          </Link>
+        </p>
+      )}
+    </>
+  );
+
+  const desktop = (
     <div className="mx-auto max-w-6xl space-y-10 px-5 py-12">
       <header className="max-w-2xl">
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</p>
@@ -72,4 +100,6 @@ export default async function PlacesPage() {
       </p>
     </div>
   );
+
+  return <Split mobile={mobile} desktop={desktop} />;
 }

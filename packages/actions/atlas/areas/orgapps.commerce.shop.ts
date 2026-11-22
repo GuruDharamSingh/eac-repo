@@ -68,6 +68,7 @@ export default {
     },
     {
       id: 'shop-checkout',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shop',
       label: 'Buy pieces (checkout)',
       does: "Turns the cart, or one piece, into an order. Card orders go to Stripe's page; eTransfer orders go to the order page with instructions. Nothing is charged until payment is made on Stripe or by transfer.",
@@ -94,6 +95,7 @@ export default {
     },
     {
       id: 'shop-order-pay-card',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shop',
       label: 'Pay an order by card',
       does: "From the order page, opens Stripe's checkout for an unpaid order, or retries one the buyer backed out of.",
@@ -113,6 +115,7 @@ export default {
     },
     {
       id: 'shop-order-pay-etransfer',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shop',
       label: 'Switch an order to Interac eTransfer',
       does: "Changes an unpaid order from card to Interac eTransfer and shows the transfer instructions.",
@@ -152,6 +155,7 @@ export default {
       canonical: "katie's gate (store, manager, method matches) inside a single confirmOrderPaid wrapper.",
       open: "art-auction confirmPaidAction and the admin POST do not check that the order is an eTransfer order: whether confirmOrderPaid itself refuses an unpaid card (Stripe) order was not verified, so a manager may be able to mark a card order paid manually. Nothing verifies that money arrived.",
       verified: V,
+      updated: '2026-11-17', // confirmOrderPaid refuses an order whose copies another payment already took (OrderOversoldError); the card paths (checkout stripe.ts) refund and cancel it. Nothing is reserved while an order is unpaid.
     },
     {
       id: 'shop-order-cancel',
@@ -212,29 +216,6 @@ export default {
       verified: V,
     },
     {
-      id: 'workshop-join',
-      area: 'orgapps.commerce.shop',
-      label: 'Join a workshop (free or paid)',
-      does: "A signed-in person joins a workshop. Free ones RSVP at once; paid ones create an order with eTransfer instructions and hold a maybe RSVP until payment.",
-      class: 'person',
-      actors: ['person'],
-      scope: 'person',
-      hosts: [
-        { key: api('inner-gathering/src/app/api/workshops/[id]/join/route.ts', 'POST'), service: ['@elkdonis/commerce/server#createThreadOrder', '@elkdonis/services#checkRsvpEligibility'], address: { app: 'inner-gathering', path: '/workshops/{id}', how: 'the Join button and payment modal of the workshop page (components workshop join modal)' } },
-        { key: 'sql:apps/inner-gathering/src/app/api/workshops/[id]/join/route.ts#POST' as HostKey, note: 'sql twin' },
-        pk(CM('service-orders', 'createThreadOrder'), 'prices from the thread (list or sliding), quantity from the caller; used by every thread checkout'),
-      ],
-      entry: null,
-      status: "thread_rsvps row for the person is yes (free) or the order is paid (paid)",
-      risk: ['money', 'emails'],
-      confirm: { text: 'Join {workshop}? A paid workshop gives you instructions to pay {price}; payment happens by eTransfer or on the checkout page, not here.', status: 'draft', wave: 5 },
-      inputs: 'contact name, email, notes',
-      drift: "inner-gathering (the hyphenated app, likely legacy next to innergathering) only. The price is read from the database; the amount row workshop_join_requests.amount_minor is computed from it.",
-      canonical: 'the booking module with a capacity-locked createBooking, or services RSVP + startThreadCheckout.',
-      open: "Capacity is checked before and written separately, with no transaction or lock (checkRsvpEligibility then INSERT): concurrent joins can exceed attendee_limit; paid requests are counted only when status is paid, which nothing in this app sets, so pending paid joins never reduce capacity. The free path trusts a client contactEmail for the welcome mail. Is the inner-gathering app still deployed?",
-      verified: V,
-    },
-    {
       id: 'stripe-webhook-elktours',
       area: 'orgapps.commerce.shop',
       label: 'Receive Stripe payment events (elktours endpoint)',
@@ -265,13 +246,14 @@ export default {
         pk(CM('series-orders', 'setSeriesOrderReceived'), 'marks a paid order fulfilled; same caller'),
         pk(CM('ledger', 'recordPayout'), 'refuses amounts above the payable balance and non-positive amounts; callers art-auction series workspace and admin Money (G)'),
         pk(CM('ledger', 'writeEntry'), 'ledger accrual rows, called inside confirmOrderPaid and refundOrder'),
-        pk(CM('stock', 'syncArtworkStatus'), 'recomputes artwork available/reserved/sold from variants, orders and reservations'),
+        pk(CM('stock', 'syncArtworkStatus'), 'recomputes artwork available/sold after payment, cancel and refund; an unpaid order no longer reserves (2026-11-17)'),
         pk(CM('index', 'setPayoutIdentity'), 'write behind payout-setup-save (orgapps.money); country, rail, e-Transfer email'),
       ],
       status: 'ledger rows and artwork status match the orders',
       risk: ['money'],
       drift: 'Shared package; the callers are in other capabilities.',
       verified: V,
+      updated: '2026-11-17', // syncArtworkStatus: the order event no longer reserves; paid with no copy left is sold. 'reserved' is now only a seller's manual setting.
     },
   ],
   ignored: [],

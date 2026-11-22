@@ -1,0 +1,1102 @@
+[
+ {
+  "id": "props-namespace",
+  "name": "Props namespace (look / morph)",
+  "kind": "data",
+  "what": "Lets an outside editor store a block's look inside the block's own props so it travels with the content.",
+  "how": "Keep a plain object prop (e.g. look) and give it a hidden object field { type: 'object', objectFields: {}, visible: false } so Puck's field walks leave it alone.",
+  "evidence": "puck-0.23.0/dist/index.js:1517 (lib/data/map-fields.ts); props copied by 2190 (reducer/actions/duplicate.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "Any change re-runs resolveData, dotted keys are split in the canvas, and a resolver returning a whole new object overwrites it.",
+  "house_use": "packages/page-builder/src/config.tsx:475",
+  "v024": "same: walkField still falls back to the parent's fields for unfielded object props (puck-0.24.0/dist/index.js:1597) and duplicate/replace code is identical (2246, 2146); the look.items 500 trap persists"
+ },
+ {
+  "id": "toplevel-extra-key",
+  "name": "Extra top-level key on a block",
+  "kind": "data",
+  "what": "Stores an aesthetic document next to props on each block, outside the field system.",
+  "how": "Put a key beside type/props (e.g. style); Puck spreads the item in replace, duplicate, move and resolve so it is kept.",
+  "evidence": "puck-0.23.0/dist/rsc.js:758 (components/ServerRender/index.tsx); root drop at index.js:3352 (lib/data/to-root.ts)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": false
+  },
+  "risk": "high",
+  "risk_note": "The block render never receives it on the published route, and the root loses unknown keys on replaceRoot.",
+  "house_use": "unused",
+  "v024": "same: Render still hands blocks only props/id/puck (puck-0.24.0/dist/rsc.js:854-900)"
+ },
+ {
+  "id": "metadata-sidecar",
+  "name": "Metadata side-car keyed by block id",
+  "kind": "data",
+  "what": "Shares a document of per-block styles with every block through one read-only channel.",
+  "how": "Pass the document as the metadata prop of Puck and Render; each block reads puck.metadata and its own id.",
+  "evidence": "puck-0.23.0/dist/index.js:10744 (components/DropZone/index.tsx); rsc.js:716 (components/SlotRender/server.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": false,
+   "move": true,
+   "undoRedo": false,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Duplicate gives new ids so entries are orphaned, and it is outside Puck history.",
+  "house_use": "packages/page-builder/src/editor.tsx:258",
+  "v024": "same: metadata still passed as puck.metadata; Render now also forwards fieldTransforms (rsc.js:930)"
+ },
+ {
+  "id": "use-get-puck",
+  "name": "useGetPuck",
+  "kind": "hook",
+  "what": "Reads the latest store state and calls actions from any code inside Puck without re-rendering.",
+  "how": "const getPuck = useGetPuck(); getPuck().dispatch / getItemById / getSelectorForId.",
+  "evidence": "puck-0.23.0/dist/index.js:17980 (lib/use-puck.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Throws outside the Puck tree and getItemById throws on an unknown id.",
+  "house_use": "packages/page-builder/src/drag/canvas-drag.tsx:102",
+  "v024": "same: usePuck projection region identical apart from renamed react import"
+ },
+ {
+  "id": "create-use-puck",
+  "name": "createUsePuck selector hook",
+  "kind": "hook",
+  "what": "Subscribes a component to selected slices of the store (selected item, config, history flags).",
+  "how": "const usePuck = createUsePuck(); usePuck(s => s.selectedItem).",
+  "evidence": "puck-0.23.0/dist/index.js:17959 (lib/use-puck.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Selectors returning fresh objects cause extra renders.",
+  "house_use": "packages/page-builder/src/parts/panel.tsx:21",
+  "v024": "same: usePuck projection region identical"
+ },
+ {
+  "id": "dispatch-replace",
+  "name": "dispatch replace (the prop-write path)",
+  "kind": "action",
+  "what": "Writes new props into one block exactly the way the Fields panel does.",
+  "how": "dispatch({type:'replace', destinationIndex, destinationZone, data:{...item, props}}) then resolveDataById(id,'replace').",
+  "evidence": "puck-0.23.0/dist/index.js:2090 (reducer/actions/replace.ts); panel flow 12423 (components/Puck/components/Fields/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Runs no resolveData itself and throws if props.id changes.",
+  "house_use": "packages/page-builder/src/drag/item-focus.tsx:327",
+  "v024": "same: replaceAction body identical (puck-0.24.0/dist/index.js:2146); still no resolveData"
+ },
+ {
+  "id": "resolve-data-by-id",
+  "name": "resolveDataById / resolveDataBySelector",
+  "kind": "hook",
+  "what": "Re-runs a block's resolveData after an outside edit and writes the result back.",
+  "how": "usePuck().resolveDataById(id, trigger); it dispatches replace only if the result changed.",
+  "evidence": "puck-0.23.0/dist/index.js:17851 (lib/data/resolve-data-by-id.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "The cache skips the run when the item is deep-equal to the last one unless trigger is force.",
+  "house_use": "packages/page-builder/src/parts/popup.tsx:106",
+  "v024": "same: resolveDataById still at puck-0.24.0/dist/index.js:19161 with the same trigger argument"
+ },
+ {
+  "id": "action-insert",
+  "name": "insert action",
+  "kind": "action",
+  "what": "Adds a new block with defaults and fresh ids at a zone and index.",
+  "how": "dispatch({type:'insert', componentType, destinationZone, destinationIndex, id?}).",
+  "evidence": "puck-0.23.0/dist/index.js:2030 (reducer/actions/insert.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "No resolveData runs; call resolveDataById(id,'insert') after.",
+  "house_use": "packages/page-builder/src/drag/canvas-menu.tsx:238",
+  "v024": "same: PuckAction union in actions-Dgllwd-W.d.ts unchanged (no new actions)"
+ },
+ {
+  "id": "action-move",
+  "name": "move / reorder action",
+  "kind": "action",
+  "what": "Moves a block between slots or within one with its id unchanged.",
+  "how": "dispatch({type:'move', sourceZone, sourceIndex, destinationZone, destinationIndex}).",
+  "evidence": "puck-0.23.0/dist/index.js:2276 (reducer/actions/move.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "Selection is index-based and goes stale; the drag path does not record history for the move itself.",
+  "house_use": "packages/page-builder/src/drag/canvas-drag.tsx:206",
+  "v024": "same: reducer/actions identical (internal.js diff empty)"
+ },
+ {
+  "id": "action-duplicate",
+  "name": "duplicate action",
+  "kind": "action",
+  "what": "Clones a block and every nested block with new ids.",
+  "how": "dispatch({type:'duplicate', sourceZone, sourceIndex}).",
+  "evidence": "puck-0.23.0/dist/index.js:2190 (reducer/actions/duplicate.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "All ids change, so anything keyed by id outside props loses its link to the copy.",
+  "house_use": "unused",
+  "v024": "same: duplicate still re-ids the copy and all descendants (puck-0.24.0/dist/index.js:2246)"
+ },
+ {
+  "id": "action-set-data",
+  "name": "setData / set actions",
+  "kind": "action",
+  "what": "Replaces whole document slices and rebuilds Puck's indexes in one step.",
+  "how": "dispatch({type:'setData', data}) or {type:'set', state}; set with indexes skips the rebuild.",
+  "evidence": "puck-0.23.0/dist/index.js:2467 (reducer/actions/set-data.ts); 1833 (reducer/actions/set.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": false,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Full re-walk, console warning, and no history record by default.",
+  "house_use": "packages/page-builder/src/templates/templates-plugin.tsx:60",
+  "v024": "same: set/setData identical (internal.js diff empty)"
+ },
+ {
+  "id": "action-set-ui",
+  "name": "setUi action (selection and panels)",
+  "kind": "action",
+  "what": "Selects a block, expands the outline, switches plugin tabs or preview mode.",
+  "how": "dispatch({type:'setUi', ui:{itemSelector:{index,zone}}}).",
+  "evidence": "puck-0.23.0/dist/index.js:2523 (reducer/actions/set-ui.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Selector is index plus zone, not an id; use getSelectorForId to convert.",
+  "house_use": "packages/page-builder/src/drag/item-focus.tsx:88",
+  "v024": "changed: UiState gains fieldTab and expandedFieldGroups (actions-Dgllwd-W.d.ts); setUi itself unchanged"
+ },
+ {
+  "id": "on-action",
+  "name": "onAction callback",
+  "kind": "hook",
+  "what": "Lets an outside editor observe every document change to keep a side-car in sync.",
+  "how": "<Puck onAction={(action, state, prev) => ...}>; diff indexes.nodes to map old ids to new after duplicate.",
+  "evidence": "puck-0.23.0/dist/index.js:3484 (store/index.ts); 19699 (components/Puck/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Typed as public state but the store path passes indexes too; fires inside the state update, so do not dispatch synchronously.",
+  "house_use": "unused",
+  "v024": "same: store dispatch still passes the private state to onAction (puck-0.24.0/dist/index.js:3561-3568)"
+ },
+ {
+  "id": "on-change",
+  "name": "onChange callback",
+  "kind": "hook",
+  "what": "Gives the outside editor the whole document after each change, de-duplicated.",
+  "how": "<Puck onChange={data => ...}>.",
+  "evidence": "puck-0.23.0/dist/index.js:19736 (components/Puck/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Not called for the initial data; fires after undo/redo too.",
+  "house_use": "packages/page-builder/src/block-settings.tsx:136",
+  "v024": "same"
+ },
+ {
+  "id": "history-api",
+  "name": "History API and recordHistory",
+  "kind": "store",
+  "what": "Lets an outside editor undo, redo, replace history and decide which actions record.",
+  "how": "usePuck().history.back/forward/setHistories/setHistoryIndex; any action takes recordHistory true/false.",
+  "evidence": "puck-0.23.0/dist/index.js:2843 (store/slices/history.ts); 2554 (reducer/index.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Snapshots are whole state with a 250 ms debounce; external state is not rolled back with Puck.",
+  "house_use": "packages/page-builder/src/parts/plugin.tsx:21",
+  "v024": "same: record still debounce(...,250) (puck-0.24.0/dist/index.js:2916-2929); setHistories unchanged"
+ },
+ {
+  "id": "initial-history",
+  "name": "initialHistory prop",
+  "kind": "store",
+  "what": "Starts the editor with a prepared undo stack and position.",
+  "how": "<Puck initialHistory={{histories:[{state}], index, appendData}}>.",
+  "evidence": "puck-0.23.0/dist/index.js:19652 (components/Puck/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": true,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "States without indexes are re-walked at mount.",
+  "house_use": "unused",
+  "v024": "same"
+ },
+ {
+  "id": "overrides-iframe",
+  "name": "overrides.iframe",
+  "kind": "override",
+  "what": "Mounts the outside editor's code and styles inside the canvas document around the page.",
+  "how": "overrides={{ iframe: ({children, document}) => ... }} or the same key inside a plugin.",
+  "evidence": "puck-0.23.0/dist/index.js:16338 (components/Puck/components/Preview/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Editor only; document is undefined until the frame is ready.",
+  "house_use": "packages/page-builder/src/parts/plugin.tsx:37",
+  "v024": "same: puck-0.24.0/dist/index.js:17630"
+ },
+ {
+  "id": "overrides-action-bar",
+  "name": "overrides.actionBar",
+  "kind": "override",
+  "what": "Replaces the floating bar over the selected block (duplicate, delete, select parent).",
+  "how": "overrides={{ actionBar: ({label, parentAction, children}) => ... }}.",
+  "evidence": "puck-0.23.0/dist/index.js:8977 (components/DraggableComponent/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Dropping the children removes duplicate and delete buttons but not their hotkeys.",
+  "house_use": "packages/page-builder/src/parts/plugin.tsx:44",
+  "v024": "changed: actionBar now also receives dragHandle and dragHandleRef props (actions-Dgllwd-W.d.ts; puck-0.24.0/dist/index.js:10211, 10529); existing props unchanged"
+ },
+ {
+  "id": "overrides-component-overlay",
+  "name": "overrides.componentOverlay",
+  "kind": "override",
+  "what": "Draws custom content in the selection box over a block (handles, badges).",
+  "how": "overrides={{ componentOverlay: ({componentId, isSelected, hover, children}) => ... }}.",
+  "evidence": "puck-0.23.0/dist/index.js:8981 (components/DraggableComponent/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "The overlay sits under the dnd sensor, so handles start a block drag unless registered with registerOverlayPortal.",
+  "house_use": "unused",
+  "v024": "same: puck-0.24.0/dist/index.js:10215"
+ },
+ {
+  "id": "overrides-fields",
+  "name": "overrides.fields",
+  "kind": "override",
+  "what": "Wraps or replaces the form of fields shown for the selected block.",
+  "how": "overrides={{ fields: ({children, isLoading, itemSelector}) => ... }}.",
+  "evidence": "puck-0.23.0/dist/index.js:12546 (components/Puck/components/Fields/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Only fields with a definition appear; props without one are not editable here.",
+  "house_use": "packages/page-builder/src/parts/plugin.tsx:40",
+  "v024": "changed: fields override additionally receives a fields map (ReactNode per field name), plus component-level renderFields (puck-0.24.0/dist/index.js:13521-13577)"
+ },
+ {
+  "id": "overrides-field-types",
+  "name": "overrides.fieldTypes and custom fields",
+  "kind": "override",
+  "what": "Replaces the widget used for a field type or supplies a fully custom one.",
+  "how": "overrides={{ fieldTypes: { text: Comp } }} or a field { type:'custom', render }.",
+  "evidence": "puck-0.23.0/dist/index.js:8123 (components/AutoField/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Plugin fieldTypes overrides nest per type; the last plugin is outermost.",
+  "house_use": "unused",
+  "v024": "changed: fieldTypes no longer omits custom in its type and may hold null; new checkbox field type (actions-Dgllwd-W.d.ts)"
+ },
+ {
+  "id": "overrides-puck",
+  "name": "overrides.puck and Puck children",
+  "kind": "override",
+  "what": "Swaps the whole Puck screen so another editor owns the layout while Puck stays the engine.",
+  "how": "<Puck>{yourLayout with <Puck.Preview/>}</Puck> or overrides={{ puck: Shell }}.",
+  "evidence": "puck-0.23.0/dist/index.js:19371 (components/Puck/components/Layout/index.tsx); 19768 (Puck.Preview etc.)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Compositional use gets no Canvas, so no zoom or viewport switcher.",
+  "house_use": "unused",
+  "v024": "same: puck-0.24.0/dist/index.js:20686"
+ },
+ {
+  "id": "overrides-preview",
+  "name": "overrides.preview",
+  "kind": "override",
+  "what": "Wraps the canvas root that holds the preview frame.",
+  "how": "overrides={{ preview: ({children}) => ... }}.",
+  "evidence": "puck-0.23.0/dist/index.js:18708 (components/Puck/components/Canvas/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Sits outside the iframe so it cannot style page content.",
+  "house_use": "unused",
+  "v024": "same: puck-0.24.0/dist/index.js:20017"
+ },
+ {
+  "id": "overrides-outline",
+  "name": "overrides.outline",
+  "kind": "override",
+  "what": "Wraps or replaces the layer tree.",
+  "how": "overrides={{ outline: ({children}) => ... }}.",
+  "evidence": "puck-0.23.0/dist/index.js:17753 (components/Puck/components/Outline/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Outline drag follows slot field constraints, not Slot props.",
+  "house_use": "unused",
+  "v024": "same: puck-0.24.0/dist/index.js:19039"
+ },
+ {
+  "id": "overrides-header",
+  "name": "overrides.header and headerActions",
+  "kind": "override",
+  "what": "Replaces the top bar and its publish and undo buttons.",
+  "how": "overrides={{ header, headerActions }} with usePuck for state.",
+  "evidence": "puck-0.23.0/dist/index.js:18165 (components/Puck/components/Header/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "renderHeader props are deprecated in favour of these.",
+  "house_use": "packages/page-builder/src/block-settings.tsx:143",
+  "v024": "same"
+ },
+ {
+  "id": "overrides-drawer",
+  "name": "overrides.drawer and drawerItem",
+  "kind": "override",
+  "what": "Restyles the components list and the drag preview of a new block.",
+  "how": "overrides={{ drawer, drawerItem }} (components and componentItem are deprecated aliases).",
+  "evidence": "puck-0.23.0/dist/index.js:12749 (components/Puck/components/Components/index.tsx); 12603",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "componentItem does not wrap blocks in the canvas, despite the name.",
+  "house_use": "unused",
+  "v024": "same"
+ },
+ {
+  "id": "plugin-overrides-compose",
+  "name": "Plugin overrides (stacked)",
+  "kind": "plugin",
+  "what": "Bundles several overrides into one installable unit that wraps whatever came before.",
+  "how": "plugins={[{ name, overrides:{ iframe, fields, actionBar } }]}; each wraps the previous as children.",
+  "evidence": "puck-0.23.0/dist/index.js:17797 (lib/load-overrides.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Plugin array identity changes rebuild the overrides and remount wrappers.",
+  "house_use": "packages/page-builder/src/parts/plugin.tsx:35",
+  "v024": "same: loadOverrides at puck-0.24.0/dist/index.js:19095, Plugin type unchanged"
+ },
+ {
+  "id": "plugin-left-rail",
+  "name": "Plugin left-rail tab",
+  "kind": "plugin",
+  "what": "Adds a named panel to the left rail with any React content.",
+  "how": "plugins={[{ name, label, icon, render: () => <Panel/> }]}.",
+  "evidence": "puck-0.23.0/dist/index.js:19426 (components/Puck/components/Layout/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "A plugin named fields replaces the built-in fields tab.",
+  "house_use": "packages/page-builder/src/templates/templates-plugin.tsx:60",
+  "v024": "same: Plugin type unchanged"
+ },
+ {
+  "id": "field-transforms",
+  "name": "fieldTransforms (prop and plugin)",
+  "kind": "hook",
+  "what": "Rewrites a prop's value by field type before the block renders in the canvas.",
+  "how": "<Puck fieldTransforms={{ text: ({value, componentId, propPath, isReadOnly}) => ... }}>.",
+  "evidence": "puck-0.23.0/dist/index.js:10784 (components/DropZone/index.tsx); 9837 (lib/field-transforms/use-field-transforms-tracked.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Also hits unfielded nested props that share a field name, and does not apply on the published route.",
+  "house_use": "unused",
+  "v024": "changed: Render (client and rsc) now accepts a fieldTransforms prop and applies it on the published route (puck-0.24.0/dist/rsc.js:930, use-render-props at rsc.js:699); edit-side pipeline unchanged (index.js:11588)"
+ },
+ {
+  "id": "compositional-parts",
+  "name": "Puck.Preview / Fields / Components / Outline / Layout",
+  "kind": "hook",
+  "what": "Lets another editor place Puck's canvas, form, list or tree anywhere in its own layout.",
+  "how": "<Puck><MyShell><Puck.Preview/><Puck.Fields/></MyShell></Puck>.",
+  "evidence": "puck-0.23.0/dist/index.js:19768 (components/Puck/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Preview sizing and READY status without Canvas are unverified.",
+  "house_use": "unused",
+  "v024": "same: Puck.Preview/Fields/Components/Outline/Layout unchanged"
+ },
+ {
+  "id": "register-overlay-portal",
+  "name": "registerOverlayPortal",
+  "kind": "dnd",
+  "what": "Marks an element inside the canvas so pointer presses on it do not start a block drag or hover outline.",
+  "how": "registerOverlayPortal(el, {disableDrag:true}) returns a cleanup function.",
+  "evidence": "puck-0.23.0/dist/index.js:9905 (lib/overlay-portal/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Clicks still bubble to every ancestor block and the outermost wins selection unless stopped.",
+  "house_use": "packages/page-builder/src/drag/empty-block.tsx:87",
+  "v024": "same: puck-0.24.0/dist/index.js:11270"
+ },
+ {
+  "id": "data-puck-dom",
+  "name": "data-puck-* DOM attributes",
+  "kind": "internal",
+  "what": "Finds a block's element, its slots and the canvas root in the iframe from outside React.",
+  "how": "doc.querySelector('[data-puck-component=ID]'), [data-puck-dropzone], [data-puck-entry].",
+  "evidence": "puck-0.23.0/dist/index.js:9074 (components/DraggableComponent/index.tsx); 11009 (components/DropZone/index.tsx)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Attributes exist only in the editor, on the wrapper (or inline root) element.",
+  "house_use": "packages/page-builder/src/parts/find.ts:31",
+  "v024": "same: data-puck-component/dnd set and el.style.position=relative still applied (puck-0.24.0/dist/index.js:10308-10310)"
+ },
+ {
+  "id": "iframe-config",
+  "name": "iframe options",
+  "kind": "iframe",
+  "what": "Turns the iframe canvas off or stops Puck copying host styles into it.",
+  "how": "<Puck iframe={{enabled, waitForStyles, syncHostStyles}}>.",
+  "evidence": "puck-0.23.0/dist/index.js:19285 (lib/style-config.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Without the iframe the page shares CSS with the editor chrome; with syncHostStyles false the host must supply styles itself.",
+  "house_use": "unused",
+  "v024": "same"
+ },
+ {
+  "id": "autoframe-style-mirror",
+  "name": "AutoFrame style mirroring",
+  "kind": "iframe",
+  "what": "Defines how page CSS reaches the canvas, which an outside style editor must hook into.",
+  "how": "Add style or link[rel=stylesheet] to the parent head (text edits are mirrored); insertRule and adoptedStyleSheets are not.",
+  "evidence": "puck-0.23.0/dist/index.js:15933 (components/AutoFrame/index.tsx)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Live CSS edits through the CSSOM never reach the canvas.",
+  "house_use": "unused",
+  "v024": "same (AutoFrame marker unchanged)"
+ },
+ {
+  "id": "dnd-config",
+  "name": "dnd options",
+  "kind": "dnd",
+  "what": "Chooses fluid or static drag feedback and disables auto-scroll or outline dragging.",
+  "how": "<Puck dnd={{behavior, disableAutoScroll, disableOutlineDrag}}>.",
+  "evidence": "puck-0.23.0/dist/index.js:19497 (components/Puck/components/Layout/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "No option changes the 200 ms plus 5 px activation.",
+  "house_use": "unused",
+  "v024": "changed: DndConfig gains enableDragHandle (actions-Dgllwd-W.d.ts)"
+ },
+ {
+  "id": "dnd-sensor-timing",
+  "name": "PointerSensor activation (200 ms + 5 px)",
+  "kind": "dnd",
+  "what": "Explains why quick pointer interactions select and slow ones drag; an outside editor must beat or avoid it.",
+  "how": "Stop pointerdown in capture on your handle, or use registerOverlayPortal.",
+  "evidence": "puck-0.23.0/dist/index.js:6127 (lib/dnd/use-sensors.ts)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Timings are not configurable and may change.",
+  "house_use": "unused",
+  "v024": "same: still Delay 200 ms + Distance 5 px; sensor now takes activatorElements and a drag-handle check (puck-0.24.0/dist/index.js:6226)"
+ },
+ {
+  "id": "permissions",
+  "name": "permissions (global, per block, resolved)",
+  "kind": "hook",
+  "what": "Switches drag, duplicate, delete, edit and insert on or off globally or per block.",
+  "how": "<Puck permissions={...}>, components[x].permissions, or resolvePermissions.",
+  "evidence": "puck-0.23.0/dist/index.js:3014 (store/slices/permissions.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "Only gates Puck's own UI; direct dispatch ignores it.",
+  "house_use": "packages/page-builder/src/block-settings.tsx:140",
+  "v024": "same"
+ },
+ {
+  "id": "resolve-data",
+  "name": "component resolveData",
+  "kind": "data",
+  "what": "Fills or corrects props from outside data whenever the block changes.",
+  "how": "components[x].resolveData(data, {changed, trigger, parent, metadata, root}) returns {props, readOnly}.",
+  "evidence": "puck-0.23.0/dist/index.js:3268 (lib/resolve-component-data.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Re-runs on any prop change, cannot clear readOnly, and resolveAllData calls it more than once for nested blocks.",
+  "house_use": "packages/page-builder/src/config.tsx:488",
+  "v024": "same API; resolveAllData internals changed, see resolve-all-data"
+ },
+ {
+  "id": "read-only-map",
+  "name": "readOnly map on a block",
+  "kind": "data",
+  "what": "Locks individual props (including array paths) against sidebar and inline editing.",
+  "how": "Return readOnly: { 'rows[*].title': true } from resolveData; stored beside props.",
+  "evidence": "puck-0.23.0/dist/index.js:9555 (lib/field-transforms/build-mappers.ts); 12507",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": false
+  },
+  "risk": "low",
+  "risk_note": "A later resolver run cannot empty it; only a non-empty readOnly replaces it.",
+  "house_use": "packages/page-builder/src/config.tsx:505",
+  "v024": "same"
+ },
+ {
+  "id": "create-reducer-headless",
+  "name": "createReducer (internal subpath)",
+  "kind": "internal",
+  "what": "Runs Puck's document actions with no UI, so a server tool or MCP can edit a page identically.",
+  "how": "import { createReducer } from '@puckeditor/core/internal'; createReducer({appStore:{config}})(state, action).",
+  "evidence": "puck-0.23.0/dist/internal.js:935 (reducer/index.ts)",
+  "stability": "semi",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": null,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "One export, no history, resolution or permissions, and the indexed-state builder is not exported.",
+  "house_use": "unused",
+  "v024": "same: internal.js identical to 0.23 apart from nothing (diff empty); still the only export (internal.d.ts, puck-0.24.0/dist/internal.js:953)"
+ },
+ {
+  "id": "resolve-all-data",
+  "name": "resolveAllData",
+  "kind": "render",
+  "what": "Resolves every block's data on the server before publishing or rendering.",
+  "how": "import { resolveAllData } from '@puckeditor/core/rsc'; await resolveAllData(data, config, metadata).",
+  "evidence": "puck-0.23.0/dist/rsc.js:1015 (lib/resolve-all-data.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "Nested blocks are resolved repeatedly and object props are walked with the parent's fields.",
+  "house_use": "apps/danamccool/src/app/[[...path]]/page.tsx",
+  "v024": "changed: slot children now resolve once via resolveChild/resolveNode, so the repeated resolveData calls in 0.23 are gone (puck-0.24.0/dist/rsc.js:1142-1182); the object-prop walk trap is unchanged"
+ },
+ {
+  "id": "rsc-render",
+  "name": "Render (RSC and client)",
+  "kind": "render",
+  "what": "Draws a stored document with no editor; the published page runs through here.",
+  "how": "import { Render } from '@puckeditor/core/rsc'; <Render config data metadata/>.",
+  "evidence": "puck-0.23.0/dist/rsc.js:819 (components/ServerRender/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": false,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "No wrapper per block, no defaults, no resolvers, unknown types dropped, and blocks see only props, id and puck.",
+  "house_use": "apps/elktours/src/lib/puck/render.tsx",
+  "v024": "changed: Render gains a fieldTransforms prop; slot elements now forward extra props to the as element; blocks still get only props/id/puck, no wrapper (puck-0.24.0/dist/rsc.js:930)"
+ },
+ {
+  "id": "walk-tree",
+  "name": "walkTree",
+  "kind": "data",
+  "what": "Visits and rewrites every slot array in a document, the building block for bulk edits.",
+  "how": "walkTree(data, config, (content, {parentId, propName}) => newContent).",
+  "evidence": "puck-0.23.0/dist/index.js:1959 (lib/data/walk-tree.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "Throws on a block type missing from config.",
+  "house_use": "packages/page-builder/src/drag/canvas-drag.tsx:206",
+  "v024": "same"
+ },
+ {
+  "id": "migrate-transform-props",
+  "name": "migrate and transformProps",
+  "kind": "data",
+  "what": "Upgrades old documents and rewrites props per block type across the tree.",
+  "how": "migrate(data, config); transformProps(data, { Type: props => newProps }).",
+  "evidence": "puck-0.23.0/dist/index.js:19893 (lib/migrate.ts); 19912 (lib/transform-props.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "migrate throws on a legacy zone with no matching slot; transform output replaces props except id.",
+  "house_use": "unused",
+  "v024": "same (walk-tree d.ts only re-hashed)"
+ },
+ {
+  "id": "inline-text-field",
+  "name": "contentEditable text fields",
+  "kind": "override",
+  "what": "Makes a text or textarea prop typeable directly on the canvas.",
+  "how": "Set contentEditable: true on a text, textarea or custom (string) field.",
+  "evidence": "puck-0.23.0/dist/index.js:10095 (lib/field-transforms/default-transforms/inline-text-transform.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": false
+  },
+  "risk": "medium",
+  "risk_note": "Every keystroke is a replace plus a resolveData run, and the span competes with outside text editors for focus.",
+  "house_use": "unused",
+  "v024": "changed: InlineTextField is now a public export with a placeholder option (index.d.ts)"
+ },
+ {
+  "id": "richtext-field",
+  "name": "richtext field (Tiptap)",
+  "kind": "override",
+  "what": "Provides inline rich-text editing with configurable Tiptap extensions and menus.",
+  "how": "Field { type:'richtext', options, tiptap:{extensions}, renderMenu, renderInlineMenu }.",
+  "evidence": "puck-0.23.0/dist/index.js:10238 (lib/field-transforms/default-transforms/rich-text-transform.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Published output is stored HTML set with dangerouslySetInnerHTML, so it must be sanitised.",
+  "house_use": "packages/page-builder/src/config.tsx:405",
+  "v024": "changed: textAlign defaults merged differently; richtext skipped when a user fieldTransform exists for the type (puck-0.24.0/dist/rsc.js:656)"
+ },
+ {
+  "id": "slot-allow-disallow",
+  "name": "Slot allow / disallow",
+  "kind": "data",
+  "what": "Restricts which block types a slot accepts.",
+  "how": "Declare allow/disallow on the slot field; Slot call props also work in the canvas.",
+  "evidence": "puck-0.23.0/dist/index.js:9592 (lib/field-transforms/default-transforms/slot-transform.tsx); 16488",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": true,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Outline reads the field only, canvas also reads Slot props.",
+  "house_use": "packages/blocks/src/slot.tsx",
+  "v024": "changed: slot call props are now typed SlotProps and extra non-consumed props are forwarded to the as element (actions-Dgllwd-W.d.ts); allow/disallow semantics not re-diffed"
+ },
+ {
+  "id": "inline-component",
+  "name": "component inline: true",
+  "kind": "dnd",
+  "what": "Removes Puck's wrapper div so the block's own root is the draggable element, matching published layout.",
+  "how": "components[x].inline = true and attach puck.dragRef to the root element.",
+  "evidence": "puck-0.23.0/dist/index.js:10830 (components/DropZone/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Puck forces position:relative inline on that root in the editor.",
+  "house_use": "unused",
+  "v024": "same: wrapper div with ref dragRef for non-inline blocks still present (puck-0.24.0/dist/index.js:12163)"
+ },
+ {
+  "id": "dev-global-appstore",
+  "name": "window.__PUCK_INTERNAL_DO_NOT_USE.appStore",
+  "kind": "store",
+  "what": "Exposes the raw zustand store to the console and outside scripts, development builds only.",
+  "how": "window.__PUCK_INTERNAL_DO_NOT_USE.appStore.getState().",
+  "evidence": "puck-0.23.0/dist/index.js:19728 (components/Puck/index.tsx)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "high",
+  "risk_note": "Absent in production builds, which the house runs.",
+  "house_use": "unused",
+  "v024": "same: puck-0.24.0/dist/index.js:21044"
+ },
+ {
+  "id": "use-puck-private",
+  "name": "usePuck __private.appState",
+  "kind": "hook",
+  "what": "Gives outside code the indexes (nodes and zones) that the public appState hides.",
+  "how": "usePuck(s => s.__private.appState.indexes).",
+  "evidence": "puck-0.23.0/dist/index.js:17921 (lib/use-puck.ts)",
+  "stability": "internal",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "high",
+  "risk_note": "Undocumented and private by name.",
+  "house_use": "unused",
+  "v024": "same"
+ },
+ {
+  "id": "config-render-hoc",
+  "name": "Config-level render wrapper",
+  "kind": "render",
+  "what": "Wraps every block's render once in config so a style layer exists on both canvas and published page.",
+  "how": "When building the Config, replace each components[x].render with a HOC that reads props.look and id.",
+  "evidence": "puck-0.23.0/dist/rsc.js:758 (components/ServerRender/index.tsx); index.js:10830",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "The editor wrapper div still sits outside it, so layout can differ from publish unless the block is inline.",
+  "house_use": "unused (config.tsx maps fields at 443-462; no render HOC)",
+  "v024": "same: no wrapper added by Puck on either route"
+ },
+ {
+  "id": "render-field-transforms",
+  "name": "Published Render fieldTransforms",
+  "kind": "render",
+  "what": "Lets the host rewrite prop values by field type on the published route, not only in the editor.",
+  "how": "<Render fieldTransforms={{ object: ({value, field, propPath, componentId}) => ... }}> from @puckeditor/core/rsc.",
+  "evidence": "puck-0.24.0/dist/rsc.js:930 (components/ServerRender/index.tsx); rsc.js:699 (lib/props/render/use-render-props.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "medium",
+  "risk_note": "Replaces a prop value, it does not wrap the block, and a user transform for a type disables Puck's default richtext rendering for it.",
+  "house_use": "unused",
+  "v024": "new: Render accepts fieldTransforms and runs them with readOnly forced on"
+ },
+ {
+  "id": "slot-forward-props",
+  "name": "Slot extra props forwarded to the element",
+  "kind": "render",
+  "what": "Lets a block pass attributes (data-*, aria, className) to the slot's container element on both canvas and published page.",
+  "how": "Call <Slot as='section' data-x='1' />; non-consumed props are forwarded to the as element, children and dangerouslySetInnerHTML are stripped with a warning.",
+  "evidence": "puck-0.24.0/dist/rsc.js:763 (lib/props/shared/get-drop-zone-props.ts)",
+  "stability": "public",
+  "survives": {
+   "duplicate": true,
+   "move": true,
+   "undoRedo": true,
+   "resolveData": true,
+   "publishedRender": true
+  },
+  "risk": "low",
+  "risk_note": "Only the slot container, not the block root.",
+  "house_use": "unused",
+  "v024": "new: DropZone and slot components forward extra props to the as element"
+ },
+ {
+  "id": "action-bar-drag-handle",
+  "name": "ActionBar drag handle",
+  "kind": "dnd",
+  "what": "Gives a block a dedicated drag grip so the rest of the block surface can be used by an outside editor without starting a drag.",
+  "how": "<Puck dnd={{enableDragHandle:true}}>; ActionBar.DragHandle or the dragHandle/dragHandleRef props of overrides.actionBar.",
+  "evidence": "puck-0.24.0/dist/index.js:9991, 10452-10458, 10529 (components/DraggableComponent/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "medium",
+  "risk_note": "Whether whole-block drag is disabled when the handle is on was not verified.",
+  "house_use": "unused",
+  "v024": "new: enableDragHandle, ActionBar.DragHandle, action-drag string"
+ },
+ {
+  "id": "render-fields-layout",
+  "name": "renderFields, FieldGroup, Tab and fields map",
+  "kind": "override",
+  "what": "Lets a block or the host lay out the sidebar fields in groups and tabs, e.g. a style tab.",
+  "how": "components[x].renderFields({fields}) or overrides.fields; use exported FieldGroup and Tab; ui.fieldTab selects the tab.",
+  "evidence": "puck-0.24.0/dist/index.js:13521-13577 (components/Puck/components/Fields/index.tsx)",
+  "stability": "public",
+  "survives": {
+   "duplicate": null,
+   "move": null,
+   "undoRedo": null,
+   "resolveData": null,
+   "publishedRender": null
+  },
+  "risk": "low",
+  "risk_note": "Sidebar only; no effect on data or publish.",
+  "house_use": "unused",
+  "v024": "new: renderFields, FieldGroup, Tab, fieldTab and expandedFieldGroups in UiState"
+ }
+]

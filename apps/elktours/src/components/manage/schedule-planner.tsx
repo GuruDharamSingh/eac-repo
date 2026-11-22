@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { TourDeparture } from "@elkdonis/commerce/server";
-import { cancelDepartureAction, saveDepartureAction } from "@/lib/tour-actions";
+import { cancelDepartureAction, removeDepartureAction, saveDepartureAction } from "@/lib/tour-actions";
 import { formatDeparture, toParisInput } from "@/lib/tour-format";
 import { addDays, formatDay, parisTimeOf } from "@/lib/schedule-plan";
 import { Button, Input, Label } from "@elkdonis/primitives";
@@ -28,6 +28,8 @@ interface Props {
   departures: PlannerDeparture[];
   tours: TourOption[];
   guides: Guide[];
+  /** Owners may remove a cancelled departure from the schedule. */
+  canRemove?: boolean;
 }
 
 type Open = { kind: "departure"; id: string } | { kind: "new"; day: string } | null;
@@ -37,7 +39,7 @@ type Open = { kind: "departure"; id: string } | { kind: "new"; day: string } | n
  * phone. A departure opens a side panel to edit or cancel it; the + on a day
  * still to come opens the same panel to add one.
  */
-export function SchedulePlanner({ monday, today, departures, tours, guides }: Props) {
+export function SchedulePlanner({ monday, today, departures, tours, guides, canRemove = false }: Props) {
   const [open, setOpen] = useState<Open>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const selected = open?.kind === "departure" ? departures.find((d) => d.id === open.id) ?? null : null;
@@ -109,7 +111,7 @@ export function SchedulePlanner({ monday, today, departures, tours, guides }: Pr
             {open.kind === "new" ? (
               <NewDeparture key={open.day} day={open.day} tours={tours} guides={guides} onDone={() => setOpen(null)} />
             ) : selected ? (
-              <DepartureDetail key={selected.id} d={selected} guides={guides} onDone={() => setOpen(null)} />
+              <DepartureDetail key={selected.id} d={selected} guides={guides} canRemove={canRemove} onDone={() => setOpen(null)} />
             ) : (
               <p className="text-sm text-muted-foreground">That departure is no longer in this week.</p>
             )}
@@ -152,7 +154,7 @@ function GuideSelect({ id, value, onChange, guides }: { id: string; value: strin
   );
 }
 
-function DepartureDetail({ d, guides, onDone }: { d: PlannerDeparture; guides: Guide[]; onDone: () => void }) {
+function DepartureDetail({ d, guides, canRemove, onDone }: { d: PlannerDeparture; guides: Guide[]; canRemove: boolean; onDone: () => void }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [startsAt, setStartsAt] = useState(toParisInput(d.startsAt));
@@ -177,6 +179,16 @@ function DepartureDetail({ d, guides, onDone }: { d: PlannerDeparture; guides: G
       const r = await cancelDepartureAction(d.id, msg);
       if (!r.ok) return void toast.error(r.error);
       toast.success(r.notified ? `Cancelled; ${r.notified} emailed` : "Cancelled");
+      router.refresh();
+      onDone();
+    });
+  }
+  function remove() {
+    if (!confirm("Remove this cancelled departure from the schedule? This cannot be undone.")) return;
+    start(async () => {
+      const r = await removeDepartureAction(d.id);
+      if (!r.ok) return void toast.error(r.error);
+      toast.success("Removed");
       router.refresh();
       onDone();
     });
@@ -221,6 +233,13 @@ function DepartureDetail({ d, guides, onDone }: { d: PlannerDeparture; guides: G
             <Button type="button" onClick={save} disabled={pending}>Save</Button>
             <Button type="button" variant="ghost" className="text-destructive" onClick={cancel} disabled={pending}>Cancel departure</Button>
           </div>
+        </div>
+      )}
+
+      {!scheduled && canRemove && (
+        <div className="mt-6 border-t border-border pt-5">
+          <Button type="button" variant="ghost" className="text-destructive" onClick={remove} disabled={pending}>Remove from schedule</Button>
+          <p className="mt-1 text-xs text-muted-foreground">Deletes the cancelled run. Runs with booking records are kept.</p>
         </div>
       )}
     </div>

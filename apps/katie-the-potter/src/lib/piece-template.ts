@@ -45,7 +45,7 @@ export const DEFAULT_PIECE_DETAIL = {
         showNav: true,
         showFacts: true,
         showDescription: true,
-        note: "Pay here by card or Interac eTransfer. Each piece is one of a kind and is held for you once you check out.",
+        note: "Pay here by card or Interac eTransfer. Each piece is one of a kind and goes to whoever pays first.",
       },
     },
     {

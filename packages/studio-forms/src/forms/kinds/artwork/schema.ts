@@ -34,6 +34,7 @@ import {
   descriptionSummary,
   detailsSummary,
   editionSummary,
+  priceLine,
 } from './sections';
 
 /** The fields the shell draws for artwork by name (content-fields declares none). */
@@ -122,7 +123,7 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
       // The seller is the artist until someone else is chosen.
       done: (_a, ctx) => ctx.fields.canEdit !== false,
     },
-    { id: 'price', label: 'Price', tier: 'essentials', fields: ['price_mode', 'price', 'currency'], render: 'artworkPrice', quick: true },
+    { id: 'price', label: 'Price', tier: 'essentials', fields: ['price_mode', 'price', 'currency'], render: 'artworkPrice', quick: true, rowSummary: (a, ctx) => { const l = priceLine(a, ctx); return l === 'No price yet' ? undefined : l; }, rowPlaceholder: 'Set a price' },
     {
       // setArtworkAvailability, on a listed piece only (commerce/src/server/index.ts:1417-1447); drawn disabled on a draft.
       id: 'availability',

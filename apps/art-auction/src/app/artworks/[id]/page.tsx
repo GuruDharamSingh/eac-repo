@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { isBotUserAgent } from "@elkdonis/analytics";
 import type { Metadata } from "next";
 import {
   getArtworkById,
@@ -49,8 +51,8 @@ export default async function ArtworkDetailPage({
     sp.via && sp.via !== artwork.storeId && (await isPresentedBy(sp.via, artwork.id)) ? sp.via : null;
   const viaStore = viaStoreId ? await getStore(viaStoreId) : null;
 
-  // Count this view (fire-and-forget; never blocks render).
-  void incrementArtworkView(artwork.id);
+  // Count this view (fire-and-forget; never blocks render). Crawlers don't count.
+  if (!isBotUserAgent((await headers()).get("user-agent"))) void incrementArtworkView(artwork.id);
 
   const userId = await getCurrentUserId();
   const [favorited, actable] = await Promise.all([

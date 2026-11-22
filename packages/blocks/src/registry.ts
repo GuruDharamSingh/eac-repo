@@ -90,6 +90,16 @@ export function createCatalogue(blocks: Block<never>[]): Catalogue {
       }
     }
 
+    // A part named like one of the block own slots: a stored morph.parts.<slot> is read as that slot by
+    // resolveAllData on the public route and 500s the page (hiddenenneagram.com, 2026-11-11, `look.items`).
+    for (const prop of block.def.props) {
+      if (prop.kind === "slot" && block.def.parts && Object.prototype.hasOwnProperty.call(block.def.parts, prop.name)) {
+        throw new Error(
+          `[blocks] ${block.def.id} declares a part named "${prop.name}", the name of one of its own slots; rename the part.`
+        );
+      }
+    }
+
     if (byId.has(block.def.id)) {
       // Two blocks answering to one id means stored page JSON is ambiguous:
       // whichever registered last would silently win, and a page saved today

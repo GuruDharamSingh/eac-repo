@@ -1,5 +1,6 @@
 "use server";
 
+import { ensureFolderSoon } from "@/lib/media-folders";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -10,17 +11,18 @@ import { ensureUniqueThreadSlug } from "@elkdonis/services";
 import { deriveExcerpt, sanitizeRichText } from "@elkdonis/utils";
 import { slugifyTitle } from "@/lib/cms/schema";
 import {
-  cancelDeparture,
-  cancelTourBooking,
-  createDeparture,
   saveTourStops,
-  updateDeparture,
   type TourStopInput,
 } from "@elkdonis/commerce/server";
-import { bookingAvailability, publicOriginFrom, startTourCheckout } from "@elkdonis/checkout/booking";
+import { bookingAvailability, publicOriginFrom, startBookingCheckout, startTourCheckout } from "@elkdonis/checkout/booking";
+import { getOfferByThread, saveOffer } from "@elkdonis/checkout/booking-server";
+import { closedAlready } from "@elkdonis/checkout/booking-core";
+import { cancelDeparture, cancelTourBooking, createDeparture, getDeparture, removeCancelledDeparture, updateDeparture } from "@/lib/departures";
 import { getViewer, requireOrgEditor } from "@/lib/auth";
+import { bookingTablesOn, getTourBookingDefaults } from "@/lib/tour-slots";
+import { PREVIEW_REFUSAL, fixturesOn } from "@/lib/tour-slot-fixtures";
 import { parisInputToDate } from "@/lib/format";
-import { getTourById, getTourBySlug, type TourDetails } from "@/lib/tours";
+import { getTourById, getTourBySlug, type TourDetails, type TourRoute } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
 
 const ORG = siteConfig.orgId;
@@ -54,6 +56,7 @@ const tourFormSchema = z.object({
   languages: lines.default([]),
   maxParty: optNum(1, 20),
   effort: z.string().trim().max(200).optional().or(z.literal("")),
+  city: z.string().trim().max(80).optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
 });
 export type TourFormValues = z.input<typeof tourFormSchema>;
@@ -78,6 +81,10 @@ export async function saveTourAction(input: TourFormValues, threadId?: string): 
     maxParty: d.maxParty ?? null,
     effort: d.effort || null,
     route: existing?.details.route ?? null,
+    // The form leaves the city out unless it shows it: keep the stored one then.
+    city: d.city !== undefined ? d.city || null : existing?.details.city ?? null,
+    // The dragged path belongs to the route step, not this form: carry it over.
+    via: existing?.details.via ?? null,
   };
   // Keep keys other features write (cover, timeZone, …): merge, do not assign.
   const patch = JSON.parse(JSON.stringify({ ...(d.coverImageUrl ? { coverImageUrl: d.coverImageUrl } : {}), tour: details })) as Record<string, string>;
@@ -96,6 +103,7 @@ export async function saveTourAction(input: TourFormValues, threadId?: string): 
       `;
       const { refreshTourRoute } = await import("@/lib/tour-cache");
       await refreshTourRoute(threadId).catch(() => null);
+      await ensureTourOffer(threadId, d.durationMinutes ?? null, d.maxParty ?? null);
       revalidateTour(slug);
       return { ok: true, id: threadId, slug };
     }
@@ -111,11 +119,48 @@ export async function saveTourAction(input: TourFormValues, threadId?: string): 
         ${d.durationMinutes ?? null}, ${d.location || null}, 'in_person', ${publishedAt}
       )
     `;
+    await ensureTourOffer(id, d.durationMinutes ?? null, d.maxParty ?? null);
+    // Tours/<slug>/ and its Private/ in Nextcloud (2026-11-20); a storage failure does not fail the save.
+    ensureFolderSoon("tour", id);
     revalidateTour(slug);
     return { ok: true, id, slug };
   } catch (err) {
     console.error("[elktours] saveTourAction:", err);
     return { ok: false, error: "Could not save. Try again." };
+  }
+}
+
+/**
+ * A tour needs a set-dates booking offer before it can be given dates on the booking tables (createSlots refuses
+ * "This tour has no booking set-up yet"). Migration 274 made one for every tour that existed on 2026-11-16; tours
+ * created later had none (found 2026-11-19). Creates it with 274's defaults when missing; never changes an
+ * existing offer. A failure is logged and does not fail the tour save.
+ */
+async function ensureTourOffer(threadId: string, durationMinutes: number | null, maxParty: number | null): Promise<void> {
+  if (!bookingTablesOn()) return;
+  try {
+    if (await getOfferByThread(ORG, threadId)) return;
+    const r = await saveOffer({
+      orgId: ORG,
+      threadId,
+      offer: {
+        mode: "set_dates",
+        durationMinutes: durationMinutes && durationMinutes >= 5 ? durationMinutes : 120,
+        timeZone: siteConfig.timeZone,
+        capacityPerSlot: 8,
+        minParty: 1,
+        maxParty: maxParty ?? 20,
+        priceUnit: "per_person",
+        leadTimeMinutes: 0,
+        closeBeforeMinutes: 0,
+        maxAheadDays: 366,
+        approval: "instant",
+        status: "open",
+      },
+    });
+    if (r.ok === false) console.error(`[elktours] ensureTourOffer(${threadId}):`, r.error);
+  } catch (err) {
+    console.error(`[elktours] ensureTourOffer(${threadId}):`, err);
   }
 }
 
@@ -163,6 +208,46 @@ export async function saveStopsAction(threadId: string, stops: TourStopInput[]):
   } catch (err) {
     console.error("[elktours] saveStopsAction:", err);
     return { ok: false, error: err instanceof Error ? err.message : "Could not save the stops." };
+  }
+}
+
+/**
+ * The walking path's dragged points (Create Tour wizard, Route step): replaces `metadata.tour.via` and
+ * recomputes the route through them. Keys are "<from>><to>" with "meet" or a stop id of this tour; up to 8
+ * points per leg, inside the city's box. Owners any tour; guides the tours they wrote.
+ */
+export async function saveRouteViaAction(threadId: string, via: Record<string, [number, number][]>): Promise<ActionResult<{ route: TourRoute | null }>> {
+  const viewer = await requireOrgEditor();
+  const tour = await getTourById(threadId);
+  if (!tour) return { ok: false, error: "Not found" };
+  if (viewer.role !== "owner" && tour.authorId !== viewer.userId) return { ok: false, error: "That is not your tour." };
+  const stopIds = new Set((await db`SELECT id::text FROM tour_stops WHERE thread_id = ${threadId} AND org_id = ${ORG}`).map((r) => (r as { id: string }).id));
+  const okKey = (k: string) => {
+    const [a, b, extra] = k.split(">");
+    return extra === undefined && !!a && !!b && (a === "meet" || stopIds.has(a)) && stopIds.has(b);
+  };
+  const clean: Record<string, [number, number][]> = {};
+  for (const [k, list] of Object.entries(via ?? {})) {
+    if (!okKey(k) || !Array.isArray(list)) continue;
+    const pts = list
+      .filter((p) => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "number" && Number.isFinite(x)))
+      .filter(([lng, lat]) => Math.abs(lat - 48.86) < 0.6 && Math.abs(lng - 2.35) < 0.9)
+      .slice(0, 8)
+      .map(([lng, lat]) => [Math.round(lng * 1e6) / 1e6, Math.round(lat * 1e6) / 1e6] as [number, number]);
+    if (pts.length) clean[k] = pts;
+  }
+  try {
+    await db`
+      UPDATE threads SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{tour,via}', ${db.json(clean as never)}, true), updated_at = NOW()
+      WHERE id = ${threadId} AND org_id = ${ORG} AND kind = 'tour'
+    `;
+    const { refreshTourRoute } = await import("@/lib/tour-cache");
+    const route = await refreshTourRoute(threadId);
+    revalidateTour(tour.slug);
+    return { ok: true, route };
+  } catch (err) {
+    console.error("[elktours] saveRouteViaAction:", err);
+    return { ok: false, error: "Could not save the path." };
   }
 }
 
@@ -235,6 +320,20 @@ export async function cancelDepartureAction(departureId: string, message?: strin
   }
 }
 
+/** Owners only: delete a cancelled departure that no booking points at (see removeCancelledDeparture). */
+export async function removeDepartureAction(departureId: string): Promise<ActionResult> {
+  const viewer = await requireOrgEditor();
+  if (viewer.role !== "owner") return { ok: false, error: "Only an owner can remove a departure." };
+  try {
+    await removeCancelledDeparture(ORG, departureId);
+    revalidateTour();
+    revalidatePath("/manage/schedule");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not remove." };
+  }
+}
+
 export async function cancelBookingAction(bookingId: string, message?: string): Promise<ActionResult> {
   await requireOrgEditor();
   try {
@@ -263,6 +362,7 @@ const bookSchema = z.object({
  * their /account page. On success this redirects (never returns).
  */
 export async function bookTourAction(input: z.input<typeof bookSchema>): Promise<ActionResult> {
+  if (fixturesOn()) return { ok: false, error: PREVIEW_REFUSAL };
   const parsed = bookSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form" };
   const d = parsed.data;
@@ -275,8 +375,48 @@ export async function bookTourAction(input: z.input<typeof bookSchema>): Promise
   if (available.ok === false) {
     return { ok: false, error: available.reason === "no_card" ? "Card payments are not switched on yet." : "Booking opens once the guide has set up how they are paid." };
   }
+  // Booking closes `closeBeforeMinutes` before the start (the tour's default; same words as quoteBooking).
+  // (On the booking tables createBooking enforces it, with the slot's own cutoff.)
+  const departure = bookingTablesOn() ? null : await getDeparture(d.departureId);
+  if (departure && departure.threadId === tour.id) {
+    const defaults = await getTourBookingDefaults(tour.id);
+    if (defaults && closedAlready(departure.startsAt, defaults.closeBeforeMinutes)) {
+      return { ok: false, error: "Booking for that date has closed." };
+    }
+  }
   const viewer = await getViewer().catch(() => null);
   const baseUrl = publicOriginFrom(await headers(), process.env.NEXT_PUBLIC_APP_URL);
+  if (bookingTablesOn()) {
+    // Booking tables: a booking is taken under the slot lock, then the order, then the card session.
+    let bookedUrl: string;
+    try {
+      const offer = await getOfferByThread(ORG, tour.id);
+      if (!offer || offer.mode !== "set_dates") return { ok: false, error: "That tour is not open for booking yet." };
+      const booked = await startBookingCheckout({
+        orgId: ORG,
+        threadId: tour.id,
+        offerId: offer.id,
+        slotId: d.departureId,
+        partySize: d.partySize,
+        kinds: ["tour"],
+        itemNoun: "place",
+        customerEmail: d.email,
+        customerName: d.name,
+        customerId: viewer?.userId ?? null,
+        notes: d.note || null,
+        timeZone: siteConfig.timeZone,
+        baseUrl,
+        siteUrl: baseUrl,
+        returnPathFor: (token) => `/bookings/${token}`,
+        cancelPath: `/tours/${tour.slug}`,
+        returnRoute: "/api/checkout/return",
+      });
+      bookedUrl = booked.url;
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Could not start the booking." };
+    }
+    redirect(bookedUrl);
+  }
   let url: string;
   try {
     const started = await startTourCheckout({

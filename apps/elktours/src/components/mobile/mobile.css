@@ -1,0 +1,422 @@
+/* ==========================================================================
+   Elkdonis mobile design (2026-11-15). Everything here is either a new class
+   nothing on desktop uses, or sits inside `.elk-m` / `max-width: 767px`.
+   Colours and fonts read the variables pinned in the "Phone design tokens" block below (they ignore Site style
+   on purpose). Radii still read the site's variables.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Phone design tokens. INTENTIONALLY IGNORE THE SAVED SITE STYLE (Justin, 2026-11-15: "the design theme can
+   supersede the edited themes on the app in every way"). These are the design pack's exact values (pack/README.md),
+   set on the body of any page that draws a phone tree (and on the shell), below 768px only, so a Site style
+   --background / colour / font edit cannot reach the phone design. Desktop (md and up) is untouched.
+   The body is the scope, not .elk-m, so portalled sheets and the nav (which sit outside .elk-m) get them too.
+   ========================================================================== */
+@media (max-width: 767px) {
+  html:has(.elk-m), html:has(.gf-m) { background: #1b1d22; }
+  body:has(.elk-m), body:has(.gf-m), .m-shell {
+    --background: 218 11% 19%;            /* #2b2f36 */
+    --foreground: 40 35% 92%;            /* ivory #f1ece2 */
+    --card: 218 10% 21%;                /* #31353c */
+    --card-foreground: 40 35% 92%;
+    --popover: 216 10% 20%;              /* sheet #2f3339 */
+    --popover-foreground: 40 35% 92%;
+    --secondary: 217 10% 26%;           /* well #3d424a */
+    --secondary-foreground: 40 35% 92%;
+    --muted-foreground: 39 12% 69%;     /* #b9b2a5 */
+    --primary: 39 50% 57%;            /* brass #c9a25c */
+    --primary-foreground: 218 13% 12%;   /* ink #1b1e23 */
+    --brass-light: 40 54% 70%;           /* #dcc08a */
+    --verdigris: 164 27% 63%;            /* #86b9ab */
+    --terracotta: 15 75% 64%;          /* vermilion #e8805c */
+    --foreground-soft: #e6e0d4;
+    --faint: #8f8a82;
+    --m-screen: linear-gradient(180deg, #25282e 0%, #2b2f36 55%, #282b31 100%);
+    --m-card: #31353c;
+    --m-card-raised: #343941;
+    --m-sheet: #2f3339;
+    --m-well: #3d424a;
+    --site-font-heading: "Brothers", "Venture", Georgia, serif;   /* Display */
+    --site-font-body: "Basteleur", Georgia, serif;                /* card titles and body */
+    --site-font-kicker: "Venture", Georgia, serif;                /* kickers */
+    /* Block text (packages/blocks .blk { color: var(--blk-fg) }). --blk-fg is resolved on :root against the
+       desktop --foreground, so without this every phone block inherited the site's black (2026-11-19: the tour
+       title on graphite). Re-resolved here it follows the phone ivory, and the light theme's ink. */
+    --blk-fg: hsl(var(--foreground));
+  }
+  body:has(.elk-m), body:has(.gf-m) { background: #2b2f36; color: #f1ece2; }
+  /* The glow: the prototype's radial behind the page, and its vignette over it, both fixed to the screen. */
+  .elk-m { isolation: isolate; }
+  .elk-m::before, .elk-m::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  .elk-m::before { background: radial-gradient(closest-side, #3b4048 0%, #2b2f36 62%, #1b1d22 100%); opacity: 0.5; }
+  .elk-m::after { background: radial-gradient(ellipse at 50% 60%, transparent 55%, rgba(0, 0, 0, 0.45) 100%); }
+  /* Display headings are always Brothers 400 on the phone. */
+  .elk-m :is(h1, h2, h3), .m-ov :is(h1, h2, h3) { font-family: var(--site-font-heading); font-weight: 400; }
+}
+
+/* ==========================================================================
+   Phone light theme (2026-11-16, design canvas L1). Chosen per visitor in the City menu (components/mobile/
+   phone-theme.tsx), which sets html[data-m-theme="light"]. The whole accent set is swapped, not lifted: brass and
+   verdigris carry text here, so they are darkened. Ratios on white #fff (well #f4f1eb):
+   ink #1b1e23 16.8 · muted 7.3 (6.5) · primary/brass #7e622a 5.5 (4.9) · white on primary 5.5 ·
+   verdigris #2f6b5d 6.3 (5.6) · terracotta 6.0 · faint #6b665e 5.7.
+   ========================================================================== */
+@media (max-width: 767px) {
+  html[data-m-theme="light"]:has(.elk-m), html[data-m-theme="light"]:has(.gf-m) { background: #ffffff; }
+  html[data-m-theme="light"] body:has(.elk-m), html[data-m-theme="light"] body:has(.gf-m), html[data-m-theme="light"] .m-shell {
+    --background: 0 0% 100%;
+    --foreground: 216 13% 12%;           /* ink #1b1e23 */
+    --card: 0 0% 100%;
+    --card-foreground: 216 13% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 13% 12%;
+    --secondary: 40 27% 94%;             /* well #f4f1eb */
+    --secondary-foreground: 216 13% 12%;
+    --muted-foreground: 40 6% 33%;
+    --primary: 39 52% 34%;               /* brass, dark #7e622a */
+    --primary-foreground: 0 0% 100%;
+    --brass-light: 39 52% 34%;
+    --verdigris: 165 39% 30%;            /* #2f6b5d */
+    --terracotta: 15 60% 40%;
+    --foreground-soft: #2c2f35;
+    --faint: #6b665e;
+    --m-screen: #ffffff;
+    --m-card: #ffffff;
+    --m-card-raised: #ffffff;
+    --m-sheet: #ffffff;
+    --m-well: #f4f1eb;
+    --scrim: rgba(255, 255, 255, 0.88);
+    /* Declared on :root in globals.css from :root's colours, so they are restated here for the light ground. */
+    --hair-1: rgba(27, 30, 35, 0.08);
+    --hair-2: rgba(27, 30, 35, 0.12);
+    --hair-3: rgba(27, 30, 35, 0.16);
+    --hair-4: rgba(27, 30, 35, 0.22);
+    --brass-line: rgba(126, 98, 42, 0.45);
+  }
+  html[data-m-theme="light"] body:has(.elk-m), html[data-m-theme="light"] body:has(.gf-m) { background: #ffffff; color: #1b1e23; }
+  html[data-m-theme="light"] .elk-m::before, html[data-m-theme="light"] .elk-m::after { display: none; }
+  /* Featured tour: no card, only the photo window. */
+  html[data-m-theme="light"] .blk-mft { background: transparent; padding: 0; clip-path: none; }
+  html[data-m-theme="light"] .blk-mft::after { display: none; }
+  html[data-m-theme="light"] :is(.blk-mft-root .m-section-label, .blk-mxp-label) { font-size: 17px; }
+  /* Masthead: the wordmark on one line in black Brothers, the city button below it on the left. */
+  html[data-m-theme="light"] .blk-mmast { flex-direction: column; align-items: flex-start; gap: 18px; padding-top: 54px; }
+  html[data-m-theme="light"] .blk-mmast-word { flex-direction: row; gap: 0.25em; width: 100%; justify-content: center; white-space: nowrap; font-size: min(42px, 10.4vw); }
+  html[data-m-theme="light"] .blk-mmast-word1 { color: inherit; }
+  html[data-m-theme="light"] .blk-mmast-city { margin-left: 0; }
+  html[data-m-theme="light"] .m-back { border-color: hsl(var(--foreground) / 0.16); background: #ffffff; color: #1b1e23; }
+  html[data-m-theme="light"] .blk-mpt-veil { background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.8) 55%, #ffffff 100%); }
+  html[data-m-theme="light"] .blk-mpt--cover .blk-mpt-title { text-shadow: none; }
+  html[data-m-theme="light"] .m-stop-thumb { background: #f4f1eb; }
+}
+
+/* The Dark | Light switch in the City menu. */
+.m-theme { display: flex; flex-direction: column; gap: 8px; }
+.m-theme-row { display: inline-flex; align-self: flex-start; padding: 3px; border-radius: 24px; border: 1px solid var(--hair-3); }
+.m-theme-btn { min-width: 84px; height: 40px; padding: 0 16px; border: 0; border-radius: 20px; background: transparent; color: inherit; font: inherit; font-size: 14.5px; cursor: pointer; }
+.m-theme-btn[aria-pressed="true"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.m-theme-btn:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+
+/* The mobile tree: one wrapper per page, drawn beside the desktop tree. */
+.elk-m {
+  position: relative;
+  min-height: 100vh;
+  background: var(--m-screen);
+  color: hsl(var(--foreground));
+  font-family: var(--site-font-body, "Basteleur", Georgia, serif);
+  font-size: 15px;
+  padding-bottom: var(--shell-nav-h, 0px);
+}
+
+/* ---- Utilities ---------------------------------------------------------- */
+
+.m-porthole {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--m-well);
+  border: 1px solid var(--brass-line);
+  color: hsl(var(--brass-light));
+}
+.m-porthole.is-verdigris { border-color: hsl(var(--verdigris) / 0.6); color: hsl(var(--verdigris)); }
+.m-porthole-initial { font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif); line-height: 1; }
+
+.m-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* Double gold frame: drawn by ArchFrame as an SVG stroke (shapes.css). */
+
+/* Cut corners (12px). Used on the primary button and call-out fills. */
+.m-cut {
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+}
+
+.m-kicker {
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+/* Hairline that fades out. `.m-rule-in` fades in instead (before a label). */
+.m-rule {
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.6), transparent);
+}
+.m-rule-in { background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.7)); }
+
+.m-dropcap::first-letter {
+  float: left;
+  font-family: var(--site-font-body, "Basteleur", Georgia, serif);
+  font-weight: 700;
+  font-size: 60px;
+  line-height: 0.82;
+  margin: 6px 10px 0 0;
+  color: hsl(var(--primary));
+}
+
+@keyframes m-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.m-enter { animation: m-enter var(--m-dur-screen, 0.32s) ease both; }
+@keyframes m-fade { from { opacity: 0; } to { opacity: 1; } }
+.m-fade { animation: m-fade 0.25s ease both; }
+
+.m-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---- Bottom nav --------------------------------------------------------- */
+
+.m-nav { display: none; }
+@media (max-width: 767px) {
+  /* The bar shows only on pages that have a mobile tree (.elk-m). */
+  body:has(.elk-m) .m-nav { display: block; }
+  body:has(.elk-m):has(.m-nav) { --shell-nav-h: calc(90px + env(safe-area-inset-bottom, 0px)); }
+}
+.m-nav { position: fixed; left: 18px; right: 18px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 40; pointer-events: none; }
+.m-nav-bar {
+  pointer-events: auto;
+  display: flex;
+  gap: 4px;
+  height: 66px;
+  padding: 6px;
+  border-radius: 33px;
+  background: hsl(var(--primary-foreground) / 0.9);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--hair-2);
+}
+.m-nav-item {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 27px;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.m-nav-item.is-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.m-nav-badge {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: hsl(var(--terracotta));
+  color: hsl(var(--primary-foreground));
+  font-size: 10px;
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Editor buttons that float at the bottom: lift them above the nav (CSS only). */
+@media (max-width: 767px) {
+  body:has(.elk-m):has(.m-nav) button[data-site-style-open],
+  body:has(.elk-m):has(.m-nav) button[data-de-ui][style*="left: 16px"][style*="bottom"],
+  body:has(.elk-m):has(.m-nav) .fixed.inset-x-0.bottom-4.z-40 {
+    bottom: calc(var(--shell-nav-h) + 12px) !important;
+  }
+  body:has(.elk-m):has(.m-nav) .fixed.inset-x-0.bottom-4.z-40 { z-index: 41; }
+}
+
+/* Header and footer give way where a mobile tree exists (no JS, no flash). */
+@media (max-width: 767px) {
+  body:has(.elk-m) [data-chrome="header"],
+  body:has(.elk-m) [data-chrome="footer"] { display: none; }
+}
+
+/* ---- Back, button, chips ------------------------------------------------ */
+
+.m-back {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 22px;
+  border: 1px solid rgba(241, 236, 226, 0.16);
+  background: rgba(241, 236, 226, 0.04);
+  color: #f1ece2;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Auto back (PhoneBack): top-left of the page; only where a phone tree exists and the screen has no back button of its own. */
+.m-back-auto { display: none; position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: 16px; z-index: 30; }
+@media (max-width: 767px) {
+  body:has(.elk-m) .m-back-auto { display: flex; }
+  body:has(.m-back:not(.m-back-auto)) .m-back-auto { display: none; }
+  /* Site style is for desktop: design tokens rule the phone. */
+  button[data-site-style-open] { display: none !important; }
+}
+
+.m-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 56px;
+  padding: 0 22px;
+  border: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-family: var(--site-font-body, "Basteleur", Georgia, serif);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+}
+.m-btn:disabled { background: hsl(var(--secondary)); color: var(--faint); cursor: not-allowed; }
+
+.m-chip-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 0 20px; }
+.m-chip-row::-webkit-scrollbar { display: none; }
+.m-chip {
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid var(--hair-4);
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-family: var(--site-font-kicker, "Venture", Georgia, serif);
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.m-chip.is-selected { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+
+/* ---- Section header ----------------------------------------------------- */
+
+.m-section { display: flex; align-items: center; gap: 10px; margin: 26px 20px 12px; }
+.m-section-more { font-family: var(--site-font-kicker, "Venture", Georgia, serif); letter-spacing: 0.08em; font-size: 12.5px; color: hsl(var(--brass-light)); text-decoration: none; white-space: nowrap; }
+
+/* ---- Sheet -------------------------------------------------------------- */
+
+.m-scrim { position: fixed; inset: 0; z-index: 50; background: var(--scrim); animation: m-fade 0.2s ease both; }
+.m-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 12px 18px calc(34px + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--m-sheet);
+  color: hsl(var(--foreground));
+  border-top: 1px solid var(--brass-line);
+  animation: m-sheet-up 0.28s var(--m-ease-sheet) both;
+}
+.m-sheet-tall { max-height: 92vh; }
+.m-sheet:focus { outline: none; }
+.m-grab { width: 40px; height: 4px; border-radius: 2px; background: hsl(var(--foreground) / 0.25); margin: 0 auto 16px; }
+@keyframes m-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ---- Catalogue row ------------------------------------------------------ */
+
+.m-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hair-1);
+  background: var(--m-card);
+  color: hsl(var(--foreground));
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.m-row-thumb { flex: none; display: flex; }
+.m-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.m-row-kicker { font-size: 10px; letter-spacing: 0.16em; }
+.m-row-title { font-weight: 700; font-size: 16px; line-height: 1.2; }
+.m-row-meta { font-size: 13px; color: hsl(var(--muted-foreground)); }
+.m-row-chev { flex: none; color: hsl(var(--primary)); font-size: 20px; }
+
+/* ---- Stop timeline ------------------------------------------------------ */
+
+.m-stops { list-style: none; margin: 0; padding: 0 20px; display: flex; flex-direction: column; }
+.m-stop { display: flex; gap: 14px; align-items: stretch; }
+.m-stop-rail { flex: none; display: flex; flex-direction: column; align-items: center; width: 36px; }
+.m-stop-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid hsl(var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--site-font-heading, "Brothers", "Venture", Georgia, serif);
+  font-size: 15px;
+  color: hsl(var(--brass-light));
+}
+.m-stop-line { flex: 1; width: 1px; min-height: 14px; background: hsl(var(--primary) / 0.45); }
+.m-stop-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 0 18px; }
+.m-stop-name { padding: 0; border: 0; background: transparent; color: hsl(var(--foreground)); text-align: left; font: inherit; font-size: 15.5px; line-height: 1.3; cursor: pointer; }
+.m-stop-here { margin-top: -4px; font-size: 9.5px; letter-spacing: 0.18em; }
+.m-stop-open { display: flex; flex-direction: column; gap: 10px; }
+.m-stop-when { font-size: 10px; letter-spacing: 0.16em; }
+.m-stop-note { margin: 0; font-size: 14px; line-height: 1.55; color: var(--foreground-soft); text-wrap: pretty; }
+
+/* ---- Facts -------------------------------------------------------------- */
+
+.m-facts { margin: 22px 20px 0; padding: 0; display: grid; border-top: 1px solid var(--brass-line); border-bottom: 1px solid var(--brass-line); }
+.m-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.m-fact { display: flex; flex-direction: column; gap: 5px; padding: 14px 4px; text-align: center; margin: 0; }
+.m-facts-strip .m-fact + .m-fact { border-left: 1px solid var(--brass-line); }
+.m-facts-grid .m-fact:nth-child(even) { border-left: 1px solid var(--brass-line); }
+.m-facts-grid .m-fact:nth-child(n + 3) { border-top: 1px solid var(--brass-line); }
+.m-fact-k { margin: 0; font-size: 10px; letter-spacing: 0.16em; color: hsl(var(--muted-foreground)); }
+.m-fact-v { margin: 0; font-weight: 700; font-size: 15px; }
+
+/* The desktop /manage chrome (title, signed-in line, 13-tab strip, centred 6xl column) gives way below md on any
+   /manage page that draws a phone tree (.elk-m). Pages without one keep the desktop chrome. Desktop is untouched. */
+@media (max-width: 767px) {
+  .elk-manage:has(.elk-m) { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .elk-manage:has(.elk-m) > .elk-manage-chrome { display: none !important; }
+  .elk-manage:has(.elk-m) > .elk-manage-body { margin-top: 0 !important; }
+}

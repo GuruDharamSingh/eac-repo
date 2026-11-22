@@ -1,0 +1,126 @@
+/* Phone board forms (G7b): artist wizard, collaborate, invitations, tour media, place edit, share a post, review lists.
+   Shared classes (.m-field, .m-chip, .m-btn, .m-kicker, .m-flow-*) come from mobile.css and blocks/mobile/flow.css.
+   Everything here is prefixed bf- and only reached from the phone trees. */
+
+.bf { max-width: 480px; margin: 0 auto; padding-bottom: calc(150px + var(--shell-nav-h, 0px)); }
+.bf-body { display: flex; flex-direction: column; gap: 18px; margin: 18px 16px 0; }
+.bf-h { margin: 0; font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 30px; line-height: 1.1; }
+.bf-sub { margin: 0; font-size: 14px; line-height: 1.5; color: hsl(var(--muted-foreground)); text-wrap: pretty; }
+.bf-note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--faint); text-wrap: pretty; }
+.bf-err { margin: 0; padding: 12px 14px; border-radius: 16px; border: 1px solid hsl(var(--terracotta)); color: hsl(var(--terracotta)); font-size: 14px; line-height: 1.4; }
+.bf-label { font-family: var(--site-font-kicker, "Venture", Georgia, serif); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--foreground-soft, hsl(var(--foreground))); }
+.bf-field { display: flex; flex-direction: column; gap: 9px; }
+.bf-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.bf .m-field { width: 100%; }
+.bf-link { color: hsl(var(--brass-light)); font-weight: 700; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* wizard progress */
+.bf-steps { display: flex; gap: 6px; margin: 16px 16px 0; }
+.bf-step { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; color: var(--faint); font-family: inherit; text-align: left; cursor: default; }
+.bf-step[data-done="true"] { color: hsl(var(--verdigris, 160 26% 63%)); cursor: pointer; }
+.bf-step[data-current="true"] { color: hsl(var(--foreground)); }
+.bf-step-bar { height: 3px; border-radius: 2px; background: var(--hair-3); }
+.bf-step[data-done="true"] .bf-step-bar { background: hsl(var(--verdigris, 160 26% 63%)); }
+.bf-step[data-current="true"] .bf-step-bar { background: hsl(var(--primary)); }
+.bf-step-label { font-family: var(--site-font-kicker, "Venture", Georgia, serif); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* stepper + switch */
+.bf-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: var(--radius-input, 16px); background: var(--m-card); border: 1px solid var(--hair-2); }
+.bf-row-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14.5px; }
+.bf-row-text small { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.bf-stepper { display: flex; align-items: center; gap: 10px; }
+.bf-stepper button { width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); font-size: 20px; font-family: inherit; cursor: pointer; }
+.bf-stepper output { min-width: 56px; text-align: center; font-weight: 700; font-size: 15px; }
+.bf-sw { flex: none; width: 52px; height: 30px; border-radius: 15px; border: 1px solid var(--hair-3); background: var(--m-well); position: relative; cursor: pointer; padding: 0; }
+.bf-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 11px; background: var(--faint); transition: transform 0.2s var(--m-ease-sheet, ease), background 0.2s; }
+.bf-sw[aria-checked="true"] { background: hsl(var(--primary) / 0.28); border-color: hsl(var(--primary)); }
+.bf-sw[aria-checked="true"]::after { transform: translateX(22px); background: hsl(var(--primary)); }
+.bf-sw:disabled { opacity: 0.45; cursor: not-allowed; }
+.bf-sub-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: var(--radius-card, 22px); background: var(--m-card); border: 1px solid var(--hair-2); }
+.bf-sub-card .bf-row { background: var(--m-well); }
+
+/* availability grid */
+.bf-grid { display: grid; grid-template-columns: 56px repeat(7, 1fr); gap: 5px; align-items: center; }
+.bf-grid-h { font-size: 11px; text-align: center; color: var(--faint); letter-spacing: 0.08em; }
+.bf-grid-r { font-size: 11px; color: var(--faint); letter-spacing: 0.04em; }
+.bf-cell { height: 44px; min-width: 0; border-radius: 10px; border: 1px solid var(--hair-2); background: var(--m-card); cursor: pointer; padding: 0; }
+.bf-cell[aria-pressed="true"] { background: hsl(var(--verdigris, 160 26% 63%)); border-color: hsl(var(--verdigris, 160 26% 63%)); }
+
+/* preview card */
+.bf-preview { padding: 14px 16px; border-radius: var(--radius-card, 22px); border: 1px solid var(--brass-line); background: var(--m-card); display: flex; flex-direction: column; gap: 4px; }
+.bf-preview strong { font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 22px; }
+.bf-preview span { font-size: 13px; color: hsl(var(--muted-foreground)); }
+
+/* footer bar: back + continue */
+.bf-bar { position: fixed; left: 0; right: 0; bottom: var(--shell-nav-h, 0px); max-width: 480px; margin: 0 auto; padding: 22px 20px 30px; display: flex; gap: 12px; align-items: center; background: linear-gradient(180deg, transparent, var(--m-sheet) 32%); z-index: 5; }
+.bf-bar .m-btn { flex: 1; }
+.bf-ghost { flex: none; height: 56px; padding: 0 22px; border-radius: 28px; border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); font-family: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+@media (min-width: 768px) { .bf-bar { position: sticky; bottom: 0; } .bf { padding-bottom: 24px; } }
+
+/* collaborate */
+.bf-stop { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius-card, 22px); background: var(--m-card); border: 1px solid var(--hair-2); }
+.bf-stop-head { display: flex; gap: 12px; align-items: baseline; }
+.bf-stop-num { flex: none; width: 30px; font-family: var(--site-font-heading, "Brothers", Georgia, serif); color: hsl(var(--brass-light)); font-size: 18px; }
+.bf-stop-name { min-width: 0; font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.bf-stop-off { margin-left: auto; flex: none; font-size: 12px; color: var(--faint); }
+.bf-stop-exp { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--m-well); font-size: 14px; }
+.bf-stop-exp small { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.bf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bf-dchip { min-height: 44px; padding: 6px 14px; border-radius: 22px; border: 1px solid var(--hair-3); background: transparent; color: var(--faint); font-family: inherit; font-size: 12.5px; line-height: 1.25; text-align: left; cursor: default; display: flex; flex-direction: column; }
+.bf-dchip b { font-size: 12.5px; }
+.bf-dchip[data-state="confirmed"] { background: hsl(var(--verdigris, 160 26% 63%)); border-color: hsl(var(--verdigris, 160 26% 63%)); color: hsl(var(--primary-foreground)); }
+.bf-dchip[data-state="asked"] { border-color: var(--brass-line); color: hsl(var(--brass-light)); }
+.bf-dchip[data-state="free"] { border-style: dashed; border-color: hsl(var(--foreground) / 0.45); color: hsl(var(--foreground)); cursor: pointer; }
+.bf-dchip:disabled { opacity: 0.6; }
+.bf-dashed { display: block; width: 100%; min-height: 48px; padding: 12px 14px; border-radius: var(--radius-input, 16px); border: 1px dashed var(--hair-4); background: transparent; color: hsl(var(--brass-light)); font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer; text-align: center; text-decoration: none; }
+.bf-pick { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--hair-2); background: var(--m-card); color: inherit; font-family: inherit; text-align: left; cursor: pointer; font-size: 14.5px; }
+.bf-pick small { font-size: 12px; color: hsl(var(--muted-foreground)); }
+.bf-pick small.is-good { color: hsl(var(--verdigris, 160 26% 63%)); }
+
+/* lists: invitations, review */
+.bf-card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: var(--radius-card, 22px); background: var(--m-card); border: 1px solid var(--hair-2); }
+.bf-card h3 { margin: 0; font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 20px; line-height: 1.15; overflow-wrap: anywhere; }
+.bf-card p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--foreground-soft, hsl(var(--foreground))); overflow-wrap: anywhere; }
+.bf-card .bf-meta { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.bf-actions { display: flex; gap: 10px; margin-top: 4px; }
+.bf-actions button, .bf-actions a { flex: 1; min-width: 0; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 23px; font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
+.bf-btn-fill { border: 0; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.bf-btn-line { border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); }
+.bf-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.bf-pill { align-self: flex-start; padding: 3px 10px; border-radius: 12px; border: 1px solid var(--hair-3); font-size: 11.5px; color: hsl(var(--muted-foreground)); }
+
+/* tour media rows */
+.bf-media { display: flex; flex-direction: column; gap: 10px; }
+.bf-media .bf-row.is-off .bf-row-text { color: hsl(var(--muted-foreground)); }
+
+/* place edit */
+.bf-star { flex: none; width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); font-size: 22px; cursor: pointer; font-family: inherit; }
+.bf-star[aria-pressed="true"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.bf-tagadd { display: flex; gap: 8px; }
+.bf-tagadd .m-field { flex: 1; min-width: 0; }
+.bf-tagadd button { flex: none; height: 50px; padding: 0 18px; border-radius: 25px; border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); font-family: inherit; font-weight: 700; cursor: pointer; }
+.bf textarea.m-field { height: 110px; }
+
+/* link strip on manage pages (phone only) */
+.bf-strip { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 0; }
+.bf-strip a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 22px; border: 1px solid var(--brass-line); color: hsl(var(--brass-light)); font-weight: 700; font-size: 14px; text-decoration: none; }
+
+.bf-saved { color: var(--faint); letter-spacing: 0; text-transform: none; font-size: 12px; }
+
+/* Tour photos on the phone media screen (components/mobile/tour-photos.tsx, 2026-11-17). */
+.mtp-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mtp-tile { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair-2); background: var(--m-well); display: flex; flex-direction: column; }
+.mtp-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.mtp-tile.is-off img { opacity: 0.45; }
+.mtp-tile.is-cover { border-color: hsl(var(--primary)); box-shadow: 0 0 0 1px hsl(var(--primary)); }
+.mtp-badge { position: absolute; top: 8px; left: 8px; padding: 3px 9px; border-radius: 10px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.mtp-actions { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; }
+.mtp-btn { min-height: 36px; padding: 0 10px; border-radius: 18px; border: 1px solid var(--hair-3); background: transparent; color: inherit; font: inherit; font-size: 12.5px; cursor: pointer; }
+.mtp-btn.is-primary { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.mtp-btn:disabled { opacity: 0.55; cursor: default; }
+.mtp-btn:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+.mtp-cover { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.mtp-cover-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mtp-sheet { padding: 8px 18px 28px; display: flex; flex-direction: column; gap: 12px; }
+.mtp-sheet h2 { margin: 0; font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 26px; }
+button.bf-dashed { width: 100%; font: inherit; cursor: pointer; }

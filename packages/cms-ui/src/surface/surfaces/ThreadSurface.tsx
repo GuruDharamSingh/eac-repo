@@ -304,6 +304,7 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
       statusTone={noticeTone}
     >
       {parts.main}
+      {connectors.threadBody?.(thread, { refresh: () => void load() })}
     </SurfaceFrame>
   );
 }

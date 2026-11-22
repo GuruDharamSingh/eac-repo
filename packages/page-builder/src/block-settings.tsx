@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useSyncExternalStore, type CSSProperties } from "react";
+import { Component, useMemo, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Puck, type Config, type Data, type Plugin } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
@@ -112,6 +112,31 @@ function HeaderActions({ guard, onCancel, onApply }: { guard: Guard; onCancel():
 
 const SHEET: CSSProperties = { flex: "1 1 auto", maxWidth: 1280, background: "#fff", color: "#111", borderRadius: 12, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.35)", display: "flex", flexDirection: "column" };
 
+/**
+ * Puck throws while drawing a block it cannot draw, and React then unmounts the whole sheet: a blank white popup with no
+ * way out. This keeps the sheet and says so plainly, with a Close that ends it the way Cancel does.
+ */
+class SettingsBoundary extends Component<{ onClose(): void; children?: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(err: unknown) {
+    console.error("[block-settings] Puck could not draw this block:", err);
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div role="alert" data-block-settings-failed="" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", font: "500 15px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif" }}>
+        <p style={{ margin: 0 }}>This block&apos;s settings could not be opened.</p>
+        <button type="button" data-block-settings-cancel="" style={BTN} onClick={this.props.onClose}>
+          Close
+        </button>
+      </div>
+    );
+  }
+}
+
 function BlockSettings({ o, onDone, guard }: { o: BlockSettingsOptions; onDone(props: Record<string, unknown> | null): void; guard: Guard }) {
   const data = useMemo<Data>(() => ({ root: { props: {} }, content: [JSON.parse(JSON.stringify(o.node))] }) as Data, [o.node]);
   const latest = useRef<Data>(data);
@@ -127,6 +152,7 @@ function BlockSettings({ o, onDone, guard }: { o: BlockSettingsOptions; onDone(p
   const apply = () => onDone(handed(latest.current));
   const label = (o.config.components as Record<string, { label?: string }>)[o.node.type]?.label ?? o.node.type;
   return (
+    <SettingsBoundary onClose={() => onDone(null)}>
     <Puck
       config={o.config}
       data={data}
@@ -143,6 +169,7 @@ function BlockSettings({ o, onDone, guard }: { o: BlockSettingsOptions; onDone(p
         headerActions: () => <HeaderActions guard={guard} onCancel={() => onDone(null)} onApply={apply} />,
       }}
     />
+    </SettingsBoundary>
   );
 }
 

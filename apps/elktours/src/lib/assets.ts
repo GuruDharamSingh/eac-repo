@@ -415,13 +415,18 @@ export async function syncHeroFilmFromUrls(
   });
 }
 
-/** Copy a catalogue (place) asset into a stop row, hidden; visibility stays per tour. */
+/**
+ * Copy a catalogue (place) asset into a stop row, hidden; visibility stays per tour. Never a second row for a file the stop
+ * already has (same source id or same url). The folders menu no longer uses this: it records a picture's owner on the
+ * picture's own row (registerInPlace). Until the placement link (MEDIA_MIGRATION_PROPOSAL.sql) is approved this is the
+ * one writer of a stop row that mirrors a place picture.
+ */
 export async function copyPlaceAssetToStop(placeAssetId: string, stopId: string, userId: string | null): Promise<TourAsset> {
   const src = await getAsset(placeAssetId);
   if (!src || !src.placeId || src.threadId) throw new Error("That is not a catalogue asset.");
   const owners = await assertOwners({ stopId });
   const [dup] = (await db`
-    SELECT * FROM tour_assets WHERE stop_id = ${stopId} AND archived_at IS NULL AND meta->>'fromPlaceAssetId' = ${src.id} LIMIT 1
+    SELECT * FROM tour_assets WHERE stop_id = ${stopId} AND archived_at IS NULL AND (meta->>'fromPlaceAssetId' = ${src.id} OR url = ${src.url}) LIMIT 1
   `) as unknown as Row[];
   if (dup) return mapAsset(dup);
   const [r] = (await db`
@@ -479,6 +484,30 @@ function davUrl(key: string): string {
 }
 function davAuth(): string {
   return `Basic ${Buffer.from(`${process.env.NEXTCLOUD_ADMIN_USER ?? ""}:${process.env.NEXTCLOUD_ADMIN_PASSWORD ?? ""}`).toString("base64")}`;
+}
+
+/**
+ * Copy a picture from elsewhere on the network (a person's own folder, from the picker's "My files") into this org's
+ * public Media/Images, re-encoded without metadata, and return its /api/media URL (2026-11-17, tour photos on the
+ * phone media screen). The caller checks the picture is the person's own before calling.
+ */
+export async function importPhotoToOrg(url: string): Promise<string> {
+  const path0 = url.split("?")[0]!;
+  if (!path0.startsWith("/api/media/EAC_Network/") || path0.includes("..")) throw new Error("That picture cannot be copied here.");
+  if (!process.env.NEXTCLOUD_URL) throw new Error("File storage is not configured.");
+  const key = path0.slice("/api/media/".length).split("/").map((seg) => decodeURIComponent(seg)).join("/");
+  const got = await fetch(davUrl(key), { headers: { Authorization: davAuth() }, signal: AbortSignal.timeout(120_000) });
+  if (!got.ok) throw new Error(`Could not read the picture (storage answered ${got.status}).`);
+  const { stripped, ext, mime } = await stripImageMetadata(Buffer.from(await got.arrayBuffer()));
+  const publicKey = `EAC_Network/${ORG}/Media/Images/tour-photo-${crypto.randomUUID().slice(0, 12)}.${ext}`;
+  const put = await fetch(davUrl(publicKey), {
+    method: "PUT",
+    headers: { Authorization: davAuth(), "Content-Type": mime, "If-None-Match": "*" },
+    body: new Uint8Array(stripped),
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (!put.ok) throw new Error(`Could not copy the picture (storage answered ${put.status}).`);
+  return `/api/media/${publicKey}`;
 }
 
 /** If the asset's file is under Private/, copy it to the public twin path and point the row at it. */

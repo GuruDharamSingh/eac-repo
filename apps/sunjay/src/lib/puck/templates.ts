@@ -1,5 +1,6 @@
 import type { PageTemplate, TemplateNode } from "@elkdonis/blocks";
 import { blankTemplate, homeTemplate, type HomeSeed } from "./home-template";
+import { SHARED_ACCENTS } from "@elkdonis/direct-edit/site/shared-accents";
 
 // ============================================================================
 // Starting documents for the generated and designed pages.
@@ -40,7 +41,7 @@ const split = (
   props: { ratio, align: "start", gap, columns: "stacked", start, end },
 });
 
-const swatch = { ground: "#1B1E20", ink: "#E9E5DD", accent: "#C9AE79" };
+const swatch = { ground: "#1B1E20", ink: "#E9E5DD", accent: SHARED_ACCENTS.bronze.hex.toUpperCase() };
 
 export const EVENT_DETAIL_TEMPLATE: PageTemplate = {
   id: "event-detail",

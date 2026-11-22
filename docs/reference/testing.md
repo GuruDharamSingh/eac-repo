@@ -87,6 +87,12 @@ with Python (`json.dumps`), since a shell heredoc mangles the quoting; Puck's
 header Publish is a `<span class="_Button…">`, not a `<button>`, so click it
 by its text node.
 
+(claude, 2026-11-16) elktours: a dev preview runs `instrumentation.ts`, which starts the reminder
+scheduler and the slot sweep against the live DB; pass `-e DISABLE_REMINDER_SCHEDULER=1
+-e DISABLE_SLOT_SWEEP=1`. Its `/` ran out of heap compiling in dev mode, at both 3.5 GB and
+4.8 GB (the service's `mem_limit` is 5 GB). For a CSS-only change, a static copy of the
+served page with the new CSS appended, screenshotted with `zenika/alpine-chrome --screenshot`
+on a `file://` URL, worked instead.
 (claude, 2026-11-06) A dev preview rewrites the app's `next-env.d.ts` to
 `import "./.next/dev/types/routes.d.ts"`; inside the production container that path
 holds stale dev types, and `check-types` then fails in `.next/types/validator.ts`

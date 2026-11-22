@@ -1,0 +1,33 @@
+/* Dana McCool mock: palette from apps/danamccool/src/app/site.css (:root), grid rules from its .dm-grid block; scoped. */
+[data-mock-app="danamccool"] {
+  --violet: #795ff0;
+  --ink: #060606;
+  --cyan: #48d0ed;
+  --dm-font-body: "Helvetica Neue", "Segoe UI", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+  --dm-font-heading: var(--dm-font-body);
+  --blk-bg: #ffffff;
+  --blk-fg: var(--ink);
+  --blk-font-body: var(--dm-font-body);
+  --blk-font-title: var(--dm-font-heading);
+  background: #ffffff;
+  color: var(--ink);
+  font-family: var(--dm-font-body);
+  padding: 32px 40px;
+  box-sizing: border-box;
+}
+[data-mock-app="danamccool"] .dm-grid,
+[data-mock-app="danamccool"] .dm-grid-wrap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+[data-mock-app="danamccool"] .dm-grid { margin: 0 0 3rem; }
+[data-mock-app="danamccool"] .page-title {
+  font-family: var(--dm-font-heading);
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin: 0 0 1.75rem;
+}
+[data-mock-app="danamccool"] .dm-grid-title { margin-bottom: 1.25rem; }

@@ -139,9 +139,18 @@ async function upcomingHosts(orgId: string, threadId: string, limit: number) {
 async function upcomingGuides(orgId: string, threadId: string, limit: number) {
   return db<{ user_id: string; at: Date }[]>`
     SELECT guide_user_id AS user_id, starts_at AS at
-    FROM tour_departures
-    WHERE thread_id = ${threadId} AND org_id = ${orgId} AND status = 'scheduled'
-      AND starts_at >= now() AND guide_user_id IS NOT NULL
+    FROM (
+      SELECT d.id, d.guide_user_id, d.starts_at FROM tour_departures d
+      WHERE d.thread_id = ${threadId} AND d.org_id = ${orgId} AND d.status = 'scheduled'
+        AND d.starts_at >= now() AND d.guide_user_id IS NOT NULL
+      UNION
+      -- The booking tables (set_dates offers), so the answer is right whichever store is live;
+      -- a departure copied by the backfill has the same id and is not counted twice.
+      SELECT s.id, s.guide_user_id, s.starts_at FROM booking_slots s
+      JOIN booking_offers o ON o.id = s.offer_id AND o.mode = 'set_dates'
+      WHERE o.thread_id = ${threadId} AND s.org_id = ${orgId} AND s.status = 'scheduled'
+        AND s.starts_at >= now() AND s.guide_user_id IS NOT NULL
+    ) x
     ORDER BY starts_at
     LIMIT ${limit}
   `;

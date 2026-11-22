@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement, Fragment } from "react";
-import { AutoField, type Config } from "@puckeditor/core";
+import { AutoField, FieldTab, type Config } from "@puckeditor/core";
 import type { PropDef } from "@elkdonis/blocks";
 import type { Block } from "@elkdonis/blocks";
 import { buildPuckConfig, type PuckConfigOptions } from "./config";
@@ -25,6 +25,29 @@ import { StyleField } from "./style/field";
 export interface EditorConfigOptions extends PuckConfigOptions {
   /** Where this site's pictures are uploaded to and chosen from. */
   media: MediaSources;
+  /**
+   * Show each block's fields in two tabs, Content and Style (Puck 0.24 `FieldTab`, 2026-11-20). The Style tab holds the
+   * generic Style control (and the site's `blockStyle` control, when it has one); a block with no content fields shows
+   * the Style control alone. Omitted: Puck's flat list, as before. A host's own `fieldTabs` wins.
+   */
+  tabs?: boolean;
+}
+
+/** The Content / Style split, for `tabs`. A block with nothing but Style gets no tab row. */
+function contentStyleTabs({ fields, style }: { fields: Record<string, React.ReactNode>; style: string[] }): React.ReactElement {
+  const content: React.ReactNode[] = [];
+  const styles: React.ReactNode[] = [];
+  for (const [name, node] of Object.entries(fields)) {
+    if (node == null || node === false) continue;
+    (style.includes(name) ? styles : content).push(createElement(Fragment, { key: name }, node));
+  }
+  if (!content.length) return createElement(Fragment, null, styles);
+  return createElement(
+    Fragment,
+    null,
+    createElement(FieldTab, { label: "Content" }, content),
+    createElement(FieldTab, { label: "Style" }, styles)
+  );
 }
 
 /**
@@ -58,9 +81,10 @@ function NoField(): React.ReactElement {
   return createElement(Fragment);
 }
 
-export function buildEditorConfig({ media, ...options }: EditorConfigOptions): Config {
+export function buildEditorConfig({ media, tabs, ...options }: EditorConfigOptions): Config {
   return buildPuckConfig({
     ...options,
+    fieldTabs: options.fieldTabs ?? (tabs ? contentStyleTabs : undefined),
     // Text blocks are typed on the page, formatted. Editor only — see the
     // note on `richText` in ./config.
     richText: options.richText ?? true,

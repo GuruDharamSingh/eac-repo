@@ -1,0 +1,52 @@
+/* Pattern blocks idea (ideas/pattern-blocks.tsx). Everything is under .pbk, so no rule here reaches another idea or the workbench. */
+
+.pbk {
+  margin-top: 20px;
+  color: var(--dev-ink, #e8eaf0);
+  font: 14px/1.55 system-ui, sans-serif;
+}
+.pbk h2 {
+  margin: 28px 0 8px;
+}
+.pbk-quote {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--dev-accent, #7aa2ff);
+  background: var(--dev-panel, #171a21);
+  color: var(--dev-ink, #e8eaf0);
+}
+.pbk-scroll {
+  overflow-x: auto;
+}
+.pbk-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pbk-table th,
+.pbk-table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--dev-line, #262b36);
+}
+.pbk-table th {
+  color: var(--dev-muted, #8b93a7);
+  font-weight: 600;
+}
+.pbk-table code {
+  font-size: 12px;
+  word-break: break-word;
+}
+.pbk-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--dev-line, #262b36);
+  border-radius: 8px;
+  background: var(--dev-panel, #171a21);
+}
+.pbk-open {
+  padding-left: 20px;
+}
+.pbk-open li {
+  margin-bottom: 8px;
+}

@@ -33,6 +33,7 @@ export default {
   capabilities: [
     {
       id: 'shipping-ship-from-save',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shipping',
       label: 'Save the ship-from address',
       does: "The seller saves the address parcels are sent from, used for every shipping quote.",
@@ -220,6 +221,7 @@ export default {
     },
     {
       id: 'order-shipping-choose',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shipping',
       label: "Choose shipping for an unpaid marketplace order",
       does: "On an unpaid order the buyer enters an address and picks a courier option or 'arranged'. The shipping cost and total are written to the order before it is paid.",
@@ -227,6 +229,7 @@ export default {
       actors: ['visitor', 'person'],
       scope: 'person',
       hosts: [
+        { key: sa('katie-the-potter/src/lib/checkout-shipping-actions.ts', 'chooseShippingAction'), service: ['@elkdonis/commerce/shipping#chooseOrderShipping', '@elkdonis/commerce/server#switchOrderToEtransfer'], address: { app: 'katie-the-potter', path: '/orders/{id}', how: 'the shipping picker on the order page, before the pay buttons (components/checkout-shipping-picker.tsx; 2026-11-17)' }, note: 'Gate: loadOrderForViewer (signed-in buyer, store team or admin; a guest order by its uuid). Same engine as art-auction; platform mode buys the label after payment.' },
         { key: sa('art-auction/src/app/orders/[id]/shipping-actions.ts', 'chooseShippingAction'), service: ['@elkdonis/commerce/shipping#chooseOrderShipping', '@elkdonis/commerce/server#switchOrderToEtransfer'], address: { app: 'art-auction', path: '/orders/{id}', how: 'the shipping chooser on the order page (components order shipping form)' } },
         pk(CS('chooseOrderShipping'), "recomputes the option from a fresh quote by id; UPDATE commerce_order SET shipping_minor and total_minor only WHERE status is draft, pending_payment or awaiting_etransfer"),
       ],
@@ -242,6 +245,7 @@ export default {
     },
     {
       id: 'commerce-shipping-store-writes',
+      updated: '2026-11-17',
       area: 'orgapps.commerce.shipping',
       label: 'Marketplace shipping writes (labels, parcels, ship-from)',
       does: "Writes behind the studio and admin shipping screens: buying a platform label, recording seller tracking, an artwork's parcel, a seller's ship-from address and a store's shipping mode; plus the label-payment bookkeeping from Stripe.",
@@ -270,5 +274,6 @@ export default {
   ignored: [
     { key: sa(SA, 'tryRatesAction'), why: 'read: asks Easyship for sandbox or read-only quotes for one piece; writes nothing (revalidatePath only)' },
     { key: sa('art-auction/src/app/orders/[id]/shipping-actions.ts', 'quoteShippingAction'), why: 'read: quotes shipping options for an unpaid order; no write (quoteOrderShipping)' },
+    { key: sa('katie-the-potter/src/lib/checkout-shipping-actions.ts', 'quoteShippingAction'), why: 'read: quotes shipping options for an unpaid order on katie; no write (quoteOrderShipping)' },
   ],
 } satisfies Area;

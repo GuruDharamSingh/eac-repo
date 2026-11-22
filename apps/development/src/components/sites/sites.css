@@ -1,0 +1,199 @@
+/* The Sites door (lane MACHINES). Everything is prefixed st- so it cannot touch a block's own styles or dev.css.
+   Colours come from the development app's own variables (dev.css :root). */
+
+.st-page {
+  max-width: 1100px;
+}
+.st-title {
+  margin: 8px 0 4px;
+}
+.st-slug {
+  color: var(--dev-muted);
+  font-size: 14px;
+  font-weight: 400;
+  margin-left: 6px;
+}
+.st-section {
+  margin-top: 28px;
+  padding: 16px 18px;
+  background: var(--dev-panel);
+  border: 1px solid var(--dev-line);
+  border-radius: 10px;
+}
+.st-section h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.st-help,
+.st-note {
+  color: var(--dev-muted);
+  margin: 6px 0 12px;
+  max-width: 70ch;
+}
+.st-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.st-table th {
+  text-align: left;
+  color: var(--dev-muted);
+  font-weight: 500;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dev-line);
+}
+.st-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1c2029;
+  vertical-align: top;
+}
+.st-table a {
+  color: var(--dev-accent);
+}
+.st-flag {
+  color: var(--dev-warn);
+}
+
+/* The page as drawn: a light sheet, as a visitor would see it, inside the dark app. */
+.st-stage {
+  margin-top: 16px;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid var(--dev-line);
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 120px;
+}
+.st-empty {
+  padding: 24px;
+  color: #666;
+}
+.st-missing {
+  margin: 8px;
+  padding: 14px 16px;
+  border: 1px dashed #b08a2e;
+  background: #fff8e6;
+  color: #5a4510;
+  border-radius: 8px;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+.st-missing p {
+  margin: 4px 0 0;
+}
+
+.st-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 14px 0 0;
+}
+.st-tabs button {
+  background: transparent;
+  color: var(--dev-muted);
+  border: 1px solid var(--dev-line);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.st-tabs button[aria-selected="true"] {
+  color: var(--dev-ink);
+  background: #232838;
+}
+
+.st-hands {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.st-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.st-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--dev-muted);
+}
+.st-grow {
+  flex: 1;
+  min-width: 240px;
+}
+.st-field select,
+.st-field textarea,
+.st-field input {
+  background: var(--dev-bg);
+  color: var(--dev-ink);
+  border: 1px solid var(--dev-line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+.st-swatches {
+  display: flex;
+  gap: 6px;
+}
+.st-swatches button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--dev-line);
+  cursor: pointer;
+}
+.st-hands button,
+.st-actions button {
+  background: #232838;
+  color: var(--dev-ink);
+  border: 1px solid var(--dev-line);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.st-hands button:disabled,
+.st-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.st-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.st-actions .st-primary {
+  background: #2d55c8;
+  border-color: #2d55c8;
+}
+.st-ledger {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.st-ledger li {
+  padding: 3px 0;
+}
+.st-ok {
+  color: #7fd6a0;
+}
+.st-bad {
+  color: #f08a7a;
+}
+.st-say {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--dev-line);
+  background: var(--dev-panel);
+}
+.st-json {
+  max-height: 480px;
+  overflow: auto;
+  font-size: 12px;
+  background: var(--dev-bg);
+  border: 1px solid var(--dev-line);
+  border-radius: 8px;
+  padding: 12px;
+}

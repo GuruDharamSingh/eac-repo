@@ -1,0 +1,35 @@
+/* Katie the Potter mock: tokens from apps/katie-the-potter/src/app/globals.css, scoped to the wrapper.
+   The block's own CSS (artwork-grid.css, looks.css, piece-block.css) is imported unscoped from the app
+   by relative path: every selector in it starts with a .ktp-* class or a data-look/status attribute. */
+[data-mock-app="katie-the-potter"] {
+  --background: 36 43% 94%;
+  --foreground: 22 15% 15%;
+  --card: 36 50% 97%;
+  --primary: 14 51% 47%;
+  --primary-foreground: 36 50% 97%;
+  --muted: 36 33% 89%;
+  --muted-foreground: 25 11% 39%;
+  --border: 35 25% 80%;
+  --radius: 10px;
+  /* --blk-* are declared on :root by @elkdonis/blocks, so they are re-pointed here */
+  --blk-bg: hsl(var(--background));
+  --blk-bg-soft: hsl(var(--muted));
+  --blk-fg: hsl(var(--foreground));
+  --blk-muted: hsl(var(--muted-foreground));
+  --blk-line: hsl(var(--border));
+  --blk-accent: hsl(var(--primary));
+  --blk-accent-ink: color-mix(in srgb, hsl(var(--primary)) 72%, black);
+  --blk-on-accent: hsl(var(--primary-foreground));
+  --blk-radius: var(--radius);
+  --blk-radius-sm: 6px;
+  --blk-font-title: Fraunces, Georgia, "Times New Roman", serif;
+  --blk-font-body: Karla, system-ui, sans-serif;
+  --blk-measure: 72rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--blk-font-body);
+  box-sizing: border-box;
+}
+[data-mock-app="katie-the-potter"] .ktp-mock-piece { max-width: 420px; margin: 0 auto; padding: 32px; }
+[data-mock-app="katie-the-potter"] .ktp-mock-piece .blk-rec,
+[data-mock-app="katie-the-potter"] .ktp-mock-piece .blk-rec-frame { width: 100%; }

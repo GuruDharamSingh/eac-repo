@@ -7,14 +7,23 @@
 
 import * as React from 'react';
 import { clock, extFor, pickRecordingMime, startChunkedUpload, type ChunkedUpload } from './upload';
+import { ShotDirector } from './aids/ShotDirector';
+import { buildEdit } from './aids/edit';
+import type { CapturePreset, TakeRecord } from './aids/types';
 
 export interface PhoneCaptureProps {
   /** The code's route, e.g. "/api/capture/7KQ2MXP4". */
   endpoint: string;
   studioName: string;
+  /**
+   * Optional preset (/c/<code>?preset=V27): the shot director coaches the filmer
+   * through its shots in the one recording, and the edit JSON is stored beside
+   * the video (<name>.edit.json). Without it nothing changes.
+   */
+  preset?: CapturePreset;
 }
 
-export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
+export function PhoneCapture({ endpoint, studioName, preset }: PhoneCaptureProps) {
   const [facing, setFacing] = React.useState<'user' | 'environment'>('environment');
   const [stream, setStream] = React.useState<MediaStream | null>(null);
   const [state, setState] = React.useState<'idle' | 'live' | 'recording' | 'saving' | 'done'>('idle');
@@ -25,6 +34,8 @@ export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
   const rec = React.useRef<MediaRecorder | null>(null);
   const up = React.useRef<ChunkedUpload | null>(null);
   const started = React.useRef(0);
+  const takes = React.useRef<TakeRecord[]>([]);
+  const now = React.useCallback(() => (Date.now() - started.current) / 1000, []);
 
   const stopTracks = React.useCallback(() => stream?.getTracks().forEach((t) => t.stop()), [stream]);
   React.useEffect(() => stopTracks, [stopTracks]);
@@ -65,6 +76,15 @@ export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
       const seconds = (Date.now() - started.current) / 1000;
       setState('saving');
       try {
+        // Before finish: the code stops working once the recording is stored.
+        // Best effort; the video is sent either way.
+        if (preset && takes.current.some((t) => t.kept)) {
+          await fetch(`${endpoint}?op=edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildEdit(preset, takes.current)),
+          }).catch(() => {});
+        }
         await up.current!.finish({ seconds: seconds.toFixed(2) });
         stopTracks();
         setStream(null);
@@ -77,6 +97,7 @@ export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
     };
     rec.current = r;
     started.current = Date.now();
+    takes.current = [];
     setSent(0);
     setElapsed(0);
     r.start(1000);
@@ -101,9 +122,20 @@ export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
         </div>
       ) : (
         <>
-          <div className="pc-view">
+          <div className={`pc-view${preset ? ' pc-view--shots' : ''}`}>
             {stream ? <video ref={video} autoPlay muted playsInline className={facing === 'user' ? 'is-mirror' : ''} /> : <p>Your camera will appear here.</p>}
             {state === 'recording' && <span className="pc-rec">● {clock(elapsed)}</span>}
+            {preset && stream && (state === 'live' || state === 'recording') && (
+              <ShotDirector
+                preset={preset}
+                recording={state === 'recording'}
+                now={now}
+                onTakes={(t) => {
+                  takes.current = t;
+                }}
+                onCut={() => rec.current?.stop()}
+              />
+            )}
           </div>
           {error && <p className="pc-err">{error}</p>}
           <div className="pc-actions">
@@ -122,7 +154,7 @@ export function PhoneCapture({ endpoint, studioName }: PhoneCaptureProps) {
                 </button>
               </>
             )}
-            {state === 'recording' && (
+            {state === 'recording' && !preset && (
               <button type="button" className="pc-btn pc-btn--record is-on" onClick={() => rec.current?.stop()} aria-label="Stop recording">
                 ■ Stop
               </button>

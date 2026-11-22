@@ -6,6 +6,7 @@ import { toPuckData } from "@/components/studio/puck-data";
 import { requireOrgEditor } from "@/lib/auth";
 import { loadTourLayout } from "@/lib/tour-layout";
 import { listTours, loadTourFull, nextDepartures } from "@/lib/tours";
+import { loadTourStageData } from "@/lib/tour-stage-data";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -34,6 +35,8 @@ export default async function TourDetailStudioPage({ searchParams }: { searchPar
   const others = tours.filter((t) => t.id !== pick.id && t.status === "published").slice(0, 6);
   const next = await nextDepartures(others.map((t) => t.id));
 
+  const stage = await loadTourStageData(full).catch(() => undefined);
+
   const sample: TourPageData = {
     // Guide notes never reach a client component, even an editor's.
     tour: { ...full, stops: full.stops.map((s) => ({ ...s, guideNotes: null })) },
@@ -44,6 +47,7 @@ export default async function TourDetailStudioPage({ searchParams }: { searchPar
     signedInEmail: null,
     googleMapsKey: siteConfig.googleMapsKey,
     others: others.map((t) => ({ tour: t, next: next.get(t.id) ?? null })),
+    stage,
   };
 
   return (

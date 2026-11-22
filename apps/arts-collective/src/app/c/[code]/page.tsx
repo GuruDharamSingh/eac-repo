@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PhoneCapture } from "@elkdonis/studio/capture";
+import { PhoneCapture, capturePreset } from "@elkdonis/studio/capture";
 import { captureValid, normalizeCode } from "@elkdonis/services/recordings";
 import "@elkdonis/studio/capture.css";
 
@@ -17,8 +17,17 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default async function PhoneCapturePage({ params }: { params: Promise<{ code: string }> }) {
+export default async function PhoneCapturePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ preset?: string | string[] }>;
+}) {
   const code = normalizeCode((await params).code);
+  // ?preset=V27 turns on the shot director for that preset (aids/presets.ts); unknown ids are ignored.
+  const p = (await searchParams).preset;
+  const preset = capturePreset(Array.isArray(p) ? p[0] : p) ?? undefined;
   if (!captureValid(code)) {
     return (
       <div className="pc">
@@ -32,5 +41,5 @@ export default async function PhoneCapturePage({ params }: { params: Promise<{ c
       </div>
     );
   }
-  return <PhoneCapture endpoint={`/api/capture/${code}`} studioName="Elkdonis Arts Collective" />;
+  return <PhoneCapture endpoint={`/api/capture/${code}`} studioName="Elkdonis Arts Collective" preset={preset} />;
 }

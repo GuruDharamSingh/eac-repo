@@ -15,6 +15,7 @@ import {
   switchOrderToEtransfer,
 } from "@elkdonis/commerce/server";
 import { getCartByToken } from "@elkdonis/commerce/queries";
+import { getOrderShippingState } from "@elkdonis/commerce/shipping";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
 import { getSiteStoreId } from "@/lib/artworks";
@@ -34,6 +35,22 @@ import { cartOwnsLine, getCartCount, loadOrderForViewer, UUID_RE } from "@/lib/s
 //     message in production, so anything a buyer needs to read is RETURNED
 //     as { ok: false, message } instead.
 // ============================================================================
+
+/**
+ * Shipping is part of checkout (2026-11-17): while the order still has to
+ * choose a courier (or "arrange it with Katie"), nobody is sent to Stripe or
+ * shown pay buttons; the order page asks first. False when the store does not
+ * quote shipping (no ship-from yet, mode "arranged", a piece with no size),
+ * so those orders go straight to payment as before.
+ */
+async function shippingStillToChoose(orderId: string): Promise<boolean> {
+  try {
+    return Boolean((await getOrderShippingState(orderId))?.required);
+  } catch (err) {
+    console.error("[katie-the-potter] shipping state:", err);
+    return false;
+  }
+}
 
 export type AddToCartResult =
   | { ok: true; count: number; already: boolean }
@@ -128,7 +145,7 @@ export async function placeOrder(values: CheckoutFormValues): Promise<PlaceOrder
     if (line.artwork?.status !== "available") {
       return {
         ok: false,
-        message: `“${line.artwork?.title ?? "A piece"}” is no longer available. Someone else may have reserved it. Remove it from your cart to continue.`,
+        message: `“${line.artwork?.title ?? "A piece"}” is no longer available. Someone else may have bought it. Remove it from your cart to continue.`,
       };
     }
   }
@@ -182,10 +199,13 @@ export async function placeOrder(values: CheckoutFormValues): Promise<PlaceOrder
     return { ok: false, message: "We couldn't place your order. Please try again, or write to us." };
   }
 
-  await clearCartToken();
+  // A card checkout keeps the cart until the payment is confirmed (the return
+  // hop takes the bought pieces out): backing out of Stripe loses nothing.
+  // An eTransfer order is paid outside the site, so its cart is cleared now.
+  if (rail !== "stripe") await clearCartToken();
   revalidatePath("/", "layout");
   // redirect() throws, so both stay outside any try.
-  if (rail === "stripe") redirect(await cardCheckoutUrl(orderId, origin));
+  if (rail === "stripe" && !(await shippingStillToChoose(orderId))) redirect(await cardCheckoutUrl(orderId, origin));
   redirect(`/orders/${orderId}`);
 }
 
@@ -271,29 +291,17 @@ export async function buyPieceNow(artworkId: string): Promise<PlaceOrderResult> 
       metadata: { source: "buy_now" },
     });
     orderId = order.id;
-    await dropVariantFromCart(sv.variantId);
+    // The piece stays in the cart (if it was there) until the payment is confirmed.
   } catch (err) {
     console.error("[katie-the-potter] buyPieceNow:", err);
     return { ok: false, message: "We couldn't start the payment. Please try again, or add it to your cart." };
   }
 
   revalidatePath("/", "layout");
+  // With shipping to choose, the order page asks for the address and courier
+  // first; payOrderByCard then opens Stripe (which asks only for the email).
+  if (await shippingStillToChoose(orderId)) redirect(`/orders/${orderId}`);
   redirect(await cardCheckoutUrl(orderId, origin, stripeCollects(email)));
-}
-
-/** Remove this visitor's cart line(s) for a variant. Never throws. */
-async function dropVariantFromCart(variantId: string): Promise<void> {
-  try {
-    const token = await readCartToken();
-    if (!token) return;
-    const rows = await db<Array<{ id: string }>>`
-      SELECT cl.id FROM cart_line cl JOIN cart c ON c.id = cl.cart_id
-      WHERE c.token = ${token} AND cl.artwork_variant_id = ${variantId}
-    `;
-    for (const r of rows) await removeCartLine({ lineId: r.id });
-  } catch (err) {
-    console.error("[katie-the-potter] dropVariantFromCart:", err);
-  }
 }
 
 /**
@@ -330,8 +338,9 @@ export async function expressCheckoutCart(): Promise<void> {
   }
   if (!orderId) redirect("/cart?express=failed");
 
-  await clearCartToken();
+  // The cart stays until the card payment is confirmed (api/checkout/return).
   revalidatePath("/", "layout");
+  if (await shippingStillToChoose(orderId)) redirect(`/orders/${orderId}`);
   redirect(await cardCheckoutUrl(orderId, origin, stripeCollects(email)));
 }
 
@@ -341,6 +350,7 @@ export async function payOrderByCard(orderId: string): Promise<void> {
   if (!order) redirect("/");
   if (!isCardPaymentAvailable()) redirect(`/orders/${orderId}?card=unavailable`);
   if (await orderHasSamplePiece(orderId)) redirect(`/orders/${orderId}?card=sample`);
+  if (await shippingStillToChoose(orderId)) redirect(`/orders/${orderId}`);
   // A Buy-now order retried after backing out of Stripe still has no email or
   // address of ours: Stripe's page asks again. An order placed through our
   // form has both and gets the session it always got.
@@ -352,6 +362,7 @@ export async function payOrderByCard(orderId: string): Promise<void> {
 export async function payOrderByEtransfer(orderId: string): Promise<void> {
   const order = await loadOrderForViewer(orderId);
   if (!order) redirect("/");
+  if (await shippingStillToChoose(orderId)) redirect(`/orders/${orderId}`);
   // eTransfer is settled by hand between the buyer and Katie; with no email on
   // the order (Buy now, before Stripe's page) nobody could reach the buyer.
   if (!order.customerEmail?.trim()) redirect(`/orders/${orderId}?card=etransfer_needs_email`);

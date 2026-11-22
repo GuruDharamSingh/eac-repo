@@ -6,9 +6,10 @@ import { OfferingsBand, type OfferingItem } from "@/components/landing/Offerings
 import { getLandingConfig, getWorkQuestion, getWorkQuestionThread, mediaSrc } from "@/lib/landing";
 import { Render, resolveAllData } from "@puckeditor/core/rsc";
 import type { Data } from "@puckeditor/core";
-import { serverPuckConfig } from "@/lib/puck/config.server";
+import { markedPuckConfig, serverPuckConfig } from "@/lib/puck/config.server";
 import { loadPage } from "@/lib/puck/store";
 import { LANDING_SLUG } from "@/lib/puck/landing";
+import { swapLandingParts } from "@/lib/puck/landing-blocks";
 import { siteConfig } from "@/config/site";
 import { renderForumRoute } from "@elkdonis/forum-ui";
 import { getForumConnectors } from "@/lib/forum";
@@ -26,6 +27,28 @@ import { patchCss, patchFontsHref, type PuckDoc } from "@elkdonis/direct-edit/bl
 import { loadPageEdits } from "@/lib/page-edits";
 import { EditPageButton } from "@/components/landing/EditPageButton";
 import type { Thread } from "@/lib/types";
+import { LANDING_RESOLVED_KEYS } from "@/lib/puck/landing-resolved";
+
+/**
+ * What each landing block's resolver drew (the gathering and its cover, the work question), by node id, for the editor:
+ * it draws them without asking again, so the block looks there as it does on the page. Never saved. The forum's own
+ * render (`embed`) is a React element and cannot go to the browser, so the forum's block is told only to draw a note
+ * where the conversation goes.
+ */
+function landingResolved(list: unknown, out: Record<string, Record<string, unknown>> = {}) {
+  if (!Array.isArray(list)) return out;
+  for (const n of list as Array<{ type?: string; props?: Record<string, unknown> }>) {
+    if (!n?.props) continue;
+    const id = n.props.id;
+    if (typeof id === "string" && n.type === "offerings-band") {
+      out[id] = Object.fromEntries(LANDING_RESOLVED_KEYS["offerings-band"].filter((k) => n.props![k] != null).map((k) => [k, n.props![k]]));
+    } else if (typeof id === "string" && n.type === "grand-forum") {
+      out[id] = { question: n.props.question ?? null, signedIn: Boolean(n.props.signedIn), preview: n.props.embed != null };
+    }
+    for (const v of Object.values(n.props)) if (Array.isArray(v)) landingResolved(v, out);
+  }
+  return out;
+}
 
 /**
  * The landing page, carried over from inner-gathering's (marketing) route
@@ -103,8 +126,8 @@ export default async function LandingPage() {
   const parts = {
     "hero-actions": (
       <div className="ig-hero-actions" data-landing-part="hero-actions" data-edit-name="Sign-in buttons">
-        <Link href={hero.ctaHref} className="cta-btn ig-hero-cta">{hero.ctaLabel}</Link>
-        <Link href={viewer ? "/hub" : "/login"} className="ig-hero-cta-quiet">
+        <Link href={hero.ctaHref} className="cta-btn ig-hero-cta" data-part="cta">{hero.ctaLabel}</Link>
+        <Link href={viewer ? "/hub" : "/login"} className="ig-hero-cta-quiet" data-part="signin">
           {viewer ? "Open the portal" : "Sign in"}
         </Link>
       </div>
@@ -178,12 +201,12 @@ export default async function LandingPage() {
       <div data-landing-part="fundraising-progress" data-edit-name="Money raised">
         {fundraising.raised > 0 && (
           <div style={{ marginBottom: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#5a5240", marginBottom: "0.4rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--ig-c-x-5a5240)", marginBottom: "0.4rem" }}>
               <span>{fundraising.currency} ${fundraising.raised.toLocaleString()} raised</span>
               <span>Goal: ${fundraising.goal.toLocaleString()} ({pct}%)</span>
             </div>
-            <div style={{ height: 5, background: "rgba(1,18,78,0.12)", borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #b79a55, #8f763c)", borderRadius: 3 }} />
+            <div style={{ height: 5, background: "var(--ig-a-01124e-12)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, var(--ig-c-gold), var(--ig-c-gold-dark))", borderRadius: 3 }} />
             </div>
           </div>
         )}
@@ -215,11 +238,16 @@ export default async function LandingPage() {
   // Once the page has been saved as a tree, the tree is the page.
   if (tree) {
     const metadata = { orgId: siteConfig.orgId, slug: LANDING_SLUG, parts };
-    const filled = await resolveAllData(tree.data as Data, serverPuckConfig, metadata);
+    // Someone who may edit gets the same page with an inert marker before each block (the Fields lens reads them).
+    const config = viewer?.canEdit ? markedPuckConfig : serverPuckConfig;
+    // The saved page keeps "Current offerings" and "The Grand Forum" as live parts; they are blocks now (lib/puck/landing-blocks.ts).
+    const data = swapLandingParts(tree.data).data;
+    const filled = await resolveAllData(data as Data, config, metadata);
     return (
       <div className="marketing-root">
-        <Render config={serverPuckConfig} data={filled as Data} metadata={metadata} />
-        {viewer?.canEdit && <EditPageButton page="home" doc={edits} tree={tree.data as PuckDoc} />}
+        {viewer?.canEdit ? <template data-blk-page={LANDING_SLUG} /> : null}
+        <Render config={config} data={filled as Data} metadata={metadata} />
+        {viewer?.canEdit && <EditPageButton page="home" doc={edits} tree={data as PuckDoc} resolved={landingResolved(filled.content)} />}
       </div>
     );
   }
@@ -232,14 +260,14 @@ export default async function LandingPage() {
           right. Everything here is editable copy over the words that used to
           be hard-coded, and the image is an admin-set space that falls back
           to the intro banner, so the section is never half-empty. */}
-      <header className={`ig-hero${heroImage ? "" : " ig-hero--plain"}`} data-edit-section="hero" data-edit-name="Opening">
+      <header className={`ig-hero${heroImage ? "" : " ig-hero--plain"}`} data-edit-section="hero" data-edit-name="Opening" data-chrome="hero">
         <div className="ig-hero-inner">
           <div className="ig-hero-copy">
-            <p className="ig-hero-eyebrow">{hero.eyebrow}</p>
-            <h1 className="ig-hero-title">{hero.title}</h1>
-            <p className="ig-hero-subtitle">{hero.subtitle}</p>
+            <p className="ig-hero-eyebrow" data-part="eyebrow">{hero.eyebrow}</p>
+            <h1 className="ig-hero-title" data-part="title">{hero.title}</h1>
+            <p className="ig-hero-subtitle" data-part="subtitle">{hero.subtitle}</p>
             <hr className="gold-rule ig-hero-rule" style={{ "--rule-width": "72px" } as React.CSSProperties} />
-            <p className="ig-hero-tagline">{hero.tagline}</p>
+            <p className="ig-hero-tagline" data-part="tagline">{hero.tagline}</p>
             {parts["hero-actions"]}
           </div>
 
@@ -273,7 +301,7 @@ export default async function LandingPage() {
       <section id="about" className="about-section" data-edit-section="about" data-edit-name="About">
         <div style={{ maxWidth: "var(--content-max)", margin: "0 auto", padding: "0 1.5rem" }}>
           <Reveal style={{ textAlign: "center", marginBottom: "4rem" }}>
-            <h2 className="section-heading" style={{ fontFamily: '"Brothers", sans-serif', fontSize: "clamp(3.75rem, 7.5vw, 5.625rem)" }}>A Mutual Aid Society</h2>
+            <h2 className="section-heading" style={{ fontFamily: 'var(--ig-font-brothers)', fontSize: "clamp(3.75rem, 7.5vw, 5.625rem)" }}>A Mutual Aid Society</h2>
             <hr className="gold-rule" style={{ "--rule-width": "60px" } as React.CSSProperties} />
           </Reveal>
           <Reveal style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 440px), 1fr))", gap: "4rem", transitionDelay: "0.1s" }}>
@@ -317,8 +345,8 @@ export default async function LandingPage() {
               <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem auto" } as React.CSSProperties} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "2rem", alignItems: "start" }}>
-              <div style={{ background: "rgba(255, 253, 248, 0.82)", border: "1px solid rgba(183,154,85,0.32)", borderRadius: 4, padding: "1.5rem" }}>
-                <p style={{ fontFamily: '"Basteleur", serif', color: "#022278", lineHeight: 1.8, marginBottom: "1.5rem" }}>
+              <div style={{ background: "var(--ig-a-fffdf8-82)", border: "1px solid var(--ig-a-b79a55-32)", borderRadius: 4, padding: "1.5rem" }}>
+                <p style={{ fontFamily: 'var(--ig-font-x-basteleur-serif)', color: "var(--ig-c-navy)", lineHeight: 1.8, marginBottom: "1.5rem" }}>
                   We Will Specialize in Grant Writing, Finding, and Even Our Own Micro Grants
                 </p>
                 {parts["fundraising-progress"]}
@@ -326,9 +354,9 @@ export default async function LandingPage() {
                   Support on GoFundMe
                 </a>
               </div>
-              <div style={{ fontFamily: '"Basteleur", serif', color: "#022278", lineHeight: 1.8 }}>
+              <div style={{ fontFamily: 'var(--ig-font-x-basteleur-serif)', color: "var(--ig-c-navy)", lineHeight: 1.8 }}>
                 {parts["fundraising-status"]}
-                <p style={{ margin: 0, fontFamily: '"Venture", serif', fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8f763c" }}>
+                <p style={{ margin: 0, fontFamily: 'var(--ig-font-x-venture-serif)', fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ig-c-gold-dark)" }}>
                   Instagram · GoFundMe · Substack — links in the footer
                 </p>
               </div>
@@ -338,17 +366,17 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Cities ── */}
-      <Reveal as="section" editSection="cities" editName="Cities" style={{ background: "#2a5a2a", padding: "5rem 4rem", display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+      <Reveal as="section" editSection="cities" editName="Cities" style={{ background: "var(--ig-c-x-2a5a2a)", padding: "5rem 4rem", display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
         {[
           ["Toronto", "Operations · Technology · Performance"],
           ["Los Angeles", "Music · Education · Outreach"],
           ["Paris", "Research · Writing · European Networks"],
         ].map(([city, line], i) => (
           <div key={city} style={{ display: "flex", alignItems: "center" }}>
-            {i > 0 && <div style={{ width: 1, height: 60, background: "rgba(221,232,208,0.15)" }} />}
+            {i > 0 && <div style={{ width: 1, height: 60, background: "var(--ig-a-dde8d0-15)" }} />}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", padding: "1.5rem 4rem" }}>
-              <span style={{ fontFamily: '"Basteleur", serif', fontWeight: 700, fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>{city}</span>
-              <span style={{ fontFamily: '"Venture", serif', fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(221,232,208,0.4)" }}>{line}</span>
+              <span style={{ fontFamily: 'var(--ig-font-x-basteleur-serif)', fontWeight: 700, fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "var(--ig-c-x-dde8d0)", letterSpacing: "0.04em" }}>{city}</span>
+              <span style={{ fontFamily: 'var(--ig-font-x-venture-serif)', fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ig-a-dde8d0-4)" }}>{line}</span>
             </div>
           </div>
         ))}
@@ -363,11 +391,11 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Vision Statement ── */}
-      <section data-edit-section="vision" data-edit-name="Vision" style={{ background: "#01124E", borderTop: "1px solid rgba(80,120,200,0.18)", padding: "8rem 4rem", textAlign: "center" }}>
-        <blockquote style={{ fontFamily: '"Basteleur", serif', fontSize: "clamp(1.1rem, 2.2vw, 1.5rem)", fontWeight: 300, lineHeight: 1.9, color: "rgba(198,221,255,0.78)", maxWidth: 700, margin: "0 auto 2.5rem", border: "none", padding: 0 }}>
+      <section data-edit-section="vision" data-edit-name="Vision" style={{ background: "var(--ig-c-navy-deep)", borderTop: "1px solid var(--ig-a-5078c8-18)", padding: "8rem 4rem", textAlign: "center" }}>
+        <blockquote style={{ fontFamily: 'var(--ig-font-x-basteleur-serif)', fontSize: "clamp(1.1rem, 2.2vw, 1.5rem)", fontWeight: 300, lineHeight: 1.9, color: "var(--ig-a-c6ddff-78)", maxWidth: 700, margin: "0 auto 2.5rem", border: "none", padding: 0 }}>
           &ldquo;The collective is committed to using art as the means of inquiry. Each inquiry focuses on a particular question that is grounded in what it is to be human. We are unique in our purpose and are not commercial. Our works are intended to be experienced, not sold.&rdquo;
         </blockquote>
-        <p style={{ fontFamily: '"Venture", serif', fontSize: "0.75rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(183,154,85,0.6)", margin: 0 }}>
+        <p style={{ fontFamily: 'var(--ig-font-x-venture-serif)', fontSize: "0.75rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "var(--ig-a-b79a55-6)", margin: 0 }}>
           Elkdonis Arts Collective &mdash; Founded, Toronto
         </p>
       </section>

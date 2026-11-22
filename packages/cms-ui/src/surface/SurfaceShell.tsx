@@ -37,11 +37,23 @@ export interface SurfaceFrameProps {
   statusTone?: "normal" | "error";
   /** Remove the main pane's padding — a gallery grid wants the edge. */
   flush?: boolean;
+  /**
+   * Turns the head's glyph tile into a toggle button (elktours' phone stop card: the number tile becomes a
+   * magnifier that opens the place's details over the text). Omit for the plain tile.
+   */
+  glyphAction?: { label: string; icon: React.ReactNode; pressed?: boolean; onClick: () => void };
   children: React.ReactNode;
 }
 
-interface FrameChrome {
-  onClose: () => void;
+export interface FrameChrome {
+  /** Absent in a SurfaceStage: a docked surface has no ✕. */
+  onClose?: () => void;
+  /** Replaces the kind's glyph in the head's tile (the stage shows the face's numeral). */
+  glyph?: string | null;
+  /** Fill the glyph tile with the kind colour (the stage's base layer). */
+  glyphFilled?: boolean;
+  /** Extra head controls, drawn before ← / ✕ (the stage's ‹ counter ›). */
+  controls?: React.ReactNode;
   onBack?: () => void;
   backLabel?: string | null;
   /** Per-layer id for aria-labelledby — layers beneath the top stay mounted. */
@@ -60,6 +72,7 @@ export function SurfaceFrame({
   status,
   statusTone = "normal",
   flush,
+  glyphAction,
   children,
 }: SurfaceFrameProps) {
   const chrome = React.useContext(ChromeCtx);
@@ -68,9 +81,21 @@ export function SurfaceFrame({
   return (
     <>
       <header className="eac-surface-head">
-        <span className="eac-surface-glyph" aria-hidden>
-          {meta.glyph}
-        </span>
+        {glyphAction ? (
+          <button
+            type="button"
+            className={`eac-surface-glyph is-filled is-action${glyphAction.pressed ? " is-pressed" : ""}`}
+            aria-label={glyphAction.label}
+            aria-pressed={glyphAction.pressed ?? false}
+            onClick={glyphAction.onClick}
+          >
+            {glyphAction.icon}
+          </button>
+        ) : (
+          <span className={`eac-surface-glyph${chrome.glyphFilled ? " is-filled" : ""}`} aria-hidden>
+            {chrome.glyph ?? meta.glyph}
+          </span>
+        )}
         <div className="eac-surface-headings">
           <div className="eac-surface-kicker">
             {chrome.onBack && chrome.backLabel ? (
@@ -90,6 +115,7 @@ export function SurfaceFrame({
           </h2>
         </div>
         <div className="eac-surface-controls">
+          {chrome.controls}
           {chrome.onBack && (
             <button
               type="button"
@@ -100,14 +126,16 @@ export function SurfaceFrame({
               ←
             </button>
           )}
-          <button
-            type="button"
-            className="eac-surface-iconbtn"
-            onClick={chrome.onClose}
-            aria-label="Close"
-          >
-            ✕
-          </button>
+          {chrome.onClose && (
+            <button
+              type="button"
+              className="eac-surface-iconbtn"
+              onClick={chrome.onClose}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </header>
 

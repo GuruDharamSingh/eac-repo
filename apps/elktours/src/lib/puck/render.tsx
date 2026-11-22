@@ -4,7 +4,7 @@ import type { Data } from "@puckeditor/core";
 import { isValidSlug } from "@elkdonis/page-builder/server";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { serverPuckConfig } from "./config.server";
+import { markedPuckConfig, serverPuckConfig } from "./config.server";
 import { loadPage } from "./store";
 import { TEMPLATE_SLUGS } from "./reserved";
 
@@ -32,11 +32,14 @@ export async function renderPuckPage(slug: string): Promise<React.ReactNode | nu
   const page = await loadPage(slug, KNOWN_TYPES);
   if (!page) return null;
   const viewer = await getViewer().catch(() => null);
-  const filled = await resolveAllData(page.data as Data, serverPuckConfig, { orgId: siteConfig.orgId, slug });
+  // Someone who may edit gets the same page with an inert marker before each block (the Fields lens reads them).
+  const config = viewer?.canEdit ? markedPuckConfig : serverPuckConfig;
+  const filled = await resolveAllData(page.data as Data, config, { orgId: siteConfig.orgId, slug });
   return (
     <>
+      {viewer?.canEdit ? <template data-blk-page={slug} /> : null}
       <div className="elk-page">
-        <Render config={serverPuckConfig} data={filled as Data} metadata={{ orgId: siteConfig.orgId, slug }} />
+        <Render config={config} data={filled as Data} metadata={{ orgId: siteConfig.orgId, slug }} />
       </div>
       {viewer?.canEdit ? (
         <a

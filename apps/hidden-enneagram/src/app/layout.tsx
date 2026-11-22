@@ -11,6 +11,7 @@ import { SITE_STYLE } from "@/lib/site-style-schema";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { SiteHeader, type HeaderLink } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { FieldsLensGate } from "@/components/fields/FieldsLensGate";
 import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
 import { LookWatcher } from "@/components/site-style/look-watcher";
 import { SiteAudio } from "@/components/music/site-audio";
@@ -101,6 +102,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Not a <main>: most pages bring their own (they did before the header moved here). */}
           <div className="flex-1">{children}</div>
           <SiteFooter body={footer.body} note={footer.note} />
+          <FieldsLensGate />
         </HubSurfaces>
         {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
         {canEdit ? <LookWatcher /> : null}

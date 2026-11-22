@@ -1,0 +1,38 @@
+/* Theme and utility colours for the elktours WEB mocks (tour and experience page blocks). Everything is under
+   [data-mock-app="elktours"] .em-web so it cannot reach another tile. Values are elktours' own (themes.json
+   -> apps.elktours.varMap); the semantic utilities (bg-card, text-muted-foreground ...) exist here because this
+   app's Tailwind does not define elktours' @theme colours. */
+[data-mock-app="elktours"] .em-web {
+  --background: 216 12% 19%; --foreground: 40 33% 92%; --card: 216 11% 23%; --card-foreground: 40 33% 92%;
+  --primary: 40 50% 57%; --primary-foreground: 216 13% 12%; --secondary: 216 10% 26%; --secondary-foreground: 40 33% 92%;
+  --muted: 216 10% 25%; --muted-foreground: 37 12% 69%; --accent: 216 10% 30%; --border: 216 9% 49%; --input: 216 9% 49%;
+  --brass: #c9a25c; --radius: 0rem;
+  background: hsl(var(--background)); color: hsl(var(--foreground));
+  font-family: "Basteleur", Georgia, serif; font-size: 16px; line-height: 1.5; width: 100%;
+}
+[data-mock-app="elktours"] .em-web .font-serif { font-family: "Brothers", "Venture", Georgia, serif; font-weight: 400; }
+[data-mock-app="elktours"] .em-web .font-mono { font-family: "Venture", Georgia, serif; }
+[data-mock-app="elktours"] .em-web .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+[data-mock-app="elktours"] .em-web .text-foreground { color: hsl(var(--foreground)); }
+[data-mock-app="elktours"] .em-web .text-primary-foreground { color: hsl(var(--primary-foreground)); }
+[data-mock-app="elktours"] .em-web .bg-card { background: hsl(var(--card)); }
+[data-mock-app="elktours"] .em-web .bg-muted { background: hsl(var(--muted)); }
+[data-mock-app="elktours"] .em-web .bg-secondary { background: hsl(var(--secondary)); }
+[data-mock-app="elktours"] .em-web .bg-primary { background: hsl(var(--primary)); }
+[data-mock-app="elktours"] .em-web .bg-background { background: hsl(var(--background)); }
+[data-mock-app="elktours"] .em-web .bg-background\/90 { background: hsl(var(--background) / 0.9); }
+[data-mock-app="elktours"] .em-web .border-border { border-color: hsl(var(--border)); }
+[data-mock-app="elktours"] .em-web a { color: inherit; }
+[data-mock-app="elktours"] .em-web .em-field { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid hsl(var(--input)); background: hsl(var(--background)); color: hsl(var(--foreground)); font: inherit; font-size: 14px; }
+[data-mock-app="elktours"] .em-web .em-btn { display: block; width: 100%; padding: 12px 16px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 600; text-align: center; border: 0; }
+[data-mock-app="elktours"] .em-web .eac-article { color: hsl(var(--foreground)); }
+[data-mock-app="elktours"] .em-web .eac-article p { margin: 0 0 1em; line-height: 1.65; }
+[data-mock-app="elktours"] .em-web .em-route-map { background: hsl(var(--secondary)); border: 1px solid hsl(var(--border)); }
+[data-mock-app="elktours"] .em-web .em-stop-n { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border: 1px solid hsl(var(--primary)); color: hsl(var(--primary)); font-family: "Venture", Georgia, serif; font-size: 12px; flex: none; }
+
+/* Phone mocks: a 400px phone drawn at 3x zoom so it fills the 1200px tile frame at natural size. */
+[data-mock-app="elktours"] .em-phone { width: 400px; zoom: 3; position: relative; overflow: hidden; }
+[data-mock-app="elktours"] .em-phone .elk-m { min-height: 0; padding-bottom: 24px; }
+[data-mock-app="elktours"] .em-phone .em-topbar-stage { position: relative; height: 70px; }
+[data-mock-app="elktours"] .em-phone .blk-mtbar { position: relative; margin-top: 0; }
+[data-mock-app="elktours"] .em-phone .em-pad-top .blk-mmast, [data-mock-app="elktours"] .em-phone .em-pad-top .blk-mmast-line { padding-top: 24px; }

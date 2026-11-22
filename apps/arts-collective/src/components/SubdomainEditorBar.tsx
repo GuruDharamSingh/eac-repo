@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SILEX_EDITOR_ENABLED } from "@/lib/silex-flag";
 import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 
 type Props = {
@@ -76,7 +77,7 @@ export function SubdomainEditorBar({
         Workshops
       </BarButton>
 
-      {silexEditorUrl && isOwner && (
+      {SILEX_EDITOR_ENABLED && silexEditorUrl && isOwner && (
         <BarButton href={silexEditorUrl} external>
           Edit layout
         </BarButton>

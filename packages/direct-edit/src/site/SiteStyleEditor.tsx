@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSS
 import { loadFonts } from "@elkdonis/fonts";
 import type { PartStyle } from "../block/style";
 import { contrastRatio } from "../model/color";
-import { cleanSiteStyle, hexToHsl, siteStyleCss, varHex, type SiteStyle, type SiteStyleSchema, type SiteVar } from "./style";
+import { cleanSiteStyle, hexToHsl, rgbaParts, rgbaString, siteStyleCss, varHex, type SiteStyle, type SiteStyleSchema, type SiteVar } from "./style";
 
 export interface SiteStyleEditorProps {
   schema: SiteStyleSchema;
@@ -64,6 +64,21 @@ function Colour({ value, onChange, name }: { value: string | null; onChange: (he
       <input type="color" data-ctl={name} value={value ?? "#000000"} onChange={(e) => onChange(e.target.value)} style={{ width: 34, height: 26, padding: 0, border: "1px solid #c9ced6", borderRadius: 5 }} />
       <input key={value ?? ""} data-ctl-text={name} defaultValue={value ?? ""} placeholder="#rrggbb" style={s.input}
         onBlur={(e) => { const v = e.target.value.trim(); if (/^#[0-9a-f]{6}$/i.test(v) && v !== value) onChange(v.toLowerCase()); }}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+    </>
+  );
+}
+
+/** A translucent colour: picker, opacity (0-100%) and the exact stored string (typed values apply on Enter or leaving the field). */
+function Rgba({ value, onChange, name }: { value: string; onChange: (v: string) => void; name: string }) {
+  const p = rgbaParts(value) ?? { hex: "#000000", a: 1 };
+  return (
+    <>
+      <input type="color" data-ctl={name} value={p.hex} onChange={(e) => onChange(rgbaString(e.target.value, p.a))} style={{ width: 34, height: 26, padding: 0, border: "1px solid #c9ced6", borderRadius: 5, flex: "none" }} />
+      <input type="number" data-ctl-alpha={name} min={0} max={100} step={1} value={Math.round(p.a * 100)} title="Opacity %" style={{ ...s.input, width: 54, flex: "none" }}
+        onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n)) onChange(rgbaString(p.hex, n / 100)); }} />
+      <input key={value} data-ctl-text={name} defaultValue={value} placeholder="rgba(0, 0, 0, 0.5)" style={s.input}
+        onBlur={(e) => { const v = e.target.value.trim(); if (rgbaParts(v) && v !== value) onChange(v); }}
         onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
     </>
   );
@@ -181,6 +196,15 @@ export function SiteStyleEditor({ schema, initial, onSave, onClose }: SiteStyleE
   const hexOf = (name: string) => { const v = schema.vars.find((x) => x.name === name); return v ? varHex(v, theme[name]) : null; };
   const groups = useMemo(() => Array.from(new Set(schema.vars.map((v) => v.group))), [schema]);
 
+  const foldOf = (g: string) => schema.vars.find((v) => v.group === g)?.fold;
+  const folds = useMemo(() => Array.from(new Set(groups.map((g) => foldOf(g)).filter((f): f is string => !!f))), [groups]); // eslint-disable-line react-hooks/exhaustive-deps
+  const groupView = (g: string) => (
+    <div key={g}>
+      <div style={s.group}>{g}</div>
+      {schema.vars.filter((v) => v.group === g).map(varRow)}
+    </div>
+  );
+
   const varRow = (v: SiteVar) => {
     const set = theme[v.name] !== undefined;
     const reset = set ? () => setVar(v.name, undefined) : null;
@@ -188,6 +212,8 @@ export function SiteStyleEditor({ schema, initial, onSave, onClose }: SiteStyleE
     if (v.kind === "hsl" || v.kind === "color" || v.kind === "background") {
       const hex = varHex(v, theme[v.name]);
       ctl = <Colour name={v.name} value={hex} onChange={(h) => setVar(v.name, v.kind === "hsl" ? hexToHsl(h) ?? undefined : h)} />;
+    } else if (v.kind === "rgba") {
+      ctl = <Rgba name={v.name} value={theme[v.name] ?? v.default} onChange={(x) => setVar(v.name, x)} />;
     } else if (v.kind === "choice") {
       ctl = (
         <select data-ctl={v.name} value={theme[v.name] ?? ""} onChange={(e) => setVar(v.name, e.target.value || undefined)} style={s.input}>
@@ -266,12 +292,17 @@ export function SiteStyleEditor({ schema, initial, onSave, onClose }: SiteStyleE
           {tab === "theme" ? (
             <>
               <p style={s.note}>Changes apply to every page of the site.</p>
-              {groups.map((g) => (
-                <div key={g}>
-                  <div style={s.group}>{g}</div>
-                  {schema.vars.filter((v) => v.group === g).map(varRow)}
-                </div>
-              ))}
+              {groups.filter((g) => !foldOf(g)).map(groupView)}
+              {folds.map((f) => {
+                const inside = groups.filter((g) => foldOf(g) === f);
+                const setCount = schema.vars.filter((v) => foldOf(v.group) === f && theme[v.name] !== undefined).length;
+                return (
+                  <details key={f} data-site-style-fold={f} style={{ margin: "14px 0 4px", borderTop: "1px solid #e6e9ee" }}>
+                    <summary style={{ ...s.group, cursor: "pointer", margin: "8px 0", listStylePosition: "inside" }}>{f}{setCount ? ` (${setCount} changed)` : ""}</summary>
+                    {inside.map(groupView)}
+                  </details>
+                );
+              })}
             </>
           ) : region ? (
             <>

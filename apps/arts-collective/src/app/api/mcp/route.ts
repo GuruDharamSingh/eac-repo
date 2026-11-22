@@ -1,6 +1,8 @@
 import { getActiveEnrolment, getCourseBySlug, getLearnerOutline, listMyEnrolments, stepTask } from "@elkdonis/lms";
+import { loadPageWithVersion } from "@elkdonis/page-builder/server";
 import { ACTION_LINKS } from "@/lib/actions/links";
 import { channelNextSource } from "@/lib/channel/next-source";
+import { mcpDrafts } from "@/lib/mcp-drafts";
 
 /**
  * POST /api/mcp: the platform MCP endpoint (packages/mcp; docs/open/mcp-foundations/PLAN.md).
@@ -36,6 +38,10 @@ function mcp() {
       linkHosts: ["elkdonis-arts.org"],
       sources: { channelNext: channelNextSource },
       lms: LMS,
+      // The page reader for read_page and find_fields (validates each row on the way out).
+      pages: { loadPageWithVersion },
+      // The draft writer for propose_page_patch and set_field: the step door and the draft store. It cannot publish.
+      drafts: mcpDrafts,
     }),
   );
   return handler;

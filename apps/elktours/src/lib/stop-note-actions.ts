@@ -1,6 +1,7 @@
 "use server";
 // CONTRACT: stop excerpt + private stop notes "from the event" (editors only). Types in lib/catalogue-types.ts.
 
+import { departuresSql } from "@/lib/departures";
 import { revalidatePath } from "next/cache";
 import { db } from "@elkdonis/db";
 import { requireOrgEditor } from "@/lib/auth";
@@ -40,7 +41,7 @@ function mapNote(r: Row): StopNote {
 const SELECT = db`
   SELECT n.*, d.starts_at, u.display_name AS author_name
   FROM tour_stop_notes n
-  LEFT JOIN tour_departures d ON d.id = n.departure_id
+  LEFT JOIN ${departuresSql()} d ON d.id = n.departure_id
   LEFT JOIN users u ON u.id = n.author_id
 `;
 
@@ -99,7 +100,7 @@ export async function addStopNoteAction(input: StopNoteInput): Promise<Result<{ 
   let departureId: string | null = null;
   if (input.departureId) {
     const [d] = (await db`
-      SELECT id FROM tour_departures WHERE id = ${input.departureId} AND thread_id = ${stop.thread_id as string} AND org_id = ${ORG}
+      SELECT id FROM ${departuresSql()} d WHERE id = ${input.departureId} AND thread_id = ${stop.thread_id as string} AND org_id = ${ORG}
     `) as unknown as Row[];
     if (!d) return { ok: false, error: "That departure is not on this tour." };
     departureId = d.id as string;

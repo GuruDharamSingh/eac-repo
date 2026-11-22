@@ -13,12 +13,13 @@ import { savePage } from "./store";
  */
 export async function savePageAction(
   slug: string,
-  data: unknown
-): Promise<{ ok: boolean; error?: string }> {
+  data: unknown,
+  expectedUpdatedAt?: string
+): Promise<{ ok: boolean; error?: string; stale?: boolean; updatedAt?: string }> {
   const viewer = await getViewer();
   if (!viewer?.canEdit) return { ok: false, error: "Only the site owner can publish pages." };
 
-  const result = await savePage(slug, data);
+  const result = await savePage(slug, data, expectedUpdatedAt);
   // Pages are served at their own address ("home" at "/"); the /p/ prefix
   // is what the first version used.
   if (result.ok) revalidatePath(slug === "home" ? "/" : `/${slug}`);

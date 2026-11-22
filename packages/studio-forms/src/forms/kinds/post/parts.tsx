@@ -124,6 +124,14 @@ export function homeLabel(a: Answers, ctx: FormContext): string {
   return feed ? `${feed.name} · ${ctx.orgName}` : ctx.orgName;
 }
 
+/** The rows layout's Goes on value (2026-11-15): "Lab work · Public" (the feed, then who sees it). */
+export function goesOnRowSummary(a: Answers, ctx: FormContext): string {
+  const feed = feedsOf(ctx).find((f) => f.slug === a.feed_slug);
+  const parts = [feed ? feed.name : ctx.orgName];
+  if (canSetVisibility(ctx)) parts.push(VISIBILITY_WORD[visibilityOf(a)] ?? 'Public');
+  return parts.join(' · ');
+}
+
 /** The Publishing row's value line: "Public · Lab work · Elkdonis Arts Collective". */
 export function placementSummary(a: Answers, ctx: FormContext): string {
   const parts: string[] = [];

@@ -30,7 +30,8 @@ export function MeetingSheetForm({
       {/* The Quick-Form is a light form (ledger-quick) with a transparent button row: on this dark site it
           sits on its own paper panel so its ink and blue ghost buttons keep their contrast. */}
       <div className="sj-chform-panel">
-        <SiteFormPage kind="meeting" site={site} threadId={id} closeHref={closeHref} />
+        {/* The sheet is narrow: quick tier (rows, one column) whatever the page default is. */}
+        <SiteFormPage kind="meeting" site={site} threadId={id} closeHref={closeHref} tier="quick" />
       </div>
       <div className="sj-chform-more">
         <a href={studioHref}>

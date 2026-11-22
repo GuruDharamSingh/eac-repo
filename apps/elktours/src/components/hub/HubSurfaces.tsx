@@ -24,11 +24,24 @@ import { siteConfig } from "@/config/site";
 import { TourPopup } from "@/components/tours/tour-popup";
 import { ExperiencePopup } from "@/components/surfaces/experience-popup";
 import { PlacePopup } from "@/components/surfaces/place-popup";
+import { PlaceDetailPopup } from "@/components/surfaces/place-detail-popup";
+import { CityMenuPopup } from "@/components/surfaces/city-menu-popup";
+import { TourQuickPopup } from "@/components/surfaces/tour-quick-popup";
 import { bindOpensLinks } from "@/components/surfaces/opens-links";
+import { forumCustom, forumListFeed, forumThreadBody } from "./forum-surface-connectors";
+import { ScheduleTourPopup } from "@/components/office/schedule-tour-popup";
+import { AddPlacePopup } from "@/components/office/add-place-popup";
+import { OfficeSoonPopup } from "@/components/office/office-faces";
+import { CreateTourPopup } from "@/components/office/create-tour/create-tour-popup";
+import { AvailabilityPopup } from "@/components/office/availability-popup";
+import { TakesPopup } from "@/components/office/takes-popup";
+import { OfficeDeepLink } from "./OfficeDeepLink";
 
 /** The Opens popups load when one opens: they draw blocks, and the blocks package is large (opens-popups.tsx). */
 const ReviewsPopup = dynamic(() => import("@/components/surfaces/opens-popups").then((m) => m.ReviewsPopup), { ssr: false });
 const PersonPopup = dynamic(() => import("@/components/surfaces/opens-popups").then((m) => m.PersonPopup), { ssr: false });
+// Loaded when a listing card first opens it: the stage brings Street View and the booking form.
+const TourStagePopup = dynamic(() => import("@/components/tours/stage/tour-stage-popup").then((m) => m.TourStagePopup), { ssr: false });
 
 const TIME_ZONE = "Europe/Paris";
 
@@ -96,7 +109,8 @@ export function HubSurfaces({
         // unpublished material), so the gallery face is only offered to
         // editors — see hub/page.tsx.
         board: true,
-        forum: true,
+        // The forum as the hub card does it: a section opens in the popup with its real topics (listFeed).
+        forum: { listFeed: forumListFeed },
         profile: true,
         centerLayout: true,
         // Living documents in the org's own Nextcloud folder, and the ideas
@@ -191,17 +205,34 @@ export function HubSurfaces({
 
         onMutated: () => router.refresh(),
       }),
+      // Replies and the reply box under a forum topic in the thread popup.
+      threadBody: forumThreadBody,
       custom: {
+        ...forumCustom,
         ...siteFormConnectors(formSite, ["meeting", "event", "post"]),
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
         // elktours popups (spec 2026-11-02 §3): local tabs, cms-ui untouched.
         tour: ({ descriptor }) => <TourPopup descriptor={descriptor} />,
+        // A listing card on desktop (2026-11-20): the tour page's stage in a `size: "stage"` dialog.
+        "tour-stage": ({ descriptor }) => <TourStagePopup descriptor={descriptor} />,
         experience: ({ descriptor }) => <ExperiencePopup descriptor={descriptor} />,
         // Private catalogue: its data route answers editors only.
         place: ({ descriptor }) => <PlacePopup descriptor={descriptor} />,
+        // Public place detail (Discover lightbox): the phone place sheet's body, readable signed out.
+        "place-detail": ({ descriptor }) => <PlaceDetailPopup descriptor={descriptor} />,
+        "city-menu": ({ descriptor }) => <CityMenuPopup descriptor={descriptor} />,
+        // Phone tour card tap: quick overview (dates, open page, checkout, itinerary download).
+        "tour-quick": ({ descriptor }) => <TourQuickPopup descriptor={descriptor} />,
         // Opened by a block's "Opens" (2026-11-06): reviews of a tour, experience or place; a person.
         reviews: ({ descriptor }) => <ReviewsPopup descriptor={descriptor} />,
         person: ({ descriptor }) => <PersonPopup descriptor={descriptor} />,
+        // The hub's Office band (2026-11-19, components/office): editors only; their actions re-check the role.
+        "office-schedule": ({ descriptor }) => <ScheduleTourPopup descriptor={descriptor} />,
+        "office-add-place": ({ descriptor }) => <AddPlacePopup descriptor={descriptor} />,
+        "office-soon": ({ descriptor }) => <OfficeSoonPopup descriptor={descriptor} />,
+        "office-create-tour": ({ descriptor }) => <CreateTourPopup descriptor={descriptor} />,
+        "office-availability": ({ descriptor }) => <AvailabilityPopup descriptor={descriptor} />,
+        "office-takes": ({ descriptor }) => <TakesPopup descriptor={descriptor} />,
         whiteboard: () => (
           <WhiteboardSurface
             onSaveError={() => toast.error("Couldn't save the whiteboard.")}
@@ -215,6 +246,9 @@ export function HubSurfaces({
   return (
     <SurfaceProvider connectors={connectors}>
       <OpensLinks />
+      <React.Suspense fallback={null}>
+        <OfficeDeepLink canEdit={canEdit} />
+      </React.Suspense>
       {children}
     </SurfaceProvider>
   );

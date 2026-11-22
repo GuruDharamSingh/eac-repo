@@ -1,6 +1,7 @@
 import type * as React from "react";
 import { renderWikiBody } from "@elkdonis/utils/wiki-render";
 import type {
+  ForumAttachment,
   Constellation,
   CreateCategoryInput,
   CreateTopicInput,
@@ -99,6 +100,15 @@ export interface ForumConnectors {
   listTopicIndex?(viewer: ForumViewer, limit: number): Promise<ForumTopicIndexRow[]>;
   firstUnreadReply?(threadId: string, viewer: ForumViewer): Promise<{ replyId: string; page: number } | null>;
   listVoters?(target: VoteTarget): Promise<ForumVoters>;
+  /**
+   * Extra role chips for people, beyond the org roles the forum already shows (owner, guide). Opt-in: a host
+   * that omits it changes nothing. Return, for the given user ids, a badge name; "artist" is drawn as
+   * `<span class="gf-role gf-role--artist" data-role="artist">Artist</span>` and the host styles that class.
+   * An org owner or guide keeps their own chip; the badge shows for everyone else. Reply bylines only.
+   */
+  roleBadges?(userIds: string[]): Promise<Record<string, "artist">>;
+  /** Attachments of a topic and its replies. Read only when composeOptions.attachments is on. */
+  listAttachments?(threadId: string): Promise<ForumAttachment[]>;
   listTopicChoices?(orgId: string): Promise<Array<{ id: string; slug: string; name: string; status: string }>>;
   listNotifications?(userId: string, limit: number): Promise<ForumNotification[]>;
   countUnreadNotifications?(userId: string): Promise<number>;
@@ -144,6 +154,8 @@ export interface ForumConnectors {
   hrefs: ForumHrefs;
   /** Where the host mounted handleForumAction, e.g. "/api/forum". */
   actionBase?: string;
+  /** Extra fields on the start-a-topic forms. Omit for the standard forms. See ForumComposeOptions. */
+  composeOptions?: ForumComposeOptions;
   /**
    * @deprecated There is one design now (2026-09-17: steel, silver, paper
    * edges). Accepted and still emitted as data-forum-theme so an older
@@ -177,6 +189,25 @@ export interface ForumConnectors {
    * reader controls' button remains either way.
    */
   matchLight?: boolean;
+}
+
+/**
+ * What the "start a topic" forms offer beyond title and body. Opt-in: a host
+ * that passes nothing gets today's forms and today's behaviour, and the form
+ * action ignores the extra fields. (2026-11-15, elktours mobile.)
+ *   kinds      Discussion / Idea / Event chips (post, idea, event).
+ *   audiences  who-can-read chips, in this order. Labels: everyone = Public,
+ *              followers = Members (anyone signed in), author = Private (only you).
+ *   link       an optional web address, shown as a card on the topic.
+ */
+export interface ForumComposeOptions {
+  kinds?: boolean;
+  audiences?: Array<"everyone" | "followers" | "author">;
+  link?: boolean;
+  /** Photos and videos (and one link) on topics and replies, stored in forum_attachments and shown on the thread. */
+  attachments?: boolean;
+  /** Where the attachment picker posts files (multipart `file`, `audience`). Default "/api/upload/forum". */
+  uploadUrl?: string;
 }
 
 export type ForumTextSize = "standard" | "large" | "largest";
@@ -405,6 +436,8 @@ export interface ServiceConnectorOptions {
   hrefs: ForumHrefs;
   /** Where the host mounted handleForumAction. Omit for a read-only host. */
   actionBase?: string;
+  /** Extra fields on the start-a-topic forms. See ForumComposeOptions. */
+  composeOptions?: ForumComposeOptions;
   /** "classic" (default) or "modern". See ForumConnectors.theme. */
   theme?: "classic" | "modern";
   /** "light" (default), "dark" or "auto". See ForumConnectors.mode. */
@@ -454,6 +487,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
     firstUnreadReply: s.firstUnreadReply,
     listVoters: s.listVoters,
     listTopicChoices: s.listTopicChoices,
+    listAttachments: s.listForumAttachments,
     listNotifications: s.listNotifications,
     countUnreadNotifications: s.countUnreadNotifications,
     listPeopleCards: s.listPeopleCards,
@@ -505,6 +539,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
         }
       : undefined,
     actionBase: opts.actionBase,
+    composeOptions: opts.composeOptions,
     theme: opts.theme,
     mode: opts.mode,
     matchLight: opts.matchLight,

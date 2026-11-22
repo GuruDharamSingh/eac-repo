@@ -1,0 +1,38 @@
+{
+  "name": "@elkdonis/house-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The house of all editors: the glue between direct-edit's canvas, page-builder's Puck and (later) live-editor's fields.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./fields": "./src/fields/index.ts",
+    "./fields/server": "./src/fields/server.ts",
+    "./fields/marks": "./src/fields/marks.ts",
+    "./steps": "./src/steps/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/blocks": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/direct-edit": "workspace:*",
+    "@elkdonis/live-editor": "workspace:*",
+    "@elkdonis/page-builder": "workspace:*"
+  },
+  "peerDependencies": {
+    "@puckeditor/core": "0.24.0",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@puckeditor/core": "0.24.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.3.3"
+  }
+}

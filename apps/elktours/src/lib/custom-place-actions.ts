@@ -1,6 +1,7 @@
 "use server";
 // CONTRACT: custom locations (editor-only): place from a map pin or a geotagged photo. Types in lib/catalogue-types.ts.
 
+import { ensureFolderSoon } from "@/lib/media-folders";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@elkdonis/db";
@@ -63,6 +64,7 @@ async function insertPinPlace(pin: z.infer<typeof pinSchema>, userId: string): P
             ${address}, ${tags}::text[], 'manual', ${!pin.title?.trim() ? (reverse?.sourceRef ?? null) : null}, ${userId})
     RETURNING *
   `) as unknown as Row[];
+  ensureFolderSoon("place", r!.id as string);
   return { place: mapPlace(r!), reverse };
 }
 

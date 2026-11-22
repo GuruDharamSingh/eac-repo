@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Data } from "@puckeditor/core";
+import { templateDocument } from "@elkdonis/blocks";
 // Server-safe entries only: the package's main entry carries editor hooks.
 import { EMPTY_PAGE } from "@elkdonis/page-builder/config";
 import { isValidPagePath } from "@elkdonis/page-builder/server";
@@ -8,6 +9,7 @@ import { requireOrgEditor } from "@/lib/auth";
 import { HOME_SLUG, loadPage, PIECE_TEMPLATE } from "@/lib/puck/store";
 import { DEFAULT_PIECE_DETAIL } from "@/lib/piece-template";
 import { DEFAULT_HOME } from "@/lib/default-home";
+import { TEMPLATE_FOR_SLUG } from "@/lib/puck/templates";
 import { PageEditor } from "@/components/studio/page-editor";
 import { siteConfig } from "@/config/site";
 import { loadSiteStyle } from "@/lib/site-style";
@@ -34,7 +36,18 @@ export default async function StudioPage({ params }: { params: Promise<{ path: s
   await requireOrgEditor(`/studio/${slug}`);
 
   const page = await loadPage(slug);
-  const initial = (page?.data as Data | undefined) ?? (slug === HOME_SLUG ? (DEFAULT_HOME as Data) : slug === PIECE_TEMPLATE ? (DEFAULT_PIECE_DETAIL as Data) : (EMPTY_PAGE as Data));
+  // An unpublished page opens on its starting design: the landing, the piece template, or (for a slug
+  // that has one, e.g. `about`) its page template with fresh ids. Nothing is saved until Publish.
+  const startTemplate = TEMPLATE_FOR_SLUG[slug];
+  const initial =
+    (page?.data as Data | undefined) ??
+    (slug === HOME_SLUG
+      ? (DEFAULT_HOME as Data)
+      : slug === PIECE_TEMPLATE
+        ? (DEFAULT_PIECE_DETAIL as Data)
+        : startTemplate
+          ? (templateDocument(startTemplate, startTemplate.name) as unknown as Data)
+          : (EMPTY_PAGE as Data));
   const siteLook = lookOf((await loadSiteStyle().catch(() => null))?.theme?.[SITE_LOOK_VAR]);
   return <PageEditor slug={slug} orgId={siteConfig.orgId} initial={initial} siteLook={siteLook} />;
 }

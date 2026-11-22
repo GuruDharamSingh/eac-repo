@@ -1,0 +1,108 @@
+{
+  "field_systems": [
+    {"id": "block-propdef", "name": "Block settings (PropDef)", "declared_in": "packages/blocks/src/types.ts:132", "kinds": ["string","text","richtext","number","boolean","select","list","url","image","slot","rows"], "stored_in": "site_config(org_id, key 'puck:<slug>').value jsonb; user_pages.data", "saved_through": "savePageAction -> page-builder savePage (expectedUpdatedAt)", "gate": "per app: getApiEditor (owner/guide); art-auction its own", "used_by": ["sunjay","elktours","hidden-enneagram","katie-the-potter","danamccool","art-auction","innergathering","arts-collective"], "note": "What every block lets you change; saved inside the page document."},
+    {"id": "puck-fields", "name": "Puck panel fields built from PropDef", "declared_in": "packages/page-builder/src/config.tsx:360", "kinds": ["text","textarea","number","select","richtext","custom pickers"], "stored_in": "same Puck document", "saved_through": "none (editor UI only)", "gate": "n/a", "used_by": ["every Puck site"], "note": "The side-panel controls are generated from the block settings, with resolver-filled values locked."},
+    {"id": "workshop-field-registry", "name": "Workshop field registry (cms-bindings)", "declared_in": "packages/cms-bindings/src/workshop/field-registry.ts:106", "kinds": ["text","textarea","url","number","datetime","date","select","image","compound","readonly","color","gallery","media","boolean"], "stored_in": "threads.*, workshop_pages.*, users.*, org_profiles.*", "saved_through": "updateWorkshopFieldByTraitAction -> updateWorkshopFieldAction (raw UPDATE, no action_events row)", "gate": "canEditOrgSite", "used_by": ["arts-collective","innergathering"], "note": "Maps a workshop page's hooks to database columns; saves with no audit row."},
+    {"id": "dossier-field-registry", "name": "Dossier (profile) field registry", "declared_in": "packages/cms-bindings/src/dossier/field-registry.ts:29", "kinds": ["text","textarea","url","image","compound","list"], "stored_in": "users.<col> or users.oad_dossier jsonb key", "saved_through": "saveProfileFieldAction -> services updateProfile (atlas profile-field-save)", "gate": "canEditProfile (self or global admin)", "used_by": ["ifac","artdirect"], "note": "What a person types into their own profile page."},
+    {"id": "live-editor", "name": "live-editor FieldDef / FieldPopover", "declared_in": "packages/live-editor/src/types.ts:26", "kinds": ["text","textarea","url","number","datetime","date","select","image","compound","readonly"], "stored_in": "whatever the host onSaveField writes", "saved_through": "host action with SaveFieldPayload{trait,value}", "gate": "none in package; host's own", "used_by": ["ifac","artdirect","arts-collective"], "note": "The older on-page popup editor; has no rules of its own."},
+    {"id": "fields-lens", "name": "Fields lens (house-editor)", "declared_in": "packages/house-editor/src/fields/registry.ts:20", "kinds": ["text","textarea","url","number","select","image","rich","boolean","color"], "stored_in": "org_site_sections(org_id, section_key).content jsonb (sunjay)", "saved_through": "createFieldsActions -> performHubAction('site-section-save')", "gate": "host authorize() + hub gate (owners and guides) + slot allow-list", "used_by": ["sunjay (pilot)","development (demo)"], "note": "Click a marked word on the live page and change it; only one site uses it so far."},
+    {"id": "studio-forms", "name": "Studio publication forms", "declared_in": "packages/studio-forms/src/forms/contract.ts:52", "kinds": ["per cms-ui ContentFieldSpec"], "stored_in": "threads, artwork (commerce)", "saved_through": "FormActions adapters -> services / commerce", "gate": "per adapter", "used_by": ["arts-collective","sunjay","katie-the-potter","ifac"], "note": "The create-and-publish forms; their field list lives in cms-ui compose."},
+    {"id": "ad-hoc-editors", "name": "Ad hoc in-place editors", "declared_in": "apps/innergathering/src/lib/page-edits.ts:24", "kinds": ["text patches","images","section copy"], "stored_in": "site_config('page-edits:<page>'), org_site_sections, Puck look/props", "saved_through": "savePageEdits, saveSectionAction (4 copies), direct-edit words boxes", "gate": "per copy", "used_by": ["innergathering","ifac","elktours","sunjay"], "note": "Small one-off editors that each repeat their own rules."}
+  ],
+  "descriptor": {
+    "name": "FieldDescriptor",
+    "fields": [
+      {"key": "id", "meaning": "Stable address '<ownerKind>:<owner>:<path>', also the value of data-field and of an MCP fieldId", "derived_from": "packages/house-editor/src/fields/registry.ts:4 (data-field grammar)"},
+      {"key": "owner", "meaning": "Where the value lives: a block prop (block, prop) or a record (kind, path, how to find the id)", "derived_from": "packages/blocks/src/types.ts:132 and cms-bindings FieldMeta table/col"},
+      {"key": "kind", "meaning": "One merged input kind", "derived_from": "packages/blocks/src/types.ts:56 + packages/house-editor/src/fields/registry.ts:14"},
+      {"key": "label_help", "meaning": "Name and a plain-words hint", "derived_from": "PropDef.label/description; FieldMeta.label/hint; FieldSpec.label/hint"},
+      {"key": "limits", "meaning": "max, min, optional, options, format; one checker for page, server and MCP", "derived_from": "packages/house-editor/src/fields/registry.ts:100 checkValue + PropDef min/max"},
+      {"key": "sanitiser", "meaning": "Named cleaner: plain, link, rich, css", "derived_from": "sanitizePageText, linkOk (registry.ts), cleanStyle (page-builder style)"},
+      {"key": "gate", "meaning": "Capability and roles that may save it", "derived_from": "packages/actions/src/types.ts:85 ActionMeta.roles"},
+      {"key": "save", "meaning": "Catalogue action id and how the value becomes its input", "derived_from": "packages/house-editor/src/fields/save.ts FieldsRoute.toInput"},
+      {"key": "risk_confirm", "meaning": "What it risks and the confirm wording", "derived_from": "ActionMeta.risk / confirm"},
+      {"key": "agent", "meaning": "none, read or draft for assistants", "derived_from": "packages/actions/src/agent.ts:17 AGENT_EXPOSURE"},
+      {"key": "binds", "meaning": "Reference kind for a bound block prop", "derived_from": "packages/blocks/src/types.ts:222"},
+      {"key": "stored", "meaning": "Informational: puck:<slug> or table.column or table.jsonb.key", "derived_from": "cms-bindings FieldMeta table/col; store.ts:46"},
+      {"key": "source_mark", "meaning": "DOM mark proving a drawn value came from this field (fieldMark)", "derived_from": "new"}
+    ]
+  },
+  "block_manifest_example": {
+    "id": "feature-card",
+    "title": "Card",
+    "what": "A picture, a title, a few words and details, typed or filled live from a post, event or artwork. Made to sit in a grid.",
+    "source": "packages/blocks/src/blocks/feature-card.tsx:199",
+    "owner": "package:blocks",
+    "category": "content",
+    "offered_by": ["arts-collective","danamccool","elktours","innergathering","sunjay"],
+    "styling": "tokens",
+    "member_safe": true,
+    "interactive": false,
+    "data_driven": false,
+    "props": [
+      {"name": "title", "kind": "string", "label": "Title", "inline_editable": true, "field_id": "block:feature-card:title", "bound_from": "record.title (typed wins)"},
+      {"name": "body", "kind": "text", "label": "Text", "inline_editable": true, "field_id": "block:feature-card:body", "bound_from": "record.excerpt"},
+      {"name": "image", "kind": "image", "label": "Picture", "field_id": "block:feature-card:image", "bound_from": "record.image"},
+      {"name": "kicker", "kind": "string", "label": "Small line above the title", "field_id": "block:feature-card:kicker"},
+      {"name": "meta", "kind": "string", "label": "Details line", "field_id": "block:feature-card:meta"},
+      {"name": "marker", "kind": "string", "label": "Marker"},
+      {"name": "href", "kind": "url", "label": "Link", "sanitiser": "link"},
+      {"name": "record", "kind": "string", "label": "Filled from (live)", "binds": "record"},
+      {"name": "opens", "kind": "string", "label": "Opens", "binds": "opens"},
+      {"name": "tone", "kind": "select", "options": ["feed","panel","bordered","plain"], "default": "feed"}
+    ],
+    "slots": [],
+    "parts": [
+      {"name": "root", "label": "Card", "sel": "> .blk-card"},
+      {"name": "image", "label": "Picture", "sel": ".blk-card-cover", "prop": "image"},
+      {"name": "marker", "label": "Marker", "sel": ".blk-card-marker", "prop": "marker"},
+      {"name": "kicker", "label": "Kicker", "sel": ".blk-card-kicker", "prop": "kicker"},
+      {"name": "title", "label": "Title", "sel": ".blk-card-title", "prop": "title"},
+      {"name": "body", "label": "Words", "sel": ".blk-card-body", "prop": "body"},
+      {"name": "meta", "label": "Details", "sel": ".blk-card-meta", "prop": "meta"}
+    ],
+    "tokens": ["--blk-accent","--blk-fg","--blk-bg","--blk-band","--blk-band-fg","--blk-font-title","--blk-font-body","--blk-radius"],
+    "binds": [
+      {"prop": "record", "kind": "record", "resolver_keys": ["bound"], "visibility": "published, public, no min_role, public feed (sunjay opens-server.ts:20-45)", "reference_grammar": "thread:<id>", "stripped_on_save": true},
+      {"prop": "opens", "kind": "opens", "resolver_keys": ["opened"], "reference_grammar": "page:<path> | popup:thread:<id> | popup:person:<id>"}
+    ],
+    "opens": {"prop": "opens", "targets": [{"kind": "page", "via": "href"}, {"kind": "popup", "key": "thread", "surface": "thread:<id>"}, {"kind": "popup", "key": "person", "surface": "custom (no URL)"}]},
+    "triggers": [],
+    "sample": {"kicker": "Workshop", "title": "Gathering", "body": "We meet before dawn, and we keep the hours together.", "meta": "Saturdays, 6:00 am"},
+    "agent": {"read": true, "place": "proposed: allowed if member_safe", "edit_props": "proposed: draft only", "edit_bound_values": "only through the record field (thread-edit), never as a prop"},
+    "known_gap": "title/body/meta/kicker/image parts declare prop but the drawn value may come from bound; no source mark yet"
+  },
+  "mcp_tools": [
+    {"name": "list_my_orgs", "tier": "read", "exists": true, "input": "{}", "validates_against": "grant org scope", "gate": "mcp:read, grant person owner/guide", "why_safe": "Lists only orgs the grant's person runs, within the key's scope."},
+    {"name": "whats_next", "tier": "read", "exists": true, "input": "{org?}", "validates_against": "settleChannel", "gate": "mcp:read", "why_safe": "Reads the next course/routine step and channel board for the settled org only."},
+    {"name": "routine_steps", "tier": "read", "exists": true, "input": "{course?}", "validates_against": "active enrolment", "gate": "mcp:read", "why_safe": "Never enrols; reads only the person's own course state."},
+    {"name": "org_summary", "tier": "read", "exists": true, "input": "{org}", "validates_against": "settleOrg", "gate": "mcp:read", "why_safe": "Org identity and setup status for an org the person runs."},
+    {"name": "entry_status", "tier": "read", "exists": true, "input": "{id, org?}", "validates_against": "AGENT_READ_IDS (catalogue agent field)", "gate": "mcp:read", "why_safe": "Only agent-exposed, never appOnly, catalogue entries."},
+    {"name": "list_pages", "tier": "read", "exists": false, "input": "{org}", "validates_against": "listPages(orgId)", "gate": "settleOrg; owner/guide", "why_safe": "Org comes from the grant and the query is keyed by org_id."},
+    {"name": "read_page", "tier": "read", "exists": false, "input": "{org, slug}", "validates_against": "loadPage + validatePage; strips resolved keys", "gate": "settleOrg; owner/guide", "why_safe": "Returns the stored document with its version; member text fenced as untrusted."},
+    {"name": "list_blocks", "tier": "read", "exists": false, "input": "{org}", "validates_against": "generated per-site block manifest", "gate": "settleOrg", "why_safe": "Static generated file, no database."},
+    {"name": "describe_block", "tier": "read", "exists": false, "input": "{org, block}", "validates_against": "manifest entry", "gate": "settleOrg", "why_safe": "Static manifest entry only."},
+    {"name": "find_fields", "tier": "read", "exists": false, "input": "{org, slug?|record?}", "validates_against": "FieldDescriptor generator over page doc and registries", "gate": "settleOrg", "why_safe": "Returns ids and limits; values are fenced and never include other orgs."},
+    {"name": "list_surfaces", "tier": "read", "exists": false, "input": "{org}", "validates_against": "SurfaceDescriptor + host opens sources", "gate": "settleOrg", "why_safe": "Descriptors only, no content."},
+    {"name": "propose_page_patch", "tier": "draft", "exists": false, "input": "{org, slug, baseVersion, ops:[{op: insert|move|remove|set|look|bind, node, ...}]}", "validates_against": "block manifest, validatePage, cleanStyle/cleanCustomCss, sanitizeRichValues, size cap, baseVersion == updatedAt", "gate": "mcp:draft scope + owner/guide + lockOrgId", "why_safe": "Ops apply to a copy saved as a draft row; the live page changes only when a person presses Publish."},
+    {"name": "set_field", "tier": "draft", "exists": false, "input": "{fieldId, subject?, value, baseVersion}", "validates_against": "descriptor limits via shared checkValue + sanitiser", "gate": "descriptor agent=draft + capability roles", "why_safe": "Only fields whose store has a draft state; live copy stays human-only."},
+    {"name": "open_surface", "tier": "act", "exists": false, "input": "{org, descriptor}", "validates_against": "parseDescriptor allow-list", "gate": "mcp:read", "why_safe": "Returns a link for the person to open; nothing opens or changes server-side."},
+    {"name": "run_action", "tier": "act", "exists": false, "input": "{id, input, org}", "validates_against": "AGENT_DRAFT_IDS and the runner's zod input", "gate": "performAction via 'mcp' + lockOrgId", "why_safe": "Only catalogue entries marked draft (writes drafts and additions only), audited as ai."}
+  ],
+  "lms_anchors": [
+    {"id": "entry-anchor", "what": "data-eac-anchor=<catalogue entry id> on the real control; dock outlines it after Take me there", "exists": "packages/actions/src/anchor.ts:14"},
+    {"id": "surface-route", "what": "?surface=<descriptor> link built from an entry's address, plus the ?eac-step return ticket", "exists": "packages/actions/src/route.ts:19"},
+    {"id": "task-step", "what": "A lesson step names a catalogue entry (settings.task id, scope, params); done is derived from its status", "exists": "packages/lms/src/tasks.ts:14"},
+    {"id": "on-performed", "what": "Pushed completion after a successful run so the host re-checks the steps naming that entry", "exists": "packages/actions/src/server/run.ts:446"},
+    {"id": "fields-lens-mark", "what": "[data-field] elements already carry data-fields-ok when declared; usable as an outline target", "exists": "packages/house-editor/src/fields/FieldsLens.tsx:84"},
+    {"id": "field-anchor", "what": "Anchor values field:<fieldId> and node:<nodeId> so a step can point at one heading", "exists": "proposed"},
+    {"id": "step-target", "what": "settings.task.target {fieldId|nodeId, page} and lens (fields|look)", "exists": "proposed"},
+    {"id": "open-lens-query", "what": "?eac-edit=field:<id> opens the Fields lens focused on that field", "exists": "proposed"},
+    {"id": "field-event-done", "what": "Step done when an action_events row exists for the field's save action with that fieldId", "exists": "proposed"}
+  ],
+  "moves": [
+    {"n": 1, "title": "One checker and a generated field descriptor list", "what_justin_sees": "Nothing yet, but the showcase can list every editable field in the repo from one source.", "files": ["packages/house-editor/src/fields/registry.ts", "packages/blocks/src/field-descriptor.ts (new)"], "size": "S"},
+    {"n": 2, "title": "Generated block manifest and read-only page/block MCP tools", "what_justin_sees": "An assistant can list his pages and blocks and say what each can change, read-only.", "files": ["scripts/build-block-manifest.mjs (new)", "docs/open/DEVELOPMENT_APP_2026-11-20/extract-blocks.js (reuse)", "packages/blocks/src/types.ts", "packages/mcp/src/server/tools.ts"], "size": "M"},
+    {"n": 3, "title": "Mark record-sourced words and edit the first one in place", "what_justin_sees": "With Edit page on, a card whose title comes from a gathering becomes editable and saves to the gathering.", "files": ["packages/blocks/src/edit-item.ts", "packages/blocks/src/blocks/feature-card.tsx", "apps/sunjay/src/lib/opens-server.ts", "apps/sunjay/src/lib/fields.ts", "packages/house-editor/src/fields/save.ts"], "size": "M"}
+  ]
+}

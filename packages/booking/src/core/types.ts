@@ -10,6 +10,9 @@ export type BookingMode = "open_hours" | "set_dates" | "request_time" | "session
 /** The modes phase 1 accepts in a save (set_dates, sessions and rsvp follow in phases 2-3). */
 export const PHASE1_MODES = ["open_hours", "request_time"] as const;
 export type Phase1Mode = (typeof PHASE1_MODES)[number];
+/** Modes a save accepts now: phase 1 plus set_dates (tour departures, phase 2). sessions and rsvp stay refused. */
+export const ACCEPTED_MODES = ["open_hours", "request_time", "set_dates"] as const;
+export type AcceptedMode = (typeof ACCEPTED_MODES)[number];
 
 export type BookingApproval = "instant" | "seller_confirms";
 export type OfferStatus = "open" | "paused" | "closed";
@@ -94,7 +97,7 @@ export interface BookingOffer {
  * `validateOfferInput`; the server fills ids, org, thread and host.
  */
 export interface BookingOfferInput {
-  mode: Phase1Mode;
+  mode: AcceptedMode;
   durationMinutes: number;
   timeZone: string;
   hours: HoursRange[];
@@ -112,6 +115,17 @@ export interface BookingOfferInput {
   status?: OfferStatus;
   /** null = no reminder; omitted = one day before. */
   reminderMinutesBefore?: number | null;
+  /**
+   * Party limits, price unit, minimum to run, cutoff and waitlist (phase 2).
+   * Omitted = today's values: 1 and 1, per_booking, none, 0, off. On an update an omitted
+   * field keeps what is stored (minToRun: null clears it).
+   */
+  minParty?: number;
+  maxParty?: number;
+  priceUnit?: "per_booking" | "per_person";
+  minToRun?: number | null;
+  closeBeforeMinutes?: number;
+  waitlist?: boolean;
 }
 
 /** A bookable time computed from open hours. */

@@ -98,7 +98,7 @@ export function LocationCreator({
 }
 
 /** Title and address, prefilled from reverse geocoding until the editor types. */
-function useNaming() {
+export function useNaming() {
   const [title, setTitle] = React.useState("");
   const [address, setAddress] = React.useState("");
   const [reverse, setReverse] = React.useState<ReverseGeocode | null>(null);
@@ -214,7 +214,7 @@ type PhotoState =
   /** No geotag: the photo is kept; a pin is needed to make the place. */
   | { step: "needsPin"; assetId: string };
 
-function PhotoCreator({ center, onCreated, mapClass }: { center?: LatLng | null; onCreated: (c: CreatedLocation) => void; mapClass: string }) {
+export function PhotoCreator({ center, onCreated, mapClass }: { center?: LatLng | null; onCreated: (c: CreatedLocation) => void; mapClass: string }) {
   const [state, setState] = React.useState<PhotoState>({ step: "choose" });
   const [preview, setPreview] = React.useState<string | null>(null);
   const [pin, setPin] = React.useState<LatLng | null>(null);

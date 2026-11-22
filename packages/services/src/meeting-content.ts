@@ -10,6 +10,7 @@ import { ensureOrgCalendar, getOrgCalendarUri, pushThreadToCalendar, removeThrea
 import { removeThreadAs } from './thread-admin';
 import { audienceToStorage, isAudience, type Audience, type ThreadRole } from './thread-audience';
 import { validTimeZone } from './meeting-series';
+import { cleanSectionNotes } from './section-notes';
 import { SERIES_KIND } from './thread-kinds';
 
 // ============================================================================
@@ -130,9 +131,10 @@ export interface MeetingInput {
 
 /**
  * The metadata keys the meeting form may write. `showCycleBadge`: innergathering's "Confirmed / Not yet
- * confirmed" badge on the meeting page; stored only as false (absent means shown).
+ * confirmed" badge on the meeting page; stored only as false (absent means shown). `sectionNotes`: row notes
+ * shown as "More details" (section-notes.ts); validated in `validate`, an empty list removes the key.
  */
-export const MEETING_FORM_METADATA = ['showCycleBadge'] as const;
+export const MEETING_FORM_METADATA = ['showCycleBadge', 'sectionNotes'] as const;
 
 export interface MeetingSummary {
   id: string;
@@ -393,6 +395,11 @@ async function validate(orgId: string, input: MeetingInput): Promise<string | nu
   if (input.timeZone && !validTimeZone(input.timeZone)) return 'Pick a time zone from the list.';
   const r = input.reminderMinutesBefore;
   if (r != null && (!Number.isInteger(r) || r < 5 || r > 14 * 24 * 60)) return 'A reminder goes out between 5 minutes and two weeks before.';
+  if (input.metadata && input.metadata.sectionNotes != null) {
+    const notes = cleanSectionNotes(input.metadata.sectionNotes);
+    // Cast: hosts with strict off (sunjay) do not narrow this union.
+    if (!notes.ok) return (notes as { ok: false; error: string }).error;
+  }
   if (input.visibility !== undefined && !VISIBILITIES.includes(input.visibility)) return 'Pick who can see it.';
   if (input.minRole != null && !ROLES.includes(input.minRole)) return 'Pick who can see it.';
   if (input.audience !== undefined && !isAudience(input.audience)) return 'Pick who can see it.';
@@ -426,6 +433,13 @@ async function writeColumns(threadId: string, orgId: string, input: MeetingInput
   const dropMeta: string[] = [];
   for (const k of MEETING_FORM_METADATA) {
     if (!input.metadata || !(k in input.metadata) || input.metadata[k] === undefined) continue;
+    if (k === 'sectionNotes') {
+      // Cleaned again here (validate refused the bad ones): an empty list removes the key.
+      const notes = cleanSectionNotes(input.metadata[k]);
+      if (notes.ok && notes.value.length) formMeta[k] = notes.value;
+      else dropMeta.push(k);
+      continue;
+    }
     if (input.metadata[k] === null) dropMeta.push(k);
     else formMeta[k] = input.metadata[k];
   }

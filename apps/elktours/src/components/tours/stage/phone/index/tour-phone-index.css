@@ -1,0 +1,214 @@
+/* Phone tour page below the stage: 4b the index (a full screen the stage snaps to) and 4c the sections, from
+   "Tour Detail Page Phone Light.dc.html" (hand-off docs/06), light theme, developer direction 2026-11-20.
+   Tokens: card #ffffff, page #f7f5f0, soft #eef2f8, sunken #f4f6fa, ink #14284b, muted #4f5d75, faint #7d889c, line #c9d2e0,
+   rule #8d9bb4, accent #2350a0 (structure, kickers, links, active pill), yellow #f2c14e with ink on it (NEXT tile, chosen date,
+   open stop numeral, Book-type actions; never text on white), place #3c7fa6, route #c4532f.
+   Type: Basteleur 700 titles, Basteleur 400 text, Venture labels and numerals (regular, letter-spaced, no stroke).
+   Contrast (measured 2026-11-20, WCAG relative luminance): ink on #fff 14.6:1, on #f7f5f0 13.4:1, on #eef2f8 13.0:1;
+   muted #4f5d75 on #fff 6.7:1, on #f7f5f0 6.1:1, on #eef2f8 5.9:1, on #f4f6fa 6.2:1; accent #2350a0 on #fff 7.7:1, on #f7f5f0 7.1:1,
+   white on accent (active pill) 7.7:1; ink on yellow 8.7:1; route #c4532f on #fff 4.5:1 (text sits on a white card; on #f7f5f0
+   it is 4.2:1, so it is never used there); faint #7d889c on #fff 3.6:1 (arrows, non-text only); rule #8d9bb4 on #fff 2.8:1 and
+   line #c9d2e0 1.5:1 are dividers, not indicators; yellow on white 1.7:1 (fills and 2px borders beside ink text only).
+   Below 768px only: the page's Split hides the phone tree above it, so every rule here sits in that query. */
+
+.tpi-root {
+  --tpi-bg: #ffffff;
+  --tpi-soft: #eef2f8;
+  --tpi-sunk: #f4f6fa;
+  --tpi-fg: #14284b;
+  --tpi-mu: #4f5d75;
+  --tpi-fa: #7d889c;
+  --tpi-ln: #c9d2e0;
+  --tpi-rl: #8d9bb4;
+  --tpi-k: #2350a0;
+  --tpi-y: #f2c14e;
+  --tpi-ok: #14284b;
+  --tpi-pc: #3c7fa6;
+  --tpi-route: #c4532f;
+  --tpi-b: "Basteleur", Georgia, serif;
+  --tpi-v: "Venture", Georgia, serif;
+  --tpi-foot: 96px;
+  /* larger sizes kept (developer, 2026-11-20): phone page 1.15, index 1.22 */
+  --tpi-s: 1.15;
+  /* tokens the reviews block and the map pins read (HSL triplets, as the stage sets them) */
+  --background: 40 27% 96%;
+  --foreground: 218 57% 19%;
+  --card: 0 0% 100%;
+  --card-foreground: 218 57% 19%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 218 57% 19%;
+  --primary: 218 64% 39%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 216 40% 95%;
+  --secondary-foreground: 218 57% 19%;
+  --muted: 216 40% 95%;
+  --muted-foreground: 218 20% 38%;
+  --accent: 216 40% 95%;
+  --accent-foreground: 218 57% 19%;
+  --border: 218 30% 85%;
+  --input: 218 30% 85%;
+  --ring: 218 64% 39%;
+  --radius: 0rem;
+
+  position: relative;
+  background: #f7f5f0;
+  color: var(--tpi-fg);
+  font-family: var(--tpi-b);
+  font-weight: 400;
+  letter-spacing: .01em;
+  -webkit-font-smoothing: antialiased;
+}
+/* titles: Basteleur 700 */
+/* labels, kickers, numerals: Venture regular, no stroke */
+.tpi-lab, .tpi-kicker, .tpi-h, .tpi-row__n, .tpi-stop__n, .tpi-take__lab, .tpi-know dt, .tpi-guide__face { font-family: var(--tpi-v); font-weight: 400; }
+.tpi-root *, .tpi-root *::before, .tpi-root *::after { box-sizing: border-box; }
+.tpi-root button { font: inherit; color: inherit; }
+.tpi-root a { color: var(--tpi-k); text-underline-offset: 3px; }
+.tpi-root button:focus-visible, .tpi-root a:focus-visible { outline: 2px solid var(--tpi-k); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+  /* snap: the stage and the index are the first two full screens; the long page below scrolls freely inside its tall area */
+  html:has(.tpi-root) { scroll-snap-type: y mandatory; }
+  /* scroll-snap-stop: always (developer, 2026-11-21): a hard fling from the stage used to skip the index and land in the sections;
+     with it the page stops at every snap area, however fast the swipe. */
+  .tsp-root { min-height: 100svh; padding-bottom: var(--eac-stage-dock-h, 78px) !important; scroll-snap-align: start; scroll-snap-stop: always; }
+  .tpi-index { scroll-snap-align: start; scroll-snap-stop: always; }
+  .tpi-every { scroll-snap-align: start; scroll-snap-stop: always; }
+  /* the sections carry their own end spacer; body padding outside every snap area would be pulled back */
+  html body:has(.tpi-root):not(#tpi-x) { padding-bottom: 0; }
+}
+
+/* ---- 4b ---- */
+.tpi-index { --tpi-s: 1.22; min-height: 100svh; display: grid; grid-template-rows: 1fr auto; padding-bottom: calc(var(--tpi-foot) + env(safe-area-inset-bottom, 0px)); }
+.tpi-ix { padding: 18px 16px 12px; display: grid; gap: 14px; align-content: start; }
+.tpi-ix__head { display: grid; gap: 4px; }
+.tpi-kicker { font-size: calc(.66rem * var(--tpi-s)); letter-spacing: .18em; color: var(--tpi-k); }
+.tpi-ix__frame { position: relative; margin-top: 10px; padding: 26px 18px 20px; text-align: center; background: var(--tpi-bg); border: 2px solid var(--tpi-fg); box-shadow: inset 0 0 0 5px var(--tpi-bg), inset 0 0 0 6px var(--tpi-fg), 0 3px 0 var(--tpi-y); }
+/* corner studs in the yellow, over the double rule */
+.tpi-ix__frame::before, .tpi-ix__frame::after { content: ""; position: absolute; bottom: -5px; width: 9px; height: 9px; background: var(--tpi-y); border: 1px solid var(--tpi-fg); transform: rotate(45deg); }
+.tpi-ix__frame::before { left: 10px; }
+.tpi-ix__frame::after { right: 10px; }
+.tpi-ix__kicker { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 0 10px; background: #f7f5f0; font-family: var(--tpi-v); font-size: calc(.66rem * var(--tpi-s)); letter-spacing: .2em; color: var(--tpi-k); white-space: nowrap; }
+/* Venture, bolded: the face has one weight, so the weight is a thin stroke (as the brand's Brothers does), not the browser's synthetic bold */
+.tpi-root .tpi-ix__name { margin: 0; font-family: var(--tpi-v); font-weight: 400; font-synthesis-weight: none; -webkit-text-stroke: .035em currentColor; paint-order: stroke fill; font-size: calc(1.5rem * var(--tpi-s) * var(--tpi-title-k, 1)); line-height: 1.2; letter-spacing: .02em; overflow-wrap: anywhere; text-wrap: balance; }
+.tpi-lab { font-size: calc(.58rem * var(--tpi-s)); letter-spacing: .14em; color: var(--tpi-mu); }
+.tpi-lab--k { color: var(--tpi-ok); }
+.tpi-key { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 1px; background: var(--tpi-ln); border: 1px solid var(--tpi-ln); }
+.tpi-key__cell { display: grid; gap: 1px; padding: 8px; background: var(--tpi-bg); min-width: 0; }
+.tpi-key__v {  font-size: calc(.9rem * var(--tpi-s)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpi-next { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--tpi-ln); background: var(--tpi-bg); text-align: left; cursor: pointer; min-height: 56px; }
+.tpi-next__rule { position: absolute; inset: 0 0 auto 0; height: 2px; background: var(--tpi-y); }
+.tpi-next__tile { display: grid; justify-items: center; padding: 4px 0; background: var(--tpi-y); color: var(--tpi-ok); border: 1px solid var(--tpi-y); }
+.tpi-next__tile .tpi-lab { color: var(--tpi-ok); }
+.tpi-next__d {  font-size: calc(.85rem * var(--tpi-s)); text-align: center; line-height: 1.15; }
+.tpi-next__text { display: grid; min-width: 0; }
+.tpi-next__t {  font-size: calc(.92rem * var(--tpi-s)); }
+.tpi-next__s { font-size: calc(.74rem * var(--tpi-s)); color: var(--tpi-mu); }
+.tpi-next__go { font-size: calc(.8rem * var(--tpi-s)); color: var(--tpi-k); }
+.tpi-rows { margin: 0; padding: 0; list-style: none; display: grid; align-content: start; border-top: 1px solid var(--tpi-rl); }
+.tpi-rows li { border-bottom: 1px solid var(--tpi-ln); }
+.tpi-row { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 44px; padding: 3px 4px; border: 0; background: none; text-align: left; cursor: pointer; }
+.tpi-row:active { background: var(--tpi-soft); }
+.tpi-row__n { font-size: calc(.7rem * var(--tpi-s)); letter-spacing: .08em; color: var(--tpi-k); }
+.tpi-row__text { display: grid; min-width: 0; }
+.tpi-row__t {  font-size: calc(.92rem * var(--tpi-s)); }
+.tpi-row__s { font-size: calc(.74rem * var(--tpi-s)); color: var(--tpi-mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpi-row__go { color: var(--tpi-fa); font-size: calc(.85rem * var(--tpi-s)); }
+
+/* ---- 4c ---- */
+.tpi-pills { position: sticky; top: 0; z-index: 4; display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px; background: rgba(238, 242, 248, .97); border-bottom: 1px solid var(--tpi-ln); scrollbar-width: none; }
+.tpi-pills::-webkit-scrollbar { display: none; }
+.tpi-pill { flex: none; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--tpi-rl); background: var(--tpi-bg); color: var(--tpi-mu); font-size: calc(.78rem * var(--tpi-s)); cursor: pointer; white-space: nowrap; }
+.tpi-pill.is-on { border-color: var(--tpi-k); background: var(--tpi-k); color: #ffffff; }
+.tpi-sec { padding: 24px 18px 8px; display: grid; gap: 12px; scroll-margin-top: 56px; }
+.tpi-sec:first-of-type { padding-top: 20px; }
+.tpi-h { margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--tpi-rl); display: flex; gap: 10px; font-size: calc(.72rem * var(--tpi-s)); letter-spacing: .18em; color: var(--tpi-fg); }
+.tpi-h__n { color: var(--tpi-k); }
+.tpi-h__aside { margin-left: auto; letter-spacing: .06em; color: var(--tpi-mu); }
+.tpi-lede { margin: 0;  font-size: calc(1.1rem * var(--tpi-s)); line-height: 1.45; }
+.tpi-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--tpi-ln); border: 1px solid var(--tpi-ln); }
+.tpi-grid2__cell { display: grid; gap: 2px; padding: 10px 12px; background: var(--tpi-bg); min-width: 0; overflow-wrap: anywhere; }
+.tpi-grid2__cell:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.tpi-grid2__cell .tpi-lab { font-size: calc(.64rem * var(--tpi-s)); }
+.tpi-bullets { list-style: disc; margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; font-size: calc(.92rem * var(--tpi-s)); line-height: 1.5; }
+.tpi-empty { margin: 0; padding: 14px 12px; border: 1px dashed var(--tpi-ln); color: var(--tpi-mu); font-size: calc(.9rem * var(--tpi-s)); }
+
+.tpi-map { position: relative; height: 280px; border: 1px solid var(--tpi-ln); background: repeating-linear-gradient(135deg, rgba(35, 80, 160, .06) 0 6px, transparent 6px 12px), var(--tpi-sunk); overflow: hidden; }
+/* caption shows until the map mounts over it (muted on #f4f6fa 6.2:1) */
+.tpi-map__cap { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--tpi-v); font-size: calc(.64rem * var(--tpi-s)); letter-spacing: .16em; text-transform: uppercase; color: var(--tpi-mu); text-align: center; padding: 0 12px; }
+.tpi-map__in { position: absolute; inset: 0; }
+.tpi-stops { margin: 0; padding: 0; list-style: none; border: 1px solid var(--tpi-ln); border-bottom: 0; }
+.tpi-stop { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 46px; padding: 6px 12px; border: 0; border-bottom: 1px solid var(--tpi-ln); background: var(--tpi-bg); text-align: left; cursor: pointer; }
+.tpi-stop__n { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--tpi-k); color: var(--tpi-k); font-family: var(--tpi-v); font-size: calc(.6rem * var(--tpi-s)); }
+.tpi-stop__n.is-on { background: var(--tpi-y); border-color: var(--tpi-y); color: var(--tpi-ok); }
+.tpi-stop__text { display: grid; min-width: 0; }
+.tpi-stop__t {  font-size: calc(.9rem * var(--tpi-s)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpi-stop__k { font-size: calc(.72rem * var(--tpi-s)); color: var(--tpi-mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpi-stop__min { font-size: calc(.72rem * var(--tpi-s)); color: var(--tpi-mu); }
+
+.tpi-deps { display: grid; border: 1px solid var(--tpi-ln); border-bottom: 0; }
+.tpi-dep { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 58px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--tpi-ln); background: var(--tpi-bg); text-align: left; cursor: pointer; }
+.tpi-dep:disabled { cursor: default; }
+.tpi-dep__tile { display: grid; justify-items: center; padding: 4px 0; border: 1px solid var(--tpi-ln); }
+.tpi-dep__d {  font-size: calc(.9rem * var(--tpi-s)); line-height: 1.1; text-align: center; }
+.tpi-dep__text { display: grid; min-width: 0; }
+.tpi-dep__t {  font-size: calc(.92rem * var(--tpi-s)); }
+.tpi-dep__s { font-size: calc(.72rem * var(--tpi-s)); color: var(--tpi-mu); }
+.tpi-dep__tag { padding: 6px 12px; border: 1px solid var(--tpi-ln); font-size: calc(.8rem * var(--tpi-s)); }
+.tpi-dep__tag.is-on { background: var(--tpi-y); border-color: var(--tpi-y); color: var(--tpi-ok); }
+.tpi-dep[aria-pressed="true"] { box-shadow: inset 3px 0 0 var(--tpi-y); }
+.tpi-dep[aria-pressed="true"] .tpi-dep__tile { background: var(--tpi-y); border-color: var(--tpi-y); color: var(--tpi-ok); }
+.tpi-dep[aria-pressed="true"] .tpi-dep__tile .tpi-lab { color: var(--tpi-ok); }
+.tpi-dep__tag.is-full { border-style: dashed; color: var(--tpi-fa); }
+
+.tpi-meet { display: grid; border: 1px solid var(--tpi-ln); border-top: 2px solid var(--tpi-pc); background: var(--tpi-bg); }
+.tpi-meet__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; }
+.tpi-meet__text { display: grid; min-width: 0; }
+.tpi-meet__t {  }
+.tpi-meet__s { font-size: calc(.74rem * var(--tpi-s)); color: var(--tpi-mu); }
+.tpi-root a.tpi-meet__go { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--tpi-ln); font-size: calc(.8rem * var(--tpi-s)); color: var(--tpi-fg); text-decoration: none; }
+
+.tpi-incl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: calc(.88rem * var(--tpi-s)); line-height: 1.5; }
+.tpi-incl--one { grid-template-columns: 1fr; }
+.tpi-incl ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; align-content: start; }
+.tpi-incl li { display: flex; gap: 8px; }
+.tpi-incl li span { color: var(--tpi-k); }
+
+.tpi-guide { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--tpi-ln); background: var(--tpi-bg); }
+.tpi-guide__rule { position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, var(--tpi-route), transparent 66%); }
+.tpi-guide__face { width: 60px; height: 60px; display: grid; place-items: center; background: repeating-linear-gradient(135deg, rgba(35, 80, 160, .07) 0 5px, transparent 5px 10px), var(--tpi-sunk);  font-size: calc(1.4rem * var(--tpi-s)); color: var(--tpi-mu); }
+.tpi-guide__text { display: grid; gap: 3px; min-width: 0; }
+.tpi-guide__t {  font-size: calc(1.05rem * var(--tpi-s)); }
+.tpi-guide__s { font-size: calc(.72rem * var(--tpi-s)); color: var(--tpi-mu); }
+.tpi-take { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; border: 1px dashed var(--tpi-route); background: var(--tpi-bg); font-size: calc(.85rem * var(--tpi-s)); line-height: 1.5; color: var(--tpi-mu); }
+.tpi-take__lab { flex: none; font-size: calc(.64rem * var(--tpi-s)); letter-spacing: .16em; color: var(--tpi-route); }
+
+.tpi-know { margin: 0; display: grid; gap: 10px; font-size: calc(.88rem * var(--tpi-s)); line-height: 1.5; }
+.tpi-know__row { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: 14px; }
+.tpi-know dt { font-size: calc(.64rem * var(--tpi-s)); letter-spacing: .14em; padding-top: 5px; }
+.tpi-know dd { margin: 0; overflow-wrap: anywhere; }
+
+.tpi-reviews { padding: 24px 18px 0; font-size: calc(.9rem * var(--tpi-s)); }
+.tpi-spacer { height: calc(120px + env(safe-area-inset-bottom, 0px)); }
+
+/* ---- the route list: a stop opens to its address and place card (everything already loaded) ---- */
+.tpi-stop[aria-expanded="true"] { background: var(--tpi-soft); }
+.tpi-stop__more { display: grid; gap: 10px; padding: 10px 12px 14px 52px; border-bottom: 1px solid var(--tpi-ln); background: var(--tpi-bg); }
+.tpi-stop__addr { margin: 0; font-size: calc(.9rem * var(--tpi-s)); line-height: 1.4; color: var(--tpi-fg); }
+.tpi-stop__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.tpi-stop__act { min-height: 40px; padding: 0 12px; border: 1px solid var(--tpi-rl); background: var(--tpi-bg); color: var(--tpi-fg); font-size: calc(.8rem * var(--tpi-s)); cursor: pointer; }
+.tpi-stop__act[aria-pressed="true"] { background: var(--tpi-fg); border-color: var(--tpi-fg); color: var(--tpi-y); }
+.tpi-stop__place { display: grid; gap: 10px; padding-top: 4px; }
+.tpi-stop__place .tsp-facts { margin: 0; display: grid; gap: 8px; font-size: calc(.88rem * var(--tpi-s)); }
+.tpi-stop__place .tsp-facts__row { display: grid; grid-template-columns: 5rem minmax(0, 1fr); column-gap: 12px; }
+.tpi-stop__place .tsp-facts dt { font-family: var(--tpi-v); font-size: calc(.6rem * var(--tpi-s)); letter-spacing: .12em; text-transform: uppercase; color: var(--tpi-mu); padding-top: 3px; }
+.tpi-stop__place .tsp-facts dd { margin: 0; }
+.tpi-stop__place .tsp-about { margin: 0; font-size: calc(.9rem * var(--tpi-s)); line-height: 1.5; }
+.tpi-stop__place .tsp-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpi-root .tpi-stop__place a.tsp-chip { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--tpi-rl); font-size: calc(.8rem * var(--tpi-s)); color: var(--tpi-fg); text-decoration: none; }
+/* the guide's profile picture */
+.tpi-guide__face--photo { object-fit: cover; background: var(--tpi-sunk); }
+
+/* branding under the index */
+.tpi-brand { display: grid; justify-items: center; gap: 4px; padding: 6px 16px 0; text-align: center; }
+.tpi-root .tpi-brand__name { font-size: 1.35rem; color: var(--tpi-fg); }

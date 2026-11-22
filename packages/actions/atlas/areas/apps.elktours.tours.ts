@@ -70,6 +70,47 @@ const capabilities: Capability[] = [
     verified: V,
   },
   {
+    id: 'elktours-tour-cover-set',
+    area: 'elktours.tours',
+    label: 'Choose a tour\'s cover photo',
+    does: "Sets or clears a tour's cover photo (threads.metadata.coverImageUrl): the picture in the tour page's arch and on its cards. Without one the phone tour page opens on the 3D route.",
+    class: 'person',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      host(sa('lib/hero-actions.ts', 'setTourCoverAction'), ['raw SQL UPDATE threads.metadata'], '/manage/tours/{id}/assets', "the 'Cover photo' picker of the phone tour media view (components/mobile/tour-media-view.tsx)"),
+      twin(sq('lib/hero-actions.ts', 'setTourCoverAction'), sa('lib/hero-actions.ts', 'setTourCoverAction')),
+    ],
+    entry: null,
+    status: 'threads.metadata.coverImageUrl for the tour equals the chosen picture, or the key is absent',
+    risk: ['public'],
+    confirm: { text: 'Use this picture as the cover of “{title}”? Visitors see it at once.', status: 'draft', wave: 6 },
+    inputs: 'tour id, a /api/media/ path or https URL, or null',
+    drift: 'The desktop tour form writes the same key through saveTourAction (lib/tour-actions.ts) as part of the whole form.',
+    open: 'None known: owners change any tour, guides only tours they wrote (author_id in the UPDATE).',
+    verified: '2026-11-17 written with lib/hero-actions.ts setTourCoverAction; 2026-11-17 later: also writes metadata.coverFrame (focal point and zoom, checked 0-100 / 1-4), cleared with the cover',
+  },
+  {
+    id: 'elktours-tour-photo-add',
+    area: 'elktours.tours',
+    label: 'Add a photo to a tour',
+    does: "Adds a picture to a tour's gallery from the phone media screen's picker and shows it on the tour page at once. An upload or a picture from the site's library is used as it is; a picture from the person's own files must be in their library and is copied into the site's Media/Images with its metadata (GPS) removed.",
+    class: 'person',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      host(sa('lib/asset-actions.ts', 'addTourPhotoAction'), ['@/lib/assets#upsertAsset', '@/lib/assets#setAssetVisible', '@/lib/assets#importPhotoToOrg'], '/manage/tours/{id}/assets', "the 'Add a photo' sheet of the phone tour photos section (components/mobile/tour-photos.tsx)"),
+    ],
+    entry: null,
+    status: 'a visible tour_assets row of kind image, role gallery, exists for the tour with the picture',
+    risk: ['public'],
+    confirm: { text: 'Add this photo to “{title}”? It shows on the tour page at once.', status: 'draft', wave: 6 },
+    inputs: 'tour id, a picture URL from an upload, the site library or the person\'s own files',
+    drift: 'The desktop asset panel adds pictures through upsertAssetAction switched off; this path switches them on at once.',
+    open: 'None known: owners any tour, guides only tours they wrote; a My files picture must be listed by listUserMediaLibrary for the caller.',
+    verified: '2026-11-17 written with lib/asset-actions.ts addTourPhotoAction',
+  },
+  {
     id: 'elktours-tour-layout-publish',
     area: 'elktours.tours',
     label: 'Publish the tour page layout',
@@ -94,6 +135,12 @@ const capabilities: Capability[] = [
 
 const ignored: Area['ignored'] = [
   { key: sa('lib/schedule-actions.ts', 'previewScheduleAction'), why: 'read: plans the dates without writing' },
+  { key: sa('lib/office-actions.ts', 'getScheduleSheet'), why: 'read: tours and upcoming runs for the hub Offer a tour popup (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'getPlaceSheet'), why: 'read: one place and its website for the hub Add a place popup (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'listPlaceSheet'), why: 'read: the places list for the Add a place popup catalogue view (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'getTourSheet'), why: 'read: one tour and its stops for the Create a tour wizard (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'listDraftTourSheet'), why: 'read: drafts the viewer may continue in the wizard (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'nearbyPlaceSheet'), why: 'read: our places near a point for the wizard Route map (2026-11-19)' },
 ];
 
 const area: Area = { capabilities, ignored };

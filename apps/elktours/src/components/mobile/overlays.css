@@ -1,0 +1,69 @@
+/* Phone overlays (G5/G6): place sheet, post preview, web view. Sheets render in a portal, outside .elk-m, so the
+   font is set here. Everything reads the site's variables. */
+
+.m-ov { font-family: var(--site-font-body, "Basteleur", Georgia, serif); font-size: 15px; color: hsl(var(--foreground)); display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+.m-ov-quiet { margin: 0; font-size: 13.5px; color: hsl(var(--muted-foreground)); }
+.m-ov a { color: inherit; }
+
+.m-ov-head { display: flex; gap: 16px; align-items: flex-end; padding: 4px 4px 0; }
+.m-ov-headtext { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.m-ov-name { margin: 0; font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 30px; line-height: 1.05; overflow-wrap: anywhere; }
+.m-ov-blurb { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--foreground-soft, hsl(var(--foreground))); text-wrap: pretty; }
+.m-ov-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-ov-tag { padding: 5px 12px; border-radius: 14px; border: 1px solid var(--hair-3); background: var(--m-well); font-size: 12.5px; }
+.m-ov-fav { margin: 0; font-size: 13px; color: hsl(var(--brass-light)); }
+.m-ov-facts { margin: 0; display: flex; flex-direction: column; border-top: 1px solid var(--hair-2); }
+.m-ov-facts > div { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--hair-2); }
+.m-ov-facts dt { flex: none; width: 74px; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); padding-top: 3px; }
+.m-ov-facts dd { margin: 0; font-size: 14px; line-height: 1.4; }
+.m-ov-tour { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: var(--radius-input, 16px); background: var(--m-card); border: 1px solid var(--brass-line); font-weight: 700; font-size: 14.5px; text-decoration: none; }
+.m-ov-tour span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.m-ov-tour span:last-child { color: hsl(var(--primary)); font-size: 20px; }
+.m-ov-actions { display: flex; gap: 10px; }
+.m-ov-ghost { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 24px; border: 1px solid var(--brass-line); background: transparent; color: hsl(var(--brass-light)); font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 14px; }
+.m-ov-actions .m-ov-ghost:only-child { flex: 1; }
+.m-ov-dashed { margin: 0; padding: 14px 16px; border-radius: var(--radius-input, 16px); border: 1px dashed var(--hair-4); font-size: 13px; line-height: 1.45; color: hsl(var(--muted-foreground)); }
+.m-ov-all { align-self: flex-start; font-weight: 700; font-size: 15px; color: hsl(var(--brass-light)) !important; text-decoration: none; padding: 6px 0; }
+
+/* post preview */
+.m-ov-author { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.m-ov-initial { flex: none; width: 40px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 20px 20px 8px 8px; background: var(--m-well); border: 1px solid var(--brass-line); font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-size: 20px; color: hsl(var(--brass-light)); }
+.m-ov-initial.is-small { width: 30px; height: 36px; font-size: 15px; border-radius: 15px 15px 6px 6px; }
+.m-ov-title { margin: 0; font-family: var(--site-font-heading, "Brothers", Georgia, serif); font-weight: 400; font-size: 28px; line-height: 1.1; overflow-wrap: anywhere; }
+.m-ov-body { font-size: 14.5px; line-height: 1.55; color: var(--foreground-soft, hsl(var(--foreground))); overflow-wrap: anywhere; }
+.m-ov-body p { margin: 0 0 10px; }
+.m-ov-body a { color: hsl(var(--brass-light)); text-decoration: underline; text-underline-offset: 3px; }
+.m-ov-body img { max-width: 100%; height: auto; border-radius: 12px; }
+.m-ov-commenthead { display: flex; align-items: center; gap: 10px; justify-content: space-between; border-top: 1px solid var(--hair-2); padding-top: 14px; }
+.m-ov-forum { font-weight: 700; font-size: 14px; color: hsl(var(--brass-light)) !important; text-decoration: none; }
+.m-ov-replies { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.m-ov-reply { display: flex; gap: 10px; font-size: 14px; }
+.m-ov-reply > div { min-width: 0; flex: 1; }
+.m-ov-commentbox { position: sticky; bottom: -26px; display: flex; gap: 10px; align-items: flex-end; padding: 10px 0 4px; background: var(--m-sheet); }
+.m-ov-commentbox textarea { flex: 1; min-width: 0; resize: none; padding: 12px 14px; border-radius: 20px; border: 1px solid var(--hair-3); background: var(--m-card); color: inherit; font-family: inherit; font-size: 14.5px; }
+.m-ov-send { flex: none; height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+
+/* web view and link card (shared) */
+.m-web { display: flex; flex-direction: column; gap: 14px; }
+.m-web-card { display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-card, 22px); background: var(--m-card); border: 1px solid var(--hair-2); }
+.m-web-img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+.m-web.is-compact .m-web-img { max-height: 150px; }
+.m-web-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; }
+.m-web-host { font-size: 10.5px; letter-spacing: 0.16em; }
+.m-web-title { font-weight: 700; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.m-web-desc { font-size: 13.5px; line-height: 1.45; color: hsl(var(--muted-foreground)); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.m-web-note { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--faint); }
+.m-web.is-compact .m-web-open { height: 44px; font-size: 14px; }
+
+/* Tour quick view (components/surfaces/tour-quick-popup.tsx) */
+.m-tq-head { display: flex; gap: 16px; align-items: center; }
+.m-tq-guide { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.m-tq-guide-name { font-weight: 700; font-size: 15px; }
+.m-tq-guide-sub { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.m-tq-blurb { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--foreground-soft); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+.m-tq-dates { display: flex; flex-direction: column; gap: 8px; }
+.m-tq-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.m-tq-chip { display: flex; flex-direction: column; gap: 2px; padding: 9px 13px; border-radius: 16px; background: var(--m-card); border: 1px solid var(--hair-2); color: inherit; text-decoration: none; min-width: 92px; }
+.m-tq-chip-day { font-weight: 700; font-size: 13.5px; }
+.m-tq-chip-left { font-size: 12px; color: hsl(var(--brass-light)); }
+.m-tq-dl { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 19px; border: 1px solid var(--brass-line); color: hsl(var(--brass-light)); font-size: 14px; text-decoration: none; }
