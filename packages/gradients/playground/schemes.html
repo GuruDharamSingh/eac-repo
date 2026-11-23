@@ -1,0 +1,432 @@
+<title>Scheme Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: controls column beside a results column (swatches, sample site, contrast, CSS); recipes reference below. Sister page to the Gradient Lab. */
+:root {
+  --bg: #F3F3F6; --plate: #FFFFFF; --line: #DADAE2; --fg: #17171C; --muted: #5B5B69; --gold: #8A6A1F;
+  --display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0B0B0D; --plate: #141417; --line: #2A2A30; --fg: #ECE7E1; --muted: #ADA79D; --gold: #C9A24A; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0B0B0D; --plate: #141417; --line: #2A2A30; --fg: #ECE7E1; --muted: #ADA79D; --gold: #C9A24A; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; margin: 0; }
+.pg { max-width: 1240px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+.eyebrow { margin: 0; font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+h1, h2, h3 { font-family: var(--display); font-weight: 500; margin: 0; line-height: 1.1; text-wrap: balance; }
+h1 { font-size: clamp(2.3rem, 6vw, 3.2rem); }
+h2 { font-size: 1.55rem; }
+h3 { font-size: 1.2rem; }
+.lede { margin: 6px 0 0; max-width: 66ch; color: var(--muted); }
+.main { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.panel { display: grid; gap: 22px; background: var(--plate); border: 1px solid var(--line); border-radius: 10px; padding: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 860px) { .panel { position: static; } }
+.group { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.group > legend, .lbl { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0; margin-bottom: 8px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.row output { font-family: var(--mono); font-size: 0.85rem; min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+input[type=range] { flex: 1; min-width: 0; accent-color: var(--gold); }
+#hue { appearance: none; -webkit-appearance: none; height: 14px; border-radius: 7px; background: linear-gradient(90deg, hsl(0 80% 55%), hsl(60 80% 55%), hsl(120 80% 55%), hsl(180 80% 55%), hsl(240 80% 55%), hsl(300 80% 55%), hsl(360 80% 55%)); }
+#hue::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--plate); border: 3px solid var(--fg); }
+#hue::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--plate); border: 3px solid var(--fg); }
+.choices { display: grid; gap: 6px; }
+.choice { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.choice:has(input:checked) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.choice:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+.choice input { position: absolute; opacity: 0; pointer-events: none; }
+.choice b { font-weight: 600; font-size: 0.93rem; }
+.choice small { display: block; color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
+.dots { display: flex; gap: 3px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15); }
+.panel.ignore-harmony #harmonyGroup .choice { opacity: .5; }
+.note { margin: 0; font-size: 0.82rem; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 0.88rem; background: none; color: var(--fg); border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--fg); color: var(--plate); }
+.btn { font: inherit; font-size: 0.88rem; font-weight: 600; background: var(--fg); color: var(--plate); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.btn.ghost { background: none; color: var(--fg); border: 1px solid var(--line); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.results { display: grid; gap: 28px; min-width: 0; }
+.top { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 22px; align-items: center; }
+@media (max-width: 520px) { .top { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
+.wheel { width: 150px; height: 150px; border-radius: 50%; position: relative; background: conic-gradient(hsl(0 75% 55%), hsl(60 75% 55%), hsl(120 75% 55%), hsl(180 75% 55%), hsl(240 75% 55%), hsl(300 75% 55%), hsl(360 75% 55%)); }
+.wheel::after { content: ""; position: absolute; inset: 26px; border-radius: 50%; background: var(--bg); }
+.wheel .pin { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 1; }
+.wheel .pin i { position: absolute; width: 20px; height: 20px; margin: -10px; border-radius: 50%; border: 3px solid var(--plate); box-shadow: 0 0 0 1px var(--fg); transform: translateY(-62px); }
+.wheel .pin.main i { width: 26px; height: 26px; margin: -13px; }
+.wheel .pin.neutral i { transform: none; }
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 520px) { .swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.sw { display: grid; gap: 4px; min-width: 0; }
+.sw .chip { aspect-ratio: 1 / 1; max-width: 100%; border-radius: 8px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+.sw .role { font-size: 0.8rem; font-weight: 600; }
+.sw code { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); overflow-wrap: anywhere; }
+.summary { margin: 0 0 10px; color: var(--muted); }
+.summary strong { color: var(--fg); font-weight: 600; }
+
+/* ---- the sample site: reads ONLY the semantic tokens ---- */
+.site { background: var(--surface); color: var(--text); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); transition: background .25s, color .25s; }
+.site nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.site .brand { font-family: var(--display); font-size: 1.35rem; font-weight: 600; color: var(--color-primary); margin-right: auto; }
+.site nav a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; }
+.site .hero { padding: 28px 20px; display: grid; gap: 12px; max-width: 60ch; }
+.site .tag { justify-self: start; background: var(--color-accent); color: var(--on-accent); font-size: 0.72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+.site h3 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.site p { margin: 0; color: var(--text-muted); }
+.site p a { color: var(--color-primary); font-weight: 600; }
+.site .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.site .b1 { background: var(--color-primary); color: var(--on-primary); border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-weight: 600; }
+.site .b2 { background: none; color: var(--color-secondary); border: 2px solid var(--color-secondary); border-radius: 8px; padding: 8px 16px; font: inherit; font-weight: 600; }
+.site .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 0 20px 22px; }
+.site .card { background: var(--surface-alt); border-radius: 10px; padding: 14px; display: grid; gap: 4px; border-top: 4px solid var(--color-secondary); }
+.site .card:nth-child(2) { border-top-color: var(--color-accent); }
+.site .card:nth-child(3) { border-top-color: var(--color-primary); }
+.site .card b { font-size: 0.98rem; }
+.site .card span { font-size: 0.85rem; color: var(--text-muted); }
+.sitebar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.sitebar code { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pair { display: inline-flex; align-items: center; justify-content: center; min-width: 46px; height: 26px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+.badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+.badge.aaa, .badge.aa { color: #1F7A4A; border-color: #1F7A4A; }
+.badge.large { color: #946200; border-color: #946200; }
+.badge.fail { color: #B3261E; border-color: #B3261E; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge.aaa, :root:not([data-theme="light"]) .badge.aa { color: #6FD39C; border-color: #6FD39C; } :root:not([data-theme="light"]) .badge.large { color: #F0C35A; border-color: #F0C35A; } :root:not([data-theme="light"]) .badge.fail { color: #FF8A80; border-color: #FF8A80; } }
+:root[data-theme="dark"] .badge.aaa, :root[data-theme="dark"] .badge.aa { color: #6FD39C; border-color: #6FD39C; }
+:root[data-theme="dark"] .badge.large { color: #F0C35A; border-color: #F0C35A; }
+:root[data-theme="dark"] .badge.fail { color: #FF8A80; border-color: #FF8A80; }
+.scroll { overflow-x: auto; }
+
+.out { background: var(--plate); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.out header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 0.8rem; line-height: 1.55; overflow-x: auto; }
+.saved { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved button { font: inherit; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 8px; background: var(--plate); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.saved button[aria-pressed=true] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.section { display: grid; gap: 10px; min-width: 0; }
+.ref { display: grid; gap: 18px; border-top: 1px solid var(--line); padding-top: 24px; }
+.ref p { margin: 0; max-width: 70ch; color: var(--muted); }
+.ref code, .section p code { font-family: var(--mono); font-size: 0.85em; }
+.hood { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.hood .out p { margin: 0; padding: 12px 14px 0; color: var(--muted); font-size: 0.9rem; }
+@media (prefers-reduced-motion: reduce) { .site { transition: none; } }
+</style>
+
+<!-- The live scheme is written here as [data-brand="..."] blocks. -->
+<style id="brand-sheet"></style>
+
+<div class="pg">
+  <header>
+    <p class="eyebrow">Elkdonis Arts Collective · Brand kits</p>
+    <h1>Scheme Lab</h1>
+    <p class="lede">Pick a base hue and a harmony, then a five-colour palette mode. The swatches become semantic tokens (<code>--color-primary</code>, <code>--surface</code>, <code>--text</code>…) and the sample site below reads only those tokens.</p>
+  </header>
+
+  <div class="main">
+    <aside class="panel" id="panel" aria-label="Scheme controls">
+      <div class="group">
+        <span class="lbl">Base colour</span>
+        <label class="row" for="hue"><span style="width:4.5em">Hue</span><input id="hue" type="range" min="0" max="359" value="196"><output id="hueOut">196°</output></label>
+        <label class="row" for="sat"><span style="width:4.5em">Saturation</span><input id="sat" type="range" min="10" max="100" value="58"><output id="satOut">58%</output></label>
+        <label class="row" for="lit"><span style="width:4.5em">Lightness</span><input id="lit" type="range" min="25" max="65" value="40"><output id="litOut">40%</output></label>
+      </div>
+      <fieldset class="group" id="harmonyGroup"><legend>Harmony</legend><div class="choices" id="harmonies"></div>
+        <p class="note" id="harmonyNote" hidden>This palette mode uses one hue, so the harmony only changes the accent pop (or nothing, for the ramp).</p>
+      </fieldset>
+      <fieldset class="group"><legend>Palette of five</legend><div class="choices" id="modes"></div></fieldset>
+    </aside>
+
+    <div class="results">
+      <section class="section" aria-labelledby="palH">
+        <h2 id="palH">Your palette</h2>
+        <div class="top">
+          <div class="wheel" id="wheel" aria-hidden="true"></div>
+          <div>
+            <p class="summary" id="summary"></p>
+            <div class="swatches" id="swatches"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="siteH">
+        <div class="sitebar">
+          <h2 id="siteH">On a site</h2>
+          <div class="row">
+            <div class="seg" role="group" aria-label="Site mode"><button id="mLight" aria-pressed="true">Light</button><button id="mDark" aria-pressed="false">Dark</button></div>
+            <button class="btn" id="save">Save scheme</button>
+          </div>
+        </div>
+        <div class="saved" id="saved" aria-label="Saved schemes"></div>
+        <p class="note">Card attribute: <code id="brandAttr">data-brand="live"</code>. Saved schemes are separate <code>[data-brand]</code> blocks; clicking one only changes that attribute.</p>
+        <article class="site" id="site" data-brand="live">
+          <nav><span class="brand">Elkdonis Arts</span><a href="#siteH">Gatherings</a><a href="#siteH">Studio</a><a href="#siteH">Market</a></nav>
+          <div class="hero">
+            <span class="tag">New this month</span>
+            <h3>Open studio, Saturday 14 March</h3>
+            <p>Twelve artists open their rooms from 1 to 6 pm. Tea in the loft, readings at 4. <a href="#siteH">See the floor plan</a>.</p>
+            <div class="ctas"><button class="b1" type="button">RSVP</button><button class="b2" type="button">Browse the work</button></div>
+          </div>
+          <div class="cards">
+            <div class="card"><b>Reading circle</b><span>Thursdays, 7 pm · In the Fourth Way</span></div>
+            <div class="card"><b>Silent auction</b><span>32 lots · closes Sunday</span></div>
+            <div class="card"><b>Paris walks</b><span>Food tour from €80</span></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" aria-labelledby="conH">
+        <h2 id="conH">Contrast (WCAG 2)</h2>
+        <div class="scroll"><table><thead><tr><th>Pair</th><th>Sample</th><th>Ratio</th><th>Result</th></tr></thead><tbody id="contrast"></tbody></table></div>
+        <p class="note">AA needs 4.5 for body text and 3 for large text (24px, or 19px bold). AAA needs 7.</p>
+      </section>
+
+      <section class="section" aria-labelledby="cssH">
+        <div class="out">
+          <header><h2 id="cssH" style="font-size:1.2rem">The tokens as CSS</h2><button class="btn ghost" id="copy">Copy</button></header>
+          <pre id="css"></pre>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="ref" aria-labelledby="refH">
+    <h2 id="refH">The recipes</h2>
+    <p>A harmony picks <em>which hues</em> by turning round the colour wheel from your base hue <code>h</code>. A palette mode then turns those hues into <em>five working colours</em> by changing saturation and lightness, and gives each one a job.</p>
+    <h3>Harmonies (three hues)</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Name</th><th>Hues</th><th>Feels</th></tr></thead>
+      <tbody>
+        <tr><td>Triadic</td><td class="num">h, h+120, h+240</td><td>Lively and balanced; three equal partners. Let one lead.</td></tr>
+        <tr><td>Split-complementary</td><td class="num">h, h+150, h+210</td><td>Contrast of a complement, with less clash: the two partners sit either side of the opposite.</td></tr>
+        <tr><td>Analogous</td><td class="num">h−30, h, h+30</td><td>Calm and close; neighbours on the wheel. Needs light/dark contrast to stay readable.</td></tr>
+        <tr><td>Complementary + neutral</td><td class="num">h, h+180, grey tinted to h</td><td>Strongest pull between two hues, steadied by a neutral.</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Palette modes (five colours)</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Mode</th><th>The five</th><th>Good for</th></tr></thead>
+      <tbody>
+        <tr><td>Tint / shade ramp</td><td>Base hue at lightness 95, 78, base, 30, 13</td><td>One-colour brands; quiet, very coherent sites.</td></tr>
+        <tr><td>Tones</td><td>All three harmony hues with saturation cut to 45%, plus a toned light and dark</td><td>Muted, earthy, “printed” looks.</td></tr>
+        <tr><td>Triad + 2 tinted neutrals</td><td>Three harmony hues at full strength, plus near-white and near-black with a hint of the base hue</td><td>Colourful sites that still read cleanly.</td></tr>
+        <tr><td>Triad + primary light / dark</td><td>Three harmony hues, plus a pale and a deep version of the primary as the page and text</td><td>Strong identity: even the page ground carries the brand.</td></tr>
+        <tr><td>Monochrome + accent pop</td><td>Base hue as light, base and shade, deep text, plus one vivid colour from the harmony</td><td>Calm sites with one thing that must be seen (a Book or RSVP button).</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Under the hood</h3>
+    <div class="hood">
+      <div class="out"><p>1. A harmony is a list of turns. Add each turn to the hue and wrap past 360.</p><pre>const HARMONIES = {
+  triadic: [0, 120, 240],
+  split:   [0, 150, 210],
+};
+const turn = (h, o) => ((h + o) % 360 + 360) % 360;
+HARMONIES.triadic.map(o => turn(196, o));
+// [196, 316, 76]</pre></div>
+      <div class="out"><p>2. Colours are written as tokens inside a <code>[data-brand]</code> block. The site only says <code>var(--color-primary)</code>.</p><pre>[data-brand="live"] {
+  --color-primary: hsl(196 58% 40%);
+  --surface: hsl(196 10% 97%);
+  --text: hsl(196 14% 14%);
+}
+.site .b1 {
+  background: var(--color-primary);
+}</pre></div>
+      <div class="out"><p>3. Contrast: turn each colour into relative luminance L, then compare the lighter and the darker.</p><pre>// L = 0.2126 R + 0.7152 G + 0.0722 B
+//     (R, G, B un-gamma'd first)
+const ratio = (L1 + 0.05) / (L2 + 0.05);
+// 4.5 or more: AA for body text</pre></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---------- colour maths (HSL in, WCAG out) ----------
+const turn = (h, o) => ((h + o) % 360 + 360) % 360;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const C = (h, s, l) => ({ h: Math.round(turn(h, 0)), s: Math.round(clamp(s, 0, 100)), l: Math.round(clamp(l, 0, 100)) });
+const css = (c) => `hsl(${c.h} ${c.s}% ${c.l}%)`;
+
+function hslToRgb({ h, s, l }) {           // standard HSL -> sRGB, each 0..1
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return [f(0), f(8), f(4)];
+}
+const hex = (c) => "#" + hslToRgb(c).map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("").toUpperCase();
+function luminance(c) {                    // WCAG relative luminance
+  const [r, g, b] = hslToRgb(c).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+const WHITE = C(0, 0, 100);
+const onColour = (bg) => { const ink = C(bg.h, 20, 10); return contrast(bg, WHITE) >= contrast(bg, ink) ? WHITE : ink; };
+
+// ---------- the recipes ----------
+const HARMONIES = {
+  triadic:    { label: "Triadic", offsets: [0, 120, 240], formula: "h, +120, +240" },
+  split:      { label: "Split-complementary", offsets: [0, 150, 210], formula: "h, +150, +210" },
+  analogous:  { label: "Analogous", offsets: [0, -30, 30], formula: "h, −30, +30" },
+  complement: { label: "Complementary + neutral", offsets: [0, 180, null], formula: "h, +180, neutral" },
+};
+
+// Each mode gets the three harmony colours [a, b, c] plus the base (h, s, l)
+// and returns five swatches, each with the job (role) it does on a site.
+const MODES = {
+  ramp: { label: "Tint / shade ramp", hint: "one hue, five steps", harmony: false,
+    make: (hs, { h, s, l }) => [
+      ["surface", C(h, s * 0.5, 95)], ["accent", C(h, s * 0.8, 78)], ["primary", C(h, s, l)],
+      ["secondary", C(h, s, 30)], ["text", C(h, s * 0.4, 13)]] },
+  tones: { label: "Tones", hint: "harmony, desaturated", harmony: true,
+    make: ([a, b, c], { h, s }) => [
+      ["primary", C(a.h, a.s * 0.45, a.l)], ["secondary", C(b.h, b.s * 0.45, b.l)], ["accent", C(c.h, c.s * 0.45, c.l + 8)],
+      ["surface", C(h, s * 0.25, 94)], ["text", C(h, s * 0.25, 15)]] },
+  neutrals: { label: "Triad + 2 tinted neutrals", hint: "full colour, near-white and near-black", harmony: true,
+    make: ([a, b, c], { h }) => [
+      ["primary", a], ["secondary", b], ["accent", c], ["surface", C(h, 10, 97)], ["text", C(h, 14, 13)]] },
+  lightdark: { label: "Triad + primary light / dark", hint: "the page ground carries the brand", harmony: true,
+    make: ([a, b, c], { h, s }) => [
+      ["primary", a], ["secondary", b], ["accent", c], ["surface", C(h, s * 0.6, 93)], ["text", C(h, s * 0.7, 14)]] },
+  pop: { label: "Monochrome + accent pop", hint: "one hue, one vivid accent", harmony: "pop",
+    make: ([a, b], { h, s, l }) => [
+      ["surface", C(h, s * 0.4, 96)], ["primary", C(h, s, l)], ["secondary", C(h, s, 28)],
+      ["text", C(h, s * 0.5, 12)], ["accent", C(b.h, 92, 52)]] },
+};
+
+// ---------- state ----------
+const state = { h: 196, s: 58, l: 40, harmony: "triadic", mode: "neutrals", dark: false, showing: "live" };
+const saved = [];
+const $ = (id) => document.getElementById(id);
+
+function harmonyColours({ h, s, l, harmony }) {
+  return HARMONIES[harmony].offsets.map((o) => (o === null ? C(h, 8, 50) : C(turn(h, o), s, l)));
+}
+
+// Five swatches -> the full semantic token set, for light or dark sites.
+function tokensFor(st) {
+  const sw = MODES[st.mode].make(harmonyColours(st), st);
+  const r = Object.fromEntries(sw);
+  let { primary, secondary, accent, surface, text } = r;
+  if (st.dark) {
+    surface = C(surface.h, Math.min(surface.s, 30), 9);
+    text = C(text.h, Math.min(text.s, 20), 93);
+    const lift = (c) => (c.l < 58 ? C(c.h, c.s, 62) : c);
+    primary = lift(primary); secondary = lift(secondary); accent = lift(accent);
+  }
+  const surfaceAlt = C(surface.h, surface.s, surface.l + (st.dark ? 7 : -5));
+  const textMuted = C(text.h, text.s, st.dark ? text.l - 24 : text.l + 26);
+  return { swatches: sw, t: {
+    "--color-primary": primary, "--on-primary": onColour(primary),
+    "--color-secondary": secondary, "--color-accent": accent, "--on-accent": onColour(accent),
+    "--surface": surface, "--surface-alt": surfaceAlt, "--text": text, "--text-muted": textMuted } };
+}
+
+function block(name, t) {
+  const lines = Object.entries(t).map(([k, c]) => `  ${k}: ${css(c)};`);
+  lines.push(`  --border: hsl(${t["--text"].h} ${t["--text"].s}% ${t["--text"].l}% / 0.16);`);
+  return `[data-brand="${name}"] {\n${lines.join("\n")}\n}`;
+}
+
+// ---------- build the choice lists once ----------
+function choiceList(host, items, groupName, current, dotsFor) {
+  host.innerHTML = Object.entries(items).map(([id, it]) => `
+    <label class="choice"><input type="radio" name="${groupName}" value="${id}" id="${groupName}-${id}" ${id === current ? "checked" : ""}>
+      <span class="dots" data-dots="${id}"></span>
+      <span><b>${it.label}</b><small>${it.formula || it.hint}</small></span>
+    </label>`).join("");
+  host.addEventListener("change", (e) => { state[groupName] = e.target.value; state.showing = "live"; render(); });
+}
+choiceList($("harmonies"), HARMONIES, "harmony", state.harmony);
+choiceList($("modes"), MODES, "mode", state.mode);
+
+function render() {
+  const { swatches, t } = tokensFor(state);
+  const usesHarmony = MODES[state.mode].harmony;
+  $("panel").classList.toggle("ignore-harmony", usesHarmony !== true);
+  $("harmonyNote").hidden = usesHarmony === true;
+  ["hue", "sat", "lit"].forEach((k, i) => ($(k + "Out").textContent = [state.h + "°", state.s + "%", state.l + "%"][i]));
+
+  // little previews on each choice
+  for (const id in HARMONIES)
+    document.querySelector(`[data-dots="${id}"]`).innerHTML = harmonyColours({ ...state, harmony: id }).map((c) => `<i style="background:${css(c)}"></i>`).join("");
+  for (const id in MODES)
+    document.querySelector(`[data-dots="${id}"]`).innerHTML = MODES[id].make(harmonyColours(state), state).map(([, c]) => `<i style="background:${css(c)}"></i>`).join("");
+
+  // wheel pins: rotate by the hue, then push out from the centre
+  const hc = harmonyColours(state);
+  $("wheel").innerHTML = hc.map((c, i) => {
+    const neutral = HARMONIES[state.harmony].offsets[i] === null;
+    return `<span class="pin ${i === 0 ? "main" : ""} ${neutral ? "neutral" : ""}" style="transform:rotate(${neutral ? 0 : c.h}deg)"><i style="background:${css(c)}"></i></span>`;
+  }).join("");
+
+  $("summary").innerHTML = `<strong>${HARMONIES[state.harmony].label}</strong> (${HARMONIES[state.harmony].formula}) as <strong>${MODES[state.mode].label}</strong>.`;
+  $("swatches").innerHTML = swatches.map(([role, c]) => `
+    <div class="sw"><div class="chip" style="background:${css(c)}"></div><span class="role">${role}</span><code>${css(c)}</code><code>${hex(c)}</code></div>`).join("");
+
+  // the stylesheet: live scheme + every saved one
+  const sheet = [block("live", t), ...saved.map((sv, i) => block(`saved-${i + 1}`, tokensFor(sv).t))].join("\n\n");
+  $("brand-sheet").textContent = sheet;
+  $("css").textContent = block("live", t);
+  $("site").dataset.brand = state.showing;
+  $("brandAttr").textContent = `data-brand="${state.showing}"`;
+  renderSaved();
+
+  // contrast for what is on the card right now
+  const shown = state.showing === "live" ? t : tokensFor(saved[+state.showing.split("-")[1] - 1]).t;
+  const pairs = [
+    ["Text on surface", "--text", "--surface"],
+    ["Muted text on surface", "--text-muted", "--surface"],
+    ["Text on surface-alt", "--text", "--surface-alt"],
+    ["Button label on primary", "--on-primary", "--color-primary"],
+    ["Link (primary) on surface", "--color-primary", "--surface"],
+    ["Outline button (secondary) on surface", "--color-secondary", "--surface"],
+  ];
+  $("contrast").innerHTML = pairs.map(([label, fg, bg]) => {
+    const r = contrast(shown[fg], shown[bg]);
+    const [cls, word] = r >= 7 ? ["aaa", "AAA"] : r >= 4.5 ? ["aa", "AA"] : r >= 3 ? ["large", "Large text only"] : ["fail", "Fails"];
+    return `<tr><td>${label}</td><td><span class="pair" style="background:${css(shown[bg])};color:${css(shown[fg])}">Aa</span></td><td class="num">${r.toFixed(2)} : 1</td><td><span class="badge ${cls}">${word}</span></td></tr>`;
+  }).join("");
+}
+
+function renderSaved() {
+  const items = [{ name: "live", label: "Live", st: state }, ...saved.map((sv, i) => ({ name: `saved-${i + 1}`, label: sv.title, st: sv }))];
+  $("saved").innerHTML = items.length > 1 ? items.map((it) => {
+    const dots = tokensFor(it.st).swatches.map(([, c]) => `<i style="background:${css(c)}"></i>`).join("");
+    return `<button type="button" data-name="${it.name}" aria-pressed="${state.showing === it.name}"><span class="dots">${dots}</span>${it.label}</button>`;
+  }).join("") : "";
+}
+$("saved").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.showing = b.dataset.name; render();
+});
+$("save").addEventListener("click", () => {
+  if (saved.length >= 4) saved.shift();
+  saved.push({ ...state, showing: undefined, title: `${state.h}° ${HARMONIES[state.harmony].label.split(" ")[0]} · ${MODES[state.mode].label.split(" ")[0]}${state.dark ? " · dark" : ""}` });
+  render();
+});
+
+[["hue", "h"], ["sat", "s"], ["lit", "l"]].forEach(([id, key]) =>
+  $(id).addEventListener("input", (e) => { state[key] = +e.target.value; state.showing = "live"; render(); }));
+$("mLight").addEventListener("click", () => { state.dark = false; state.showing = "live"; $("mLight").setAttribute("aria-pressed", "true"); $("mDark").setAttribute("aria-pressed", "false"); render(); });
+$("mDark").addEventListener("click", () => { state.dark = true; state.showing = "live"; $("mDark").setAttribute("aria-pressed", "true"); $("mLight").setAttribute("aria-pressed", "false"); render(); });
+$("copy").addEventListener("click", () => {
+  const text = $("css").textContent;
+  navigator.clipboard?.writeText(text).then(() => ($("copy").textContent = "Copied"), () => selectCss()) ?? selectCss();
+  setTimeout(() => ($("copy").textContent = "Copy"), 1600);
+});
+function selectCss() { const r = document.createRange(); r.selectNodeContents($("css")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+render();
+</script>
