@@ -491,3 +491,19 @@ body.de-resize-se, body.de-resize-se * { cursor: nwse-resize !important; }
 .de-where .de-seg button { position: relative; padding: 3px 5px; font-size: 11.5px; }
 .de-dot { position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--de-cyan); }
 .de-clash { color: var(--de-amber); }
+
+/* Fill: Colour / Fade (panel/fade.ts, lane GRADIENT 2026-11-22) */
+.de-fade { margin: 2px 16px 10px; display: grid; gap: 8px; }
+.de-fade-strip { height: 22px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.de-fade-presets { display: flex; flex-wrap: wrap; gap: 5px; }
+.de-fade-preset { width: 28px; height: 20px; border-radius: 5px; border: 0; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+.de-fade-preset:hover, .de-fade-preset:focus-visible { box-shadow: 0 0 0 2px var(--de-bg), 0 0 0 3.5px var(--de-cyan); }
+.de-fade-stops { display: grid; gap: 5px; }
+.de-fade-stop { display: flex; align-items: center; gap: 6px; }
+.de-fade-stop input[type="color"] { width: 34px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; }
+.de-fade-at, #de-fade-angle { width: 52px; }
+.de-fade-unit { font-size: 11.5px; color: var(--de-muted); }
+.de-fade-add { justify-self: start; border: 0; background: var(--de-field); color: var(--de-text); border-radius: 6px; padding: 4px 10px; font-size: 12px; min-height: 26px; }
+
+/* A block that is entered (one of its parts is selected): the rest of the page is drawn quieter. A shadow on the click-through sheet, over everything but the block; nothing moves. */
+.de-layer-sheet .de-veil { position: absolute; pointer-events: none; box-shadow: 0 0 0 300vmax rgba(20, 22, 26, .34); outline: 1px dashed rgba(43, 127, 255, .6); outline-offset: 2px; }

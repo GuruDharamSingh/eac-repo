@@ -105,7 +105,10 @@ export function dedupeLook(def: BlockContract, slots: ResolvedSlot[], stored: Re
   const kept = slots.filter((s) => {
     const label = home.get(s.key);
     if (!label) return true;
-    const set = !!stored[s.key];
+    // A block that declares `resize` has the one home for its height: a height stored on its look is kept but not drawn, so the row goes.
+    const ignored = !!def.resize && s.key === "hmode";
+    const set = !!stored[s.key] && !ignored;
+    if (ignored && stored[s.key]) notes[s.section] = (notes[s.section] ?? "") + `<p class="de-note" data-f="home-${esc(s.id)}-kept">A height is also stored on this block's look. It is kept, and not drawn: the block's own “${esc(label)}” is the one that counts.</p>`;
     notes[s.section] = (notes[s.section] ?? "") + `<p class="de-note" data-f="home-${esc(s.id)}">${esc(s.label)} is a setting of this block: ${set ? `it is also set here, which wins over it. Reset it here and change` : "change"} “${esc(label)}” in the Content tab.</p>`;
     if (!set) hidden.push(s.key);
     return set;

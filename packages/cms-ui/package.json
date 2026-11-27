@@ -42,6 +42,7 @@
     "./email.css": "./src/email/email.css",
     "./hub.css": "./src/hub/hub.css",
     "./hubsite": "./src/hubsite/index.ts",
+    "./file-types": "./src/hubsite/file-types.tsx",
     "./hubsite.css": "./src/hubsite/hubsite.css",
     "./nextcloud-access": "./src/nextcloud-access/index.ts",
     "./nextcloud-access.css": "./src/nextcloud-access/nextcloud-access.css",

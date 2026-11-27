@@ -79,6 +79,24 @@ const KIND_WORDS: Record<string, [string, string]> = { article: ['post', 'posts'
 /** The marketplace org a person's store and works live in (commerce's journeys). */
 const MARKET_ORG = 'market';
 
+/** Stored HTML (a store note, a bio written by IFAC's editor) as plain text for a form field. */
+function plainText(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<\/(p|div|h[1-6]|li)>\s*/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, '’')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 type UserRow = {
   display_name: string | null; avatar_url: string | null; headline: string | null; bio: string | null; slug: string | null;
   directory_listed: boolean | null; nextcloud_user_id: string | null; stripe_account_id: string | null; stripe_onboarded_at: Date | null;
@@ -218,6 +236,28 @@ export const CHECKS: Record<string, Check> = {
     if (u?.stripe_onboarded_at) return ok('Payouts are set up.');
     if (u?.stripe_account_id) return part('Started with Stripe; not finished yet.');
     return none('Not set up.');
+  },
+  // The market's store course (2026-11-24). `values` prefill the dock form: the store's own
+  // description as plain text, and the directory bio for "Fill from my directory bio".
+  async 'store-front'({ userId }) {
+    const [s] = await db<Array<{ bio_html: string | null }>>`SELECT bio_html FROM store WHERE owner_user_id = ${userId} AND org_id = ${MARKET_ORG} LIMIT 1`;
+    const u = await user(userId);
+    const values = { note: plainText(s?.bio_html), bio: plainText(u?.bio) };
+    if (!s) return { ...none('Open a store first.'), values };
+    return values.note ? { ...ok('Your store has a description.'), values } : { ...none('No description yet.'), values };
+  },
+  // The ship-from address (users.ship_from), one for every store that sells the person's work.
+  // Not saved yet: the form starts from what the profile holds (getShipFromDefaults).
+  async 'ship-from'({ userId }) {
+    const { getShipFrom, getShipFromDefaults } = await import('@elkdonis/commerce/shipping');
+    const saved = await getShipFrom(userId);
+    const v = (saved ?? (await getShipFromDefaults(userId)) ?? {}) as unknown as Record<string, unknown>;
+    const str = (k: string) => (typeof v[k] === 'string' ? (v[k] as string) : '');
+    const values = {
+      recipientName: str('recipientName'), line1: str('line1'), city: str('city'), region: str('region'),
+      postalCode: str('postalCode'), country: str('country'), phone: str('phone'),
+    };
+    return saved ? { ...ok(`Ships from ${saved.city}.`), values } : { ...none('No ship-from address yet.'), values };
   },
   async org({ userId }) {
     const [o] = await db<Array<{ id: string; name: string; slug: string }>>`

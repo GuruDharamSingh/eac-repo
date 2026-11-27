@@ -67,12 +67,13 @@ export async function saveTourAction(input: TourFormValues, threadId?: string): 
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form" };
   const d = parsed.data;
 
-  const slug = await ensureUniqueThreadSlug(ORG, slugifyTitle(d.title), threadId);
   const body = sanitizeRichText(d.body ?? "");
   const excerpt = deriveExcerpt(body, { explicit: d.excerpt });
   // The cached route belongs to the stops, not this form: carry it over on an edit.
   const existing = threadId ? await getTourById(threadId) : null;
   if (threadId && !existing) return { ok: false, error: "Not found" };
+  // A published tour keeps its address when it is renamed: links and bookings' mail point at it (2026-11-26).
+  const slug = existing?.status === "published" ? existing.slug : await ensureUniqueThreadSlug(ORG, slugifyTitle(d.title), threadId);
   const details: TourDetails = {
     highlights: d.highlights,
     includes: d.includes,

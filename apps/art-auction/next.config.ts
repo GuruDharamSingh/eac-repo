@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@elkdonis/services",
+    "@elkdonis/actions",
+    "@elkdonis/dock",
+    "@elkdonis/lms",
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
     "@elkdonis/checkout",
@@ -11,6 +14,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/commerce",
     "@elkdonis/db",
     "@elkdonis/direct-edit",
+    "@elkdonis/gradients",
     "@elkdonis/email",
     "@elkdonis/messaging",
     "@elkdonis/nextcloud",

@@ -25,7 +25,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@elkdonis/fonts": "workspace:*"
+    "@elkdonis/fonts": "workspace:*",
+    "@elkdonis/gradients": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19",

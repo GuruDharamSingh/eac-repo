@@ -4,6 +4,7 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 // The numbered map pins (.tour-pin) are styled here, shared with the tour page.
 import "@/components/tours/tour-story.css";
+import { tourEditorHref } from "@/lib/office-links";
 import {
   SurfaceFrame,
   SurfaceFacts,
@@ -49,7 +50,7 @@ export function TourPopup({ descriptor }: { descriptor: Extract<SurfaceDescripto
 
   const href = `/tours/${data?.tour.slug ?? slug ?? ""}`;
   const actions: SurfaceAction[] = [];
-  if (data?.canEdit && data.tour.id) actions.push({ label: "Edit", href: `/manage/tours/${data.tour.id}`, quiet: true });
+  if (data?.canEdit && data.tour.id) actions.push({ label: "Edit", href: tourEditorHref(data.tour.id), quiet: true });
   actions.push({ label: "Open page", href, primary: !(data && !data.unavailable && data.departures.length > 0) });
   if (data && !data.unavailable && data.departures.length > 0) actions.push({ label: "Book", href: `${href}#book`, primary: true });
 

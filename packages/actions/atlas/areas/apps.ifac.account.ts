@@ -28,7 +28,7 @@ const capabilities: Capability[] = [
     actors: ['member', 'guide', 'owner', 'admin'],
     scope: 'person',
     hosts: [
-      h(api('upload', 'POST'), '/manage/directory', 'upload field in the gallery editor and the directory manager (components/gallery-editor.tsx, components/writing-views.tsx, components/manage/directory-manager.tsx)', ['(getServerSession; memberSlug must match the viewer, or canManageIfac)', '@elkdonis/nextcloud#ensureUserFolder', '@elkdonis/services#uploadFile', '@elkdonis/services#markArtist', '@elkdonis/services#appendOrgPortfolio', '@elkdonis/utils#validateUploadBuffer']),
+      h(api('upload', 'POST'), '/manage/directory', 'upload field in the gallery editor and the directory manager (components/gallery-editor.tsx, components/writing-views.tsx, components/manage/directory-manager.tsx)', ['(getServerSession; memberSlug must match the viewer, or canManageIfac)', '@elkdonis/nextcloud#ensureUserFolder', '@elkdonis/services#uploadFile', '@elkdonis/services#appendOrgPortfolio', '@elkdonis/utils#validateUploadBuffer']),
       twin(k('sql', 'app/api/upload/route.ts', 'POST'), api('upload', 'POST')),
     ],
     entry: null,
@@ -36,7 +36,7 @@ const capabilities: Capability[] = [
     risk: ['public'],
     confirm: cf('Add “{file}” to {person}’s pictures on {org}? Visitors can see it on their page.'),
     inputs: 'file, memberSlug, target gallery|avatar|file, title',
-    drift: 'Third upload family: artdirect api/upload (canEditProfile, profile portfolio), hidden-enneagram api/upload (editor, org tree, audio), danamccool api/media/upload (editor, site owner folder). ifac has the manager override and markArtist. The "avatar" and "file" targets only skip the portfolio append.',
+    drift: 'Third upload family: artdirect api/upload (canEditProfile, profile portfolio), hidden-enneagram api/upload (editor, org tree, audio), danamccool api/media/upload (editor, site owner folder). ifac has the manager override. It no longer calls markArtist (2026-11-24: an upload does not make anyone an artist of the collective). The "avatar" and "file" targets only skip the portfolio append.',
     canonical: 'services uploadUserFile (one upload path) with validateUploadBuffer and a per-app authorizer.',
     open: 'SECURITY: apps/ifac/src/app/api/upload/route.ts:71-98 when memberSlug matches no member a canManageIfac caller (allowlisted email, no role) can still upload; the slug is then used as the Nextcloud folder name (ensureUserFolder(getAdminClient(), memberSlug)) with no pattern check here (editors only; traversal handling lives in ensureUserFolder, not read). Gate is canManageIfac (lead #4).',
   }),

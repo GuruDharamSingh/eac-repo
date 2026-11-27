@@ -1,5 +1,6 @@
 import { handleOAuthCallback } from "@elkdonis/auth-server";
 import { type NextRequest, NextResponse } from "next/server";
+import { siteConfig } from "@/config/site";
 
 // Completes the Google PKCE flow started by signInWithGoogle() in
 // @elkdonis/auth-client — the same route ArtDirect and IFAC carry, so one
@@ -8,8 +9,9 @@ import { type NextRequest, NextResponse } from "next/server";
 // Wrapped in a real async function rather than bare-exported: a bare
 // `export { handleOAuthCallback as GET }` only satisfies Next's route-handler
 // type by coincidence and breaks as soon as the shared function takes an
-// options parameter (which it does). No options passed — the marketplace is
-// cross-org, not scoped to one org's membership.
+// options parameter (which it does). A first Google sign-in becomes a viewer of
+// the marketplace and of `oad`, as a password signup does (./signup/route.ts;
+// the shared default was `inner_group` until 2026-11-24).
 //
 // Behind the reverse proxy the internal request.url is http://0.0.0.0:3009/...
 // Proxy the NextRequest so `url` reports the public origin (used to build
@@ -28,5 +30,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return handleOAuthCallback(proxied as NextRequest);
+  return handleOAuthCallback(proxied as NextRequest, {
+    defaultOrgs: [
+      { id: siteConfig.marketplaceOrgId, role: "viewer" },
+      { id: "oad", role: "viewer" },
+    ],
+  });
 }

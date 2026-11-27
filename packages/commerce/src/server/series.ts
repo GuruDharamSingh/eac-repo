@@ -1,3 +1,4 @@
+import { indexArtwork } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { jsonb, type Row } from "./map-order";
@@ -592,6 +593,7 @@ export async function addSeriesLot(input: AddSeriesLotInput): Promise<{ artworkI
   await addLotToSeries(input.seriesId, input.actorUserId, lot.id, input.lotNumber ?? null);
 
   if (input.weekNo) await featureInWeek(input.seriesId, artworkId, input.weekNo, Number(ser.week_count));
+  await indexArtwork(artworkId);
   return { artworkId, lotId: lot.id };
 }
 

@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useSurfaceOptional, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
+import { createTourDescriptor } from "@/components/office/create-tour/create-tour-popup";
+import { tourEditorHref } from "@/lib/office-links";
 
 export interface ScheduleCardTour {
   id: string;
@@ -18,10 +21,23 @@ type Filter = "all" | "published" | "drafts";
  * each one's editor, and a drafts filter. Drawn in the Cards 2 style
  * (cms-ui hubsite `.eac-hp-card`), but a panel rather than one link, since it
  * holds many.
+ *
+ * Since 2026-11-26 Edit, Stops, Dates and New tour open the Office popups over
+ * the hub (Create a tour, Offer a tour) rather than the old /manage editor.
+ * Each is still a link to the editor page (/hub/tours/edit), so opening it in a
+ * new tab works.
  */
 export function TourScheduleCard({ tours }: { tours: ScheduleCardTour[] }) {
   const drafts = tours.filter((t) => t.status !== "published").length;
   const [filter, setFilter] = React.useState<Filter>("all");
+  const surface = useSurfaceOptional();
+  /** A plain click opens the popup; a modified click, or no popup host, follows the link. */
+  const popup = (d: SurfaceDescriptor) => (e: React.MouseEvent) => {
+    if (!surface || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    surface.open(d);
+  };
+  const dates = (tourId: string): SurfaceDescriptor => ({ type: "custom", key: "office-schedule", title: "Offer a tour", kind: "event", size: "wide", props: { tourId } });
   const shown = tours.filter((t) =>
     filter === "all" ? true : filter === "published" ? t.status === "published" : t.status !== "published"
   );
@@ -57,14 +73,14 @@ export function TourScheduleCard({ tours }: { tours: ScheduleCardTour[] }) {
           {shown.map((t) => (
             <li key={t.id}>
               <span className="el-schedule-name">
-                <a href={`/manage/tours/${t.id}`}>{t.title}</a>
+                <a href={tourEditorHref(t.id)} onClick={popup(createTourDescriptor(t.id))}>{t.title}</a>
                 {t.status !== "published" && <span className="el-schedule-badge">{t.status}</span>}
               </span>
               <span className="el-schedule-next">{t.next ? `Next: ${t.next}` : "No dates"}</span>
               <span className="el-schedule-actions">
-                <a href={`/manage/tours/${t.id}`}>Edit</a>
-                <a href={`/manage/tours/${t.id}/stops`}>Stops</a>
-                <a href={`/manage/tours/${t.id}?tab=departures`}>Dates</a>
+                <a href={tourEditorHref(t.id)} onClick={popup(createTourDescriptor(t.id))}>Edit</a>
+                <a href={tourEditorHref(t.id, "route")} onClick={popup(createTourDescriptor(t.id, 2))}>Stops</a>
+                <a href={`/hub?office=schedule&tour=${t.id}`} onClick={popup(dates(t.id))}>Dates</a>
                 <a href={`/tours/${t.slug}`}>{t.status === "published" ? "View" : "Preview"}</a>
               </span>
             </li>
@@ -74,7 +90,7 @@ export function TourScheduleCard({ tours }: { tours: ScheduleCardTour[] }) {
 
       <span className="eac-hp-card-meta el-schedule-foot">
         <a href="/manage/schedule">Plan dates in the schedule</a>
-        <a href="/manage/tours/new">New tour</a>
+        <a href={tourEditorHref()} onClick={popup(createTourDescriptor())}>New tour</a>
       </span>
     </section>
   );

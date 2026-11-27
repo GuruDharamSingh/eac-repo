@@ -55,7 +55,7 @@ export function SeatBar({ slot }: { slot: Pick<BoardSlot, "seatsTaken" | "capaci
 }
 
 /** One slot as a card (Schedule, Board home, Decisions). Opens the slot page. */
-export function SlotCard({ slot, showGuide, showDay }: { slot: BoardSlot; showGuide?: boolean; showDay?: boolean }) {
+export function SlotCard({ slot, showGuide, showDay, overlap }: { slot: BoardSlot; showGuide?: boolean; showDay?: boolean; overlap?: string | null }) {
   const cancelled = slot.status === "cancelled";
   const off = cancelled || slot.stateKey === "past";
   const extra = slot.status === "scheduled" && slot.stateKey === "open" ? slot.note : null;
@@ -74,6 +74,7 @@ export function SlotCard({ slot, showGuide, showDay }: { slot: BoardSlot; showGu
       </div>
       {!cancelled ? <SeatBar slot={slot} /> : null}
       {extra ? <span className="b-card-extra">{extra}</span> : null}
+      {overlap && !cancelled && !off ? <span className="b-card-extra is-warn">Overlaps {overlap}</span> : null}
     </Link>
   );
 }

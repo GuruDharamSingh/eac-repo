@@ -21,11 +21,11 @@ import {
   updateSlot as updateBookingSlot,
   type NewSlot,
 } from "@elkdonis/checkout/booking-server";
-import { checkNewSlot, type BookingStatus } from "@elkdonis/checkout/booking-core";
+import { checkNewSlot, closedAlready, type BookingStatus } from "@elkdonis/checkout/booking-core";
 import { requireOrgEditor, type Viewer } from "@/lib/auth";
 import { listGuides } from "@/lib/tours";
 import type { ActionResult } from "@/lib/tour-actions";
-import { MAX_SCHEDULE_BATCH, isDay, isTime, parisInstant } from "@/lib/schedule-plan";
+import { isDay, isTime, parisInstant } from "@/lib/schedule-plan";
 import { getSiteSettings } from "@/lib/site-settings";
 import { siteConfig } from "@/config/site";
 import { PREVIEW_REFUSAL, fixtureManifest, fixtureWaitlist, fixturesOn } from "@/lib/tour-slot-fixtures";
@@ -55,6 +55,9 @@ import {
 const ORG = siteConfig.orgId;
 
 const UNAVAILABLE = "Available after the booking cutover.";
+
+/** @elkdonis/booking createSlots takes at most 200 slots per call. */
+const BOOKING_CHUNK = 200;
 
 /** A minimum of none or 1 means "no minimum" (a slot says None by storing 1). */
 const minOf = (n: number | null | undefined): number | null => (n != null && n > 1 ? n : null);
@@ -100,13 +103,18 @@ export interface NewSlotsInput {
   guideUserId?: string | null;
 }
 
-export type SlotProblem = "clash" | "closed" | "exists" | "past" | "over_cap";
+/**
+ * Why a candidate is not ready ("closed", "exists", "past"), or, on a ready item, "clash": the guide already leads
+ * an overlapping run. A clash is a warning, not a block: the item stays `ok` and is created (2026-11-24).
+ */
+export type SlotProblem = "clash" | "closed" | "exists" | "past";
 
 export interface SlotPreviewItem {
   day: string;
   time: string;
   startsAt: string;
   endsAt: string;
+  /** Will be created. A clashing slot is ok with `reason: "clash"`. */
   ok: boolean;
   reason: SlotProblem | null;
   /** "Clashes with Latin Quarter at 10:00", "Booking would already be closed. Shorten the cutoff.", ... */
@@ -117,6 +125,8 @@ export interface SlotPreviewItem {
 export interface SlotPreview {
   items: SlotPreviewItem[];
   ready: number;
+  /** Ready items that overlap another run of the same guide (warned, still created). */
+  clashes: number;
   /** Settings that differ from the tour's own and cannot be stored per slot (old source only; always empty on the booking tables). */
   notStored: Array<"duration" | "minToRun" | "closeBeforeMinutes" | "waitlist" | "price">;
 }
@@ -166,6 +176,7 @@ async function plan(input: NewSlotsInput, viewer: Viewer): Promise<{ error: stri
   const now = new Date();
   const items: SlotPreviewItem[] = [];
   let ready = 0;
+  let clashes = 0;
   for (const c of starts) {
     const startsAt = c.at.toISOString();
     const endsAt = new Date(c.at.getTime() + duration * 60000).toISOString();
@@ -179,23 +190,29 @@ async function plan(input: NewSlotsInput, viewer: Viewer): Promise<{ error: stri
       continue;
     }
     const check = checkNewSlot({ candidate: { startsAt, endsAt, guideUserId: effectiveGuide }, closeBeforeMinutes: closeBefore, existing, now });
-    if (check.ok === false) {
-      items.push({
-        ...base,
-        ok: false,
-        reason: check.reason,
-        message: check.message,
-        ...(check.clashWith ? { clashWith: { tourTitle: check.clashWith.tourTitle, startsAt: String(check.clashWith.startsAt) } } : {}),
-      });
+    if (check.ok === false && check.reason !== "clash") {
+      items.push({ ...base, ok: false, reason: check.reason, message: check.message });
       continue;
     }
-    if (ready >= MAX_SCHEDULE_BATCH) {
-      items.push({ ...base, ok: false, reason: "over_cap", message: `At most ${MAX_SCHEDULE_BATCH} slots at a time.` });
+    // checkNewSlot stops at a clash, so a clashing candidate still needs the "already closed" test.
+    if (check.ok === false && closedAlready(startsAt, closeBefore, now)) {
+      items.push({ ...base, ok: false, reason: "closed", message: "Booking would already be closed. Shorten the cutoff." });
       continue;
     }
     ready += 1;
-    items.push({ ...base, ok: true, reason: null, message: null });
-    // A later candidate in this batch must not overlap this one.
+    if (check.ok === false) {
+      clashes += 1;
+      items.push({
+        ...base,
+        ok: true,
+        reason: "clash",
+        message: check.message,
+        ...(check.clashWith ? { clashWith: { tourTitle: check.clashWith.tourTitle, startsAt: String(check.clashWith.startsAt) } } : {}),
+      });
+    } else {
+      items.push({ ...base, ok: true, reason: null, message: null });
+    }
+    // A later candidate in this batch is checked against this one too.
     existing.push({
       tourId: tour.id,
       tourTitle: tour.title,
@@ -219,7 +236,7 @@ async function plan(input: NewSlotsInput, viewer: Viewer): Promise<{ error: stri
   }
   if (input.priceMinor !== undefined && (input.priceMinor ?? null) !== tour.priceMinor) notStored.push("price");
 
-  return { preview: { items, ready, notStored }, guideUserId: guideId, tourSlug: tour.slug, tour };
+  return { preview: { items, ready, clashes, notStored }, guideUserId: guideId, tourSlug: tour.slug, tour };
 }
 
 /** The slots a request would create, each ready or blocked with the reason. Writes nothing. */
@@ -235,8 +252,12 @@ export async function previewSlots(input: NewSlotsInput): Promise<ActionResult<{
   }
 }
 
-/** Create the ready slots (re-planned on the server, so a clash made since the preview is skipped). */
-export async function createSlots(input: NewSlotsInput): Promise<ActionResult<{ created: number; skipped: number; notStored: SlotPreview["notStored"]; firstDay: string | null }>> {
+/**
+ * Create the ready slots, re-planned on the server. There is no limit on how many a request may create; the booking
+ * package takes 200 per call, so a large request goes in as several calls. A slot that overlaps another run of its
+ * guide is created and counted in `clashes`; past, closed and duplicate slots are skipped.
+ */
+export async function createSlots(input: NewSlotsInput): Promise<ActionResult<{ created: number; skipped: number; clashes: number; notStored: SlotPreview["notStored"]; firstDay: string | null }>> {
   const viewer = await requireOrgEditor();
   if (fixturesOn()) return { ok: false, error: PREVIEW_REFUSAL };
   let created = 0;
@@ -267,12 +288,26 @@ export async function createSlots(input: NewSlotsInput): Promise<ActionResult<{ 
         ...(p.guideUserId ? { guideUserId: p.guideUserId } : {}),
         ...overrides,
       }));
-      const r = await createBookingSlots({ orgId: ORG, offerId: offer.id, slots });
-      if (r.ok === false) return r;
+      let made = 0;
+      let firstStart: string | null = null;
+      let hardError: string | null = null;
+      let firstSkip: string | null = null;
+      for (let i = 0; i < slots.length; i += BOOKING_CHUNK) {
+        const r = await createBookingSlots({ orgId: ORG, offerId: offer.id, slots: slots.slice(i, i + BOOKING_CHUNK), allowClash: true });
+        if (r.ok === false) {
+          hardError = r.error;
+          break;
+        }
+        made += r.created.length;
+        firstStart ??= r.created[0]?.startsAt ?? null;
+        firstSkip ??= r.skipped[0]?.message ?? null;
+      }
       revalidate(p.tourSlug);
-      if (r.created.length === 0) return { ok: false, error: r.skipped[0]?.message ?? "Nothing was created." };
-      const firstDay = todo.find((i) => i.startsAt === r.created[0]!.startsAt)?.day ?? todo[0]!.day;
-      return { ok: true, created: r.created.length, skipped: p.preview.items.length - r.created.length, notStored: [], firstDay };
+      // Earlier chunks are already saved; say so rather than hide a partial result.
+      if (hardError) return { ok: false, error: made ? `${made} created, then: ${hardError}` : hardError };
+      if (made === 0) return { ok: false, error: firstSkip ?? "Nothing was created." };
+      const firstDay = todo.find((i) => i.startsAt === firstStart)?.day ?? todo[0]!.day;
+      return { ok: true, created: made, skipped: p.preview.items.length - made, clashes: p.preview.clashes, notStored: [], firstDay };
     }
     for (const item of todo) {
       await createDeparture(ORG, input.tourId, {
@@ -283,7 +318,7 @@ export async function createSlots(input: NewSlotsInput): Promise<ActionResult<{ 
       created += 1;
     }
     revalidate(p.tourSlug);
-    return { ok: true, created, skipped: p.preview.items.length - todo.length, notStored: p.preview.notStored, firstDay: todo[0]!.day };
+    return { ok: true, created, skipped: p.preview.items.length - todo.length, clashes: p.preview.clashes, notStored: p.preview.notStored, firstDay: todo[0]!.day };
   } catch (err) {
     console.error("[elktours] createSlots:", err);
     revalidate();

@@ -247,6 +247,59 @@ export async function davMove(from: string, to: string): Promise<boolean> {
   return res.ok;
 }
 
+/**
+ * Copy a file to a new path. Never overwrites: a name clash is "exists" (412).
+ *
+ * The copy is a new file: it has its own file id and no version history (the
+ * reason .claude/rules/areas/nextcloud.md says MOVE, not COPY, when a file is
+ * being relocated). Use it only where a second, independent file is wanted:
+ * attach-by-copy in media-copy.ts.
+ */
+export async function davCopy(from: string, to: string): Promise<'copied' | 'exists' | 'failed'> {
+  if (!davConfigured()) return 'failed';
+  const res = await fetch(davUrl(from), {
+    method: 'COPY',
+    headers: { Authorization: davAuthHeader(), Destination: davUrl(to), Overwrite: 'F' },
+  });
+  if (res.status === 412) return 'exists';
+  if (!res.ok) {
+    console.error(`[dav] COPY ${from} -> ${to}: ${res.status}`);
+    return 'failed';
+  }
+  return 'copied';
+}
+
+/** Read a file's bytes. Null when it is missing or unreadable. */
+export async function davGetBytes(path: string): Promise<Uint8Array | null> {
+  if (!davConfigured()) return null;
+  const res = await fetch(davUrl(path), { headers: { Authorization: davAuthHeader() } });
+  if (!res.ok) {
+    if (res.status !== 404) console.error(`[dav] GET ${path} -> ${res.status}`);
+    return null;
+  }
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+/**
+ * PUT that refuses to replace an existing file (`If-None-Match: *`).
+ * "exists" on a clash, so the caller tries another name.
+ */
+export async function davPutNew(path: string, body: Uint8Array, contentType: string): Promise<'written' | 'exists' | 'failed'> {
+  if (!davConfigured()) return 'failed';
+  const init = {
+    method: 'PUT',
+    headers: { Authorization: davAuthHeader(), 'Content-Type': contentType, 'If-None-Match': '*' },
+    body,
+  } as unknown as Parameters<typeof fetch>[1];
+  const res = await fetch(davUrl(path), init);
+  if (res.status === 412) return 'exists';
+  if (!res.ok) {
+    console.error(`[dav] PUT(new) ${path} -> ${res.status}`);
+    return 'failed';
+  }
+  return 'written';
+}
+
 /** Delete. Already-gone (404) counts as success — it's the desired end state. */
 export async function davDelete(path: string): Promise<boolean> {
   if (!davConfigured()) return false;

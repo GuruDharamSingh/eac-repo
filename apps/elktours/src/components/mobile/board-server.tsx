@@ -7,10 +7,12 @@ import { addDays, formatWeekLabel, mondayOf, parisDayOf, parisInstant, parisToda
 import { boardCounts, getBookingRule, listBoardSlots, listDecisions, loadTours } from "@/lib/tour-slots";
 import { listGuides } from "@/lib/tours";
 import { getOfficeSummary } from "@/lib/office";
+import { countOverlaps, overlapsOfSlot } from "@/lib/slot-overlaps";
 import { listFeedPosts, type FeedPost } from "@/lib/feed";
 import { listExperiencesToReview } from "@/lib/artist-wizard";
 import { SectionHeader } from "@/components/mobile";
 import { BoardTabBar } from "./board-nav";
+import { tourEditorHref } from "@/lib/office-links";
 import { BoardWho, SlotCard, clock, dayLong, dayShort } from "./board-ui";
 import { OfficeReviewCards, type ReviewCard } from "./office-review-cards";
 import { DecisionsView } from "./decisions-view";
@@ -67,8 +69,10 @@ export async function ManageIndexMobile() {
   const { calls } = await boardCounts({ guideUserId: me.guideUserId })
     .then((c) => ({ calls: c.belowMinimum }))
     .catch(() => ({ calls: 0 }));
+  const overlaps = await countOverlaps({ guideUserId: me.guideUserId });
   const rows = [
     { href: "/manage/schedule", title: "Schedule", line: "Every run, by week; open one for its guests" },
+    ...(overlaps > 0 ? [{ href: "/manage/overlaps", title: `Overlapping runs (${overlaps})`, line: "Runs of one guide that overlap" }] : []),
     ...(calls > 0 ? [{ href: "/manage/decisions", title: `Calls to make (${calls})`, line: "Runs below their minimum" }] : []),
     { href: "/manage/suggestions", title: "Suggestions", line: "Spots and walks visitors suggested" },
     { href: "/manage/share", title: "Share a post", line: "A post or a link for Discover" },
@@ -216,7 +220,7 @@ export async function BoardHomeMobile() {
                       <Link href="/manage/schedule/new" className="b-sr-link">Dates</Link>
                       <Link href={`/manage/tours/${t.id}/collaborate`} className="b-sr-link">Collaborate</Link>
                       <Link href={`/manage/tours/${t.id}/assets`} className="b-sr-link">Page media</Link>
-                      <Link href={`/manage/tours/${t.id}`} className="b-sr-link">Edit</Link>
+                      <Link href={tourEditorHref(t.id)} className="b-sr-link">Edit</Link>
                     </span>
                   </div>
                 );
@@ -375,7 +379,8 @@ export async function SlotMobile({ slotId }: { slotId: string }) {
   await requireOrgEditor();
   const r = await getSlot(slotId);
   if (!r.ok) notFound();
-  return <SlotView initialSlot={r.slot} initialManifest={r.manifest} />;
+  const overlaps = await overlapsOfSlot(r.slot.slotId, { startsAt: r.slot.startsAt, endsAt: r.slot.endsAt }).catch(() => []);
+  return <SlotView initialSlot={r.slot} initialManifest={r.manifest} overlaps={overlaps} />;
 }
 
 /** Screen 34, Decisions (/manage/decisions). */

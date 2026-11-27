@@ -35,6 +35,7 @@ import {
   facebookExchangeCode,
   facebookLongLivedToken,
   facebookMe,
+  facebookGrantedPermissions,
   facebookPages,
   facebookPageById,
   facebookRevoke,
@@ -417,7 +418,8 @@ export async function deleteConnection(userId: string, id: string): Promise<bool
 export async function beginConnectionAuth(
   userId: string,
   id: string,
-  returnTo: string | null
+  returnTo: string | null,
+  opts: { comments?: boolean } = {}
 ): Promise<ConnectionResult<{ url: string }>> {
   const rows = await db`SELECT provider, client_id FROM user_connections WHERE user_id = ${userId} AND id = ${id}`;
   const row = rows[0];
@@ -430,13 +432,13 @@ export async function beginConnectionAuth(
   `;
   const state = `${id}.${nonce}`;
   if (row.provider === 'meta') {
-    return { ok: true, url: facebookAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
+    return { ok: true, url: facebookAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state, comments: opts.comments === true }) };
   }
   if (row.provider === 'threads') {
     return { ok: true, url: threadsAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
   }
   if (row.provider === 'instagram') {
-    return { ok: true, url: instagramAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
+    return { ok: true, url: instagramAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state, comments: opts.comments === true }) };
   }
   const q = new URLSearchParams({
     client_id: row.client_id,
@@ -621,6 +623,8 @@ async function completeMeta(userId: string, id: string, app: { appId: string; ap
   const long = await facebookLongLivedToken(app, short.access_token);
   const me = await facebookMe(long.access_token);
   const pages = await facebookPages(long.access_token);
+  // What Facebook actually granted (2026-11-24); Channel → Comments reads it.
+  const granted = await facebookGrantedPermissions(long.access_token);
   let targets: MetaPageTarget[] = pages.map((p) => ({
     id: p.id,
     name: p.name,
@@ -638,7 +642,7 @@ async function completeMeta(userId: string, id: string, app: { appId: string; ap
   await db`
     UPDATE user_connections SET
       refresh_token_enc = ${seal(long.access_token)},
-      scopes = ${META_SCOPES},
+      scopes = ${granted ?? META_SCOPES},
       account_id = ${me.id},
       account_name = ${me.name},
       account_url = ${`https://www.facebook.com/${me.id}`},
@@ -677,10 +681,12 @@ async function completeInstagram(userId: string, id: string, app: { appId: strin
   const long = await instagramLongLivedToken(app.appSecret, short.access_token);
   const me = await instagramMe(long.access_token);
   const igId = String(me.user_id ?? me.id ?? short.user_id);
+  // What Instagram granted, when it says (2026-11-24); Channel → Comments reads it.
+  const perms = Array.isArray(short.permissions) ? short.permissions : typeof short.permissions === 'string' ? short.permissions.split(',').map((x) => x.trim()).filter(Boolean) : [];
   await db`
     UPDATE user_connections SET
       refresh_token_enc = ${seal(long.access_token)},
-      scopes = ${INSTAGRAM_SCOPES},
+      scopes = ${perms.length ? perms : INSTAGRAM_SCOPES},
       account_id = ${igId},
       account_name = ${me.username ? `@${me.username}` : me.name ?? null},
       account_url = ${me.username ? `https://www.instagram.com/${me.username}` : null},

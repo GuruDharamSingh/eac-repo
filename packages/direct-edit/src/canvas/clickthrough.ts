@@ -57,7 +57,14 @@ export interface ClickThroughOptions {
   /** A click on no box: what to select instead (the page itself). Default: nothing. */
   emptyTarget?(target: Element): HTMLElement | null;
   /** Double click, or Enter on a box with nothing inside. */
-  onDouble?(el: HTMLElement): void;
+  /** Double click, or Enter on a box with nothing inside. `before` is what was selected when the first click of a double-click landed (absent for Enter). */
+  onDouble?(el: HTMLElement, before?: HTMLElement | null): void;
+  /** Which box a click selects, from the boxes under the pointer (outermost first) and the selection. Return undefined for the usual next layer in. */
+  pick?(chain: HTMLElement[], sel: HTMLElement | null): HTMLElement | null | undefined;
+  /** Where Esc goes from a box: a box, null for nothing, or undefined for the box around it. */
+  up?(el: HTMLElement): HTMLElement | null | undefined;
+  /** A box the page is drawn quieter around (the block that is entered). Null: no veil. */
+  veil?(): HTMLElement | null;
   /** Called whenever the selection changes; `address` is stable while the page's structure is. */
   onSelect?(el: HTMLElement | null, address: string | null): void;
   /** Find targets by rectangle, for pages that set pointer-events: none inside their components (Puck). */
@@ -117,8 +124,10 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
   let heldLabel: string | undefined;
   /** The click that ends a drag must not select anything. */
   let swallowClick = false;
+  /** What was selected when the first click of the current double-click landed. */
+  let pressSel: HTMLElement | null = null;
 
-  const box = (el: HTMLElement, cls: string, label?: string) => {
+  const box =(el: HTMLElement, cls: string, label?: string) => {
     const b = document.createElement("div");
     b.className = `de-box ${cls}`.trim();
     const rc = rectIn(el, layer);
@@ -132,6 +141,14 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
     layer.innerHTML = "";
     if (sel && !sel.isConnected) sel = null;
     if (hover && !hover.isConnected) hover = null;
+    // The page goes quiet around a block that is entered: a shadow drawn on the sheet over everything but the block. Nothing moves.
+    const veiled = o.veil?.() ?? null;
+    if (veiled && veiled.isConnected) {
+      const v = document.createElement("div");
+      v.className = "de-veil";
+      Object.assign(v.style, rectIn(veiled, layer));
+      layer.appendChild(v);
+    }
     if (sel && o.reveal !== false) for (const k of src.kids(sel)) if (k !== hover) box(k, "kid");
     if (sel) {
       box(sel, "", heldLabel ?? src.name(sel));
@@ -222,7 +239,9 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
     if (!chain.length) { select(o.emptyTarget?.(ev.target as Element) ?? null); return; }
     ev.preventDefault();
     ev.stopPropagation();
-    select(ev.altKey ? chain[chain.length - 1]! : nextLayer(chain, sel, holds));
+    if (ev.detail <= 1) pressSel = sel;
+    const picked = ev.altKey ? undefined : o.pick?.(chain, sel);
+    select(ev.altKey ? chain[chain.length - 1]! : picked !== undefined && picked !== null ? picked : nextLayer(chain, sel, holds));
   }, true);
 
   // A press can start a page's own behaviour (a link drag, a component's handler).
@@ -237,7 +256,7 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
       if (!last) return;
       ev.preventDefault();
       if (last !== sel) select(last);
-      o.onDouble!(last);
+      o.onDouble!(last, pressSel);
     }, true);
   }
 
@@ -282,7 +301,8 @@ export function mountClickThrough(o: ClickThroughOptions = {}): ClickThroughHand
     if (held || menu || !sel || isUi(ev.target as Element)) return;
     if (ev.key === "Escape") {
       ev.preventDefault();
-      select(src.parent(sel));
+      const to = o.up?.(sel);
+      select(to !== undefined ? to : src.parent(sel));
     } else if (ev.key === "Enter") {
       const first = src.kids(sel)[0];
       if (first) { ev.preventDefault(); select(first); }

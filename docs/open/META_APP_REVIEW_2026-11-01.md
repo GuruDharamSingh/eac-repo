@@ -55,25 +55,39 @@ reason. Each item below is placed by what the code does today.
 | `business_management` | Facebook | A |
 | `instagram_business_basic` | Instagram Login | B |
 | `instagram_business_content_publish` | Instagram Login | B |
-| `threads_basic`, `threads_content_publish` | Threads | C |
+| ~~`threads_basic`, `threads_content_publish`~~ | Threads | C — skipped for now (developer, 2026-11-24); submit later |
 
-### Round 2: after a reply feature is built
+### Round 2: comments (Channel → Comments)
 
-Built today as read-only mirroring. Meta's instructions for the comment
-permissions ask for a screencast in which the account replies to a comment
-within 30 seconds, which the product cannot do yet.
+2026-11-24 (source only, not deployed; migration 292 written, not applied):
+Channel → Comments (`/channel/comments`) lists the comments on the person's
+own Facebook Page and Instagram posts, fetched from Graph on opening the page
+(at most once a minute per post) and with Check now, and sends a reply as the
+Page or account. Code: `apps/arts-collective/src/lib/channel/comments.ts`,
+`packages/meta/src/comments.ts`, `packages/services/src/external-comments.ts`.
+Comments are fetched, not pushed, so webhooks and `pages_manage_metadata` are
+not needed for it.
 
-| Permission | What it would cover |
+The comment permissions are asked for separately: "Allow comments" on the
+Comments page reconnects with `with=comments`
+(`/api/connections/start`), which uses `META_LOGIN_CONFIG_ID_COMMENTS` (a
+second Facebook Login for Business configuration that adds the permissions
+below) when set, else the first configuration. Facebook connections now record
+the permissions actually granted (`/me/permissions`) in `user_connections.scopes`.
+
+2026-11-25: the developer chose to add the comment permissions to the existing
+configuration, so `META_LOGIN_CONFIG_ID_COMMENTS` stays unset and every
+Facebook connect (first connect and "Allow comments") shows the same dialog,
+publishing and comments together. Instagram Login takes its scopes from the
+URL, so there the first connect still asks for publishing only.
+
+| Permission | Used for |
 |---|---|
-| `pages_manage_metadata` | Subscribe the Page to the webhook so its comments reach the network |
-| `pages_read_user_content` | Read comments left by other people on the Page's posts (assumed needed for the feed webhook's comment text; unverified) |
-| `instagram_manage_comments` | Instagram comments on a Page-linked account: read, reply |
+| `pages_read_user_content` | Read comments other people left on the Page's posts |
+| `pages_manage_engagement` | Reply as the Page (Meta docs, assumed; not yet seen working) |
+| `instagram_manage_comments` | Read and reply on an Instagram account linked to a Page |
 | `instagram_business_manage_comments` | Same, for Instagram Login accounts |
-
-Until round 2 is approved, remove `pages_manage_metadata` from
-`META_SCOPES` and from the Facebook Login configuration before switching the
-app to Live, so the login dialog does not ask for a scope that has not been
-granted.
+| `pages_manage_metadata` | Only for webhooks (push); not needed by Comments. Remove from `META_SCOPES` and the first configuration before going Live unless webhooks are submitted. |
 
 ### Do not request (nothing in the product uses them)
 
@@ -87,6 +101,25 @@ granted.
 | `publish_video`, Live Video API | Go live uses a pasted stream key, which needs neither |
 | `read_insights`, `instagram_business_manage_insights` | No Meta insights shown; candidates for a later Channel analytics round |
 | Meta oEmbed Read, Threads oEmbed Read | No embeds of Facebook, Instagram or Threads posts |
+
+### Use cases on the app (read 2026-11-25 with the Meta developer tools)
+
+Nine are configured on 829861816853346. Recommended:
+
+| Use case | Keep? | Reason |
+|---|---|---|
+| Manage everything on your Page (`PAGES_API`) | Keep | Page posts; holds `pages_read_user_content` and `pages_manage_engagement` for comments |
+| Manage messaging & content on Instagram (`INSTAGRAM_BUSINESS`) | Keep | IG posts and comments; `INSTAGRAM_APP_ID` (Instagram Login) belongs to it |
+| Access the Threads API (`THREADS_API`) | Keep, do not submit | `THREADS_APP_ID` belongs to it; removing it would break the Threads option in Outlets (assumed) |
+| Manage products with Catalog API | Remove | No catalog |
+| Measure ad performance / Create & manage ads (Marketing API, two) | Remove | No ads; they require `ads_management` and the Access Tier |
+| Connect with customers through WhatsApp | Remove | No WhatsApp |
+| Access the Live Video API | Remove | Go live uses a pasted stream key; also untick `publish_video` in the login configuration |
+| Embed … (oEmbed) | Remove | No oEmbed calls in the code (grep, 2026-11-25) |
+
+The tool lists each use case's available permissions, not which ones were
+added; whether `pages_read_user_content` and `pages_manage_engagement` are
+added to the Pages use case is unknown from here.
 
 Removing an item: uncheck it in the submission, or remove it from App Review →
 Permissions and Features. "Completed" test calls (`ads_management`) do not
@@ -285,17 +318,26 @@ Steps 1-2 as A; "Connect Instagram (no Page)"; Instagram login and consent;
 Outlets card with @handle; New post with a picture; Publish and confirm;
 open the post; Remove.
 
-### C. Threads app (about 3 min)
+### C. Threads app (about 3 min; skipped for now, developer 2026-11-24)
 
 Steps 1-2 as A; "Connect Threads"; Threads consent; a text post and a
 picture post, each opened on Threads; Remove.
 
-### D. Round 2: comments (not recordable yet)
+### D. Round 2: comments (about 3 min; recordable once deployed)
 
-Published post from A → a second account comments on Facebook and on
-Instagram → within 30 seconds the comment appears under the piece on the
-member's ArtDirect page → the member replies there → the reply shows on
-Facebook/Instagram. Needs the reply feature.
+1. Signed in, Channel → Comments: "Comments are not turned on for …" →
+   Allow comments → the Facebook dialog listing the comment permissions →
+   back on Comments.
+2. In a second browser, a second account comments on the post from A, on
+   Facebook and on Instagram.
+3. Back on Comments, press Check now: both comments appear under the post
+   (caption `pages_read_user_content`, `instagram_manage_comments`).
+4. Reply to each, Send reply, within 30 seconds of the comment (Meta's
+   instruction). Open the post on Facebook and Instagram: the reply is there
+   as the Page / account (caption `pages_manage_engagement`,
+   `instagram_manage_comments`).
+5. For the reviewer's instructions: link to the post, and say any comment
+   text works (there is no keyword automation).
 
 ## Required test calls
 
@@ -361,6 +403,11 @@ permissions). Do the rehearsal at least a day before submitting.
 
 ## History
 
+- 2026-11-24: Threads left out of the first submission (developer). Comment
+  intake checked: the Facebook app has no webhook subscriptions
+  (`devtools_webhook_list`, 0), `meta_webhook_events` has no rows and
+  `thread_external_comments` none, so no comment has ever arrived; Channel
+  shows "Comments" as "soon" in the Studio console nav only.
 - 2026-11-12: revised for the review form's full list. Sorted into round 1,
   round 2, do not request. `publish_video` moved to "do not request" (Go live
   needs no permission). The 2026-11-01 line "Not requested: comments

@@ -103,7 +103,7 @@ module.exports = async ({ p, ok, h, open }) => {
   ok("6 second click: its cell", (await h.head()) === "Picture and caption", await h.head());
   await h.click(CAP);
   ok("6 third click: Caption", (await h.head()) === "Caption", await h.head());
-  ok("6 says how many", (await p.textContent('.de-vpanel [data-f="notice"]')) === "All 6 change together.", await p.textContent('.de-vpanel [data-f="notice"]'));
+  ok("6 says how many", (await p.textContent('.de-vpanel [data-f="notice"]')) === "Caption: applies to every caption in this block (6).", await p.textContent('.de-vpanel [data-f="notice"]'));
   await h.shot("6-caption");
   // A scrolled panel still says which part this is.
   await p.$eval(".de-vpanel .de-body", (e) => { e.scrollTop = e.scrollHeight; }); await h.pause(40);
@@ -129,9 +129,7 @@ module.exports = async ({ p, ok, h, open }) => {
   ok("7 Copy and Reset live with a look", !(await h.menuOff("copy-style")) && !(await h.menuOff("reset")));
   await h.closeMenu();
   await p.keyboard.press("Escape"); await h.pause(40);
-  ok("7 Esc: Words", (await h.head()) === "Words", await h.head());
-  await p.keyboard.press("Escape"); await h.pause(40);
-  ok("7 Esc: Hero banner", (await h.head()) === "Hero banner", await h.head());
+  ok("7 Esc: a part goes out to its block", (await h.head()) === "Hero banner", await h.head());
 
   // ------------------------------------------------------------------ step 8
   await open();

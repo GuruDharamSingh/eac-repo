@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -93,7 +94,7 @@ function Stepper({ label, value, onMinus, onPlus, minusOff, plusOff }: { label: 
  * cards link to). Status panel, decisions, booked count with seat ticks, slot settings, guest list.
  * The waitlist is off, so it is neither shown nor editable.
  */
-export function SlotView({ initialSlot, initialManifest }: { initialSlot: BoardSlot; initialManifest: ManifestRow[] }) {
+export function SlotView({ initialSlot, initialManifest, overlaps = [] }: { initialSlot: BoardSlot; initialManifest: ManifestRow[]; overlaps?: Array<{ slotId: string; tourTitle: string; startsAt: string }> }) {
   const router = useRouter();
   const [slot, setSlot] = useState(initialSlot);
   const [manifest, setManifest] = useState(initialManifest);
@@ -169,6 +170,21 @@ export function SlotView({ initialSlot, initialManifest }: { initialSlot: BoardS
         </div>
         <p className="b-panel-text">{pn.text}</p>
       </div>
+
+      {overlaps.length > 0 && slot.status === "scheduled" ? (
+        <p className="b-note is-warn" role="status">
+          Overlaps{" "}
+          {overlaps.map((o, i) => (
+            <span key={o.slotId}>
+              {i ? ", " : ""}
+              <Link href={`/manage/schedule/${o.slotId}`} style={{ color: "inherit", textDecoration: "underline" }}>
+                {o.tourTitle} at {clock(o.startsAt)}
+              </Link>
+            </span>
+          ))}
+          , another run of the same guide.
+        </p>
+      ) : null}
 
       <SlotActions slot={slot} onChanged={refresh} />
 

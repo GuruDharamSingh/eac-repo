@@ -24,6 +24,21 @@ export async function register() {
     setInterval(sweep, TICK_MS);
   }
 
+  // Standing rules: keep the runs of every active rule made up to its horizon (at most six months ahead).
+  // Hourly; a no-op until migration 291 is applied. Idempotent and safe on several instances.
+  if (process.env.DISABLE_STANDING_RULES !== "1") {
+    const topUp = async () => {
+      try {
+        const { topUpStandingRules } = await import("@/lib/standing-rules");
+        await topUpStandingRules();
+      } catch (err) {
+        console.error("[elktours] standing rules tick error:", err);
+      }
+    };
+    setTimeout(topUp, 60_000);
+    setInterval(topUp, 60 * 60 * 1000);
+  }
+
   if (process.env.DISABLE_REMINDER_SCHEDULER === "1") return;
 
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3021";

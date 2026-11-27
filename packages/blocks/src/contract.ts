@@ -51,6 +51,8 @@ export interface BlockContract {
   sample: Readonly<Record<string, unknown>>;
   /** What the block declares. Absent: it can be restyled only as a whole, through a generic root. */
   parts?: PartMap;
+  /** The height setting a handle on the block writes (BlockDef.resize). Absent: no handle writes a setting. */
+  resize?: { height: string; target?: string };
   /** BLOCK_TOKENS for a "tokens" block, then its own. A Tailwind block has only its own. */
   tokens: readonly TokenDef[];
 }
@@ -69,6 +71,7 @@ export function contractOf(blocks: readonly Block<never>[]): BlocksContract {
       props: def.props.map((p) => ({ ...p, group: groupOf(p) })),
       sample: rows,
       ...(def.parts ? { parts: def.parts } : {}),
+      ...(def.resize ? { resize: def.resize } : {}),
       tokens: [...(def.styling === "tokens" ? BLOCK_TOKENS : []), ...(def.tokens ?? [])],
     };
   }

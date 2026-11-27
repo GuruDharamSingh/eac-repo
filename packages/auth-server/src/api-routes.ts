@@ -224,9 +224,12 @@ async function login(request: NextRequest, options: SignInOrgOptions) {
  */
 export interface SignupOrgOptions {
   /**
-   * Orgs the new user joins. Defaults to the EAC network
-   * (elkdonis + inner_group) as `member`. Per-org apps (e.g. hiddenenneagram.com)
-   * pass their own org so signups stay scoped to that group.
+   * Orgs the new user joins. Defaults to `oad` (ArtDirect, the artist directory)
+   * as `viewer` since 2026-11-24 (it was `inner_group`). A `viewer` there is a
+   * visitor to the directory; joining as an artist (`gainSpace`) raises it to
+   * `member`. Per-org apps (e.g. hiddenenneagram.com) pass their own org so
+   * signups stay scoped to that group. The first entry also names the welcome
+   * email.
    */
   defaultOrgs?: { id: string; role: string }[];
   /**
@@ -344,15 +347,15 @@ export async function handleSignup(
       // Fallback for the multi-org sites (inner-gathering, arts-collective,
       // the blogs); every single-org site passes its own defaultOrgs.
       //
-      // `elkdonis` used to be joined alongside inner_group — it was the
-      // legacy Nextcloud group that inner-gathering hosted the collective
-      // under. Under the EAC_Network model those people are inner_group
-      // members, so signups no longer join elkdonis. Existing elkdonis rows
-      // are left alone; every real person in them already holds inner_group.
+      // The fallback was `inner_group` (viewer) until 2026-11-24. It is now
+      // `oad`, the artist directory: an app that is not one org's own site
+      // (ArtDirect, the marketplace) gets visitors who are artists or become
+      // them, and `oad` is where "artist of the collective" lives
+      // (artist-space.ts). A site that belongs to one org passes that org.
       // A signup is a follower (viewer role), never a member: membership is
       // something an org grants. CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
       const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'inner_group', role: 'viewer' },
+        { id: 'oad', role: 'viewer' },
       ];
       signupOrgId = defaultOrgs[0]?.id;
 
@@ -529,8 +532,8 @@ export async function handleGetSession(request: NextRequest) {
  */
 export interface OAuthCallbackOptions {
   /**
-   * Orgs a FRESH Google signup joins. Defaults to the EAC network
-   * (elkdonis + inner_group), same as handleSignup's default — per-org apps
+   * Orgs a FRESH Google signup joins. Defaults to `oad` as `viewer`, same as
+   * handleSignup's default — per-org apps
    * (e.g. ifac.com) pass their own org so a first-time Google sign-in scopes
    * to that group instead of the wider network.
    */
@@ -649,14 +652,10 @@ export async function handleOAuthCallback(
       // Fallback for the multi-org sites (inner-gathering, arts-collective,
       // the blogs); every single-org site passes its own defaultOrgs.
       //
-      // `elkdonis` used to be joined alongside inner_group — it was the
-      // legacy Nextcloud group that inner-gathering hosted the collective
-      // under. Under the EAC_Network model those people are inner_group
-      // members, so signups no longer join elkdonis. Existing elkdonis rows
-      // are left alone; every real person in them already holds inner_group.
+      // `inner_group` until 2026-11-24; now `oad`, as in handleSignup.
       // A signup is a follower (viewer role), never a member: membership is
       // something an org grants. CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
-      { id: 'inner_group', role: 'viewer' },
+      { id: 'oad', role: 'viewer' },
     ];
 
     try {

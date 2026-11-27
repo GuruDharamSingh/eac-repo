@@ -21,7 +21,8 @@
     "./server/site-builder": "./src/server/site-builder.ts",
     "./review": "./src/review/index.ts",
     "./review/model": "./src/review/model.ts",
-    "./server/review": "./src/server/review.ts"
+    "./server/review": "./src/server/review.ts",
+    "./mount": "./src/mount/index.ts"
   },
   "dependencies": {
     "@elkdonis/analytics": "workspace:*",

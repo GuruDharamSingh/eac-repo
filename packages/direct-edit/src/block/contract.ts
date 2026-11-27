@@ -50,6 +50,8 @@ export interface BlockContract {
   /** Absent: the block has only its generic root (GENERIC_ROOT_SEL). */
   parts?: Readonly<Record<string, ContractPart>>;
   tokens?: readonly ContractToken[];
+  /** The number setting a drag of the block's bottom edge writes (BlockDef.resize). `height` names a prop of `props`; 0 means as tall as its content. Absent: the edge writes a look, as before. */
+  resize?: { height: string; target?: string };
 }
 
 export type EditorContract = Readonly<Record<string, BlockContract>>;

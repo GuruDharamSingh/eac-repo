@@ -1,0 +1,359 @@
+/* Workshop workspace prototype. Class prefix ws-. Variables on .ws-root are shared with the sheet and journal lanes. */
+.ws-root {
+  --ws-ground: #17181b;
+  --ws-panel: #202226;
+  --ws-line: #3a3d44;
+  --ws-ink: #e8e6e1;
+  --ws-muted: #a7a9ae;
+  --ws-accent: #e0a458;
+  --ws-module: #2f4d68;
+  --ws-module-ink: #ffffff;
+  --ws-title-font: inherit;
+  background: var(--ws-ground);
+  color: var(--ws-ink);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: calc(100vh - 56px);
+  position: relative;
+  margin: -1px;
+}
+.ws-root *, .ws-root *::before, .ws-root *::after { box-sizing: border-box; }
+.ws-root button { font: inherit; color: inherit; cursor: pointer; }
+.ws-root :focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 2px; }
+.ws-muted { color: var(--ws-muted); }
+.ws-small { font-size: 12px; font-weight: 400; margin-left: 8px; }
+.ws-grow { flex: 1; }
+.ws-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+/* Buttons */
+.ws-btn { background: var(--ws-panel); border: 1px solid var(--ws-line); border-radius: 6px; padding: 8px 14px; }
+.ws-btn:hover:not(:disabled) { border-color: var(--ws-muted); }
+.ws-btn:disabled { opacity: 0.5; cursor: default; }
+.ws-btn-small { padding: 4px 10px; font-size: 13px; }
+.ws-btn-quiet { background: transparent; }
+.ws-btn-primary { background: var(--ws-accent); border-color: var(--ws-accent); color: #17181b; font-weight: 600; }
+.ws-btn-primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--ws-accent); }
+.ws-btn-mod { background: var(--ws-panel); }
+.ws-fill-buttons .ws-btn-mod { background: var(--ws-module); border-color: var(--ws-module); color: var(--ws-module-ink); }
+.ws-linkbtn { background: none; border: 0; padding: 0; text-decoration: underline; color: var(--ws-muted); font-size: 13px; }
+.ws-danger { color: #f0a0a0; margin-top: 16px; display: block; }
+.ws-chip { position: absolute; right: 12px; bottom: 12px; background: rgba(23, 24, 27, 0.85); border: 1px solid var(--ws-line); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.ws-theater-btn { position: absolute; left: 12px; bottom: 12px; border-radius: 999px; padding: 6px 16px; }
+
+/* Chrome and draft bar */
+.ws-chrome { display: flex; align-items: center; gap: 16px; padding: 8px 20px; border-bottom: 1px solid var(--ws-line); flex-wrap: wrap; }
+.ws-modes, .ws-seg { display: inline-flex; border: 1px solid var(--ws-line); border-radius: 6px; overflow: hidden; }
+.ws-mode { background: transparent; border: 0; padding: 6px 14px; color: var(--ws-muted); }
+.ws-mode[aria-pressed="true"] { background: var(--ws-ink); color: var(--ws-ground); font-weight: 600; }
+.ws-viewer { color: var(--ws-muted); margin-right: auto; }
+.ws-draftbar { display: flex; align-items: center; gap: 10px; padding: 8px 20px; background: #2a2c31; border-bottom: 1px solid var(--ws-line); flex-wrap: wrap; }
+.ws-pill { background: var(--ws-accent); color: #17181b; font-weight: 600; border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+.ws-pill-live { background: #8fc79a; }
+
+/* Body: list | pane | sheet */
+.ws-body { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: calc(100vh - 160px); }
+.ws-body.ws-has-sheet { grid-template-columns: 250px minmax(0, 1fr) 400px; }
+.ws-body.ws-has-strip { grid-template-columns: 250px minmax(0, 1fr) 44px; }
+
+.ws-list { border-right: 1px solid var(--ws-line); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+.ws-list-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ws-muted); margin: 0 0 8px 8px; font-weight: 500; }
+.ws-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; width: 100%; }
+.ws-item:hover { border-color: var(--ws-line); }
+.ws-item[aria-current] { border-color: var(--ws-ink); }
+.ws-item-filled:hover { filter: brightness(1.1); border-color: transparent; }
+.ws-item-filled[aria-current] { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
+.ws-item-d { opacity: 0.85; font-size: 12px; white-space: nowrap; }
+.ws-item-add { color: var(--ws-muted); border: 1px dashed var(--ws-line); }
+.ws-list-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ws-line); display: flex; flex-direction: column; gap: 4px; }
+
+/* Pane */
+.ws-pane { padding: 24px 32px 48px; max-width: 880px; width: 100%; }
+.ws-session.ws-fill-pane { background: color-mix(in srgb, var(--ws-module) 32%, var(--ws-ground)); max-width: none; }
+.ws-session.ws-fill-pane > * { max-width: 820px; }
+.ws-cover { position: relative; height: 200px; border: 1px solid var(--ws-line); border-radius: 8px; background: var(--ws-panel); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+.ws-session .ws-cover { background: color-mix(in srgb, var(--ws-module) 55%, var(--ws-ground)); }
+.ws-banner { height: 160px; }
+.ws-cover-label { color: var(--ws-muted); padding: 0 16px; text-align: center; }
+.ws-session .ws-cover-label { color: var(--ws-ink); }
+.ws-kicker { margin: 0; color: var(--ws-muted); font-size: 13px; }
+.ws-title { font-family: var(--ws-title-font); font-size: 32px; line-height: 1.2; font-weight: 600; margin: 4px 0 8px; display: block; }
+.ws-session.ws-fill-title .ws-title { color: color-mix(in srgb, var(--ws-module) 30%, #ffffff); }
+.ws-line { font-size: 17px; color: var(--ws-muted); margin: 0 0 12px; display: block; }
+.ws-meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--ws-muted); margin-bottom: 16px; }
+.ws-h2 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; }
+.ws-h3 { font-size: 13px; font-weight: 600; margin: 16px 0 6px; color: var(--ws-muted); }
+.ws-about { display: block; max-width: 70ch; margin: 0 0 12px; white-space: pre-wrap; }
+.ws-guide { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.ws-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--ws-panel); border: 1px solid var(--ws-line); display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+.ws-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.ws-check { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+
+/* The "field" cue: click to edit in place */
+.ws-field { border-bottom: 1px dashed var(--ws-muted); cursor: text; }
+.ws-field:hover { border-bottom-color: var(--ws-accent); background: rgba(224, 164, 88, 0.08); }
+.ws-placeholder { color: var(--ws-muted); font-style: italic; font-weight: 400; font-size: 0.9em; }
+.ws-input { font: inherit; color: var(--ws-ink); background: var(--ws-panel); border: 1px solid var(--ws-accent); border-radius: 4px; padding: 2px 6px; width: 100%; max-width: 70ch; display: block; font-family: inherit; }
+h1.ws-input { font-size: inherit; }
+
+/* Materials */
+.ws-materials { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ws-material { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--ws-line); border-radius: 6px; background: var(--ws-panel); flex-wrap: wrap; }
+.ws-session.ws-fill-pane .ws-material { background: color-mix(in srgb, var(--ws-module) 40%, var(--ws-panel)); }
+.ws-material-name { flex: 1; min-width: 140px; }
+.ws-badge { font-size: 12px; border: 1px solid var(--ws-line); border-radius: 999px; padding: 2px 10px; color: var(--ws-muted); }
+.ws-select { background: var(--ws-ground); color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 4px; padding: 4px 8px; font: inherit; }
+
+/* Look panel */
+.ws-look { margin-top: 32px; padding: 16px; border: 1px dashed var(--ws-line); border-radius: 8px; background: rgba(23, 24, 27, 0.5); }
+.ws-look .ws-h2 { margin-top: 0; }
+.ws-swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.ws-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; }
+.ws-swatch[aria-pressed="true"] { border-color: #fff; }
+.ws-colorpick { width: 36px; height: 28px; padding: 0; border: 1px solid var(--ws-line); background: none; }
+.ws-toggles { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.ws-q { display: flex; flex-direction: column; gap: 4px; margin: 0 0 16px; border: 0; padding: 0; min-width: 0; }
+.ws-q > span, .ws-q > legend { font-weight: 500; padding: 0; }
+.ws-q small { color: var(--ws-muted); }
+.ws-q input[type="text"], .ws-q input:not([type]), .ws-q input[type="number"], .ws-noteform input { background: var(--ws-ground); color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 6px; padding: 8px 10px; font: inherit; width: 100%; }
+
+/* Theater */
+.ws-theater-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.ws-screen { height: 340px; background: #0b0b0d; border: 1px solid var(--ws-line); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.ws-player { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.ws-scrub { flex: 1; accent-color: var(--ws-module, var(--ws-accent)); min-width: 0; }
+.ws-time { font-variant-numeric: tabular-nums; color: var(--ws-muted); }
+.ws-notes { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ws-notes li { display: flex; gap: 12px; align-items: baseline; }
+.ws-stamp { background: var(--ws-panel); border: 1px solid var(--ws-line); border-radius: 4px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.ws-noteform { display: flex; gap: 8px; }
+
+/* Sheet wrapper and strip */
+.ws-sheetwrap { position: relative; border-left: 1px solid var(--ws-line); background: var(--ws-panel); min-width: 0; overflow-y: auto; max-height: calc(100vh - 56px); }
+.ws-sheet-close { position: absolute; top: 10px; right: 12px; z-index: 2; background: var(--ws-ground); border: 1px solid var(--ws-line); border-radius: 6px; padding: 2px 10px; font-size: 13px; }
+.ws-strip { border: 0; border-left: 1px solid var(--ws-line); background: var(--ws-panel); display: flex; align-items: center; justify-content: center; padding: 0; }
+.ws-strip span { writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.08em; color: var(--ws-muted); }
+
+/* Start state and the new-workshop sheet */
+.ws-start { display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+.ws-start-card { max-width: 480px; }
+.ws-start-card h1 { font-size: 28px; margin: 0 0 8px; }
+.ws-start-card p { color: var(--ws-muted); margin: 0 0 24px; }
+.ws-scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 50; display: flex; justify-content: flex-end; }
+.ws-newsheet { width: min(440px, 100%); height: 100%; background: var(--ws-panel); border-left: 1px solid var(--ws-line); padding: 24px; overflow-y: auto; color: var(--ws-ink); font: 14px/1.5 Inter, system-ui, sans-serif; }
+.ws-newsheet h2 { margin: 0 0 20px; font-size: 20px; }
+.ws-newsheet :focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 2px; }
+.ws-newsheet .ws-btn { color: var(--ws-ink); }
+.ws-newsheet .ws-btn-primary { color: #17181b; }
+
+/* Narrow: stack, the sheet becomes a panel below */
+@media (max-width: 1100px) {
+  .ws-body.ws-has-sheet { grid-template-columns: 220px minmax(0, 1fr); }
+  .ws-body.ws-has-sheet .ws-sheetwrap { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--ws-line); max-height: none; }
+  .ws-body { grid-template-columns: 220px minmax(0, 1fr); }
+  .ws-body.ws-has-strip { grid-template-columns: 220px minmax(0, 1fr); }
+  .ws-body.ws-has-strip .ws-strip { grid-column: 1 / -1; height: 40px; border-left: 0; border-top: 1px solid var(--ws-line); }
+  .ws-strip span { writing-mode: horizontal-tb; transform: none; }
+}
+@media (max-width: 720px) {
+  .ws-body, .ws-body.ws-has-sheet, .ws-body.ws-has-strip { grid-template-columns: minmax(0, 1fr); }
+  .ws-list { border-right: 0; border-bottom: 1px solid var(--ws-line); flex-direction: row; flex-wrap: wrap; overflow-x: auto; }
+  .ws-list-h, .ws-list-foot { width: 100%; }
+  .ws-list-foot { flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
+  .ws-item { width: auto; }
+  .ws-pane { padding: 16px; }
+  .ws-title { font-size: 26px; }
+  .ws-screen { height: 200px; }
+  .ws-chrome, .ws-draftbar { padding: 8px 12px; }
+}
+
+/* Round 2: main-pane steps, settings, sheet tab */
+.ws-ms { margin: 28px 0 8px; }
+.ws-ms-toggle { margin-bottom: 10px; }
+.ws-ms-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ws-ms-row { border: 1px solid var(--ws-line); border-radius: 6px; background: var(--ws-panel); }
+.ws-session.ws-fill-pane .ws-ms-row { background: color-mix(in srgb, var(--ws-module) 40%, var(--ws-panel)); }
+.ws-ms-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex-wrap: wrap; }
+.ws-ms-title { flex: 1; min-width: 140px; }
+.ws-ms-pick { background: none; border: 0; text-align: left; padding: 0; text-decoration: underline; text-decoration-color: var(--ws-line); }
+.ws-ms-pick:disabled { opacity: 0.55; cursor: default; text-decoration: none; }
+.ws-ms-move { display: inline-flex; gap: 4px; }
+.ws-ms-due { font-size: 12px; color: var(--ws-muted); }
+.ws-ms-overdue { color: #f0a0a0; font-weight: 600; }
+.ws-ms-edit { padding: 12px 16px 16px; border-top: 1px solid var(--ws-line); width: 100%; }
+.ws-ms-kinds { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ws-ms-new { margin-left: 6px; font-size: 10px; text-transform: uppercase; color: var(--ws-accent); }
+.ws-ms-done { color: #8fc79a; }
+.ws-ms-current { border-color: var(--ws-accent); color: var(--ws-accent); }
+.ws-ms-locked { opacity: 0.7; }
+.ws-set-opt { align-items: flex-start; }
+.ws-set-later { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; color: var(--ws-muted); }
+.ws-sheet-tab { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 20; background: var(--ws-panel); border: 1px solid var(--ws-line); border-right: 0; border-radius: 8px 0 0 8px; padding: 14px 6px; }
+.ws-sheet-tab span { writing-mode: vertical-rl; letter-spacing: 0.06em; }
+
+/* Round 3: settings with a section list, planner table, ongoing marks */
+.ws-pane.ws-settings { max-width: 1100px; }
+.ws-set { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px; align-items: start; }
+.ws-set-nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 8px; }
+.ws-set-body { min-width: 0; max-width: 780px; }
+.ws-seg { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.ws-set-fixed { margin: 0; }
+.ws-set-ongoing { border: 1px solid var(--ws-line); border-radius: 8px; padding: 4px 16px 16px; margin: 20px 0; background: var(--ws-panel); }
+.ws-set-table { width: 100%; border-collapse: collapse; }
+.ws-set-table th, .ws-set-table td { text-align: left; vertical-align: top; padding: 8px 8px 8px 0; border-top: 1px solid var(--ws-line); font-weight: 400; }
+.ws-set-table thead th { border-top: 0; color: var(--ws-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.ws-set-table tbody th { white-space: nowrap; }
+.ws-set-now { margin-left: 8px; }
+.ws-set-mats { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ws-set-mats li { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ws-set-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ws-ongoing-mark { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid currentColor; border-radius: 10px; padding: 0 8px; opacity: 0.9; white-space: nowrap; }
+.ws-late { color: #f0a0a0; font-weight: 600; }
+.ws-sheet-open-theater { min-width: 0; }
+@media (max-width: 720px) {
+  .ws-set { grid-template-columns: minmax(0, 1fr); }
+  .ws-set-nav { position: static; flex-direction: row; flex-wrap: wrap; }
+  .ws-set-nav .ws-item { width: auto; }
+  .ws-set-table, .ws-set-table tbody, .ws-set-table tr, .ws-set-table th, .ws-set-table td { display: block; }
+  .ws-set-table thead { display: none; }
+}
+
+/* Links inside the pages and sheets: the host (Sophia) styles bare links for its own paper; here the ground is dark. */
+.ws-root .ws-pane a, .ws-root .ws-sh a, .ws-root .ws-j-frame a { color: var(--ws-accent); }
+.ws-root .ws-pane a:hover, .ws-root .ws-sh a:hover, .ws-root .ws-j-frame a:hover { color: var(--ws-ink); }
+.ws-cover-img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
+.ws-ro-do { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ws-ro-do .ws-sh-label { display: block; margin: 10px 0 4px; }
+.ws-ro-do .ws-sh-fieldset { margin: 10px 0; }
+
+/* Module page: numbered one-line step list, header strip, the step in the page. */
+.ws-sl { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ws-sl:focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 3px; }
+.ws-sl-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 7px 12px; border: 1px solid var(--ws-line); border-radius: 6px; background: var(--ws-panel); min-width: 0; }
+.ws-session.ws-fill-pane .ws-sl-row { background: color-mix(in srgb, var(--ws-module) 40%, var(--ws-panel)); }
+.ws-sl-row:hover:not(:disabled) { border-color: var(--ws-muted); }
+.ws-sl-row.is-on { border-color: var(--ws-accent); }
+.ws-sl-row.is-locked { opacity: 0.6; cursor: default; }
+.ws-sl-n { flex: none; width: 1.6em; color: var(--ws-muted); font-variant-numeric: tabular-nums; }
+.ws-sl-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-sl-i { flex: none; width: 16px; display: inline-flex; color: #8fc79a; }
+.ws-sl-row .ws-badge { flex: none; }
+.ws-sp-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--ws-line); border-radius: 6px 6px 0 0; background: var(--ws-panel); flex-wrap: wrap; }
+.ws-sp-count { color: var(--ws-muted); font-size: 13px; }
+.ws-sp-title { flex: 1; min-width: 120px; }
+.ws-sp-body { border: 1px solid var(--ws-line); border-top: 0; border-radius: 0 0 6px 6px; padding: 16px; background: color-mix(in srgb, var(--ws-panel) 70%, var(--ws-ground)); }
+@media (max-width: 600px) { .ws-sp-head { gap: 6px; } .ws-sp-body { padding: 12px; } }
+.ws-draft-warn { flex-basis: 100%; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 0 2px; color: var(--ws-accent); }
+/* A primary button that is a link keeps dark text on its amber ground (the link colour rule above would otherwise paint it amber on amber). */
+.ws-root .ws-sh a.ws-sh-primary, .ws-root .ws-pane a.ws-sh-primary { color: #17181b; text-decoration: none; display: inline-block; }
+/* Links that are drawn as buttons keep readable text on their own ground (the host's bare-link colour would otherwise win). */
+.so-root .ws-root a { color: var(--ws-accent); }
+.so-root .ws-root a.ws-btn, .so-root .ws-root a.ws-sh-btn, .so-root .ws-root a.ws-j-btn { color: var(--ws-ink); text-decoration: none; display: inline-block; }
+.so-root .ws-root a.ws-btn-primary, .so-root .ws-root a.ws-sh-primary { color: #17181b; }
+/* Buttons drawn as links read the same in every host: ink on panel, dark on amber (no dark-on-dark, no amber-on-amber). */
+.ws-root a.ws-btn { color: var(--ws-ink); text-decoration: none; display: inline-block; }
+.ws-root a.ws-btn.ws-btn-primary { color: #17181b; }
+.ws-root .ws-btn, .ws-root .ws-mode { color: var(--ws-ink); }
+.ws-root .ws-btn.ws-btn-primary { color: #17181b; }
+.ws-root .ws-mode { color: var(--ws-muted); }
+.ws-root .ws-mode[aria-pressed="true"] { color: var(--ws-ground); }
+/* Sheet buttons under .ws-root: ".ws-root button { color: inherit }" would otherwise beat the sheet rules (pale text on amber). */
+.ws-root .ws-sh-btn { color: var(--ws-ink); }
+.ws-root .ws-sh-btn.ws-sh-btn-quiet { color: var(--ws-muted); }
+.ws-root .ws-sh-btn.ws-sh-primary { color: #17181b; }
+.ws-root .ws-sh-btn[aria-pressed="true"]:not(.ws-sh-primary) { background: color-mix(in srgb, var(--ws-accent) 22%, transparent); }
+.ws-root .ws-sh-primary, .ws-root button.ws-sh-primary, .ws-root .ws-btn-primary, .ws-root button.ws-btn-primary { color: #17181b; }
+
+/* Round 4: one framed box everywhere, triadic module colours, larger instructions, sheet General / This session, whole-sheet switch. */
+.ws-root {
+  /* Set per module by moduleVars(): the module's own colour lifted for text, and its two triadic companions (hue +/- 120). These are the fallbacks outside a module. */
+  --ws-module-t: var(--ws-accent);
+  --ws-module-2: #e896a6; --ws-module-3: #a0bd77;
+  --ws-module-2-ink: #111111; --ws-module-3-ink: #111111;
+}
+
+/* The frame: border, radius, a header strip with the title and its actions, a body. */
+.ws-frame { border: 1px solid var(--ws-line); border-radius: 8px; background: var(--ws-ground); overflow: hidden; margin: 0 0 14px; min-width: 0; }
+.ws-frame-head { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; padding: 8px 14px; background: color-mix(in srgb, var(--ws-module-t) 10%, var(--ws-panel)); border-bottom: 1px solid var(--ws-line); border-left: 4px solid var(--ws-module-t); }
+.ws-frame.is-collapsed > .ws-frame-head { border-bottom: 0; }
+.ws-frame-title { margin: 0; flex: 1; min-width: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ws-ink); overflow-wrap: anywhere; }
+.ws-frame-aside { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ws-root .ws-frame-toggle { min-height: 30px; padding: 0 12px; background: transparent; color: var(--ws-muted); border: 1px solid var(--ws-line); border-radius: 4px; font-size: 12px; }
+.ws-root .ws-frame-toggle:hover { color: var(--ws-ink); border-color: var(--ws-muted); }
+.ws-frame-body { padding: 14px 16px; min-width: 0; }
+.ws-frame-body > :first-child { margin-top: 0; }
+.ws-frame-body > :last-child { margin-bottom: 0; }
+.ws-frame-hero > .ws-frame-head { border-left-color: var(--ws-module-t); }
+.ws-frame-steps > .ws-frame-head { border-left-color: var(--ws-module-t); }
+.ws-frame-step > .ws-frame-head { border-left-color: var(--ws-module-2); }
+.ws-frame-mat > .ws-frame-head { border-left-color: var(--ws-module-3); }
+.ws-ms.ws-sp { margin: 0; }
+.ws-frame-step { margin-top: 0; }
+.ws-frame-step > .ws-sp-head { border: 0; border-left: 4px solid var(--ws-module-2); border-bottom: 1px solid var(--ws-line); border-radius: 0; background: color-mix(in srgb, var(--ws-module-2) 10%, var(--ws-panel)); }
+.ws-frame-step > .ws-sp-body { border: 0; border-radius: 0; background: var(--ws-ground); padding: 14px 16px; }
+.ws-session .ws-frame-hero .ws-cover { margin-top: 0; }
+.ws-session .ws-frame-hero .ws-title { margin-top: 0; }
+.ws-session .ws-frame-hero .ws-about, .ws-session .ws-frame-hero .ws-meta { margin-bottom: 0; }
+.ws-session .ws-frame-hero .ws-meta { margin-top: 4px; }
+.ws-session .ws-frame-hero .ws-about { margin-top: 10px; }
+
+/* Triadic colour inside a module: the kind pills are the second colour, the material chips the third, the step numbers and the chosen step the module's own. */
+.ws-badge.is-kind, .ws-chip-2 { color: var(--ws-module-2); border: 1px solid color-mix(in srgb, var(--ws-module-2) 60%, var(--ws-line)); background: color-mix(in srgb, var(--ws-module-2) 13%, transparent); border-radius: 999px; padding: 1px 10px; font-size: 12px; }
+.ws-badge.is-mat, .ws-chip-3 { color: var(--ws-module-3); border: 1px solid color-mix(in srgb, var(--ws-module-3) 60%, var(--ws-line)); background: color-mix(in srgb, var(--ws-module-3) 13%, transparent); border-radius: 999px; padding: 1px 10px; font-size: 12px; }
+.ws-sl-n { color: var(--ws-module-t); font-weight: 600; }
+.ws-sl-row.is-on { border-color: var(--ws-module-t); background: color-mix(in srgb, var(--ws-module-t) 14%, var(--ws-panel)); }
+.ws-session.ws-fill-pane .ws-sl-row.is-on { background: color-mix(in srgb, var(--ws-module-t) 20%, var(--ws-panel)); }
+.ws-frame-mat .ws-material { border-left: 3px solid var(--ws-module-3); }
+.ws-frame-steps .ws-sl-row, .ws-frame-mat .ws-material { background: var(--ws-panel); }
+.ws-sheet-session .ws-sh-chip { color: var(--ws-module-2); border-color: color-mix(in srgb, var(--ws-module-2) 60%, var(--ws-line)); }
+.ws-sheet-session .ws-sh-step.is-current { border-color: var(--ws-module-t); background: color-mix(in srgb, var(--ws-module-t) 14%, transparent); }
+.ws-sheet-session .ws-frame-head { border-left-color: var(--ws-module-t); }
+.ws-ong-chip.ws-chip-2, .ws-ong-chip.ws-chip-3 { font-size: 11px; padding: 2px 8px; }
+
+/* The guide mark. */
+.ws-guide-mark { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.6; padding: 0 8px; border-radius: 999px; background: var(--ws-module-2); color: var(--ws-module-2-ink); margin-left: 6px; vertical-align: middle; }
+
+/* Instructions read larger: the step's prompt on the page, in the ongoing header and in the sheet. */
+.ws-root .ws-prompt, .ws-root .ws-ong-stepline, .ws-root .ws-sh-prompt { font-size: 19px; line-height: 1.55; color: var(--ws-ink); margin: 0 0 12px; }
+.ws-root .ws-ong-stepline, .ws-root .ws-sp-body .ws-sh-prompt { padding-left: 12px; border-left: 3px solid var(--ws-module-t); }
+.ws-root .ws-sheet2 .ws-prompt, .ws-root .ws-sheet2 .ws-sh-prompt { font-size: 17px; }
+@media (max-width: 720px) {
+  .ws-root .ws-prompt, .ws-root .ws-ong-stepline, .ws-root .ws-sh-prompt { font-size: 18px; }
+}
+
+/* Ongoing: the header, the entry and the feed are the same frames. */
+.ws-ong-frame.ws-frame { border-top: 1px solid var(--ws-line); margin-bottom: 0; }
+.ws-ong-frame > .ws-ong-head { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 6px; padding: 8px 14px; border-left: 4px solid var(--ws-module-t); background: color-mix(in srgb, var(--ws-module-t) 10%, var(--ws-panel)); }
+.ws-ong-frame > .ws-ong-body { padding: 14px 16px; background: var(--ws-ground); }
+.ws-ong-body .ws-frame { background: var(--ws-panel); margin-bottom: 0; }
+.ws-ong-body .ws-frame[aria-label="Your entry"] > .ws-frame-head { border-left-color: var(--ws-module-2); background: color-mix(in srgb, var(--ws-module-2) 10%, var(--ws-panel)); }
+.ws-ong-body .ws-ong-feedframe > .ws-frame-head { border-left-color: var(--ws-module-3); background: color-mix(in srgb, var(--ws-module-3) 10%, var(--ws-panel)); }
+.ws-frame.ws-ong-done { border-color: var(--ws-module-2); }
+.ws-ong-donebody { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ws-ong-aud { margin-top: 10px; }
+.ws-ong-feeditem { padding-left: 10px; border-left: 3px solid var(--ws-module-3); }
+.ws-ong-feeditem.is-mine { border-left-color: var(--ws-module-2); }
+.ws-ong-who { align-items: center; }
+.ws-ong-frame .ws-ong-name { color: var(--ws-ink); }
+
+/* The sheet: General and This session, framed sections. */
+.ws-sheet2 { max-width: 100%; }
+.ws-sheet-tabs { display: flex; margin: 12px 14px 0; border: 1px solid var(--ws-line); border-radius: 8px; overflow: hidden; flex: none; }
+.ws-root .ws-sheet-tab-btn { flex: 1; min-height: 40px; background: transparent; color: var(--ws-muted); border: 0; font-weight: 500; }
+.ws-root .ws-sheet-tab-btn + .ws-sheet-tab-btn { border-left: 1px solid var(--ws-line); }
+.ws-root .ws-sheet-tab-btn[aria-pressed="true"] { background: var(--ws-ink); color: var(--ws-ground); font-weight: 600; }
+.ws-sheet2 .ws-sh-scroll { padding-top: 12px; }
+.ws-sheet2 .ws-frame { background: var(--ws-ground); }
+.ws-sheet2 .ws-frame-body { padding: 12px 14px; }
+.ws-sheet2 .ws-hm-name { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.ws-sheet2 .ws-hm-hostcard { margin: 10px 0; }
+
+/* The whole-sheet switch in the chrome. */
+.ws-root .ws-sheet-switch { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 3px 4px 3px 12px; background: transparent; color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 999px; }
+.ws-root .ws-sheet-switch:hover { border-color: var(--ws-muted); }
+.ws-sheet-switch-s { display: inline-block; min-width: 56px; text-align: center; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--ws-line); color: var(--ws-ink); }
+.ws-root .ws-sheet-switch[aria-checked="true"] .ws-sheet-switch-s { background: var(--ws-accent); color: #17181b; }
+@media (max-width: 720px) {
+  .ws-frame-body, .ws-ong-frame > .ws-ong-body { padding: 12px; }
+  .ws-frame-head { padding: 8px 12px; }
+}

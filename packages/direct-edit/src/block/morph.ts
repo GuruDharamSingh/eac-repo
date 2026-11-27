@@ -198,7 +198,7 @@ const PSEUDO_ELEMENT = /::|:(?:before|after|first-line|first-letter)\b/;
  * root has a generic one, so every block has a root look. `editor` keeps a hidden part visible and faint, so it can
  * still be selected. Returns null when nothing would be written.
  */
-export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { editor?: boolean } = {}): CompiledMorph | null {
+export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { editor?: boolean; setsHeight?: boolean } = {}): CompiledMorph | null {
   const declared = (name: string) => (parts && hasOwn(parts, name) ? parts[name] : undefined);
   // One complex selector, per the declaration; a broken one must not take the sheet with it.
   const oneSel = (sel: string | undefined) => (sel && !/[,{};<]/.test(sel) ? sel : undefined);
@@ -222,6 +222,12 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
   const names = Object.keys(m.parts ?? {}).sort();
   const tailOf = (name: string, sel: string) => (name === ROOT_PART ? root : sel.startsWith(">") ? sel.replace(/^>\s*/, "") : `${root} ${sel}`);
   const declsOf = (look: PartStyle) => lookDecls(look, !!o.editor).map((d) => guarded(d, look));
+  // A block that declares `resize` has its height as a setting: the one home. A height stored on its root look is kept, and not drawn.
+  const declsFor = (name: string, look: PartStyle) => {
+    if (!o.setsHeight || name !== ROOT_PART || look.h === undefined) return declsOf(look);
+    const { h: _kept, ...drawn } = look;
+    return declsOf(drawn);
+  };
   const addFont = (look: PartStyle) => { if (look.font && isKnownFont(look.font)) fonts.add(look.font); };
 
   // Base rules first, exactly as a v1 look compiled before states and sizes existed.
@@ -229,7 +235,7 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
     const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
     if (!sel) continue;
     const look = m.parts![name]!;
-    const decls = declsOf(look);
+    const decls = declsFor(name, look);
     if (!decls.length) continue;
     addFont(look);
     rules.push(rule(tailOf(name, sel), decls));
@@ -244,7 +250,7 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
         const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
         const look = m.parts![name]!.at?.[size];
         if (!sel || !look || PSEUDO_ELEMENT.test(sel)) continue;
-        const decls = declsOf(look);
+        const decls = declsFor(name, look);
         if (decls.length) rules.push(rule(`${tailOf(name, sel)}[data-de-at~="${size}"]`, decls));
       }
     }
@@ -258,7 +264,7 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
       const look = m.parts![name]!.states?.[state];
       // A pseudo-class cannot follow a pseudo-element.
       if (!sel || !look || /::|:(?:before|after|first-line|first-letter)\b/.test(sel)) continue;
-      const decls = declsOf(look);
+      const decls = declsFor(name, look);
       if (!decls.length) continue;
       addFont(look);
       rules.push(ruleOf(o.editor ? [tailOf(name, sel) + PSEUDO[state], `${tailOf(name, sel)}[data-de-force~="${state}"]`] : [tailOf(name, sel) + PSEUDO[state]], decls));
@@ -270,7 +276,7 @@ export function morphCss(m: NodeMorph, parts: MorphParts | undefined, o: { edito
       const sel = name === ROOT_PART ? root : oneSel(declared(name)?.sel);
       const look = m.parts![name]!.at?.[size];
       if (!sel || !look) continue;
-      const decls = declsOf(look);
+      const decls = declsFor(name, look);
       if (!decls.length) continue;
       addFont(look);
       inner.push(rule(tailOf(name, sel), decls));
@@ -328,6 +334,8 @@ export function setPartLookAt(props: Props, part: string, where: LookWhere, look
   const parts = { ...(m.parts ?? {}) };
   const cur: PartLook = hasOwn(parts, part) ? parts[part]! : {};
   const given = bare(look);
+  // One fill only: a fade on this look replaces its flat colour (panel/fade.ts), whoever writes it.
+  if (given.grad) delete given.fill;
   let base = bare(cur), states = cur.states, at = cur.at;
   if (where.state) {
     states = { ...(states ?? {}) };

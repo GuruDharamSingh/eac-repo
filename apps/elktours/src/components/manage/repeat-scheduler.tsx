@@ -4,18 +4,18 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createScheduleAction, previewScheduleAction, type RepeatScheduleValues } from "@/lib/schedule-actions";
-import { addDays, formatDay, MAX_SCHEDULE_BATCH, WEEKDAYS, type RepeatPlan } from "@/lib/schedule-plan";
+import { addDays, formatDay, WEEKDAYS, type RepeatPlan } from "@/lib/schedule-plan";
 import { Button, Input, Label } from "@elkdonis/primitives";
 
 interface Guide { id: string; name: string; role: string }
 interface TourOption { id: string; title: string; status: string }
 
-const STATUS_LABEL = { new: "", exists: "already scheduled", past: "past", over_cap: "over this run's limit" } as const;
+const STATUS_LABEL = { new: "", exists: "already scheduled", past: "past" } as const;
 
 /**
  * Repeat one tour on chosen weekdays and times across a date range. Preview
  * lists every slot and what will happen to it; Create re-plans on the server
- * and writes only the new ones (at most MAX_SCHEDULE_BATCH per run).
+ * and writes only the new ones (no limit per run).
  */
 export function RepeatScheduler({ tours, guides, defaultFrom }: { tours: TourOption[]; guides: Guide[]; defaultFrom: string }) {
   const router = useRouter();
@@ -56,7 +56,7 @@ export function RepeatScheduler({ tours, guides, defaultFrom }: { tours: TourOpt
         router.refresh();
         return;
       }
-      toast.success(`${r.added} departure${r.added === 1 ? "" : "s"} created${r.overCap ? `; ${r.overCap} more remain, run it again` : ""}`);
+      toast.success(`${r.added} departure${r.added === 1 ? "" : "s"} created`);
       setPlan(null);
       router.refresh();
     });
@@ -150,7 +150,6 @@ export function RepeatScheduler({ tours, guides, defaultFrom }: { tours: TourOpt
             Create {plan.creatable} departure{plan.creatable === 1 ? "" : "s"}
           </Button>
         )}
-        <span className="text-xs text-muted-foreground">At most {MAX_SCHEDULE_BATCH} per run.</span>
       </div>
 
       {plan && <PlanPreview plan={plan} />}
@@ -168,7 +167,6 @@ function PlanPreview({ plan }: { plan: RepeatPlan }) {
         {plan.creatable} new
         {plan.existing ? ` · ${plan.existing} already scheduled` : ""}
         {plan.past ? ` · ${plan.past} past` : ""}
-        {plan.overCap ? ` · ${plan.overCap} beyond the limit (run again after creating)` : ""}
       </p>
       <ul className="mt-2 grid max-h-80 gap-x-6 overflow-y-auto border border-border p-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
         {plan.items.map((i) => (

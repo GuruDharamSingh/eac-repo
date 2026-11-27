@@ -7,6 +7,7 @@ import type { RecordSources } from "@elkdonis/direct-edit/puck";
 import type { TreePageOptions } from "@elkdonis/direct-edit/puck";
 import { contentDoor } from "./content-door";
 import { holdVersion, type HouseSave } from "./save";
+import type { RecordFieldHost } from "./fields/FieldsLens";
 import { resolvedRows, withProps, type ResolvedKeys } from "./walk";
 type PictureChooser = NonNullable<TreePageOptions["choosePicture"]>;
 
@@ -49,6 +50,11 @@ export interface HouseFlags {
    * Default false: the panel is as it was.
    */
   contentTab?: boolean;
+  /**
+   * The zoomed popup over the page, and "Edit look" in the settings sheet that opens it. Default FALSE: everything happens in the one
+   * window (a double-click goes one level in, in place). `true` brings the popup back (the canvas's opener and the sheet's).
+   */
+  largeView?: boolean;
 }
 
 export interface HouseRoutes {
@@ -97,6 +103,8 @@ export interface HouseOptions {
   cleanRich?: (html: string) => string;
   /** Plugins for the settings sheet beside the parts plugin, made once by the app. */
   sheetPlugins?: Plugin[];
+  /** Words that come from a record (a tour's name on its card) open that record's field in the Fields lens's panel, with its own save. Absent: a plain line says they cannot be opened from here. */
+  recordFields?: RecordFieldHost;
   flags?: HouseFlags;
   /** Asked before mounting: true when the host went away while the catalogue loaded. */
   cancelled?: () => boolean;
@@ -104,7 +112,7 @@ export interface HouseOptions {
 
 /** Opens the editor on `host`. Resolves null when `cancelled()` or the host went away first. */
 export async function openHouse(o: HouseOptions): Promise<{ dispose(): void } | null> {
-  const { designTools = true, inception = true, developer = false, sheetParts = true, freeMove = false, contentTab = false } = o.flags ?? {};
+  const { designTools = true, inception = true, developer = false, sheetParts = true, freeMove = false, contentTab = false, largeView = false } = o.flags ?? {};
   const [de, puck, pb, morph, , loaded] = await Promise.all([
     import("@elkdonis/direct-edit/puck"),
     import("@puckeditor/core"),
@@ -141,7 +149,7 @@ export async function openHouse(o: HouseOptions): Promise<{ dispose(): void } | 
             panel: (host: HTMLElement) => mountLookPanel(host, { blkStyleDecls }),
             developer,
             handBack: true,
-            popup: (ctx) => openStudioPopup({ config: canvasConfig as never, contract: contract as never, records, blkStyleDecls, ...(freeMove ? { freeMove } : {}), ...(contentTab ? { contentTab } : {}) }, ctx),
+            ...(largeView ? { popup: (ctx: Parameters<typeof openStudioPopup>[1]) => openStudioPopup({ config: canvasConfig as never, contract: contract as never, records, blkStyleDecls, ...(freeMove ? { freeMove } : {}), ...(contentTab ? { contentTab } : {}) }, ctx) } : {}),
           }),
         ]
       : []),
@@ -167,6 +175,9 @@ export async function openHouse(o: HouseOptions): Promise<{ dispose(): void } | 
     records,
     developer,
     designTools,
+    largeView,
+    // Words that come from a record open that record's field where they stand, through the lens's own panel and save.
+    ...(o.recordFields ? { recordWords: { open: (ref: string) => { void import("./fields/open-record").then((m) => m.openRecordField(o.recordFields!, ref)); } } } : {}),
     ...(freeMove ? { freeMove } : {}),
     ...(contentTab && contract
       ? {

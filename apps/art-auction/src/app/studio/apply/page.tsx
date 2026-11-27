@@ -7,12 +7,15 @@ import {
   listOrgsUserCanOpenStoreFor,
 } from "@elkdonis/commerce/queries";
 import { canClaimStore } from "@elkdonis/commerce/server";
+import { getArtistAgreement, listAffiliationOrgs } from "@elkdonis/services";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { getCurrentStore, getCurrentUserId } from "@/lib/marketplace-auth";
 import { toNetworkProfile } from "@/lib/profile-bio";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { ArtistProfileForm } from "../_components/artist-profile-form";
 import { OpenOrgStoreButton } from "../_components/open-org-store-button";
+import { JoinCollectiveCard } from "../_components/join-collective-card";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sell · My art" };
@@ -22,11 +25,12 @@ export const metadata: Metadata = { title: "Sell · My art" };
  *
  *   * an org store you can already act for → go to the studio
  *   * an org you OWN with no store yet     → open one (no review needed)
- *   * your own store                        → apply (reviewed), or its status
+ *   * your own store                        → apply (opens at once while stores are auto-approved), or its status
  *
  * Everything hangs off collective membership: a store is a commercial
- * relationship with the collective, so someone with only an account is
- * pointed at the hub to join an organisation first.
+ * relationship with the collective. Someone with only an account first joins
+ * as an artist (accepts the artist agreement, optionally says which orgs they
+ * already belong to), which makes them an `oad` member.
  */
 export default async function StudioApplyPage() {
   const userId = await getCurrentUserId();
@@ -44,6 +48,11 @@ export default async function StudioApplyPage() {
   ]);
 
   if (own?.status === "active") redirect("/studio");
+
+  // Only needed (and only read) for someone who has not joined yet.
+  const [agreement, affiliationOrgs] = member
+    ? ([null, []] as [Awaited<ReturnType<typeof getArtistAgreement>>, Awaited<ReturnType<typeof listAffiliationOrgs>>])
+    : await Promise.all([getArtistAgreement(), listAffiliationOrgs()]);
 
   const actable = stores.filter((s) => s.status === "active" && s.id !== own?.id);
   const canOpen = openable.filter((o) => !o.storeId);
@@ -127,17 +136,19 @@ export default async function StudioApplyPage() {
           </Link>
         </section>
       ) : !member ? (
-        <section className="rounded-lg border border-dashed border-border p-5">
-          <p className="font-medium">A store is for members of the collective.</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Join an organisation in the network first — that is where payouts,
-            agreements and your public profile live. Then come back and claim
-            your store.
-          </p>
-          <Button asChild className="mt-4">
-            <a href={`${hub}/hub`}>Go to the Arts Collective hub</a>
-          </Button>
-        </section>
+        <JoinCollectiveCard
+          agreement={
+            agreement
+              ? {
+                  id: agreement.id,
+                  title: agreement.title,
+                  bodyHtml: sanitizeRichText(agreement.bodyHtml ?? ""),
+                }
+              : null
+          }
+          orgs={affiliationOrgs}
+          hubUrl={`${hub}/hub`}
+        />
       ) : (
         <section>
           <h2 className="mb-2 font-serif text-2xl">
@@ -146,8 +157,8 @@ export default async function StudioApplyPage() {
           <p className="mb-6 text-sm text-muted-foreground">
             Your store is presented under the profile you already have in the
             network. Check it, add a store note if you like, and give an
-            eTransfer address; card payouts can be connected once you are
-            approved.
+            eTransfer address; card payouts can be connected once your
+            store is open.
           </p>
           {own?.status === "rejected" && own.rejectionReason && (
             <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">

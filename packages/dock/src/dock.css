@@ -149,7 +149,8 @@ p.eac-dock__hint { margin: 0 0 8px; }
 
 .eac-dock__form { margin: 0 0 4px; }
 .eac-dock__field { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 13px; color: var(--dk-muted); }
-.eac-dock__field input {
+.eac-dock__field input,
+.eac-dock__field textarea {
   padding: 6px 8px;
   border: 1px solid var(--dk-line);
   border-radius: 6px;
@@ -157,6 +158,8 @@ p.eac-dock__hint { margin: 0 0 8px; }
   color: var(--dk-ink);
   font: inherit;
 }
+/* The store-front form (2026-11-24): a few lines, resizable only in height. */
+.eac-dock__field textarea { resize: vertical; min-height: 72px; }
 
 /* The channel's one move (2026-11-07): the title on one line, cut with an ellipsis
    (the full reason is its title attribute), and its one button. Same inks as above. */

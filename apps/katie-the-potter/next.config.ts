@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/commerce",
     "@elkdonis/checkout",
     "@elkdonis/direct-edit",
+    "@elkdonis/gradients",
     "@elkdonis/studio",
     "@elkdonis/studio-forms",
     "@elkdonis/studio-ui",

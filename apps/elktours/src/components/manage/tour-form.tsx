@@ -88,7 +88,12 @@ export function TourForm({ tour, bookingDefaults = null }: { tour?: Tour; bookin
       </div>
 
       <aside className="space-y-6">
-        <MediaField value={f.coverImageUrl} onChange={(url) => set("coverImageUrl", url)} label="Cover image" />
+        <MediaField
+          value={f.coverImageUrl}
+          onChange={(url) => set("coverImageUrl", url)}
+          label="Cover image"
+          destination={tour ? { kind: "tour", tourId: tour.id, slot: "cover" } : undefined}
+        />
         <div>
           <Label htmlFor="price">Price per person (EUR)</Label>
           <Input id="price" type="number" min={0} step="0.01" value={f.price} onChange={(e) => set("price", e.target.value)} className="mt-1" />

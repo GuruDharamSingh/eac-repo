@@ -201,6 +201,7 @@ export interface FolderPhotos {
 
 const urlOf = (folder: string, file: string) =>
   `/api/media/${[...ROOT.split("/"), folder, file].map(encodeURIComponent).join("/")}?w=${WIDTH}`;
+const urlOfKey = (dir: string, file: string) => `/api/media/${[...dir.split("/"), file].map(encodeURIComponent).join("/")}?w=${WIDTH}`;
 
 export interface FolderMatch {
   /** The folder's name under Stops/. */
@@ -217,7 +218,12 @@ export async function matchStopFolder(tour: { slug: string; title: string }, sto
     return key.length >= 4 && tourKey.includes(key);
   });
   if (!folder) return null;
-  const files = (await list(`${ROOT}/${folder.name}`)).filter((e) => !e.dir && IMAGE.test(e.name)).map((e) => e.name).sort();
+  return { folder: folder.name, files: await matchFiles(`${ROOT}/${folder.name}`, stops) };
+}
+
+/** The pictures directly in `dir` and, per file, the stop it names (null: the overview). */
+async function matchFiles(dir: string, stops: FolderStop[]): Promise<FolderMatch["files"]> {
+  const files = (await list(dir)).filter((e) => !e.dir && IMAGE.test(e.name)).map((e) => e.name).sort();
   const info = files.length ? await credits(files) : new Map<string, Credit>();
 
   const stopWords = stops.map((s) => {
@@ -233,20 +239,33 @@ export async function matchStopFolder(tour: { slug: string; title: string }, sto
     }
     return best;
   };
-  return {
-    folder: folder.name,
-    files: files.map((file) => {
-      const c = info.get(file) ?? NONE;
-      const best = match(new Set([...words(file), ...c.titleWords])) ?? match(new Set(c.categoryWords));
-      const caption = captionOf(c.title ?? file);
-      return { file, stopId: best?.id ?? null, caption: caption || null, credit: c.credit };
-    }),
-  };
+  return files.map((file) => {
+    const c = info.get(file) ?? NONE;
+    const best = match(new Set([...words(file), ...c.titleWords])) ?? match(new Set(c.categoryWords));
+    const caption = captionOf(c.title ?? file);
+    return { file, stopId: best?.id ?? null, caption: caption || null, credit: c.credit };
+  });
 }
 
-/** The tour's Stops folder, matched to its stops. Empty when there is no folder for the tour or storage is down. */
-export async function stopFolderPhotos(tour: { slug: string; title: string }, stops: FolderStop[]): Promise<FolderPhotos> {
+/**
+ * The tour's stop pictures, matched to its stops. Read from the tour's own folder, `<mediaFolder>/Stops/`, once it
+ * holds pictures (the owner's Stops/<FOLDER>/ moves there: docs/open/ELKTOURS_MEDIA_STRUCTURE_2026-11-26.md §4), and
+ * from the old Stops/<FOLDER>/ until then. Empty when neither has pictures or storage is down.
+ */
+export async function stopFolderPhotos(tour: { slug: string; title: string; mediaFolder?: string | null }, stops: FolderStop[]): Promise<FolderPhotos> {
   const out: FolderPhotos = { byStop: new Map(), rest: [] };
+  if (tour.mediaFolder) {
+    const dir = `${tour.mediaFolder}/Stops`;
+    const files = await matchFiles(dir, stops).catch(() => []);
+    if (files.length) {
+      for (const f of files) {
+        const photo: StagePhoto = { url: urlOfKey(dir, f.file), caption: f.caption, alt: f.caption, credit: f.credit };
+        if (f.stopId) (out.byStop.get(f.stopId) ?? out.byStop.set(f.stopId, []).get(f.stopId)!).push(photo);
+        else out.rest.push(photo);
+      }
+      return out;
+    }
+  }
   const m = await matchStopFolder(tour, stops);
   if (!m) return out;
   for (const f of m.files) {

@@ -33,6 +33,7 @@ import {
 } from "@elkdonis/checkout/stripe";
 import { canEtransfer, normaliseCountry } from "@elkdonis/commerce/payout-rails";
 import type { ArtworkMediaInput, Currency, StoreMemberRole } from "@elkdonis/commerce/types";
+import { joinArtistSpace } from "@elkdonis/services";
 import {
   getCurrentUser,
   getCurrentUserId,
@@ -41,6 +42,7 @@ import {
   STUDIO_STORE_COOKIE,
 } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
+import { startStoreCourse } from "@/lib/store-course";
 
 type Result = { ok: boolean; error?: string };
 
@@ -92,6 +94,34 @@ export async function openOrgStoreAction(orgId: string): Promise<Result> {
   }
 }
 
+// ─── Join the collective as an artist ───────────────────────────────────────
+
+/**
+ * The step before a store: accept the artist agreement, say which orgs you
+ * already belong to (recorded as follows, not membership), and gain the space.
+ * That makes the person an `oad` member, which is what canClaimStore reads.
+ */
+export async function joinCollectiveAsArtistAction(input: {
+  agreementId: string;
+  orgIds?: string[];
+}): Promise<Result> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { ok: false, error: "Please sign in first." };
+  try {
+    const res = await joinArtistSpace(userId, {
+      agreementId: input.agreementId,
+      orgIds: input.orgIds,
+    });
+    // `strict: false` here: the union does not narrow on `ok`.
+    if (!res.ok) return { ok: false, error: (res as { ok: false; error: string }).error };
+    revalidatePath("/studio", "layout");
+    revalidatePath("/studio/apply");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
 // ─── Apply / profile ─────────────────────────────────────────────────────────
 
 export type ArtistLinkInput = { label: string; url: string };
@@ -120,7 +150,7 @@ export async function applyArtistAction(input: ApplyArtistInput): Promise<Result
   if (!input.displayName?.trim())
     return { ok: false, error: "A display name is required." };
   if (!input.payoutEmail?.trim())
-    return { ok: false, error: "An eTransfer payout email is required to apply. You can add card payouts through Stripe once approved." };
+    return { ok: false, error: "An eTransfer payout email is required to apply. You can add card payouts through Stripe once your store is open." };
 
   try {
     // applyForStore refuses non-members — surface its reason rather than
@@ -140,6 +170,10 @@ export async function applyArtistAction(input: ApplyArtistInput): Promise<Result
       links: input.links,
     });
     if (!result.ok) return { ok: false, error: result.error };
+
+    // A store that opened (stores open at once while auto-approved) starts "Finish your store"
+    // in the dock. No-op for a store still pending; never fails the application.
+    await startStoreCourse(userId);
 
     revalidatePath("/studio", "layout");
     revalidatePath("/studio/apply");

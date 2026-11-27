@@ -19,6 +19,8 @@ export type LookSize = "sm" | "md";
 
 export type Step =
   | { op: "set_prop"; block: string; prop: string; value: unknown }
+  | { op: "unset"; block: string; prop: string }
+  | { op: "bind"; block: string; prop: string; record: string }
   | { op: "set_look"; block: string; part: string; look: Record<string, unknown> | null; state?: LookState; at?: LookSize }
   | { op: "set_token"; block: string; name: string; value: string | null }
   | { op: "insert"; type: string; zone?: string; index?: number; props?: Record<string, unknown> }
@@ -33,6 +35,8 @@ export interface BlockContractLike {
     name: string;
     kind: string;
     label: string;
+    /** The value the block uses when nothing is set (what `unset` puts back). */
+    default?: unknown;
     binds?: string;
     /** A string setting that holds a hex colour (or nothing). */
     format?: string;
@@ -53,6 +57,11 @@ export interface StepContext {
    * with a block type the door cannot vouch for is refused whole, because the door could not say what its step did to it.
    */
   allowUnknownTypes?: boolean;
+  /**
+   * The host's sanitiser for formatted text (`sanitizePageText` from @elkdonis/utils/sanitize). Without it a rich-text
+   * setting is refused by set_prop: the door never stores formatted text it did not have cleaned.
+   */
+  sanitizeRichText?: (html: string) => string;
 }
 
 export type StepSide = "words" | "look" | "structure" | null;

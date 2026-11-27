@@ -79,7 +79,8 @@ export default async function StudioLayout({ children }: { children: ReactNode }
                 <Link href="/studio/profile">Store details</Link>
               </Button>
               <Button asChild>
-                <Link href="/studio/artworks/new">New artwork</Link>
+                {/* data-eac-anchor: outlined by the dock on arrival (registry entry artwork, step 3 of Finish your store). */}
+                <Link href="/studio/artworks/new" data-eac-anchor="artwork">New artwork</Link>
               </Button>
             </>
           ) : (

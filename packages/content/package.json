@@ -11,9 +11,14 @@
     "./registry": "./src/registry.ts",
     "./server": "./src/server/index.ts",
     "./ui": "./src/ui/index.ts",
+    "./media-library": "./src/ui/MediaLibrary.tsx",
     "./summary": "./src/summary/index.ts",
     "./summary.css": "./src/summary/summary.css",
-    "./content.css": "./src/content.css"
+    "./content.css": "./src/content.css",
+    "./hub": "./src/hub/index.ts",
+    "./hub/server": "./src/hub/server.ts",
+    "./routes": "./src/routes.ts",
+    "./query": "./src/query-string.ts"
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",

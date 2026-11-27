@@ -35,6 +35,7 @@ import { OfficeSoonPopup } from "@/components/office/office-faces";
 import { CreateTourPopup } from "@/components/office/create-tour/create-tour-popup";
 import { AvailabilityPopup } from "@/components/office/availability-popup";
 import { TakesPopup } from "@/components/office/takes-popup";
+import { OverlapsPopup } from "@/components/office/overlaps-popup";
 import { OfficeDeepLink } from "./OfficeDeepLink";
 
 /** The Opens popups load when one opens: they draw blocks, and the blocks package is large (opens-popups.tsx). */
@@ -233,6 +234,7 @@ export function HubSurfaces({
         "office-create-tour": ({ descriptor }) => <CreateTourPopup descriptor={descriptor} />,
         "office-availability": ({ descriptor }) => <AvailabilityPopup descriptor={descriptor} />,
         "office-takes": ({ descriptor }) => <TakesPopup descriptor={descriptor} />,
+        "office-overlaps": ({ descriptor }) => <OverlapsPopup descriptor={descriptor} />,
         whiteboard: () => (
           <WhiteboardSurface
             onSaveError={() => toast.error("Couldn't save the whiteboard.")}

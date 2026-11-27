@@ -17,7 +17,12 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "path": "/hub/network",
       "surface": "artwork",
       "anchor": "artwork",
-      "how": "Publish all in the artwork queue"
+      "how": "Publish all in the artwork queue",
+      "market": {
+        "path": "/studio",
+        "anchor": "artwork",
+        "how": "The New artwork button at the top of My art"
+      }
     },
     "risk": [
       "public",
@@ -186,7 +191,12 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "path": "/hub/network",
       "surface": "journey:auction",
       "anchor": "payouts",
-      "how": "Connect Stripe, step 3 of Sell your art"
+      "how": "Connect Stripe, step 3 of Sell your art",
+      "market": {
+        "path": "/studio/payouts",
+        "anchor": "payouts",
+        "how": "Connect with Stripe on the Payouts page"
+      }
     },
     "risk": [
       "money"
@@ -244,6 +254,18 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "wave": 1
     }
   },
+  "ship-from": {
+    "address": {
+      "host": "app",
+      "app": "art-auction",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [],
+    "roles": [
+      "person"
+    ]
+  },
   "show-on": {
     "address": {
       "host": "hub",
@@ -286,6 +308,20 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "status": "approved",
       "wave": 1
     }
+  },
+  "store-front": {
+    "address": {
+      "host": "app",
+      "app": "art-auction",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
   },
   "studio": {
     "address": {

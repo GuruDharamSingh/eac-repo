@@ -7,6 +7,7 @@ import { addPlaceDescriptor } from "@/components/office/add-place-popup";
 import { createTourDescriptor } from "@/components/office/create-tour/create-tour-popup";
 import { availabilityDescriptor } from "@/components/office/availability-popup";
 import { takesDescriptor } from "@/components/office/takes-popup";
+import { overlapsDescriptor } from "@/components/office/overlaps-popup";
 
 /**
  * The hub's Office band (2026-11-19): the staff tasks as cards that open popups over the hub, on a phone and a
@@ -15,9 +16,20 @@ import { takesDescriptor } from "@/components/office/takes-popup";
  * plan in docs/open/ELKTOURS_OFFICE_HUB_2026-11-19.md.
  */
 
-export function OfficeFaces() {
+export function OfficeFaces({ overlaps = 0 }: { overlaps?: number }) {
   return (
     <>
+      {/* Only while there is something to look at (hub faces return nothing when empty). */}
+      {overlaps > 0 ? (
+        <SurfaceCard
+          kind="event"
+          glyph="!"
+          kicker={`${overlaps} to look at`}
+          title="Overlapping runs"
+          blurb="Runs of one guide that overlap in time. They were published anyway; dismiss a notice once you have seen it."
+          surface={overlapsDescriptor}
+        />
+      ) : null}
       <SurfaceCard
         kind="event"
         glyph="◷"

@@ -1,0 +1,12 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Live edit harness</title>
+<style>body{margin:0;font:16px Georgia,serif;background:#fbf7ef;color:#1d1a16}main{max-width:720px;margin:0 auto;padding:40px 20px 160px}img{max-width:100%;display:block;background:#ddd;min-height:120px}</style>
+<main>
+  <h1 data-field="section:about:title" id="t">About us</h1>
+  <p id="plain">A plain paragraph the page's own code draws.</p>
+  <div data-field="section:about:body" id="rich"><p>Some <b>words</b> here.</p></div>
+  <img data-field="section:about:photo" id="pic" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" width="400" height="140">
+  <h2 data-field="record:thread:t1:title" id="rec">A post</h2>
+  <p data-field="mystery:1:x" id="nope">Looks like a field, is not one.</p>
+</main>
+<div id="app"></div>
+<script src="entry.js"></script>

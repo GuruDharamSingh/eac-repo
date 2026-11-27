@@ -36,6 +36,14 @@
   color: hsl(var(--foreground));
   white-space: nowrap;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.ktp-header__logo {
+  width: 44px;
+  height: 44px;
+  flex: none;
 }
 .ktp-header__nav {
   display: flex;

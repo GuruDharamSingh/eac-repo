@@ -12,12 +12,12 @@
 import { applySteps, type BlockContractLike, type PageDoc, type StepContext } from "../steps";
 import { findNode } from "../steps/walk";
 import type { HouseSave } from "../save";
-import { fieldMapOf, splitBlockId, type BlockFieldEntry, type BlockMapSource } from "./blockmap";
+import { fieldMapOf, settingsOf, splitBlockId, type BlockFieldEntry, type BlockMapSource, type BlockSetting } from "./blockmap";
 
 const own = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
 
-export { fieldMapOf, blockSpecs, splitBlockId } from "./blockmap";
-export type { BlockFieldMap, BlockFieldEntry, BlockPartField, BlockMapSource } from "./blockmap";
+export { fieldMapOf, blockSpecs, settingSpec, settingsOf, splitBlockId } from "./blockmap";
+export type { BlockFieldMap, BlockFieldEntry, BlockPartField, BlockSetting, BlockMapSource, SettingKind, FieldMapOptions } from "./blockmap";
 
 // ---------------------------------------------------------------------------
 // the two server doors
@@ -33,6 +33,11 @@ export interface BlockFieldsOptions {
   save: HouseSave;
   /** Pass the version to `save` so the store's own guard runs too. Default true. See the note in `saveBlock`. */
   storeGuard?: boolean;
+  /**
+   * The host's sanitiser for formatted text (`sanitizePageText` from @elkdonis/utils/sanitize). Given: a rich-text setting
+   * is offered and saved through it. Absent: rich text is not offered at all.
+   */
+  sanitizeRichText?: (html: string) => string;
 }
 
 export interface BlockLoad {
@@ -51,9 +56,31 @@ export interface BlockSave {
   say?: string;
 }
 
+/**
+ * The one step a changed value sends. A setting filled from a record is a `bind`; a choice, switch or number left empty
+ * goes back to its default (`unset`); everything else is a `set_prop` with the value in its own type.
+ */
+export function stepFor(block: string, s: BlockSetting, raw: unknown): { step: unknown } | { error: string } {
+  if (typeof raw !== "string") return { error: `"${s.label}" takes text.` };
+  if (s.binds) return { step: { op: "bind", block, prop: s.prop, record: raw } };
+  if (s.kind === "boolean") {
+    if (raw === "") return { step: { op: "unset", block, prop: s.prop } };
+    if (raw !== "true" && raw !== "false") return { error: `"${s.label}" is on or off.` };
+    return { step: { op: "set_prop", block, prop: s.prop, value: raw === "true" } };
+  }
+  if (s.kind === "number") {
+    if (raw.trim() === "") return { step: { op: "unset", block, prop: s.prop } };
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return { error: `"${s.label}" takes a number.` };
+    return { step: { op: "set_prop", block, prop: s.prop, value: n } };
+  }
+  if (s.kind === "select" && raw === "") return { step: { op: "unset", block, prop: s.prop } };
+  return { step: { op: "set_prop", block, prop: s.prop, value: raw } };
+}
+
 export function createBlockFields(o: BlockFieldsOptions) {
-  const map = fieldMapOf(o.contracts);
-  const ctx: StepContext = { contracts: o.contracts, config: o.config, allowUnknownTypes: true };
+  const map = fieldMapOf(o.contracts, { richtext: !!o.sanitizeRichText });
+  const ctx: StepContext = { contracts: o.contracts, config: o.config, allowUnknownTypes: true, sanitizeRichText: o.sanitizeRichText };
 
   async function locate(id: string): Promise<{ error: string } | { slug: string; block: string; type: string; entry: BlockFieldEntry; page: { data: unknown; updatedAt: string }; props: Record<string, unknown> }> {
     const at = splitBlockId(id);
@@ -66,9 +93,13 @@ export function createBlockFields(o: BlockFieldsOptions) {
     return { ...at, type: node.type, entry: map[node.type]!, page, props: node.props };
   }
 
+  /** Each offered setting as text. "" is "nothing set": the block's own default shows. A switch is "true" or "false". */
   const wordsOf = (entry: BlockFieldEntry, props: Record<string, unknown>) => {
     const values: Record<string, string> = {};
-    for (const p of Object.values(entry.parts)) values[p.prop] = typeof props[p.prop] === "string" ? (props[p.prop] as string) : "";
+    for (const s of Object.values(settingsOf(entry))) {
+      const v = props[s.prop];
+      values[s.prop] = s.kind === "boolean" ? (typeof v === "boolean" ? String(v) : "") : s.kind === "number" ? (typeof v === "number" ? String(v) : "") : typeof v === "string" ? v : "";
+    }
     return values;
   };
 
@@ -83,11 +114,13 @@ export function createBlockFields(o: BlockFieldsOptions) {
   async function saveBlock(id: string, values: Record<string, string>, version?: string): Promise<BlockSave> {
     const at = await locate(id);
     if ("error" in at) return { ok: false, error: at.error };
-    const allowed = new Set(Object.values(at.entry.parts).map((p) => p.prop));
+    const settings = settingsOf(at.entry);
     const steps: unknown[] = [];
     for (const [prop, value] of Object.entries(values ?? {})) {
-      if (!allowed.has(prop)) return { ok: false, error: `"${prop}" is not a setting that can be typed here.` };
-      steps.push({ op: "set_prop", block: at.block, prop, value });
+      if (!own(settings, prop)) return { ok: false, error: `"${prop}" is not a setting that can be changed here.` };
+      const s = stepFor(at.block, settings[prop]!, value);
+      if ("error" in s) return { ok: false, error: s.error };
+      steps.push(s.step);
     }
     if (!steps.length) return { ok: true, values: wordsOf(at.entry, at.props), version: at.page.updatedAt };
     // The page may have moved since the editor loaded it: say so before writing anything.

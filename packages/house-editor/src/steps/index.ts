@@ -4,6 +4,8 @@
 // A page is Puck JSON. Every change to it is a STEP, and this file is the whole
 // of "who may change what":
 //   set_prop   the words door: a declared content setting of one block, by its kind.
+//   unset      the words door: a declared setting back to its declared default (no default: removed).
+//   bind       the words door: choose the record a setting declared with `binds` is filled from ("" clears it).
 //   set_look   the look door: one declared part, kept under props.morph (a state
 //              or a screen size too, once the look format holds them).
 //   set_token  the look door, for a block's declared colours and lengths.
@@ -28,14 +30,14 @@ import {
   type StepResult,
 } from "./types";
 import { allHaveIds, countId, findNode, replaceProps, unknownTypes } from "./walk";
-import { setWord } from "./words";
+import { bindWord, setWord, unsetWord } from "./words";
 
 export type { BlockContractLike, LookSize, LookState, PageDoc, PageNode, Step, StepContext, StepResult, StepSide } from "./types";
 export { LOOK_PROPS, EDITOR_PROPS } from "./types";
 export { hasStatesAndSizes };
 
 const own = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
-const OPS = ["set_prop", "set_look", "set_token", "insert", "move", "duplicate", "remove"];
+const OPS = ["set_prop", "unset", "bind", "set_look", "set_token", "insert", "move", "duplicate", "remove"];
 const STRUCTURE = new Set(["insert", "move", "duplicate", "remove"]);
 
 const refuse = (doc: PageDoc, code: string, say: string): StepResult => ({ ok: false, doc, side: null, code, say });
@@ -79,11 +81,12 @@ function contentStep(doc: PageDoc, step: Record<string, unknown>, ctx: StepConte
   const id = node.props.id as string;
 
   if (step.op === "set_prop") {
-    const w = setWord(contract, node.props, String(step.prop), step.value);
-    if (!w.ok) return refuse(doc, w.code, w.say);
-    if (!w.changed) return { ok: true, doc, side: null, code: "same", say: w.say, touched: [] };
-    return { ok: true, doc: replaceProps(doc, id, w.props), side: "words", code: "ok", say: w.say, touched: [id] };
+    const w = setWord(contract, node.props, String(step.prop), step.value, { sanitizeRichText: ctx.sanitizeRichText });
+    return wordsAnswer(doc, id, w);
   }
+
+  if (step.op === "unset") return wordsAnswer(doc, id, unsetWord(contract, node.props, String(step.prop)));
+  if (step.op === "bind") return wordsAnswer(doc, id, bindWord(contract, node.props, String(step.prop), step.record));
 
   if (step.op === "set_look") {
     const r = setLook(contract, node.props, String(step.part), step.look, { state: step.state as never, at: step.at as never });
@@ -94,6 +97,12 @@ function contentStep(doc: PageDoc, step: Record<string, unknown>, ctx: StepConte
   const r = setTokenValue(contract, node.props, String(step.name), step.value);
   if (!r.ok) return refuse(doc, r.code, r.say);
   return { ok: true, doc: replaceProps(doc, id, r.props), side: "look", code: "ok", say: r.say, touched: [id] };
+}
+
+function wordsAnswer(doc: PageDoc, id: string, w: ReturnType<typeof setWord>): StepResult {
+  if (!w.ok) return refuse(doc, w.code, w.say);
+  if (!w.changed) return { ok: true, doc, side: null, code: "same", say: w.say, touched: [] };
+  return { ok: true, doc: replaceProps(doc, id, w.props), side: "words", code: "ok", say: w.say, touched: [id] };
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +141,7 @@ function structureStep(doc: PageDoc, step: Record<string, unknown>, ctx: StepCon
     if (!id) return refuse(doc, "engine", "The block could not be added.");
     for (const [name, value] of entries) {
       const node = findNode(made, id)!;
-      const w = setWord(contract!, node.props, name, value);
+      const w = setWord(contract!, node.props, name, value, { sanitizeRichText: ctx.sanitizeRichText });
       if (!w.ok) return refuse(doc, w.code, w.say);
       if (w.changed) made = replaceProps(made, id, w.props);
     }

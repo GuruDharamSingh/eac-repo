@@ -15,7 +15,8 @@
     "./data-deletion": "./src/data-deletion.ts",
     "./webhook": "./src/webhook.ts",
     "./threads": "./src/threads.ts",
-    "./instagram-login": "./src/instagram-login.ts"
+    "./instagram-login": "./src/instagram-login.ts",
+    "./comments": "./src/comments.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

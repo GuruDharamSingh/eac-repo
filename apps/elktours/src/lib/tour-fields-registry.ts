@@ -13,7 +13,7 @@ export const tourFieldsRegistry = defineFields({
   tour: {
     heading: "This tour",
     label: "This tour",
-    shared: "These words are on the tour's page for everyone to read.",
+    shared: "This changes the tour itself, everywhere it appears: its page, its cards and its lists.",
     fields: {
       title: { label: "Tour title", input: "text", max: 200, optional: false },
       excerpt: {

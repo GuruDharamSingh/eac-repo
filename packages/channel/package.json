@@ -18,7 +18,9 @@
     "./site/board": "./src/site/board.ts",
     "./hub": "./src/hub/index.ts",
     "./hub/server": "./src/hub/server.ts",
-    "./hub.css": "./src/hub/hub.css"
+    "./hub.css": "./src/hub/hub.css",
+    "./hub/card": "./src/hub/card.tsx",
+    "./hub/card-server": "./src/hub/card-server.ts"
   },
   "dependencies": {
     "@elkdonis/actions": "workspace:*",

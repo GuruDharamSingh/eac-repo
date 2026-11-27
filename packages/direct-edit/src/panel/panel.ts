@@ -23,6 +23,8 @@ import { getDecl, setDecl, droppedDecls, type Decl } from "../model/css";
 import { contrastVerdict, normHex } from "../model/color";
 import { icon } from "./icons";
 import { nextWhere, whereHtml, type LookWhere, type PanelWhere } from "./where";
+import { cleanGrad } from "../block/style";
+import { FADE_PRESETS, fadeAdd, fadeAngle, fadeColour, fadeHtml, fadeModeHtml, fadePlace, fadeRemove, fadeShape, startFade, type Grad } from "./fade";
 
 export interface Swatch { value: string; label?: string }
 export interface TextStylePreset { id: string; label: string; group?: string; style: Record<string, Scalar | undefined> }
@@ -120,6 +122,8 @@ export interface PanelContext {
   where?: PanelWhere;
   /** One line when two sources set the same thing on the block's root (Style and the look), saying which wins. */
   clash?: string;
+  /** Offers Fill: Colour / Fade under the Fill row. `grad` is the fade stored at the place being edited, or null. Written through `change("grad", Grad | null)`. Absent on a panel that has `where` (a part's look): `values.grad` is read instead. */
+  fade?: { grad: Grad | null };
   /** The Content tab (opt-in, with "content" in `tabs`): a block's declared settings, drawn like any slots. The panel opens on it when the selection moves to a block that has it. */
   content?: { slots: ResolvedSlot<any>[]; values: Record<string, unknown>; overridden: Record<string, boolean>; top?: string; bottom?: string };
   /** The name of the Properties tab when a Content tab is beside it ("Look"). */
@@ -297,7 +301,7 @@ export class Panel {
     let h = `<div class="de-head"><b>${esc(c.heading)}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ""}</div>`;
     h += c.notice ? `<p class="de-note de-notice" data-f="notice" data-sync="notice">${esc(c.notice)}</p>` : `<div data-sync="notice" hidden></div>`;
     if (k.top) h += k.top;
-    const sub: PanelContext = { ...c, slots: k.slots, values: k.values, overridden: k.overridden, outside: [], sectionTop: undefined, extra: undefined, layers: undefined };
+    const sub: PanelContext = { ...c, slots: k.slots, values: k.values, overridden: k.overridden, outside: [], sectionTop: undefined, extra: undefined, layers: undefined, fade: undefined };
     for (const sec of ["content", "layout", "appearance", "behaviour"] as const) h += this.section(sec, sub);
     if (!k.slots.length) h += `<p class="de-note" data-f="content-none">This block has no settings of its own.</p>`;
     if (k.bottom) h += `<div class="de-bottom">${k.bottom}</div>`;
@@ -390,7 +394,14 @@ export class Panel {
       const ver = contrastVerdict(c.contrast.fg, c.contrast.bg, c.contrast.size, c.contrast.weight);
       after = ver ? `<div class="de-contrast ${ver.good ? "good" : "poor"}" data-sync="contrast-${esc(s.id)}" title="Against ${esc(c.contrast.bg)} (WCAG AA ${ver.large ? "3" : "4.5"}:1)">${icon("text")}${esc(ver.text)}</div>` : "";
     }
-    return `<div class="de-row${bare ? " bare" : ""}${s.key.startsWith("p:") ? " de-prop" : ""} c-${s.control}" data-sync="row-${esc(s.id)}">${lab}<div class="de-ctl">${ctl}</div>${this.aux(s, c)}${after}</div>`;
+    const out = `<div class="de-row${bare ? " bare" : ""}${s.key.startsWith("p:") ? " de-prop" : ""} c-${s.control}" data-sync="row-${esc(s.id)}">${lab}<div class="de-ctl">${ctl}</div>${this.aux(s, c)}${after}</div>`;
+    // Fill: Colour / Fade. A fade replaces the colour row (lane GRADIENT; panel/fade.ts).
+    const fade = fadeOf(c);
+    if (fade && s.key === "fill" && s.control === "color" && !bare) {
+      const g = fade.grad;
+      return fadeModeHtml(!!g, esc) + (g ? fadeHtml(g, esc) : out.replace(">Fill</label>", ">Colour</label>"));
+    }
+    return out;
   }
 
   private control(s: ResolvedSlot<any>, v: unknown, c: PanelContext, isComp = false): string {
@@ -612,6 +623,7 @@ export class Panel {
     if (!t || !this.ctx) return;
     const d = t.dataset;
     if (d.where !== undefined) { if (this.ctx.where) this.h.where?.(nextWhere(this.ctx.where.now, d.where)); return; }
+    if (fadeOf(this.ctx) && (d.fadeMode || d.fadePreset || d.fadeShape || d.fadeAdd !== undefined || d.fadeRemove !== undefined)) { this.fadeClick(d); return; }
     if (d.tab) { this.tab = d.tab as TabId; this.pop = null; this.redraw(); return; }
     if (d.sec) { const s = d.sec as SectionId; this.open.has(s) ? this.open.delete(s) : this.open.add(s); this.redraw(); return; }
     if (d.more) { const s = d.more as SectionId; this.more.has(s) ? this.more.delete(s) : this.more.add(s); this.redraw(); return; }
@@ -656,6 +668,23 @@ export class Panel {
     if (d.set) { const v = JSON.parse(d.val!); if (t.classList.contains("de-swbtn") && typeof v === "string") this.remember(v); this.h.change(d.set, v, false); return; }
   }
 
+  /** The fade last taken off a part (this session), so Colour then Fade again brings it back. */
+  private fadeMemo = new Map<string, Grad>();
+  private fadeClick(d: DOMStringMap) {
+    const c = this.ctx!, g = fadeOf(c)?.grad ?? null;
+    const put = (n: Grad | null) => this.h.change("grad", n, false);
+    if (d.fadeMode === "colour") { if (g) { this.fadeMemo.set(c.key, g); put(null); } return; }
+    if (d.fadeMode === "fade") {
+      if (!g) put(this.fadeMemo.get(c.key) ?? startFade(normHex(String(c.values.fill ?? c.computed?.fill ?? "")) ?? undefined));
+      return;
+    }
+    if (!g) return;
+    if (d.fadePreset) { const p = FADE_PRESETS.find((x) => x.id === d.fadePreset); if (p) put(p.grad); }
+    else if (d.fadeShape) put(fadeShape(g, d.fadeShape as Grad["kind"]));
+    else if (d.fadeAdd !== undefined) put(fadeAdd(g));
+    else if (d.fadeRemove !== undefined) put(fadeRemove(g, Number(d.fadeRemove)));
+  }
+
   /** A pull on a draggable layer row starts a drag (a plain click still selects). */
   private onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
@@ -681,6 +710,12 @@ export class Panel {
     if (d.fontq !== undefined) { if (this.pop) this.pop.q = t.value; this.filterFonts(t.value); return; }
     if (d.cssall !== undefined) { this.rawCss = { key: this.ctx.key, text: t.value }; this.debounce("cssall", () => this.h.change("css", t.value, true), 300); return; }
     if (d.cssprop) { if (t.tagName === "SELECT") return; this.debounce("p" + d.cssprop, () => this.h.change("css", setDecl(this.ctx!.values.css as string, d.cssprop!, t.value), true), 250); return; }
+    const fadeNow = fadeOf(this.ctx);
+    if (fadeNow?.grad) {
+      const g = fadeNow.grad;
+      if (d.fadeColour !== undefined) { this.h.change("grad", fadeColour(g, Number(d.fadeStop), t.value.toLowerCase()), true); return; }
+      if (d.fadeAngle !== undefined) { const n = parseNum(t.value); if (n !== null) this.h.change("grad", fadeAngle(g, n), true); return; }
+    }
     if (d.colorinput !== undefined) { this.debounce("recent", () => this.remember(t.value.toLowerCase()), 600); this.h.change(d.k!, t.value.toLowerCase(), true); return; }
     if (d.hex !== undefined) { const hx = normHex(t.value); if (hx) { this.debounce("recent", () => this.remember(hx), 600); this.h.change(d.k!, hx, true); } return; }
     if (d.side !== undefined) {
@@ -704,6 +739,14 @@ export class Panel {
     const t = e.target as HTMLInputElement & HTMLSelectElement;
     if (!this.ctx) return;
     const d = t.dataset;
+    // A colour's place is set when the field is left (or Enter): the colours re-sort by place, so not on every key.
+    const fadeHere = fadeOf(this.ctx);
+    if (d.fadeAt !== undefined && fadeHere?.grad) {
+      const n = parseNum(t.value);
+      if (n !== null) this.h.change("grad", fadePlace(fadeHere.grad, Number(d.fadeStop), n), false);
+      t.blur();
+      return;
+    }
     if (d.textstyle !== undefined) {
       const p = this.ctx.textStyles?.find((x) => x.id === t.value);
       if (p) this.h.textStyle?.(p.style);
@@ -785,6 +828,11 @@ export class Panel {
     list.querySelectorAll("[data-font]").forEach((b) => this.io!.observe(b));
     list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
   }
+}
+
+/** Fill: Colour / Fade is offered on every panel that edits a part's look (it has `where`), or where the host asks for it. */
+function fadeOf(c: PanelContext): { grad: Grad | null } | undefined {
+  return c.fade ?? (c.where ? { grad: cleanGrad(c.values.grad) ?? null } : undefined);
 }
 
 function parseNum(s: string): number | null {

@@ -29,7 +29,6 @@ import {
   resolveWithin,
   type DavEntry,
 } from './dav';
-import { markArtistByFolder } from './artist-membership';
 
 const ROOT = process.env.NEXTCLOUD_ORG_ROOT_FOLDER || 'EAC_Network';
 
@@ -153,9 +152,8 @@ export async function createUserFolder(slug: string, relative: string): Promise<
     ok = await davMkcol(resolveUserPath(slug, parts.slice(0, i).join('/')));
     if (!ok) return false;
   }
-  // Storing in a person's folder gains their space (artist-membership.ts).
-  // Every per-person upload creates its target folder here first.
-  if (ok) await markArtistByFolder(slug);
+  // Creating a folder does not make the person an artist of the collective
+  // (retracted 2026-11-24, artist-membership.ts): space is gained on purpose.
   return ok;
 }
 

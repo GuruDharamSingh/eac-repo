@@ -24,6 +24,7 @@ import { PayoutsCard } from "@/components/manage/payouts-card";
 import { TourScheduleCard } from "@/components/hub/tour-schedule-card";
 import { OfficeFaces } from "@/components/office/office-faces";
 import { listSuggestionsAction } from "@/lib/suggestion-actions";
+import { countOverlaps } from "@/lib/slot-overlaps";
 
 export const metadata: Metadata = { title: "Hub" };
 export const dynamic = "force-dynamic";
@@ -107,6 +108,8 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
     : undefined;
   const boardCards = board ? board.stacks.reduce((n, s) => n + (s.cards ?? []).filter((c) => !c.archived).length, 0) : null;
   const drafts = tours.filter((t) => t.status !== "published").length;
+  // Overlap notices for the Office band: a guide sees their own, an owner all.
+  const overlaps = viewer.canEdit ? await countOverlaps({ guideUserId: viewer.role === "owner" ? undefined : viewer.userId }) : 0;
 
   return (
     <main className="hub">
@@ -127,7 +130,7 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
               Office
             </h2>
             <SurfaceCardGrid>
-              <OfficeFaces />
+              <OfficeFaces overlaps={overlaps} />
             </SurfaceCardGrid>
           </section>
         ) : null}

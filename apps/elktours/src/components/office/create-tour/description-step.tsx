@@ -22,7 +22,16 @@ type PlaceRow = { id: string; title: string; address: string | null; tags: strin
  * Step 1, Description: city, title and one-line summary; the meeting point as a pin on the map or one of our
  * places; then price, length, languages and the cover. The longer copy and lists sit under "More about the tour".
  */
-export function DescriptionStep({ draft, set }: { draft: TourDraft; set: <K extends keyof TourDraft>(k: K, v: TourDraft[K]) => void }) {
+export function DescriptionStep({
+  draft,
+  set,
+  tourId = null,
+}: {
+  draft: TourDraft;
+  set: <K extends keyof TourDraft>(k: K, v: TourDraft[K]) => void;
+  /** The saved tour, once it has one: its cover is filed in the tour's own folder (2026-11-26). */
+  tourId?: string | null;
+}) {
   const lat = numOrNull(draft.meetingLat);
   const lng = numOrNull(draft.meetingLng);
   const pin = lat != null && lng != null ? { lat, lng } : null;
@@ -147,7 +156,13 @@ export function DescriptionStep({ draft, set }: { draft: TourDraft; set: <K exte
           <span className={label}>Languages (one per line)</span>
           <textarea rows={2} value={draft.languages} onChange={(e) => set("languages", e.target.value)} className={field} />
         </label>
-        <MediaField value={draft.coverImageUrl} onChange={(url) => set("coverImageUrl", url)} label="Cover image" />
+        <MediaField
+          value={draft.coverImageUrl}
+          onChange={(url) => set("coverImageUrl", url)}
+          label="Cover image"
+          destination={tourId ? { kind: "tour", tourId, slot: "cover" } : { kind: "general", context: draft.title ? `${draft.title}-cover` : null }}
+          hint={tourId ? undefined : "Until the tour is saved, the cover is filed in the site's media folder."}
+        />
 
         <details className="rounded-md border border-border p-3">
           <summary className="cursor-pointer select-none font-medium">More about the tour</summary>

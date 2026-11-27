@@ -10,6 +10,8 @@ import { landingCanvasConfig } from "@/lib/puck/config.landing";
 import { restoreLandingAction, saveLandingAction } from "@/lib/puck/actions";
 // "From what?" on the home page too (round 2, 2026-11-14): Next gathering's `which` (system32-fc), Featured person, Opens.
 import { records } from "./person-records";
+// One Edit button: Site style opens from inside the page editor (a button in its bar), as the same editor it always was.
+import { hasSiteStyle, openProvidedSiteStyle } from "@elkdonis/house-editor/entry";
 
 const FIRST_SAVE = "Saving makes this page public right away. From then on its words no longer follow /manage/pages, and later changes to the page's code do not reach it. \"Restore the original page\" goes back to the code.";
 
@@ -36,6 +38,7 @@ export async function openLandingEditor({ tree }: { tree: PuckDoc | null }) {
     contract: contractOf(HOME_BLOCKS) as never,
     choosePicture,
     records,
+    ...(hasSiteStyle() ? { barExtras: [{ id: "site-style", label: "Site style", title: "Colours, fonts and the header and footer, for the whole site" }], onBarExtra: (id: string) => { if (id === "site-style") void openProvidedSiteStyle("column"); } } : {}),
     saveNotice: tree ? undefined : FIRST_SAVE,
     onSave: (d) => saveLandingAction(d),
     onDone: () => window.location.reload(),

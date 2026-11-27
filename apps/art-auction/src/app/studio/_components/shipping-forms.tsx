@@ -52,7 +52,9 @@ export interface ShipFromValue {
   email: string;
 }
 
-export function ShipFromForm({ initial }: { initial: ShipFromValue | null }) {
+export function ShipFromForm({ initial, defaults }: { initial: ShipFromValue | null; defaults?: Partial<ShipFromValue> }) {
+  // Saved value wins; otherwise the profile's values fill what they can.
+  const v: Partial<ShipFromValue> | null = initial ?? defaults ?? null;
   const { pending, run } = useRun();
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,16 +79,22 @@ export function ShipFromForm({ initial }: { initial: ShipFromValue | null }) {
   };
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Field label="Name" name="recipientName" defaultValue={initial?.recipientName} required />
-      <Field label="Studio or company (optional)" name="company" defaultValue={initial?.company} />
-      <Field label="Street address" name="line1" defaultValue={initial?.line1} span required />
-      <Field label="Unit (optional)" name="line2" defaultValue={initial?.line2} span />
-      <Field label="City" name="city" defaultValue={initial?.city} required />
-      <Field label="Province / state" name="region" defaultValue={initial?.region} />
-      <Field label="Postal / ZIP code" name="postalCode" defaultValue={initial?.postalCode} required />
-      <Field label="Country (CA, US, FR…)" name="country" defaultValue={initial?.country ?? "CA"} required />
-      <Field label="Phone (couriers require it)" name="phone" defaultValue={initial?.phone} required />
-      <Field label="Email for the courier" name="email" type="email" defaultValue={initial?.email} required />
+      {!initial && (
+        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm sm:col-span-2">
+          No ship-from address saved yet. Buyers see no courier choice on your work until you save one.
+          {defaults && " Name, email and city come from your profile; check them and add the street and a phone number."}
+        </p>
+      )}
+      <Field label="Name" name="recipientName" defaultValue={v?.recipientName} required />
+      <Field label="Studio or company (optional)" name="company" defaultValue={v?.company} />
+      <Field label="Street address" name="line1" defaultValue={v?.line1} span required />
+      <Field label="Unit (optional)" name="line2" defaultValue={v?.line2} span />
+      <Field label="City" name="city" defaultValue={v?.city} required />
+      <Field label="Province / state" name="region" defaultValue={v?.region} />
+      <Field label="Postal / ZIP code" name="postalCode" defaultValue={v?.postalCode} required />
+      <Field label="Country (CA, US, FR…)" name="country" defaultValue={v?.country ?? "CA"} required />
+      <Field label="Phone (couriers require it)" name="phone" defaultValue={v?.phone} required />
+      <Field label="Email for the courier" name="email" type="email" defaultValue={v?.email} required />
       <div className="flex gap-3 sm:col-span-2">
         <Button type="submit" disabled={pending}>Save ship-from address</Button>
         {initial && (

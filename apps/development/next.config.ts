@@ -13,9 +13,11 @@ const nextConfig: NextConfig = {
     "@elkdonis/services",
     "@elkdonis/cms-ui",
     "@elkdonis/direct-edit",
+    "@elkdonis/gradients",
     "@elkdonis/page-builder",
     "@elkdonis/blocks",
     "@elkdonis/primitives",
+    "@elkdonis/workspace-ui",
   ],
   experimental: {
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : undefined,

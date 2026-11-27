@@ -64,6 +64,9 @@ export interface TreePageOptions {
   resolveRows?(node: PuckNode): Promise<Record<string, unknown> | null>;
   /** A live site page: drawn scaled beside the panel, not narrowed by it (tree-editor `fitToPanel`). Set by openPageAsTree and openVisitorPage. */
   fitToPanel?: TreeEditorOptions["fitToPanel"];
+  /** Buttons the host adds to the edit bar (e.g. "Site style") and what they do. */
+  barExtras?: TreeEditorOptions["barExtras"];
+  onBarExtra?: TreeEditorOptions["onBarExtra"];
   /** What the panel says about a live part, by name (tree-editor `liveNote`). */
   liveNote?: TreeEditorOptions["liveNote"];
   /**
@@ -71,6 +74,9 @@ export interface TreePageOptions {
    * each layer over the last (canvas/stack.ts), the selection handed back on close. Absent: as before.
    */
   inception?: boolean;
+  /** The zoomed popup (tree-editor `largeView`): default OFF. Words that come from a record (tree-editor `recordWords`). */
+  largeView?: boolean;
+  recordWords?: TreeEditorOptions["recordWords"];
   /** The host's sanitiser for rich text typed in place (tree-editor `cleanRich`). */
   cleanRich?(html: string): string;
   /**
@@ -210,10 +216,10 @@ export function mountTreePage(o: TreePageOptions): TreeEditorHandle {
   };
   const drawsSample = (n: PuckNode) => sampleKeysOf(o.contract, n.type).length > 0 && !resolved[n.props.id];
   // The popup is this same mount on a working copy of one block. Only with a contract, and never inside itself.
-  const mountNested: Parameters<typeof mountTreeEditor>[0]["mountNested"] = o.contract && !o.nested
+  const mountNested: Parameters<typeof mountTreeEditor>[0]["mountNested"] = o.largeView && o.contract && !o.nested
     ? (m) => mountTreePage({ ...o, resolved, boundCache: cache, host: m.stage, doc: m.doc, pageName: m.name, nested: m.nested, onSave: m.onSave, onDone: undefined, onRestore: undefined, blockEditorHref: undefined, saveNotice: undefined, editSettings: o.inception ? o.editSettings : undefined, settingsCache: o.inception ? settingsRows : undefined, resolveRows: o.inception ? o.resolveRows : undefined })
     : undefined;
-  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, pages: o.pages, nested: o.nested, mountNested, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, liveNote: o.liveNote, fitToPanel: o.fitToPanel, designTools: o.designTools, inception: o.inception, freeMove: o.freeMove, blkStyleDecls: o.blkStyleDecls, contentTab: o.contentTab, setProp: o.setProp, resolveRows });
+  const editor = mountTreeEditor({ doc: o.doc, slots, scope: o.host, draw, labels, catalogue, contract: o.contract, drawsSample, onSave: o.onSave, saveNotice: o.saveNotice, onDone: o.onDone, choosePicture: o.choosePicture, blockEditorHref: o.blockEditorHref, pageName: o.pageName, onRestore: o.onRestore, pages: o.pages, nested: o.nested, mountNested, largeView: o.largeView, recordWords: o.recordWords, developer: o.developer, cleanRich: o.cleanRich, binding, presets: o.presets, editSettings, liveNote: o.liveNote, fitToPanel: o.fitToPanel, barExtras: o.barExtras, onBarExtra: o.onBarExtra, designTools: o.designTools, inception: o.inception, freeMove: o.freeMove, blkStyleDecls: o.blkStyleDecls, contentTab: o.contentTab, setProp: o.setProp, resolveRows });
   return {
     ...editor,
     dispose() {

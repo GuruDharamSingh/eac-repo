@@ -84,6 +84,9 @@ const UNPAID = ["draft", "pending_payment", "awaiting_etransfer"];
 // Services a courier offers that are not allowed for artwork.
 const EXCLUDED_SERVICE = /\bmedia\b/i; // USPS Media Mail: books and recorded media only
 
+/** Countries where a courier quote needs the province or state. */
+export const STATE_REQUIRED = ["CA", "US", "AU"];
+
 const toMinor = (major: number | null | undefined) => Math.round(Number(major ?? 0) * 100);
 
 // ---------------------------------------------------------------------------
@@ -93,6 +96,28 @@ const toMinor = (major: number | null | undefined) => Math.round(Number(major ??
 export async function getShipFrom(userId: string): Promise<ShipFrom | null> {
   const [r] = (await db`SELECT ship_from FROM users WHERE id = ${userId} LIMIT 1`) as unknown as Row[];
   return (r?.ship_from as ShipFrom | null) ?? null;
+}
+
+/**
+ * Starting values for the ship-from form when none is saved: what the maker's
+ * network profile already holds. Not stored; the maker confirms by saving.
+ * Phone and street are never guessed (no profile column holds them).
+ */
+export async function getShipFromDefaults(userId: string): Promise<Partial<ShipFrom>> {
+  const [r] = (await db`
+    SELECT display_name, email, city, region, country, postal_code FROM users WHERE id = ${userId} LIMIT 1
+  `) as unknown as Row[];
+  if (!r) return {};
+  const country = String(r.country ?? "").trim().toUpperCase();
+  return {
+    recipientName: (r.display_name as string | null) ?? undefined,
+    email: (r.email as string | null) ?? undefined,
+    city: (r.city as string | null) ?? undefined,
+    region: (r.region as string | null) ?? undefined,
+    postalCode: (r.postal_code as string | null) ?? undefined,
+    // The profile column is free text ("Canada"); only a two-letter code carries over.
+    country: /^[A-Z]{2}$/.test(country) ? country : undefined,
+  };
 }
 
 export async function setShipFrom(userId: string, value: ShipFrom | null): Promise<Result> {
@@ -289,6 +314,11 @@ export async function quoteOrderShipping(orderId: string, address: Address): Pro
   if (!ctx.canQuote || !ctx.origin) return { ok: false, error: ctx.reason ?? "No quote for this order." };
   if (!address?.line1 || !address.city || !address.postalCode || !address.country) {
     return { ok: false, error: "Enter the street, city, postal code and country." };
+  }
+  // Easyship answers 422 ("no solutions") when the state is blank for these countries
+  // (verified 2026-11-24: Toronto quoted with ON, refused without it).
+  if (STATE_REQUIRED.includes(address.country.trim().toUpperCase()) && !String(address.region ?? "").trim()) {
+    return { ok: false, error: "Enter the province or state (for example ON)." };
   }
   const currency = String(ctx.order.currency).trim();
   try {

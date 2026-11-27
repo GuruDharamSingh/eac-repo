@@ -7,6 +7,10 @@ import { LANDING_SLUG } from "@/lib/puck/landing";
 import { RESOLVED_KEYS } from "@/lib/puck/resolved";
 import { records } from "./person-records";
 import { choosePicture } from "./page-picture-chooser";
+import { loadFieldsAction, restoreFieldsAction, saveFieldsAction } from "@/app/fields/actions";
+import { elktoursFieldsRegistry } from "@/lib/tour-fields-registry";
+// One Edit button: Site style opens from inside the page editor (a button in its bar), as the same editor it always was.
+import { hasSiteStyle, openProvidedSiteStyle } from "@elkdonis/house-editor/entry";
 
 /**
  * The landing page's editor: the house landing bind (@elkdonis/house-editor) on this site's catalogue. A sealed block
@@ -40,8 +44,11 @@ export async function openLandingEditor({ tree, resolved, version, orgId }: { tr
     liveNote: (part) => LIVE_NOTES[part] ?? null,
     choosePicture,
     records,
+    // Double-click on a tour card's title (already selected) opens the tour's own field through the Fields lens: its load, its save, its warning line.
+    recordFields: { registry: elktoursFieldsRegistry, load: loadFieldsAction, save: saveFieldsAction, restore: restoreFieldsAction },
     // The landing page is not drawn with the design tools (as before).
     flags: { designTools: false },
+    ...(hasSiteStyle() ? { barExtras: [{ id: "site-style", label: "Site style", title: "Colours, fonts and the header and footer, for the whole site" }], onBarExtra: (id: string) => { if (id === "site-style") void openProvidedSiteStyle("column"); } } : {}),
     save: (_slug, data, held) => saveLandingAction(data, held),
     ...(tree
       ? {

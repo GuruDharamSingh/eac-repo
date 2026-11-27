@@ -48,8 +48,8 @@ check("the marker sits right before the block's own root when there is no look",
 
 console.log("-- finding each part's element");
 const d1 = dom(on);
-check("the block field map names the parts that can be typed", !!map["feature-card"]?.parts.title && map["feature-card"].parts.title.prop === "title" && map["feature-card"].parts.title.inline === true && !map["feature-card"].parts.image && !!map["hero-banner"]?.parts.title && !map["feature-card"].parts.root, Object.keys(map["feature-card"]?.parts ?? {}).join());
-check("a setting declared with `binds` is never offered", !Object.values(map).some((e: any) => Object.values(e.parts).some((p: any) => contracts[Object.keys(map).find((k) => map[k] === e)!].props.find((x: any) => x.name === p.prop)?.binds)));
+check("the block field map names the parts that can be typed", !!map["feature-card"]?.parts.title && map["feature-card"].parts.title.prop === "title" && map["feature-card"].parts.title.inline === true && map["feature-card"].parts.image?.kind === "image" && !!map["hero-banner"]?.parts.title && !map["feature-card"].parts.root, Object.keys(map["feature-card"]?.parts ?? {}).join());
+check("a setting declared with `binds` is offered as a record, never as a typed value", Object.entries(map).every(([t, e]: any) => [...Object.values(e.parts), ...Object.values(e.others)].every((p: any) => !!contracts[t].props.find((x: any) => x.name === p.prop)?.binds === !!p.binds)));
 const found = scanBlocks(d1, map, "home");
 const byRef = Object.fromEntries(found.map((f) => [f.ref, f]));
 check("every typed part of a card is found, with the C4 id", byRef["block:home:c-1:title"]?.el.textContent === "Typed title" && byRef["block:home:c-1:body"]?.el.textContent === "Typed words." && byRef["block:home:c-2:title"]?.el.textContent === "Typed title", found.map((f) => f.ref).join(" "));
@@ -103,8 +103,8 @@ r = await blockDoors.save("home:c-1", { title: "Again" }, "v1");
 check("a change made on a page that moved since is stale, and writes nothing", !r.ok && r.stale === true && saves.length === 1 && stored.content[0].props.title === "New title", r.error);
 r = await blockDoors.save("home:c-1", { title: "x".repeat(500) }, "v2");
 check("a refused step shows its own words and writes nothing", !r.ok && /too long/.test(r.error) && saves.length === 1, r.error);
-r = await blockDoors.save("home:c-1", { tone: "plain" }, "v2");
-check("a setting no part draws cannot be written through here", !r.ok && /not a setting that can be typed/.test(r.error) && saves.length === 1, r.error);
+r = await blockDoors.save("home:c-1", { nope: "plain" }, "v2");
+check("a setting the block does not have cannot be written through here", !r.ok && /not a setting that can be changed/.test(r.error) && saves.length === 1, r.error);
 r = await blockDoors.save("home:c-1", { morph: "x" }, "v2");
 check("the look key cannot be written through here", !r.ok && saves.length === 1);
 r = await blockDoors.save("home:c-1", { title: "New title" }, "v2");
@@ -292,5 +292,137 @@ console.log("-- the three canvas sites' binds (source level)");
   check("elktours: the landing page is not marked (its slug is reserved for the canvas, so the page save would refuse it)", !/markedPuckConfig/.test(read("elktours/src/app/page.tsx")) && /LANDING_SLUG/.test(read("elktours/src/lib/puck/reserved.ts")));
   check("no site gained a package dependency (the actions package is not needed to bind the doors)", ["elktours", "hidden-enneagram", "innergathering"].every((a) => !/"@elkdonis\/actions"/.test(read(`${a}/package.json`))));
 }
+
+// ---------------------------------------------------------------------------
+// 2026-11-22 (lane DOOR): the lens offers more than plain text. Each kind: offered when declared, refused values, the
+// step each save sends. Same page store stub style as above; nothing touches a database.
+console.log("-- wider kinds: what is offered");
+{
+  const { stepFor, settingsOf, blockSpecs: specsOf, settingSpec } = fieldsServer as any;
+  const { checkValue } = fieldsServer as any;
+  const mapR = fieldMapOf(contracts, { richtext: true });
+  const mapN = fieldMapOf(contracts);
+  const fc = mapN["feature-card"]!, hb = mapN["hero-banner"]!, ti = mapR["text-image"]!;
+  check("a choice is offered with the block's own options and default", fc.others.tone?.kind === "select" && J(fc.others.tone.options?.map((o: any) => o.value)) === J(["feed", "panel", "bordered", "plain"]) && fc.others.tone.default === "feed", J(fc.others.tone));
+  check("a number is offered with its declared range, step and unit", hb.others.height?.kind === "number" && J(hb.others.height.range) === J({ min: 0, max: 1200, step: 10, unit: "px" }), J(hb.others.height));
+  check("a choice with no declared options is never offered", !Object.values(fieldMapOf({ x: { label: "X", props: [{ name: "s", kind: "select", label: "S" }] } } as never)).length);
+  check("a switch is offered with its default as text", Object.values(mapN).some((e: any) => Object.values(e.others).some((s: any) => s.kind === "boolean" && (s.default === "true" || s.default === "false"))));
+  check("a link is offered as a link", fc.others.href?.kind === "url" && specsOf(fc).href.input === "url");
+  check("a picture a part draws is offered at that part", fc.parts.image?.kind === "image" && hb.parts.image?.kind === "image" && specsOf(hb).imageUrl.input === "image");
+  check("formatted text is offered only where the host can clean it", ti.others.body?.kind === "richtext" && specsOf(ti).body.input === "rich" && !mapN["text-image"]?.others.body, J(Object.keys(mapN["text-image"]?.others ?? {})));
+  check("a setting filled from a record is offered as a record, with its kind", fc.others.record?.binds === "record" && specsOf(fc).record.input === "record" && specsOf(fc).record.binds === "record" && specsOf(fc).opens.binds === "opens");
+  const odd = fieldMapOf({
+    x: { label: "X", props: [
+      { name: "c", kind: "string", label: "Colour", format: "color" },
+      { name: "r", kind: "rows", label: "Rows" }, { name: "l", kind: "list", label: "List" }, { name: "sl", kind: "slot", label: "Slot" },
+      { name: "nb", kind: "number", label: "NB", binds: "x" },
+      { name: "ok", kind: "string", label: "Fine" },
+    ] },
+  } as never) as any;
+  check("colours, rows, lists, regions and a record on a non-text setting are never offered", J(Object.keys(odd.x.others)) === J(["ok"]), J(Object.keys(odd.x?.others ?? {})));
+  check("a block with a setting no part draws is reachable from its own box; a block with only part-drawn settings is not", Object.keys(fc.others).length > 0 && Object.keys(fieldMapOf({ y: { label: "Y", props: [{ name: "t", kind: "string", label: "T" }], parts: { t: { label: "T", sel: ".t", prop: "t" } } } } as never) as any).length === 1 && Object.keys((fieldMapOf({ y: { label: "Y", props: [{ name: "t", kind: "string", label: "T" }], parts: { t: { label: "T", sel: ".t", prop: "t" } } } } as never) as any).y.others).length === 0);
+  check("every offered setting is one the block declares, by its own kind", Object.entries(mapR).every(([t, e]: any) => Object.keys(settingsOf(e)).every((n) => contracts[t].props.some((p: any) => p.name === n))));
+  check("nothing in the look or the editor's own keys is offered", Object.values(mapR).every((e: any) => Object.keys(settingsOf(e)).every((n) => !["morph", "look", "blkStyle", "id", "puck", "editMode", "children"].includes(n))));
+  check("settingSpec carries the options, default, range and record kind into the lens's field", settingSpec(fc.others.tone).options.length === 4 && settingSpec(hb.others.height).range.max === 1200 && settingSpec(fc.others.record).binds === "record");
+
+  console.log("-- wider kinds: what the lens refuses before it sends");
+  const num = specsOf(hb).height ?? settingSpec(hb.others.height);
+  check("a number outside the declared range is refused with the range", !checkValue(num, "5000").ok && /0 to 1200/.test(checkValue(num, "5000").error) && !checkValue(num, "-1").ok && checkValue(num, "300").ok);
+  check("something that is not a number is refused", !checkValue(num, "tall").ok);
+  const tone = settingSpec(fc.others.tone);
+  check("a choice outside the options is refused; nothing means the default", !checkValue(tone, "loud").ok && checkValue(tone, "plain").ok && checkValue(tone, "").ok && checkValue(tone, "").value === "");
+  const sw = settingSpec({ prop: "s", label: "S", kind: "boolean", inline: false, max: 0, default: "false" });
+  check("a switch takes on, off, or nothing (the default)", checkValue(sw, "true").ok && checkValue(sw, "false").ok && checkValue(sw, "").ok && !checkValue(sw, "maybe").ok);
+  const link = settingSpec(fc.others.href);
+  check("a link is checked the way the lens already checks links", checkValue(link, "https://example.org/a").ok && checkValue(link, "/about").ok && checkValue(link, "mailto:a@b.org").ok && !checkValue(link, "javascript:alert(1)").ok && !checkValue(link, "//evil.example").ok && !checkValue(link, "data:text/html,x").ok);
+  const rec = settingSpec(fc.others.record);
+  check("a record is chosen, never typed with spaces", !checkValue(rec, "thread: abc").ok && checkValue(rec, "thread:abc").ok);
+
+  console.log("-- wider kinds: the step each save sends");
+  const S = (prop: string, raw: unknown, map: any = fc) => stepFor("b-1", settingsOf(map)[prop], raw);
+  check("a choice sends set_prop with the option", J(S("tone", "plain")) === J({ step: { op: "set_prop", block: "b-1", prop: "tone", value: "plain" } }));
+  check("a choice left empty sends unset", J(S("tone", "")) === J({ step: { op: "unset", block: "b-1", prop: "tone" } }));
+  check("a number sends set_prop with a number, not text", J(S("height", "320", hb)) === J({ step: { op: "set_prop", block: "b-1", prop: "height", value: 320 } }));
+  check("a number left empty sends unset; one that is not a number sends nothing", J(S("height", "", hb)) === J({ step: { op: "unset", block: "b-1", prop: "height" } }) && "error" in S("height", "tall", hb));
+  const boolSetting = Object.values(mapN).flatMap((e: any) => Object.values(e.others)).find((s: any) => s.kind === "boolean") as any;
+  check("a switch sends set_prop with true or false, empty sends unset", J(stepFor("b-1", boolSetting, "true")) === J({ step: { op: "set_prop", block: "b-1", prop: boolSetting.prop, value: true } }) && J(stepFor("b-1", boolSetting, "false")) === J({ step: { op: "set_prop", block: "b-1", prop: boolSetting.prop, value: false } }) && J(stepFor("b-1", boolSetting, "")) === J({ step: { op: "unset", block: "b-1", prop: boolSetting.prop } }) && "error" in stepFor("b-1", boolSetting, "maybe"));
+  check("a link and a picture send set_prop with the text", J(S("href", "/about").step) === J({ op: "set_prop", block: "b-1", prop: "href", value: "/about" }) && (S("image", "https://x.org/a.png") as any).step.op === "set_prop");
+  check("formatted text sends set_prop with the text (the door cleans it)", (stepFor("b-1", settingsOf(ti).body, "<p>x</p>") as any).step.op === "set_prop");
+  check("a setting filled from a record sends bind, and empty clears it", J(S("record", "thread:abc")) === J({ step: { op: "bind", block: "b-1", prop: "record", record: "thread:abc" } }) && (S("record", "") as any).step.op === "bind");
+  check("a value that is not text sends nothing", "error" in S("tone", 5) && "error" in S("record", null));
+
+  console.log("-- wider kinds: saved through the block door, stale guard included");
+  let doc: any = page(card("c-1", { title: "T", tone: "feed" }), { type: "hero-banner", props: { id: "h-1", title: "Big title", height: 400, align: "left" } }, { type: "text-image", props: { id: "t-1", body: "<p>Old</p>" } });
+  let ver = "v1";
+  const writes: any[] = [];
+  const cleaner = (h: string) => h.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/\son\w+="[^"]*"/gi, "");
+  const mk = (extra: object = {}) => createBlockFields({
+    contracts, config: plain,
+    loadPage: async () => ({ data: doc, updatedAt: ver }),
+    save: async (slug: string, d: unknown, v?: string) => { writes.push({ slug, d, v }); if (v !== undefined && v !== ver) return { ok: false, stale: true, error: "stale" }; doc = d; ver = "v" + (writes.length + 1); return { ok: true, updatedAt: ver }; },
+    ...extra,
+  });
+  const door = mk({ sanitizeRichText: cleaner });
+  const plainDoor = mk();
+  const frozen = J(doc);
+  let q: any = await door.load("home:c-1");
+  check("load gives every offered setting as text, empty where nothing is set", q.ok && q.values.tone === "feed" && q.values.href === "" && q.values.record === "" && q.values.title === "T", J(q.values));
+  q = await door.load("home:h-1");
+  check("load gives a number as text and a missing switch as empty", q.ok && q.values.height === "400" && q.values.align === "left" && q.values.imageUrl === "", J(q.values));
+  let n0 = writes.length;
+  q = await door.save("home:c-1", { tone: "plain" }, "v1");
+  check("a choice saves as one set_prop and changes only that value", q.ok && writes.length === n0 + 1 && doc.content[0].props.tone === "plain" && doc.content[0].props.title === "T" && J(doc.content[1]) === J(JSON.parse(frozen).content[1]), q.error ?? q.say);
+  q = await door.save("home:c-1", { tone: "loud" }, ver);
+  check("a choice outside the options is refused by the door and writes nothing", !q.ok && /takes one of/.test(q.error) && writes.length === n0 + 1);
+  q = await door.save("home:c-1", { tone: "" }, ver);
+  check("a choice sent empty goes back to the declared default through unset", q.ok && doc.content[0].props.tone === "feed", q.error ?? q.say);
+  q = await door.save("home:h-1", { height: "640" }, ver);
+  check("a number saves as a number", q.ok && doc.content[1].props.height === 640, q.error ?? q.say);
+  q = await door.save("home:h-1", { height: "99999" }, ver);
+  check("a number past the declared top is held to it", q.ok && doc.content[1].props.height === 1200, q.error ?? q.say);
+  q = await door.save("home:h-1", { height: "tall" }, ver);
+  check("a number that is not a number is refused and writes nothing", !q.ok && /number/.test(q.error));
+  q = await door.save("home:h-1", { height: "" }, ver);
+  check("a number sent empty goes back to its default", q.ok && doc.content[1].props.height === 0, q.error ?? q.say);
+  q = await door.save("home:c-1", { href: "https://example.org/x" }, ver);
+  check("a link saves", q.ok && doc.content[0].props.href === "https://example.org/x", q.error ?? q.say);
+  q = await door.save("home:c-1", { href: "javascript:alert(1)" }, ver);
+  check("a link that is not a link is refused and the stored one stays", !q.ok && /web address/.test(q.error) && doc.content[0].props.href === "https://example.org/x", q.error);
+  q = await door.save("home:h-1", { imageUrl: "/media/a.png" }, ver);
+  check("a picture saves as its address", q.ok && doc.content[1].props.imageUrl === "/media/a.png", q.error ?? q.say);
+  q = await door.save("home:h-1", { imageUrl: "javascript:alert(1)" }, ver);
+  check("a picture that is not an address is refused", !q.ok && /picture address/.test(q.error) && doc.content[1].props.imageUrl === "/media/a.png", q.error);
+  q = await door.save("home:t-1", { body: '<p onclick="x()">New</p><script>alert(1)</script>' }, ver);
+  check("formatted text is stored as the host's cleaner left it", q.ok && doc.content[2].props.body === "<p>New</p>", q.error ?? J(doc.content[2].props.body));
+  q = await plainDoor.save("home:t-1", { body: "<p>Hi</p>" }, ver);
+  check("a host with no cleaner offers no formatted text and the door refuses it", !q.ok && !plainDoor.map["text-image"]?.others.body && doc.content[2].props.body === "<p>New</p>", q.error);
+  q = await door.save("home:c-1", { record: "thread:abc123" }, ver);
+  check("a record saves through bind", q.ok && doc.content[0].props.record === "thread:abc123", q.error ?? q.say);
+  q = await door.save("home:c-1", { record: "Not A Record" }, ver);
+  check("a record reference of the wrong shape is refused", !q.ok && /kind:id/.test(q.error) && doc.content[0].props.record === "thread:abc123", q.error);
+  q = await door.save("home:c-1", { record: "" }, ver);
+  check("an empty record reference clears the choice", q.ok && doc.content[0].props.record === "", q.error ?? q.say);
+  n0 = writes.length;
+  const stale = ver;
+  ver = "v-moved";
+  q = await door.save("home:c-1", { tone: "panel" }, stale);
+  check("a choice saved from a page that moved since is stale and writes nothing", !q.ok && q.stale === true && writes.length === n0 && doc.content[0].props.tone === "feed");
+  q = await door.save("home:c-1", { nope: "x" }, ver);
+  check("a setting the block does not have is refused", !q.ok && /not a setting that can be changed/.test(q.error));
+  q = await door.save("home:c-1", { morph: "x" }, ver);
+  check("the look key is still refused", !q.ok);
+  q = await door.save("home:c-1", { tone: "panel", title: "Two", href: "/a" }, ver);
+  check("several kinds in one save are several steps and one page write", q.ok && writes.length === n0 + 1 && doc.content[0].props.tone === "panel" && doc.content[0].props.title === "Two" && doc.content[0].props.href === "/a", q.error ?? q.say);
+
+  console.log("-- wider kinds: finding a block's own box");
+  const marker = renderToStaticMarkup(React.createElement(Render as any, { config: marked, data: page(card("c-7"), { type: "hero-banner", props: { id: "h-7", title: "Big" } }) }));
+  const dd = dom(marker);
+  const foundR = scanBlocks(dd, mapN, "home");
+  const rootsF = foundR.filter((f) => f.root);
+  check("a block with settings no part draws gets one field on its own box, named *", rootsF.length === 2 && rootsF.every((f) => f.ref.endsWith(":*") && f.prop === "*") && rootsF[0]!.ref === "block:home:c-7:*", J(rootsF.map((f) => f.ref)));
+  check("the box is never also one of its own parts: one element, one field", new Set(foundR.map((f) => f.el)).size === foundR.length);
+  check("the box stands for the block's settings, so its text parts are still found beside it", foundR.some((f) => f.ref === "block:home:c-7:title") && foundR.some((f) => f.ref === "block:home:h-7:title"));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -1,10 +1,10 @@
 {
- "generatedAt": "2026-11-21",
+ "generatedAt": "2026-11-26",
  "counts": {
   "byKind": {
-   "api": 528,
-   "sa": 937,
-   "sql": 538
+   "api": 531,
+   "sa": 953,
+   "sql": 565
   },
   "byApp": {
    "actions": {
@@ -28,7 +28,7 @@
     "sql": 1
    },
    "art-auction": {
-    "sa": 118,
+    "sa": 124,
     "api": 8,
     "sql": 12
    },
@@ -38,7 +38,7 @@
     "sql": 6
    },
    "arts-collective": {
-    "sa": 187,
+    "sa": 190,
     "api": 68,
     "sql": 25
    },
@@ -98,9 +98,9 @@
     "sql": 3
    },
    "elktours": {
-    "sa": 201,
-    "api": 51,
-    "sql": 97
+    "sa": 208,
+    "api": 53,
+    "sql": 101
    },
    "email": {
     "sa": 0,
@@ -140,7 +140,7 @@
    "lms": {
     "sa": 0,
     "api": 0,
-    "sql": 30
+    "sql": 53
    },
    "mcp": {
     "sa": 0,
@@ -189,7 +189,7 @@
    },
    "sophia": {
     "sa": 0,
-    "api": 1,
+    "api": 2,
     "sql": 0
    },
    "sunjay": {
@@ -201,7 +201,7 @@
  },
  "sharedSqlCount": {
   "db": 10,
-  "services": 325
+  "services": 326
  },
  "reexports": [],
  "hosts": [
@@ -1372,7 +1372,7 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/api/auth/signup/route.ts",
    "symbol": "POST",
-   "line": 8,
+   "line": 15,
    "imports": [
     "@elkdonis/auth-server"
    ],
@@ -1381,7 +1381,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "01fe12250131"
+   "hash": "598d69646ccb"
   },
   {
    "key": "api:apps/art-auction/src/app/api/galleries/[id]/items/route.ts#PATCH",
@@ -1646,7 +1646,7 @@
    "app": "arts-collective",
    "file": "apps/arts-collective/src/app/api/auth/signup/route.ts",
    "symbol": "POST",
-   "line": 19,
+   "line": 20,
    "imports": [
     "@elkdonis/auth-server"
    ],
@@ -1655,7 +1655,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "4d416308125c"
+   "hash": "950facfffb1f"
   },
   {
    "key": "api:apps/arts-collective/src/app/api/broadcast/camera-upload/route.ts#POST",
@@ -2873,7 +2873,7 @@
    "app": "danamccool",
    "file": "apps/danamccool/src/app/api/auth/signup/route.ts",
    "symbol": "POST",
-   "line": 8,
+   "line": 12,
    "imports": [
     "@elkdonis/auth-server"
    ],
@@ -2882,7 +2882,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "01fe12250131"
+   "hash": "7e539fadb0dd"
   },
   {
    "key": "api:apps/danamccool/src/app/api/contact/route.ts#POST",
@@ -3776,6 +3776,32 @@
    "registry": false,
    "rawSql": true,
    "hash": "b9c4ac898db6"
+  },
+  {
+   "key": "api:apps/elktours/src/app/api/media/attach/route.ts#POST",
+   "kind": "api",
+   "app": "elktours",
+   "file": "apps/elktours/src/app/api/media/attach/route.ts",
+   "symbol": "POST",
+   "line": 14,
+   "imports": [],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "117ad5e2c40d"
+  },
+  {
+   "key": "api:apps/elktours/src/app/api/media/upload-to/route.ts#POST",
+   "kind": "api",
+   "app": "elktours",
+   "file": "apps/elktours/src/app/api/media/upload-to/route.ts",
+   "symbol": "POST",
+   "line": 14,
+   "imports": [],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "cbc170803baa"
   },
   {
    "key": "api:apps/elktours/src/app/api/network/arrival/route.ts#POST",
@@ -6687,14 +6713,13 @@
     "@elkdonis/nextcloud#getAdminClient",
     "@elkdonis/services#appendOrgPortfolio",
     "@elkdonis/services#getProxyFileUrl",
-    "@elkdonis/services#markArtist",
     "@elkdonis/services#uploadFile",
     "@elkdonis/services#uploadFilename",
     "@elkdonis/utils#validateUploadBuffer"
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "ba5a024f2a0d"
+   "hash": "52b9953ed63f"
   },
   {
    "key": "api:apps/innergathering/src/app/api/auth/signup/route.ts#POST",
@@ -8134,6 +8159,61 @@
    "registry": false,
    "rawSql": false,
    "hash": "d0a6258df44d"
+  },
+  {
+   "key": "api:apps/sophia/src/app/api/workspaces/[action]/route.ts#POST",
+   "kind": "api",
+   "app": "sophia",
+   "file": "apps/sophia/src/app/api/workspaces/[action]/route.ts",
+   "symbol": "POST",
+   "line": 27,
+   "imports": [
+    "@elkdonis/lms",
+    "@elkdonis/services",
+    "@elkdonis/workspace-ui/map"
+   ],
+   "calls": [
+    "@elkdonis/lms#addWorkspaceMember",
+    "@elkdonis/lms#afterWithdrawalPublished",
+    "@elkdonis/lms#agreeToParticipation",
+    "@elkdonis/lms#answerWorkspaceEntry",
+    "@elkdonis/lms#applyWorkspaceEdit",
+    "@elkdonis/lms#commentOnWorkspaceEntry",
+    "@elkdonis/lms#completeWorkspaceStep",
+    "@elkdonis/lms#createWorkspace",
+    "@elkdonis/lms#createWorkspaceInvite",
+    "@elkdonis/lms#decidePublication",
+    "@elkdonis/lms#getExperimentState",
+    "@elkdonis/lms#getOngoingView",
+    "@elkdonis/lms#getWorkspaceJournal",
+    "@elkdonis/lms#getWorkspaceView",
+    "@elkdonis/lms#listOngoingSessions",
+    "@elkdonis/lms#listResultCandidates",
+    "@elkdonis/lms#listResults",
+    "@elkdonis/lms#listWorkspaceInvites",
+    "@elkdonis/lms#makeMyWorkspaceEntriesPrivate",
+    "@elkdonis/lms#markResultPublished",
+    "@elkdonis/lms#markResultTakenDown",
+    "@elkdonis/lms#prepareResultsPublication",
+    "@elkdonis/lms#refreshWorkspaceDoing",
+    "@elkdonis/lms#requestPublication",
+    "@elkdonis/lms#revokeWorkspaceInvite",
+    "@elkdonis/lms#saveConsentText",
+    "@elkdonis/lms#saveIntervalEntry",
+    "@elkdonis/lms#saveIntervalPlan",
+    "@elkdonis/lms#saveResultDraft",
+    "@elkdonis/lms#saveWorkspaceResponse",
+    "@elkdonis/lms#searchWorkspaceMembers",
+    "@elkdonis/lms#setWorkspaceEntryVisibility",
+    "@elkdonis/lms#withdrawParticipation",
+    "@elkdonis/services#createThread",
+    "@elkdonis/services#moderateThread",
+    "@elkdonis/services#updatePost",
+    "@elkdonis/workspace-ui/map#mapWorkspace"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "85fd873975de"
   },
   {
    "key": "api:apps/sunjay/src/app/api/auth/login/route.ts#POST",
@@ -10958,12 +11038,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "addStoreMemberAction",
-   "line": 644,
+   "line": 678,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#addStoreMember",
@@ -10979,19 +11060,20 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "applyArtistAction",
-   "line": 117,
+   "line": 147,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#applyForStore"
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "e89f5584d335"
+   "hash": "44efceb92021"
   },
   {
    "key": "sa:apps/art-auction/src/app/studio/actions.ts#archiveArtworkAction",
@@ -10999,12 +11081,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "archiveArtworkAction",
-   "line": 384,
+   "line": 418,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#archiveArtwork"
@@ -11019,12 +11102,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "buyLabelAction",
-   "line": 696,
+   "line": 730,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [],
    "registry": false,
@@ -11037,12 +11121,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "cancelLotAction",
-   "line": 456,
+   "line": 490,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#cancelLot"
@@ -11057,12 +11142,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "cancelOrderAction",
-   "line": 500,
+   "line": 534,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#cancelOrder"
@@ -11077,12 +11163,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "confirmOrderPaidAction",
-   "line": 480,
+   "line": 514,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#confirmOrderPaid"
@@ -11097,12 +11184,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "createArtworkAction",
-   "line": 288,
+   "line": 322,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#createArtwork"
@@ -11117,12 +11205,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "createLotAction",
-   "line": 421,
+   "line": 455,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#createLot",
@@ -11138,12 +11227,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "disconnectStripeAction",
-   "line": 634,
+   "line": 668,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/checkout/stripe#disconnectStripeAccount"
@@ -11158,12 +11248,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "fulfilOrderAction",
-   "line": 513,
+   "line": 547,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#markOrderFulfilled"
@@ -11173,17 +11264,39 @@
    "hash": "e5c7df7c8c02"
   },
   {
+   "key": "sa:apps/art-auction/src/app/studio/actions.ts#joinCollectiveAsArtistAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/studio/actions.ts",
+   "symbol": "joinCollectiveAsArtistAction",
+   "line": 104,
+   "imports": [
+    "@elkdonis/checkout/stripe",
+    "@elkdonis/commerce/payout-rails",
+    "@elkdonis/commerce/server",
+    "@elkdonis/db",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/services#joinArtistSpace"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "6f2ff6d6ed02"
+  },
+  {
    "key": "sa:apps/art-auction/src/app/studio/actions.ts#openOrgStoreAction",
    "kind": "sa",
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "openOrgStoreAction",
-   "line": 70,
+   "line": 72,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#openOrgStore"
@@ -11198,12 +11311,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "presentArtworkAction",
-   "line": 550,
+   "line": 584,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#presentArtwork"
@@ -11218,12 +11332,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "publishArtworkAction",
-   "line": 372,
+   "line": 406,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#publishArtwork"
@@ -11238,12 +11353,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "recordTrackingAction",
-   "line": 676,
+   "line": 710,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [],
    "registry": false,
@@ -11256,12 +11372,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "refundOrderAction",
-   "line": 530,
+   "line": 564,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#refundOrder",
@@ -11277,12 +11394,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "removeStoreMemberAction",
-   "line": 663,
+   "line": 697,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#removeStoreMember"
@@ -11297,12 +11415,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "saveParcelAction",
-   "line": 736,
+   "line": 770,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [],
    "registry": false,
@@ -11315,12 +11434,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "savePayoutSetupAction",
-   "line": 595,
+   "line": 629,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/payout-rails#canEtransfer",
@@ -11337,12 +11457,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "saveShipFromAction",
-   "line": 711,
+   "line": 745,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [],
    "registry": false,
@@ -11355,12 +11476,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "searchPeopleAction",
-   "line": 263,
+   "line": 297,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/db#db"
@@ -11375,12 +11497,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "selectStoreAction",
-   "line": 54,
+   "line": 56,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [],
    "registry": false,
@@ -11393,12 +11516,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "setPayoutEmailAction",
-   "line": 578,
+   "line": 612,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#setPayoutIdentity"
@@ -11413,12 +11537,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "startStripeOnboardingAction",
-   "line": 620,
+   "line": 654,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/checkout/stripe#isCardPaymentAvailable",
@@ -11434,12 +11559,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "unpresentArtworkAction",
-   "line": 563,
+   "line": 597,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#unpresentArtwork"
@@ -11454,12 +11580,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "updateArtworkAction",
-   "line": 334,
+   "line": 368,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#setArtworkMedia",
@@ -11475,12 +11602,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "updateProfileAction",
-   "line": 158,
+   "line": 192,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#updateStore"
@@ -11613,6 +11741,98 @@
    "registry": false,
    "rawSql": false,
    "hash": "d40b38e69601"
+  },
+  {
+   "key": "sa:apps/art-auction/src/lib/dock-actions.ts#dockAckDone",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/dock-actions.ts",
+   "symbol": "dockAckDone",
+   "line": 81,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/lms"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#dockMarkDoneSeen"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "f37919f22a84"
+  },
+  {
+   "key": "sa:apps/art-auction/src/lib/dock-actions.ts#dockChooseCourse",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/dock-actions.ts",
+   "symbol": "dockChooseCourse",
+   "line": 76,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/lms"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#dockChoose"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "cb4ef8dc1fd7"
+  },
+  {
+   "key": "sa:apps/art-auction/src/lib/dock-actions.ts#dockDepart",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/dock-actions.ts",
+   "symbol": "dockDepart",
+   "line": 64,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/lms"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#dockDepart"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "c6c3b7c9976a"
+  },
+  {
+   "key": "sa:apps/art-auction/src/lib/dock-actions.ts#dockReturn",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/dock-actions.ts",
+   "symbol": "dockReturn",
+   "line": 71,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/lms"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#dockReturn"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "cd4366fb5618"
+  },
+  {
+   "key": "sa:apps/art-auction/src/lib/dock-actions.ts#runDockAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/dock-actions.ts",
+   "symbol": "runDockAction",
+   "line": 47,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/lms"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#actionOrgId",
+    "@elkdonis/actions/server#isDockAction",
+    "@elkdonis/actions/server#performAction"
+   ],
+   "registry": true,
+   "rawSql": false,
+   "hash": "c29b8c98442b"
   },
   {
    "key": "sa:apps/art-auction/src/lib/puck/actions.ts#checkNewPageAction",
@@ -13817,6 +14037,66 @@
    "registry": false,
    "rawSql": false,
    "hash": "e46cf92f116b"
+  },
+  {
+   "key": "sa:apps/arts-collective/src/lib/channel/comments.ts#refreshChannelCommentsAction",
+   "kind": "sa",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/lib/channel/comments.ts",
+   "symbol": "refreshChannelCommentsAction",
+   "line": 123,
+   "imports": [
+    "@elkdonis/meta",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/services#listChannelCommentPosts",
+    "@elkdonis/services#storeFetchedComments"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "14e232ee300f"
+  },
+  {
+   "key": "sa:apps/arts-collective/src/lib/channel/comments.ts#refreshOnePostAction",
+   "kind": "sa",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/lib/channel/comments.ts",
+   "symbol": "refreshOnePostAction",
+   "line": 216,
+   "imports": [
+    "@elkdonis/meta",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/services#getChannelCommentPost",
+    "@elkdonis/services#storeFetchedComments"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "270fe19f1db8"
+  },
+  {
+   "key": "sa:apps/arts-collective/src/lib/channel/comments.ts#replyToChannelCommentAction",
+   "kind": "sa",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/lib/channel/comments.ts",
+   "symbol": "replyToChannelCommentAction",
+   "line": 169,
+   "imports": [
+    "@elkdonis/meta",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/meta#replyToInstagramComment",
+    "@elkdonis/meta#replyToInstagramLoginComment",
+    "@elkdonis/meta#replyToPageComment",
+    "@elkdonis/services#getChannelComment",
+    "@elkdonis/services#recordExternalComment"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "7bce7c7bf56a"
   },
   {
    "key": "sa:apps/arts-collective/src/lib/classifieds/actions.ts#saveClassifiedsAction",
@@ -18587,7 +18867,7 @@
    "calls": [],
    "registry": false,
    "rawSql": false,
-   "hash": "a6b33094b026"
+   "hash": "f9f383ff638f"
   },
   {
    "key": "sa:apps/elktours/src/lib/office-actions.ts#getTourSheet",
@@ -18595,7 +18875,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/office-actions.ts",
    "symbol": "getTourSheet",
-   "line": 126,
+   "line": 128,
    "imports": [
     "@elkdonis/commerce/server",
     "@elkdonis/db"
@@ -18606,15 +18886,15 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "dacc8b384100"
+   "hash": "448eddd2ff33"
   },
   {
-   "key": "sa:apps/elktours/src/lib/office-actions.ts#listDraftTourSheet",
+   "key": "sa:apps/elktours/src/lib/office-actions.ts#listEditableTourSheet",
    "kind": "sa",
    "app": "elktours",
    "file": "apps/elktours/src/lib/office-actions.ts",
-   "symbol": "listDraftTourSheet",
-   "line": 141,
+   "symbol": "listEditableTourSheet",
+   "line": 144,
    "imports": [
     "@elkdonis/commerce/server",
     "@elkdonis/db"
@@ -18622,7 +18902,7 @@
    "calls": [],
    "registry": false,
    "rawSql": false,
-   "hash": "d44912d7f9f4"
+   "hash": "c0f919dd3818"
   },
   {
    "key": "sa:apps/elktours/src/lib/office-actions.ts#listPlaceSheet",
@@ -18646,7 +18926,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/office-actions.ts",
    "symbol": "nearbyPlaceSheet",
-   "line": 161,
+   "line": 165,
    "imports": [
     "@elkdonis/commerce/server",
     "@elkdonis/db"
@@ -18655,6 +18935,51 @@
    "registry": false,
    "rawSql": false,
    "hash": "5b2a41644200"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/overlap-actions.ts#dismissAllOverlaps",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/overlap-actions.ts",
+   "symbol": "dismissAllOverlaps",
+   "line": 72,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "8373a8bca5ae"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/overlap-actions.ts#dismissOverlap",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/overlap-actions.ts",
+   "symbol": "dismissOverlap",
+   "line": 54,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "e8be16edc70d"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/overlap-actions.ts#listOverlapsAction",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/overlap-actions.ts",
+   "symbol": "listOverlapsAction",
+   "line": 29,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "a51ad6ebdeff"
   },
   {
    "key": "sa:apps/elktours/src/lib/payout-actions.ts#disconnectPayoutsAction",
@@ -19700,7 +20025,7 @@
    "calls": [],
    "registry": false,
    "rawSql": false,
-   "hash": "2b756e32f81d"
+   "hash": "3eb5ec5af5e2"
   },
   {
    "key": "sa:apps/elktours/src/lib/schedule-actions.ts#previewScheduleAction",
@@ -19736,7 +20061,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "cancelSlot",
-   "line": 367,
+   "line": 402,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19758,7 +20083,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "closeSlotNow",
-   "line": 560,
+   "line": 595,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19778,7 +20103,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "createSlots",
-   "line": 239,
+   "line": 260,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19792,7 +20117,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "6bdf679e6bd3"
+   "hash": "c461484b3769"
   },
   {
    "key": "sa:apps/elktours/src/lib/slot-actions.ts#getSlot",
@@ -19800,7 +20125,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "getSlot",
-   "line": 315,
+   "line": 350,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19821,7 +20146,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "offerWaitlistPlace",
-   "line": 572,
+   "line": 607,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19839,7 +20164,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "previewSlots",
-   "line": 226,
+   "line": 243,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19857,7 +20182,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "reopenSlot",
-   "line": 548,
+   "line": 583,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19877,7 +20202,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "runSlot",
-   "line": 535,
+   "line": 570,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19897,7 +20222,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "saveTourBookingDefaults",
-   "line": 503,
+   "line": 538,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19918,7 +20243,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "updateSlot",
-   "line": 418,
+   "line": 453,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -19934,6 +20259,77 @@
    "registry": false,
    "rawSql": false,
    "hash": "a642caa8f778"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/standing-actions.ts#listStandingRules",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "listStandingRules",
+   "line": 168,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "eda512998b37"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/standing-actions.ts#previewStandingRule",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "previewStandingRule",
+   "line": 96,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "bf71010fe62b"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/standing-actions.ts#saveStandingRule",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "saveStandingRule",
+   "line": 131,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/checkout/booking-server#getOfferByThread",
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "691d6146a0ce"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/standing-actions.ts#stopStandingRule",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "stopStandingRule",
+   "line": 217,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "038d04d9d1bb"
   },
   {
    "key": "sa:apps/elktours/src/lib/stop-note-actions.ts#addStopNoteAction",
@@ -20282,7 +20678,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "addDeparturesAction",
-   "line": 287,
+   "line": 288,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20303,7 +20699,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "bookTourAction",
-   "line": 364,
+   "line": 365,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20331,7 +20727,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "cancelBookingAction",
-   "line": 337,
+   "line": 338,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20352,7 +20748,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "cancelDepartureAction",
-   "line": 312,
+   "line": 313,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20373,7 +20769,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "geocodeAction",
-   "line": 452,
+   "line": 453,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20394,7 +20790,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "removeDepartureAction",
-   "line": 324,
+   "line": 325,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20415,7 +20811,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "saveDepartureAction",
-   "line": 265,
+   "line": 266,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20436,7 +20832,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "saveRouteViaAction",
-   "line": 219,
+   "line": 220,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20459,7 +20855,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "saveStopsAction",
-   "line": 193,
+   "line": 194,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20501,7 +20897,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "4bb88b54b999"
+   "hash": "78932a46757d"
   },
   {
    "key": "sa:apps/elktours/src/lib/tour-actions.ts#setTourPinnedAction",
@@ -20509,7 +20905,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "setTourPinnedAction",
-   "line": 184,
+   "line": 185,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -20532,7 +20928,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "setTourStatusAction",
-   "line": 167,
+   "line": 168,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -26554,12 +26950,13 @@
    "app": "art-auction",
    "file": "apps/art-auction/src/app/studio/actions.ts",
    "symbol": "createLotAction",
-   "line": 421,
+   "line": 455,
    "imports": [
     "@elkdonis/checkout/stripe",
     "@elkdonis/commerce/payout-rails",
     "@elkdonis/commerce/server",
-    "@elkdonis/db"
+    "@elkdonis/db",
+    "@elkdonis/services"
    ],
    "calls": [
     "@elkdonis/commerce/server#createLot",
@@ -28399,7 +28796,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/departures.ts",
    "symbol": "removeCancelledDeparture",
-   "line": 145,
+   "line": 147,
    "imports": [
     "@elkdonis/checkout/booking-server",
     "@elkdonis/commerce/server",
@@ -28634,14 +29031,14 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/media-folders.ts",
    "symbol": "registerInPlace",
-   "line": 370,
+   "line": 372,
    "imports": [
     "@elkdonis/db"
    ],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "02a0228a4a75"
+   "hash": "567bb2b62868"
   },
   {
    "key": "sql:apps/elktours/src/lib/media-folders.ts#runStopsMove",
@@ -28649,7 +29046,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/media-folders.ts",
    "symbol": "runStopsMove",
-   "line": 442,
+   "line": 444,
    "imports": [
     "@elkdonis/db"
    ],
@@ -28659,6 +29056,23 @@
    "registry": false,
    "rawSql": true,
    "hash": "5c238752defa"
+  },
+  {
+   "key": "sql:apps/elktours/src/lib/overlap-actions.ts#insertDismissals",
+   "kind": "sql",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/overlap-actions.ts",
+   "symbol": "insertDismissals",
+   "line": 39,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "40aabfa9a0e9"
   },
   {
    "key": "sql:apps/elktours/src/lib/place-actions.ts#approvePlaceLinkAction",
@@ -29124,7 +29538,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/slot-actions.ts",
    "symbol": "saveTourBookingDefaults",
-   "line": 503,
+   "line": 538,
    "imports": [
     "@elkdonis/checkout/booking-core",
     "@elkdonis/checkout/booking-server",
@@ -29138,6 +29552,62 @@
    "registry": false,
    "rawSql": true,
    "hash": "60bf4b8284ae"
+  },
+  {
+   "key": "sql:apps/elktours/src/lib/standing-actions.ts#saveStandingRule",
+   "kind": "sql",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "saveStandingRule",
+   "line": 131,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/checkout/booking-server#getOfferByThread",
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "691d6146a0ce"
+  },
+  {
+   "key": "sql:apps/elktours/src/lib/standing-actions.ts#stopStandingRule",
+   "kind": "sql",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-actions.ts",
+   "symbol": "stopStandingRule",
+   "line": 217,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "038d04d9d1bb"
+  },
+  {
+   "key": "sql:apps/elktours/src/lib/standing-rules.ts#materialiseRule",
+   "kind": "sql",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/standing-rules.ts",
+   "symbol": "materialiseRule",
+   "line": 127,
+   "imports": [
+    "@elkdonis/checkout/booking-server",
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/checkout/booking-server#createSlots",
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "31e3989cc4c3"
   },
   {
    "key": "sql:apps/elktours/src/lib/stop-note-actions.ts#addStopNoteAction",
@@ -29399,7 +29869,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "saveRouteViaAction",
-   "line": 219,
+   "line": 220,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -29440,7 +29910,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "4bb88b54b999"
+   "hash": "78932a46757d"
   },
   {
    "key": "sql:apps/elktours/src/lib/tour-actions.ts#setTourPinnedAction",
@@ -29448,7 +29918,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "setTourPinnedAction",
-   "line": 184,
+   "line": 185,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -29471,7 +29941,7 @@
    "app": "elktours",
    "file": "apps/elktours/src/lib/tour-actions.ts",
    "symbol": "setTourStatusAction",
-   "line": 167,
+   "line": 168,
    "imports": [
     "@elkdonis/checkout/booking",
     "@elkdonis/checkout/booking-core",
@@ -30011,14 +30481,13 @@
     "@elkdonis/nextcloud#getAdminClient",
     "@elkdonis/services#appendOrgPortfolio",
     "@elkdonis/services#getProxyFileUrl",
-    "@elkdonis/services#markArtist",
     "@elkdonis/services#uploadFile",
     "@elkdonis/services#uploadFilename",
     "@elkdonis/utils#validateUploadBuffer"
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "ba5a024f2a0d"
+   "hash": "52b9953ed63f"
   },
   {
    "key": "sql:apps/ifac/src/lib/cms/actions.ts#attachRooms",
@@ -31828,7 +32297,7 @@
    "app": "actions",
    "file": "packages/actions/src/server/run.ts",
    "symbol": "<class>.run",
-   "line": 317,
+   "line": 328,
    "imports": [
     "@elkdonis/db"
    ],
@@ -31843,7 +32312,7 @@
    "app": "actions",
    "file": "packages/actions/src/server/run.ts",
    "symbol": "record",
-   "line": 555,
+   "line": 607,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32288,12 +32757,12 @@
    "app": "auth-server",
    "file": "packages/auth-server/src/api-routes.ts",
    "symbol": "handleOAuthCallback",
-   "line": 548,
+   "line": 551,
    "imports": [],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "ba6bc556c3b5"
+   "hash": "856c2e397ff4"
   },
   {
    "key": "sql:packages/auth-server/src/api-routes.ts#handleSignup",
@@ -32301,12 +32770,12 @@
    "app": "auth-server",
    "file": "packages/auth-server/src/api-routes.ts",
    "symbol": "handleSignup",
-   "line": 240,
+   "line": 243,
    "imports": [],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "ae658eadeccf"
+   "hash": "c6d0dd403189"
   },
   {
    "key": "sql:packages/auth-server/src/api-routes.ts#joinOrgsOnSignIn",
@@ -32636,7 +33105,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "cancelSlot",
-   "line": 458,
+   "line": 476,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32651,7 +33120,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "closeSlotNow",
-   "line": 596,
+   "line": 614,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32668,14 +33137,14 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "createSlots",
-   "line": 280,
+   "line": 290,
    "imports": [
     "@elkdonis/db"
    ],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "0369c751c96b"
+   "hash": "e410decde1d0"
   },
   {
    "key": "sql:packages/booking/src/server/slots.ts#reopenSlot",
@@ -32683,7 +33152,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "reopenSlot",
-   "line": 580,
+   "line": 598,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32700,7 +33169,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "runSlot",
-   "line": 561,
+   "line": 579,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32717,7 +33186,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "setOfferDefaults",
-   "line": 607,
+   "line": 625,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32734,7 +33203,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "setOverrides",
-   "line": 224,
+   "line": 225,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32749,7 +33218,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/slots.ts",
    "symbol": "updateSlot",
-   "line": 378,
+   "line": 396,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32909,7 +33378,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "addStoreMember",
-   "line": 750,
+   "line": 783,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -32945,7 +33414,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "adminHideArtwork",
-   "line": 1363,
+   "line": 1396,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -32963,7 +33432,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "adminShowArtwork",
-   "line": 1382,
+   "line": 1415,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -32981,7 +33450,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "applyForStore",
-   "line": 587,
+   "line": 615,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -32992,7 +33461,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "76c4cc5ba81b"
+   "hash": "38d39fa490cc"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#approveStore",
@@ -33000,7 +33469,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "approveStore",
-   "line": 934,
+   "line": 967,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33018,7 +33487,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "archiveArtwork",
-   "line": 1396,
+   "line": 1429,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33036,7 +33505,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "createArtwork",
-   "line": 1048,
+   "line": 1081,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33090,7 +33559,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "openOrgStore",
-   "line": 669,
+   "line": 702,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33109,7 +33578,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "pauseStore",
-   "line": 955,
+   "line": 988,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33127,7 +33596,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "publishArtwork",
-   "line": 1328,
+   "line": 1361,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33143,7 +33612,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "rejectArtworkCredit",
-   "line": 1255,
+   "line": 1288,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33161,7 +33630,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "rejectStore",
-   "line": 965,
+   "line": 998,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33197,7 +33666,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "removeStoreMember",
-   "line": 767,
+   "line": 800,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33215,7 +33684,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "setArtworkAvailability",
-   "line": 1422,
+   "line": 1455,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33249,7 +33718,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "setPayoutIdentity",
-   "line": 802,
+   "line": 835,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33267,7 +33736,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "updateArtwork",
-   "line": 1125,
+   "line": 1158,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33286,7 +33755,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "updateStore",
-   "line": 895,
+   "line": 928,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33305,7 +33774,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "writeArtworkMedia",
-   "line": 1292,
+   "line": 1325,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -33321,7 +33790,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "writeProvenance",
-   "line": 1229,
+   "line": 1262,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -34537,7 +35006,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "buyPlatformLabel",
-   "line": 537,
+   "line": 567,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34554,7 +35023,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "chooseOrderShipping",
-   "line": 319,
+   "line": 349,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34571,7 +35040,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "recordSellerTracking",
-   "line": 489,
+   "line": 519,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34586,7 +35055,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "setArtworkParcel",
-   "line": 115,
+   "line": 140,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34603,7 +35072,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "setShipFrom",
-   "line": 98,
+   "line": 123,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34620,7 +35089,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/shipping/index.ts",
    "symbol": "setStoreShippingMode",
-   "line": 617,
+   "line": 647,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34911,7 +35380,7 @@
    "app": "lms",
    "file": "packages/lms/src/content.ts",
    "symbol": "publishCourse",
-   "line": 295,
+   "line": 317,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -34927,7 +35396,7 @@
    "app": "lms",
    "file": "packages/lms/src/content.ts",
    "symbol": "setDraftOutline",
-   "line": 272,
+   "line": 293,
    "imports": [
     "@elkdonis/db",
     "@elkdonis/utils"
@@ -34937,7 +35406,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "7e70b3cbf0a9"
+   "hash": "ba59f5d4befd"
   },
   {
    "key": "sql:packages/lms/src/content.ts#updateCourse",
@@ -35185,6 +35654,91 @@
    "hash": "fc02cc014baf"
   },
   {
+   "key": "sql:packages/lms/src/ongoing.ts#deleteOngoingSession",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/ongoing.ts",
+   "symbol": "deleteOngoingSession",
+   "line": 292,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "06b40e853e4a"
+  },
+  {
+   "key": "sql:packages/lms/src/ongoing.ts#getOngoingView",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/ongoing.ts",
+   "symbol": "getOngoingView",
+   "line": 147,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "eb31775c3a1d"
+  },
+  {
+   "key": "sql:packages/lms/src/ongoing.ts#saveIntervalEntry",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/ongoing.ts",
+   "symbol": "saveIntervalEntry",
+   "line": 228,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "a9a2cc6fc8f9"
+  },
+  {
+   "key": "sql:packages/lms/src/ongoing.ts#saveIntervalPlan",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/ongoing.ts",
+   "symbol": "saveIntervalPlan",
+   "line": 88,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "da8874281b51"
+  },
+  {
+   "key": "sql:packages/lms/src/ongoing.ts#saveOngoingSession",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/ongoing.ts",
+   "symbol": "saveOngoingSession",
+   "line": 68,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "f0950075b227"
+  },
+  {
    "key": "sql:packages/lms/src/pool.ts#addToPool",
    "kind": "sql",
    "app": "lms",
@@ -35347,6 +35901,329 @@
    "registry": false,
    "rawSql": true,
    "hash": "ffc96bc0ab85"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-create.ts#archiveWorkspace",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-create.ts",
+   "symbol": "archiveWorkspace",
+   "line": 161,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "f66799bdb55d"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-create.ts#createWorkspace",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-create.ts",
+   "symbol": "createWorkspace",
+   "line": 99,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db",
+    "@elkdonis/utils#sanitizeRichText"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "3e6b78d7827e"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-create.ts#setCourseKind",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-create.ts",
+   "symbol": "setCourseKind",
+   "line": 51,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "16977449bd90"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-edit.ts#createWorkspaceInvite",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-edit.ts",
+   "symbol": "createWorkspaceInvite",
+   "line": 407,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "d0a1117707c2"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-edit.ts#redeemWorkspaceInvite",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-edit.ts",
+   "symbol": "redeemWorkspaceInvite",
+   "line": 439,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "ceb8ed499f8d"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-edit.ts#revokeWorkspaceInvite",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-edit.ts",
+   "symbol": "revokeWorkspaceInvite",
+   "line": 431,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "70dcdaa0eb07"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-edit.ts#saveSettings",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-edit.ts",
+   "symbol": "saveSettings",
+   "line": 57,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "57c5c6c5460e"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#agreeToParticipation",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "agreeToParticipation",
+   "line": 100,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "83d09b2a77ad"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#decidePublication",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "decidePublication",
+   "line": 282,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "04dd17742cfd"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#markResultPublished",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "markResultPublished",
+   "line": 349,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "c04d757cd438"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#markResultTakenDown",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "markResultTakenDown",
+   "line": 357,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "41760053f803"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#requestPublication",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "requestPublication",
+   "line": 245,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "c69cf6214a41"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#saveConsentText",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "saveConsentText",
+   "line": 139,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "2aa7f6c26c77"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#saveResultDraft",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "saveResultDraft",
+   "line": 230,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "2302caa71352"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#setWorkspacePreset",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "setWorkspacePreset",
+   "line": 56,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "42eeafc15821"
+  },
+  {
+   "key": "sql:packages/lms/src/workspace-experiment.ts#withdrawParticipation",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspace-experiment.ts",
+   "symbol": "withdrawParticipation",
+   "line": 116,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "3506d03163a3"
+  },
+  {
+   "key": "sql:packages/lms/src/workspaces.ts#commentOnWorkspaceEntry",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspaces.ts",
+   "symbol": "commentOnWorkspaceEntry",
+   "line": 380,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "4501ed8c9941"
+  },
+  {
+   "key": "sql:packages/lms/src/workspaces.ts#makeMyWorkspaceEntriesPrivate",
+   "kind": "sql",
+   "app": "lms",
+   "file": "packages/lms/src/workspaces.ts",
+   "symbol": "makeMyWorkspaceEntriesPrivate",
+   "line": 355,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [
+    "@elkdonis/db#db"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "d827284299b1"
   },
   {
    "key": "sql:packages/mcp/src/server/audit.ts#insert",

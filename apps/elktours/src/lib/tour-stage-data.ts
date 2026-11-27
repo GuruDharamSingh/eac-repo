@@ -8,6 +8,7 @@ import type { TourFull } from "@/lib/tours";
 import { distanceM } from "@/lib/places";
 import { publicTakesFor, type GuideTake } from "@/lib/guide-takes";
 import { stopFolderPhotos } from "@/lib/stop-folder-photos";
+import { recordedFolder } from "@/lib/media-folders";
 import {
   toRoman,
   type StagePhoto,
@@ -114,8 +115,10 @@ export async function loadTourStageData(tour: TourFull, opts: { takes?: GuideTak
   }
 
   // The owner's Stops folder in Nextcloud (2026-11-20): pictures matched to stops by name, the rest to the overview.
+  // Read from the tour's own folder (<mediaFolder>/Stops/) once the pictures have moved there (2026-11-26).
+  const mediaFolder = await recordedFolder({ threadId: tour.id });
   const folder = await stopFolderPhotos(
-    { slug: tour.slug, title: tour.title },
+    { slug: tour.slug, title: tour.title, mediaFolder },
     stops.map((s) => ({ id: s.id, title: s.title, placeTitle: s.placeId ? placeRows.get(s.placeId)?.title ?? null : null }))
   ).catch((err) => {
     console.error("[elktours] loadTourStageData stops folder:", err instanceof Error ? err.message : err);

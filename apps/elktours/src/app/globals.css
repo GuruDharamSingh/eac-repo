@@ -28,6 +28,9 @@
 @import "@elkdonis/cms-ui/gallery.css";
 /* MediaPicker (the composer's cover-image pane) is styled here too. */
 @import "@elkdonis/cms-ui/files-card.css";
+/* The one picker (@elkdonis/content MediaLibrary, components/manage/media-field.tsx) draws in the content library's
+   classes; plain CSS on --ec-* tokens that read --sf-* first. */
+@import "@elkdonis/content/content.css";
 /* Field controls and the composer's groups — plain CSS, so the same form
    sets correctly in every app. */
 @import "@elkdonis/cms-ui/fields.css";
@@ -597,3 +600,4 @@ h4 {
 @media (max-width: 767px) {
   .elk-brand { --elk-brand-ls: 0.04em; font-size: 1rem; }
 }
+

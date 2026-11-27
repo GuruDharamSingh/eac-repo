@@ -666,6 +666,8 @@ services:
       META_APP_SECRET: ${META_APP_SECRET}
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
       META_LOGIN_CONFIG_ID: ${META_LOGIN_CONFIG_ID:-}
+      # A second Facebook Login configuration with the comment permissions (Channel → Comments, 2026-11-24); empty = the first.
+      META_LOGIN_CONFIG_ID_COMMENTS: ${META_LOGIN_CONFIG_ID_COMMENTS:-}
       # Studio sound effects: Freesound CC0 search/import (packages/services/src/reels.ts); empty = off.
       FREESOUND_API_KEY: ${FREESOUND_API_KEY:-}
       THREADS_APP_ID: ${THREADS_APP_ID}
@@ -1055,6 +1057,8 @@ services:
       META_APP_SECRET: ${META_APP_SECRET}
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
       META_LOGIN_CONFIG_ID: ${META_LOGIN_CONFIG_ID:-}
+      # A second Facebook Login configuration with the comment permissions (Channel → Comments, 2026-11-24); empty = the first.
+      META_LOGIN_CONFIG_ID_COMMENTS: ${META_LOGIN_CONFIG_ID_COMMENTS:-}
       THREADS_APP_ID: ${THREADS_APP_ID}
       THREADS_APP_SECRET: ${THREADS_APP_SECRET}
       INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID}

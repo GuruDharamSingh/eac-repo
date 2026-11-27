@@ -15,7 +15,7 @@
 import type { FieldDef, FieldInputType } from "@elkdonis/live-editor";
 
 /** live-editor's kinds, plus: rich (cms-ui RichTextEditor), boolean, color. */
-export type FieldKind = FieldInputType | "rich" | "boolean" | "color" | "list";
+export type FieldKind = FieldInputType | "rich" | "boolean" | "color" | "list" | "record";
 
 export interface FieldSpec extends Omit<FieldDef, "trait" | "initialValue" | "input" | "label"> {
   /** Shown in the panel; defaults to the field name. */
@@ -34,6 +34,12 @@ export interface FieldSpec extends Omit<FieldDef, "trait" | "initialValue" | "in
   optional?: boolean;
   /** A reason string makes the field read-only: the panel shows it, nothing can be saved. */
   readOnly?: string;
+  /** What the block uses when nothing is set, as text ("true" / "false" for a switch). Set: "" means "use the default" and saves as `unset`. */
+  default?: string;
+  /** A "number": its declared range, step and unit. */
+  range?: { min?: number; max?: number; step?: number; unit?: string };
+  /** A "record": the kind of record this value is filled from (a setting declared `binds`). */
+  binds?: string;
 }
 
 export interface RecordSpec {
@@ -130,7 +136,15 @@ export function checkValue(spec: FieldSpec, value: unknown): CheckResult {
   }
   if (spec.max !== undefined && v.length > spec.max) return bad(`Too long: ${v.length} of ${spec.max} characters.`);
   if (spec.input === "url" && !linkOk(v)) return bad("Use a web address (https://...), a path starting with /, or mailto:.");
-  if (spec.input === "number" && !Number.isFinite(Number(v))) return bad("That is not a number.");
+  if (spec.input === "number") {
+    if (!Number.isFinite(Number(v))) return bad("That is not a number.");
+    const { min, max } = spec.range ?? {};
+    if (min !== undefined && max !== undefined && (Number(v) < min || Number(v) > max)) return bad(`Use a number from ${min} to ${max}.`);
+    if (min !== undefined && Number(v) < min) return bad(`Use a number of ${min} or more.`);
+    if (max !== undefined && Number(v) > max) return bad(`Use a number of ${max} or less.`);
+  }
+  if (spec.input === "boolean" && spec.default !== undefined && v !== "true" && v !== "false") return bad("Choose on or off.");
+  if (spec.input === "record" && /\s/.test(v)) return bad("A record is chosen from the list, not typed.");
   if (spec.input === "color" && !/^#[0-9a-fA-F]{6}$/.test(v)) return bad("Use a colour like #c9a961.");
   if (spec.input === "select" && spec.options && !spec.options.some((o) => o.value === v)) return bad("Pick one of the choices.");
   return good(v);

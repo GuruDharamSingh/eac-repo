@@ -6,7 +6,7 @@ import { listOrgDepartures } from "@/lib/departures";
 import { getTourById, listGuides, listTours, type Tour } from "@/lib/tours";
 import { listTourStops, type TourStop } from "@elkdonis/commerce/server";
 import { db } from "@elkdonis/db";
-import { loadTours } from "@/lib/tour-slots";
+import { getTourBookingDefaults, loadTours, type TourBookingDefaults } from "@/lib/tour-slots";
 import { parisDayOf, parisTimeOf, parisToday } from "@/lib/schedule-plan";
 import { getPlace, listPlaces } from "@/lib/places";
 import type { Place } from "@/lib/catalogue-types";
@@ -45,7 +45,7 @@ export interface ScheduleSheet {
   /** The viewer, when a guide: they schedule their own tours and lead them. */
   selfGuideId: string | null;
   tours: ScheduleSheetTour[];
-  /** Upcoming runs for the next four months, cancelled included (the calendar marks them). */
+  /** Upcoming runs for the next six months (a standing listing reaches that far), cancelled included (the calendar marks them). */
   slots: ScheduleSheetSlot[];
   /** Owners assign a guide; null for a guide. */
   guides: Array<{ id: string; name: string }> | null;
@@ -55,14 +55,14 @@ export async function getScheduleSheet(): Promise<ScheduleSheet> {
   const viewer = await requireOrgEditor();
   const isOwner = viewer.role === "owner";
   const from = new Date();
-  const to = new Date(from.getTime() + 124 * 24 * 3600_000);
+  const to = new Date(from.getTime() + 190 * 24 * 3600_000);
   const [tours, departures, guides] = await Promise.all([
     loadTours(),
     listOrgDepartures(siteConfig.orgId, { from, to, includeCancelled: true }).catch(() => [] as Awaited<ReturnType<typeof listOrgDepartures>>),
     isOwner ? listGuides().catch(() => []) : Promise.resolve(null),
   ]);
   const list = [...tours.values()]
-    .filter((t) => isOwner || t.authorId == null || t.authorId === viewer.userId)
+    .filter((t) => !t.archived && (isOwner || t.authorId == null || t.authorId === viewer.userId))
     .sort((a, b) => Number(b.published) - Number(a.published) || a.title.localeCompare(b.title))
     .map((t) => ({
       id: t.id,
@@ -120,6 +120,8 @@ export interface TourSheet {
   stops: TourStop[];
   /** tour_stops.excerpt by stop id (the short line the tour page shows); TourStop does not carry the column. Only stops with one are listed. */
   excerpts: Record<string, string>;
+  /** Minimum to run, cutoff and waitlist size shared by the tour's dates; null when they could not be read. */
+  bookingDefaults: TourBookingDefaults | null;
 }
 
 /** One tour and its stops for the wizard. Guides open only tours they wrote; owners any. */
@@ -134,16 +136,18 @@ export async function getTourSheet(tourId: string): Promise<TourSheet | null> {
   )) as unknown as { id: string; excerpt: string }[];
   const excerpts: Record<string, string> = {};
   for (const r of rows) excerpts[r.id] = r.excerpt;
-  return { tour, stops, excerpts };
+  const bookingDefaults = await getTourBookingDefaults(tour.id).catch(() => null);
+  return { tour, stops, excerpts, bookingDefaults };
 }
 
-/** Draft tours the viewer may continue in the wizard (owners: every draft; guides: their own). */
-export async function listDraftTourSheet(): Promise<Array<{ id: string; title: string; updatedAt: string }>> {
+/** Tours the viewer may open in the wizard, drafts and published (owners: every one; guides: their own). */
+export async function listEditableTourSheet(): Promise<Array<{ id: string; title: string; published: boolean }>> {
   const viewer = await requireOrgEditor();
   const tours = await listTours({ includeDrafts: true }).catch(() => [] as Tour[]);
   return tours
-    .filter((t) => t.status === "draft" && (viewer.role === "owner" || t.authorId === viewer.userId))
-    .map((t) => ({ id: t.id, title: t.title, updatedAt: String(t.updatedAt ?? "") }));
+    .filter((t) => viewer.role === "owner" || t.authorId === viewer.userId)
+    .map((t) => ({ id: t.id, title: t.title, published: t.status === "published" }))
+    .sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export interface NearbyPlace {

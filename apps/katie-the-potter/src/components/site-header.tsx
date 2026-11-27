@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { NavItem } from "@elkdonis/services/nav-core";
@@ -63,7 +64,8 @@ export function SiteHeader({ signedIn, canEdit, email, cartCount = 0, nav = DEFA
     <header className="ktp-header" data-chrome="header">
       <div className="ktp-header__row">
         <Link href="/" className="ktp-header__brand" data-part="brand" onClick={close}>
-          {siteConfig.orgName}
+          <Image src="/brand/logo.png" alt="" width={44} height={44} priority className="ktp-header__logo" />
+          <span>{siteConfig.orgName}</span>
         </Link>
         <nav className="ktp-header__nav" aria-label="Site" data-part="links">
           {links}

@@ -14,7 +14,7 @@ import { getProfile, listOrgFeeds } from "@elkdonis/services";
 import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
 import { loadSiteStyle } from "@/lib/site-style";
 import { SITE_STYLE } from "@/lib/site-style-schema";
-import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
+import { EditEntryMount } from "@/components/edit-entry/EditEntryMount";
 import { MobileShell } from "@/components/mobile";
 import { phoneThemeScript } from "@/components/mobile/phone-theme-script";
 import { PhoneThemeKeeper } from "@/components/mobile/phone-theme";
@@ -102,7 +102,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <MobileShell nav="guest" />
             <ArrivalNotice endpoint="/api/network/arrival" />
             <AnalyticsBeacon />
-            {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
+            {canEdit ? <EditEntryMount initial={siteStyle} /> : null}
           </HubSurfaces>
         </div>
       </body>

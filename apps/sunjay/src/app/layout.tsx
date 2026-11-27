@@ -15,7 +15,7 @@ import { getProfile, listOrgFeeds } from "@elkdonis/services";
 import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
 import { loadSiteStyle } from "@/lib/site-style";
 import { SITE_STYLE } from "@/lib/site-style-schema";
-import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
+import { EditEntryMount } from "@/components/edit-entry/EditEntryMount";
 
 export const metadata: Metadata = {
   title: {
@@ -100,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <SiteFooter content={sections.footer} />
           <Toaster position="top-right" />
-          {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
+          {canEdit ? <EditEntryMount initial={siteStyle} /> : null}
         </HubSurfaces>
         <AnalyticsBeacon />
       </body>

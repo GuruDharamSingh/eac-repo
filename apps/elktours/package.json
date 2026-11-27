@@ -22,6 +22,7 @@
     "@elkdonis/chat": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/content": "workspace:*",
     "@elkdonis/direct-edit": "workspace:*",
     "@elkdonis/house-editor": "workspace:*",
     "@elkdonis/db": "workspace:*",

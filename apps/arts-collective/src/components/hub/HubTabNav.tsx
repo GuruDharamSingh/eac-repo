@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -35,6 +36,17 @@ export function HubTabNav() {
           </Link>
         );
       })}
+      {/* Channel lives outside /hub; a link, not a tab (2026-11-25). */}
+      <Link
+        href="/channel"
+        aria-label="Channel"
+        title="Channel"
+        className="ml-auto inline-flex shrink-0 items-center gap-1.5 px-2 py-3 text-sm font-medium tracking-wide text-muted-foreground transition-colors hover:text-foreground sm:px-4"
+      >
+        <Radio size={15} aria-hidden />
+        {/* Icon only on phones: the three tabs already fill 390px. */}
+        <span className="hidden sm:inline">Channel</span>
+      </Link>
     </div>
   );
 }

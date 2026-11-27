@@ -102,6 +102,8 @@ export async function createDeparture(orgId: string, threadId: string, input: De
     orgId,
     offerId: offer.id,
     slots: [{ startsAt: input.startsAt, capacity: input.capacity, guideUserId: input.guideUserId ?? undefined, note: input.note ?? null }],
+    // Overlap with the guide's other runs is warned about by the schedulers, not refused here.
+    allowClash: true,
   });
   if (r.ok === false) throw new Error(r.error);
   if (r.created.length === 0) throw new Error(r.skipped[0]?.message ?? "Could not add the departure.");

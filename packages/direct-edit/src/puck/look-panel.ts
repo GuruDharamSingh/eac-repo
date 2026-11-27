@@ -21,6 +21,7 @@ import { layerRole } from "../canvas/layers";
 import { partKind } from "../canvas/parts";
 import { partLookOf, partSafeDecls, setPartLook, setToken, tokenOf } from "../block/morph";
 import { readLook, type BlkStyleDecls } from "../block/read-look";
+import { setFade } from "../panel/fade";
 import { Forcer, cleanWhere, clashLine, editLookAt, lookAtWhere, panelWhere, rememberWhere, selectionWhere, type LookWhere } from "../panel/where";
 import { ROOT_PART, tokenKey, tokenNameOf, tokenSlotId } from "../block/contract";
 import type { PartStyle } from "../block/style";
@@ -123,6 +124,7 @@ function contextOf(ctx: LookPanelContext, probeHost: HTMLElement, where: LookWhe
     stickHead: true,
     where: panelWhere(ctx.props, ctx.part, where),
     clash,
+    fade: { grad: look.grad ?? null },
     freedom: 2,
     slots: boxSlots(el, look).map((s) =>
       // Puck wraps inline-editable words in a span of its own, so boxSlots reads a title as a box holding a box and puts
@@ -218,8 +220,11 @@ export function mountLookPanel(host: HTMLElement, o: { blkStyleDecls?: BlkStyleD
         if (!ctx.developer) return;
         return writeLook(part, live, (s) => setCodeText(s, String(value ?? ""), partSafeDecls));
       }
+      // Fill: Colour / Fade. A fade replaces the colour on that look, and a colour replaces the fade (panel/fade.ts).
+      if (key === "grad") return writeLook(part, live, (s) => setFade(s, value));
       writeLook(part, live, (s, el) => {
         applyKey(s, key, value, el);
+        if (key === "fill" && value) delete s.grad;
         // As in the tree editor: columns draw only on a grid; leaving a layout drops what the Code tab wrote for it.
         if (key === "gcols" && !s.layout) s.layout = "grid";
         if (key === "layout" && value === "block") dropCss(s, ["display", "flex-direction", "flex-wrap", "grid-template-columns"]);

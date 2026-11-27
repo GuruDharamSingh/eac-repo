@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { createThread, getViewerRoles, postReply, listOrgMediaLibrary, listUserMediaLibrary } from "@elkdonis/services";
+import { indexArtwork, createThread, getViewerRoles, postReply, listOrgMediaLibrary, listUserMediaLibrary } from "@elkdonis/services";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { sendEmail } from "@elkdonis/email";
 import { jsonb, type Row } from "./map-order";
@@ -432,6 +432,7 @@ export async function addListingToSeries(input: {
     const [m] = (await db`SELECT COUNT(*)::int AS n FROM artwork_media WHERE artwork_id = ${input.artworkId}`) as unknown as Row[];
     if (Number(m?.n ?? 0) === 0) throw new Error("That piece has no image yet; the artist needs to add one.");
     await db`UPDATE artwork SET status = 'available' WHERE id = ${input.artworkId} AND status = 'draft'`;
+    await indexArtwork(input.artworkId);
   }
   const now = Date.now();
   const opens = ser.silent_opens_at ? new Date(ser.silent_opens_at as string) : new Date(now);

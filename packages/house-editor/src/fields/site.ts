@@ -19,7 +19,7 @@ import { siteFieldsRegistry } from "./site-registry";
 /** postgres.js's tagged template (`db`), loosely: the one read below is a plain SELECT, bound by organisation. */
 type Sql = (strings: TemplateStringsArray, ...values: any[]) => PromiseLike<any[]>;
 
-export interface SiteFieldsOptions extends Pick<BlockFieldsOptions, "contracts" | "config" | "loadPage" | "save" | "storeGuard"> {
+export interface SiteFieldsOptions extends Pick<BlockFieldsOptions, "contracts" | "config" | "loadPage" | "save" | "storeGuard" | "sanitizeRichText"> {
   /** This site's organisation: every read is bound to it. */
   orgId: string;
   sql: Sql;
@@ -38,7 +38,7 @@ export const READ_ONLY_THREAD = "This card shows a gathering, a tour or a series
 export const READ_ONLY_POSTS = "Posts are renamed on their own page on this site for now.";
 
 export function createSiteFields(o: SiteFieldsOptions) {
-  const blocks = createBlockFields({ contracts: o.contracts, config: o.config, loadPage: o.loadPage, save: o.save, storeGuard: o.storeGuard });
+  const blocks = createBlockFields({ contracts: o.contracts, config: o.config, loadPage: o.loadPage, save: o.save, storeGuard: o.storeGuard, sanitizeRichText: o.sanitizeRichText });
 
   const canEditPosts = !!o.performAction && !!o.session;
   const threadRoute: FieldsRoute = {

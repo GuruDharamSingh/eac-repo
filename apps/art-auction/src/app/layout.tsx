@@ -13,6 +13,8 @@ import { loadSiteStyle } from "@/lib/site-style";
 import { SITE_STYLE } from "@/lib/site-style-schema";
 import { getPagesEditor } from "@/lib/puck/auth";
 import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
+import { Dock } from "@elkdonis/dock";
+import { runDockAction, dockDepart, dockReturn, dockChooseCourse, dockAckDone } from "@/lib/dock-actions";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -76,6 +78,8 @@ export default async function RootLayout({
         <Toaster richColors position="top-right" />
         <ArrivalNotice endpoint="/api/network/arrival" />
         <AnalyticsBeacon />
+        {/* The course rail (packages/dock): signed-out visitors get a 401 and see nothing. */}
+        <Dock run={runDockAction} trail={{ depart: dockDepart, back: dockReturn, choose: dockChooseCourse, ack: dockAckDone }} />
       </body>
     </html>
   );

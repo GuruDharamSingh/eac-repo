@@ -21,6 +21,7 @@ import type { ActResult, BookingStatus } from "../core/types";
 import { refundShare } from "../core/policy";
 import {
   checkNewSlot,
+  closedAlready,
   closeNowCloseBeforeMinutes,
   reopenCloseBeforeMinutes,
   resolveSlotSettings,
@@ -260,6 +261,10 @@ export interface NewSlot extends SlotOverrides {
   /** Default: the offer's host. */
   guideUserId?: string | null;
   note?: string | null;
+  /** 'rule' for a slot a standing rule made (default 'manual'). */
+  source?: "manual" | "rule";
+  /** The standing rule that made the slot (migration 291). Written only when set, so a plain create does not need the column. */
+  standingRuleId?: string | null;
 }
 
 export type SlotSkipReason = NewSlotProblem | "exists" | "invalid";
@@ -276,8 +281,13 @@ export interface CreateSlotsResult {
  * "booking would already be closed", and against an existing slot at the same
  * start of the same offer. The override columns are written only for slots
  * that carry overrides, so a plain create does not touch them.
+ *
+ * `allowClash` creates a slot that overlaps another slot of the same guide
+ * instead of skipping it: the caller has shown the overlap as a warning and
+ * the office chose to publish (elktours, 2026-11-24). Past and already-closed
+ * slots and duplicates at the same start are still skipped.
  */
-export async function createSlots(input: { orgId: string; offerId: string; slots: NewSlot[]; now?: Date }): Promise<ActResult<CreateSlotsResult>> {
+export async function createSlots(input: { orgId: string; offerId: string; slots: NewSlot[]; now?: Date; allowClash?: boolean }): Promise<ActResult<CreateSlotsResult>> {
   const now = input.now ?? new Date();
   if (input.slots.length === 0) return { ok: false, error: "No slots to create." };
   if (input.slots.length > 200) return { ok: false, error: "At most 200 slots at a time." };
@@ -335,13 +345,18 @@ export async function createSlots(input: { orgId: string; offerId: string; slots
         const guide = p.s.guideUserId === undefined ? offer.hostUserId : p.s.guideUserId;
         const closeBefore = p.s.closeBeforeMinutes ?? offer.closeBeforeMinutes;
         const check = checkNewSlot({ candidate: { startsAt, endsAt: p.end, guideUserId: guide }, closeBeforeMinutes: closeBefore, existing, now });
-        if (check.ok === false) {
+        if (check.ok === false && !(input.allowClash && check.reason === "clash")) {
           result.skipped.push({ startsAt, reason: check.reason, message: check.message });
+          continue;
+        }
+        // checkNewSlot returns at the clash, so a clashing candidate has not been tested for "already closed" yet.
+        if (check.ok === false && closedAlready(p.start, closeBefore, now)) {
+          result.skipped.push({ startsAt, reason: "closed", message: "Booking would already be closed. Shorten the cutoff." });
           continue;
         }
         const inserted = (await tx`
           INSERT INTO booking_slots (offer_id, org_id, starts_at, ends_at, capacity, guide_user_id, note, source)
-          VALUES (${offer.id}, ${input.orgId}, ${p.start}, ${p.end}, ${p.s.capacity}, ${p.s.guideUserId ?? null}, ${p.s.note ?? null}, 'manual')
+          VALUES (${offer.id}, ${input.orgId}, ${p.start}, ${p.end}, ${p.s.capacity}, ${p.s.guideUserId ?? null}, ${p.s.note ?? null}, ${p.s.source ?? "manual"})
           ON CONFLICT (offer_id, starts_at) DO NOTHING
           RETURNING id
         `) as unknown as Row[];
@@ -351,6 +366,9 @@ export async function createSlots(input: { orgId: string; offerId: string; slots
         }
         const slotId = inserted[0].id as string;
         await setOverrides(tx, input.orgId, slotId, p.s);
+        if (p.s.standingRuleId) {
+          await tx`UPDATE booking_slots SET standing_rule_id = ${p.s.standingRuleId} WHERE id = ${slotId} AND org_id = ${input.orgId}`;
+        }
         result.created.push({ slotId, startsAt });
         existing.push({ id: slotId, offerId: offer.id, guideUserId: guide, status: "scheduled", startsAt, endsAt: p.end.toISOString(), label: `${offer.threadId} at ${startsAt.slice(11, 16)} UTC` });
       }

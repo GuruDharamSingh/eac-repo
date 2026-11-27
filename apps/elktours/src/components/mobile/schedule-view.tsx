@@ -6,8 +6,9 @@ import "@/blocks/mobile/flow.css";
 import "./board.css";
 import { Chip, ChipRow } from "@/components/mobile";
 import type { BoardSlot } from "@/lib/tour-slots";
+import { overlappingPairs } from "@/lib/overlap-pairs";
 import { BoardTabBar } from "./board-nav";
-import { BoardWho, DecideBanner, SlotCard, dayKey, dayLong } from "./board-ui";
+import { BoardWho, DecideBanner, SlotCard, clock, dayKey, dayLong } from "./board-ui";
 
 const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -45,6 +46,16 @@ export function ScheduleView({ name, sub, days, today, weekLabel, prevWeek, next
     for (const s of byGuide) if (s.status === "scheduled") m.set(dayKey(s.startsAt), (m.get(dayKey(s.startsAt)) ?? 0) + 1);
     return m;
   }, [byGuide]);
+  // Overlaps among the listed runs of one guide: what each card names ("Latin Quarter at 10:00").
+  const overlaps = useMemo(() => {
+    const m = new Map<string, string[]>();
+    const live = sorted.filter((s) => s.status === "scheduled").map((s) => ({ id: s.slotId, guideUserId: s.guide?.id ?? null, startsAt: s.startsAt, endsAt: s.endsAt, title: s.tourTitle }));
+    for (const [x, y] of overlappingPairs(live)) {
+      m.set(x.id, [...(m.get(x.id) ?? []), `${y.title} at ${clock(y.startsAt)}`]);
+      m.set(y.id, [...(m.get(y.id) ?? []), `${x.title} at ${clock(x.startsAt)}`]);
+    }
+    return m;
+  }, [sorted]);
   const shown = day ? byGuide.filter((s) => dayKey(s.startsAt) === day) : byGuide;
   const groups = useMemo(() => {
     const m = new Map<string, BoardSlot[]>();
@@ -112,7 +123,7 @@ export function ScheduleView({ name, sub, days, today, weekLabel, prevWeek, next
               </div>
               <div className="b-cards">
                 {items.map((s) => (
-                  <SlotCard key={s.slotId} slot={s} showGuide={Boolean(guides)} />
+                  <SlotCard key={s.slotId} slot={s} showGuide={Boolean(guides)} overlap={overlaps.get(s.slotId)?.join(", ") ?? null} />
                 ))}
               </div>
             </section>

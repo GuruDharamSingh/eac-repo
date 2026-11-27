@@ -17,5 +17,17 @@ export type { PieceBrickProps, PieceLightboxProps, PieceLightboxAction } from ".
 export { OutletMarks, KindLine, StatusChip } from "./piece-atoms";
 export { ContentLibrary } from "./ContentLibrary";
 export type { ContentLibraryProps, LibraryState, LibraryView, LibrarySort } from "./ContentLibrary";
+// The one picker: files in the library's language (docs/open/ELKTOURS_MEDIA_STRUCTURE_2026-11-26.md §5).
+export { MediaLibrary, acceptsFile } from "./MediaLibrary";
+export type { MediaLibraryProps, MediaLibrarySource, MediaLibraryFile, MediaLibraryUpload, MediaLibraryMode, MediaLibraryView } from "./MediaLibrary";
 export { PublishCardFace, PublishPopup } from "./PublishCard";
 export type { PublishCardData, PublishCardFaceProps, PublishPopupProps } from "./PublishCard";
+// v1 (CONTRACT §7, §10): the unified library's parts.
+export type { LibraryGroupBy, LibraryFolderSource } from "./ContentLibrary";
+export { ActionButton } from "./PieceLightbox";
+export { useRemoteSearch } from "./library/use-remote-search";
+export type { RemoteSource, RemoteState } from "./library/use-remote-search";
+export { FileBrowser } from "./library/FileBrowser";
+export type { FileBrowserProps } from "./library/FileBrowser";
+export { ItemBadges, SALE_WORD } from "./library/badges";
+export type { LibraryUpload } from "./library/upload";

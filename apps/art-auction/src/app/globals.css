@@ -274,3 +274,28 @@ h4 {
   --pc-title-font: var(--font-fraunces), Georgia, serif;
   --pc-price-font: var(--font-fraunces), Georgia, serif;
 }
+
+/* ---------------------------------------------------------------------------
+   Dock arrival badge (2026-11-24, "Finish your store"): when the dock brings
+   someone to the New artwork button (data-eac-anchor="artwork"), it outlines
+   it (packages/dock dock.css); this adds a "Start here" badge on the market
+   only. Background on foreground ink: about 16:1 in both themes.
+   ------------------------------------------------------------------------ */
+a[data-eac-anchor="artwork"][data-eac-outlined="true"] {
+  position: relative;
+}
+a[data-eac-anchor="artwork"][data-eac-outlined="true"]::after {
+  content: "Start here";
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}

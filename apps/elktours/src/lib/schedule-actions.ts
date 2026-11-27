@@ -77,7 +77,7 @@ export async function previewScheduleAction(input: RepeatScheduleValues): Promis
  * Create the planned departures. Re-plans on the server, so a slot added
  * elsewhere since the preview is skipped rather than doubled.
  */
-export async function createScheduleAction(input: RepeatScheduleValues): Promise<ActionResult<{ added: number; skipped: number; overCap: number }>> {
+export async function createScheduleAction(input: RepeatScheduleValues): Promise<ActionResult<{ added: number; skipped: number }>> {
   await requireOrgEditor();
   let added = 0;
   try {
@@ -94,7 +94,7 @@ export async function createScheduleAction(input: RepeatScheduleValues): Promise
       added += 1;
     }
     revalidateSchedule(p.tour.slug);
-    return { ok: true, added, skipped: p.plan.existing + p.plan.past, overCap: p.plan.overCap };
+    return { ok: true, added, skipped: p.plan.existing + p.plan.past };
   } catch (err) {
     console.error("[elktours] createScheduleAction:", err);
     revalidateSchedule();

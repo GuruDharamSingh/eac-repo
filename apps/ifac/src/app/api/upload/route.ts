@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { getServerSession } from "@elkdonis/auth-server";
 import { db } from "@elkdonis/db";
-import { uploadFile, getProxyFileUrl, uploadFilename, markArtist, appendOrgPortfolio } from "@elkdonis/services";
+import { uploadFile, getProxyFileUrl, uploadFilename, appendOrgPortfolio } from "@elkdonis/services";
 import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { nanoid } from "nanoid";
 import { canManageIfac } from "@/lib/data";
@@ -96,9 +96,8 @@ export async function POST(request: NextRequest) {
     // slug rename. A profile not saved yet has no row; its folder will be
     // assigned from this same slug when the row is created.
     const memberFolder = await ensureUserFolder(getAdminClient(), member?.storage_folder ?? memberSlug);
-    // A folder of their own makes them an artist of the collective (oad
-    // member, listed). Best effort; the upload does not depend on it.
-    if (member) await markArtist(member.id).catch((err) => console.error("[ifac upload] markArtist:", err));
+    // A folder of their own no longer makes them an artist of the collective
+    // (oad member, listed): that is a deliberate step now (2026-11-24).
 
     // Named after the work when the surface sends a title, else after the
     // uploaded file. This address outlives the upload — it is what a stored

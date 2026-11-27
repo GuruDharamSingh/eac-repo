@@ -186,6 +186,7 @@ export function NewSlotsView({
         return;
       }
       toast.success(r.created === 1 ? "1 slot created." : `${r.created} slots created.`);
+      if (r.clashes > 0) toast.message(r.clashes === 1 ? "1 slot overlaps another run of the same guide." : `${r.clashes} slots overlap another run of the same guide.`);
       if (r.notStored.length > 0) toast.message(`Not stored per slot: ${r.notStored.map((k) => NOT_STORED[k] ?? k).join(", ")}. The tour's own settings apply.`);
       router.push(`/manage/schedule${r.firstDay ? `?week=${r.firstDay}` : ""}`);
     } catch {
@@ -208,6 +209,7 @@ export function NewSlotsView({
   const ready = preview?.ready ?? 0;
   const items = preview?.items ?? [];
   const blocked = items.length - ready;
+  const clashes = preview?.clashes ?? 0;
 
   if (tours.length === 0) {
     return (
@@ -359,16 +361,19 @@ export function NewSlotsView({
           ) : null}
 
           <section className="b-sec">
-            <Head n={guides && guides.length > 0 ? "IX" : "VIII"} label="To be created" aside={!input ? "" : checking ? "Checking..." : items.length === 0 ? "" : blocked > 0 ? `${ready} ready · ${blocked} blocked` : `${ready} ready`} />
+            <Head n={guides && guides.length > 0 ? "IX" : "VIII"} label="To be created" aside={!input ? "" : checking ? "Checking..." : items.length === 0 ? "" : `${ready} ready${clashes > 0 ? ` · ${clashes} overlap` : ""}${blocked > 0 ? ` · ${blocked} blocked` : ""}`} />
             {!input ? <p className="b-note">Pick a date and a start time to see the slots.</p> : null}
             {previewError ? <p className="b-err" style={{ marginTop: 12 }} role="alert">{previewError}</p> : null}
             <div className={`b-items${checking ? " b-fade" : ""}`}>
               {items.map((it) => (
-                <div key={it.startsAt} className={`b-item${it.ok ? "" : " is-blocked"}`}>
-                  <span className="b-item-mark" aria-hidden="true">{it.ok ? "✓" : "✕"}</span>
+                <div key={it.startsAt} className={`b-item${it.ok ? (it.reason === "clash" ? " is-warn" : "") : " is-blocked"}`}>
+                  <span className="b-item-mark" aria-hidden="true">{it.ok ? (it.reason === "clash" ? "!" : "✓") : "✕"}</span>
                   <span className="b-item-text">
                     <span>{dayShort(it.day)} · {it.time}</span>
-                    <span className="b-item-sub">{it.ok ? `to ${hhmm(toMins(it.time) + duration)}` : it.message ?? "Blocked."}</span>
+                    <span className="b-item-sub">
+                      {it.ok ? `to ${hhmm(toMins(it.time) + duration)}` : it.message ?? "Blocked."}
+                      {it.ok && it.reason === "clash" ? ` · ${it.message ?? "Overlaps another run"}. Will still be created.` : ""}
+                    </span>
                   </span>
                 </div>
               ))}

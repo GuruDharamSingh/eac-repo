@@ -21,6 +21,8 @@ export interface FoundField {
   part: string;
   prop: string;
   fromRecord: boolean;
+  /** The block's own box, standing for its settings that no element draws (the field name is "*"). */
+  root?: boolean;
 }
 
 const SKIP = new Set(["TEMPLATE", "STYLE", "LINK"]);
@@ -77,6 +79,11 @@ export function scanBlocks(scope: ParentNode, map: BlockFieldMap, slug: string):
       claimed.add(el);
       const rec = from[def.prop];
       out.push({ el, ref: rec ?? `block:${slug}:${id}:${def.prop}`, block: `${slug}:${id}`, type, part, prop: def.prop, fromRecord: !!rec });
+    }
+    // Settings no part draws (a choice, a switch, a size) are reached from the block's own box, unless a part holds it.
+    if (Object.keys(entry.others).length && !claimed.has(root)) {
+      claimed.add(root);
+      out.push({ el: root, ref: `block:${slug}:${id}:*`, block: `${slug}:${id}`, type, part: "", prop: "*", fromRecord: false, root: true });
     }
   }
   return out;

@@ -8,6 +8,7 @@
 
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
+import { indexArtwork } from "@elkdonis/services";
 import { sanitizeRichText } from "@elkdonis/utils";
 import type {
   ProvenanceInput,
@@ -484,18 +485,36 @@ export type ApplyResult = {
  *
  * A store is a commercial relationship with the collective — payouts and a
  * commission rate — so it is gated on actually being in the collective, not
- * merely holding an account. Any org role anywhere qualifies; this asks "are
- * you one of us", not "are you one of THIS org's".
+ * merely holding an account. It asks "are you a member of the platform" (a
+ * non-viewer role in `oad`) and, once the artist agreement is published, "have
+ * you accepted it". Being in an org alone no longer qualifies (2026-11-24).
  */
 export async function canClaimStore(userId: string): Promise<boolean> {
   try {
+    // A platform member (non-viewer in `oad`, the artist directory) who has
+    // accepted the active `artist-space` agreement. Before 2026-11-24 any
+    // non-viewer role in any org was enough. When no agreement is active the
+    // acceptance test passes (nothing to accept), as for the network terms.
     const [row] = await db`
       SELECT 1 FROM user_organizations
       WHERE user_id = ${userId}
-        -- Excludes 'viewer', which the ungated self-join route hands out:
-        -- claiming a store is a commitment to the collective, not something
+        AND org_id = 'oad'
+        -- Excludes 'viewer', which signup and the ungated self-join route hand
+        -- out: claiming a store is a commitment to the collective, not something
         -- you should be able to grant yourself by POSTing an org slug.
         AND role <> 'viewer'
+        AND (
+          NOT EXISTS (
+            SELECT 1 FROM org_agreements a
+            WHERE a.org_id = 'oad' AND a.key = 'artist-space' AND a.status = 'active'
+          )
+          OR EXISTS (
+            SELECT 1 FROM org_agreement_acceptances ac
+            JOIN org_agreements a ON a.id = ac.agreement_id
+            WHERE ac.user_id = ${userId} AND ac.revoked_at IS NULL
+              AND a.org_id = 'oad' AND a.key = 'artist-space' AND a.status = 'active'
+          )
+        )
       LIMIT 1
     `;
     return Boolean(row);
@@ -576,9 +595,19 @@ function plainProfileBio(bio: string | null | undefined): string | null {
 }
 
 /**
- * A person applies for their own store (or resubmits). Creates a `pending`
- * row; a previously `rejected` applicant is reset to `pending`. Bio is
- * sanitized.
+ * Stores open without review while this is true (developer, 2026-11-24: "auto
+ * approve for now"). A member of the collective who passes `canClaimStore` gets
+ * an `active` store at once. Set it to false to restore the admin queue
+ * (`/admin/applications`). A `rejected` applicant resubmitting still goes back
+ * to `pending` (an administrator's decision is not overridden), and a `paused`
+ * store stays paused.
+ */
+const AUTO_APPROVE_STORES = true;
+
+/**
+ * A person applies for their own store (or resubmits). Creates an `active` row
+ * (a `pending` one when AUTO_APPROVE_STORES is false); a previously `rejected`
+ * applicant is reset to `pending`. Bio is sanitized.
  *
  * Gated on collective membership — previously any signed-in account could
  * apply, which meant a stranger could enter the seller review queue with
@@ -591,7 +620,7 @@ export async function applyForStore(
     return {
       ok: false,
       error:
-        "A store is for members of the collective. Join an organisation first, then claim your store.",
+        "A store is for artists of the collective. Join as an artist on the Sell page (accept the artist agreement), then claim your store.",
     };
   }
 
@@ -622,12 +651,12 @@ export async function applyForStore(
   await db`
     INSERT INTO store (
       owner_user_id, org_id, payout_email, payout_method, default_currency,
-      status, bio_html, links, applied_at
+      status, bio_html, links, applied_at, reviewed_at
     ) VALUES (
       ${input.userId}, ${orgId},
       ${input.payoutEmail}, ${input.payoutMethod ?? "etransfer"},
-      ${input.defaultCurrency ?? "CAD"}, 'pending', ${bioHtml},
-      ${jsonb(serializeLinks(input.links))}, NOW()
+      ${input.defaultCurrency ?? "CAD"}, ${AUTO_APPROVE_STORES ? "active" : "pending"}, ${bioHtml},
+      ${jsonb(serializeLinks(input.links))}, NOW(), ${AUTO_APPROVE_STORES ? new Date() : null}
     )
     ON CONFLICT (org_id, owner_user_id) WHERE owner_user_id IS NOT NULL
     DO UPDATE SET
@@ -638,7 +667,12 @@ export async function applyForStore(
       links = EXCLUDED.links,
       status = CASE
         WHEN store.status = 'rejected' THEN 'pending'
+        WHEN store.status = 'pending' AND ${AUTO_APPROVE_STORES} THEN 'active'
         ELSE store.status
+      END,
+      reviewed_at = CASE
+        WHEN store.status = 'pending' AND ${AUTO_APPROVE_STORES} THEN NOW()
+        ELSE store.reviewed_at
       END,
       rejection_reason = CASE
         WHEN store.status = 'rejected' THEN NULL
@@ -1045,7 +1079,7 @@ async function uniqueSlug(
  * Ownership: the caller must be an active marketplace artist. Returns the new
  * artwork id.
  */
-export async function createArtwork(
+async function createArtworkRaw(
   input: CreateArtworkInput
 ): Promise<{ id: string; slug: string }> {
   const descriptionHtml = input.descriptionHtml
@@ -1122,7 +1156,7 @@ export async function createArtwork(
 }
 
 /** Update editable fields on an owned artwork (and optionally its price). */
-export async function updateArtwork(
+async function updateArtworkRaw(
   artworkId: string,
   artistUserId: string,
   input: UpdateArtworkInput
@@ -1270,7 +1304,7 @@ export async function rejectArtworkCredit(
  * image becomes the primary. Used by the studio editor (the uploader emits the
  * full ordered list).
  */
-export async function setArtworkMedia(
+async function setArtworkMediaRaw(
   artworkId: string,
   artistUserId: string,
   images: ArtworkMediaInput[]
@@ -1325,7 +1359,7 @@ async function writeArtworkMedia(
  * zero is allowed and means "price on request": the piece is shown, cannot be
  * added to a cart, and the buyer is pointed at messaging the artist.
  */
-export async function publishArtwork(
+async function publishArtworkRaw(
   artworkId: string,
   artistUserId: string
 ): Promise<void> {
@@ -1360,7 +1394,7 @@ export async function publishArtwork(
  * a marked piece so the artist cannot put it back. A reserved piece (open order)
  * is refused: releasing that order would put it back on sale.
  */
-export async function adminHideArtwork(artworkId: string, actorUserId: string, orgId: string): Promise<void> {
+async function adminHideArtworkRaw(artworkId: string, actorUserId: string, orgId: string): Promise<void> {
   const rows = (await db`
     UPDATE artwork SET
       metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
@@ -1379,7 +1413,7 @@ export async function adminHideArtwork(artworkId: string, actorUserId: string, o
 }
 
 /** Reverse {@link adminHideArtwork}: restore the status the piece had when it was hidden. */
-export async function adminShowArtwork(artworkId: string, orgId: string): Promise<void> {
+async function adminShowArtworkRaw(artworkId: string, orgId: string): Promise<void> {
   const rows = (await db`
     UPDATE artwork SET
       status = COALESCE(metadata->'hiddenByAdmin'->>'from', 'available'),
@@ -1393,7 +1427,7 @@ export async function adminShowArtwork(artworkId: string, orgId: string): Promis
 }
 
 /** Archive an owned artwork (removes it from the public storefront). */
-export async function archiveArtwork(
+async function archiveArtworkRaw(
   artworkId: string,
   artistUserId: string
 ): Promise<void> {
@@ -1419,7 +1453,7 @@ export type ArtworkAvailability = "available" | "reserved" | "sold";
  * still drives the status afterwards: an order, payment, cancel or refund on
  * the piece recomputes it (./stock.ts).
  */
-export async function setArtworkAvailability(
+async function setArtworkAvailabilityRaw(
   artworkId: string,
   actorUserId: string,
   status: ArtworkAvailability
@@ -1473,3 +1507,59 @@ export type { SeriesReply, SeriesOrg, SeriesLibrary, ArtistListing } from "./ser
 export { recordShippingLabelPaid, recordShippingLabelSessionExpired, sendCommerceNotice, type ShippingLabelPayment } from "./shipping-label";
 // Quote-only shipping (2026-11-07): the shipping payment is the maker's money, ledger in the same transaction.
 export { recordShippingPaymentPaid, accrueShippingPayment, type ShippingPaymentRecord, type ShippingPaymentLedger } from "./shipping-label";
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function createArtwork(...args: Parameters<typeof createArtworkRaw>): ReturnType<typeof createArtworkRaw> {
+  const result = await createArtworkRaw(...args);
+  await indexArtwork(result.id);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function updateArtwork(...args: Parameters<typeof updateArtworkRaw>): ReturnType<typeof updateArtworkRaw> {
+  const result = await updateArtworkRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function setArtworkMedia(...args: Parameters<typeof setArtworkMediaRaw>): ReturnType<typeof setArtworkMediaRaw> {
+  const result = await setArtworkMediaRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function publishArtwork(...args: Parameters<typeof publishArtworkRaw>): ReturnType<typeof publishArtworkRaw> {
+  const result = await publishArtworkRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function adminHideArtwork(...args: Parameters<typeof adminHideArtworkRaw>): ReturnType<typeof adminHideArtworkRaw> {
+  const result = await adminHideArtworkRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function adminShowArtwork(...args: Parameters<typeof adminShowArtworkRaw>): ReturnType<typeof adminShowArtworkRaw> {
+  const result = await adminShowArtworkRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function archiveArtwork(...args: Parameters<typeof archiveArtworkRaw>): ReturnType<typeof archiveArtworkRaw> {
+  const result = await archiveArtworkRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}
+
+// content_index hook (CONTENT_CORNERSTONE): re-index after the write; never fails the write.
+export async function setArtworkAvailability(...args: Parameters<typeof setArtworkAvailabilityRaw>): ReturnType<typeof setArtworkAvailabilityRaw> {
+  const result = await setArtworkAvailabilityRaw(...args);
+  await indexArtwork(args[0]);
+  return result;
+}

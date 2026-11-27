@@ -12,12 +12,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/actions": "workspace:*",
     "@elkdonis/analytics": "workspace:*",
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/checkout": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/dock": "workspace:*",
+    "@elkdonis/lms": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/blocks": "workspace:*",
     "@elkdonis/db": "workspace:*",

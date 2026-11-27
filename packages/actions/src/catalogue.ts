@@ -13,7 +13,7 @@ import { withAgent } from './agent';
 import { REGISTRY_DATA } from './registry-data';
 
 /** Entry id -> module form key (packages/dock/src/forms.tsx). Stub: one example. */
-const DOCK_FORM: Record<string, string> = { profile: 'profile-basics' };
+const DOCK_FORM: Record<string, string> = { profile: 'profile-basics', 'store-front': 'store-front' };
 
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
@@ -31,6 +31,10 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   d('store', 'A store on the market', 'The person’s own store on the collective’s market.', 'person', 'market', true),
   d('artwork', 'A work on the market', 'One artwork with a photo, a title and a price, published.', 'person', 'market'),
   d('payouts', 'Payouts set up', 'A Stripe account that sales and bookings are paid into.', 'person', 'payments'),
+  // The market's store course, "Finish your store" (2026-11-24; docs/open/MARKET_CENTER_AND_DOCK_2026-11-24.md).
+  // Both are done in the dock: a description on the person's own market store, and the ship-from address.
+  d('store-front', 'Your store front', 'Two or three lines collectors read above the work in the person’s own market store.', 'person', 'market', true),
+  d('ship-from', 'Where you ship from', 'The address couriers quote and label from. Private: only the city shows.', 'person', 'market', true),
   d('org', 'An organisation of one’s own', 'A collective with a name and an address on the network.', 'person', 'org', true),
   d('org-details', 'Organisation details', 'A line, a description and an image for the organisation.', 'org', 'org', true),
   d('org-offering', 'Something leading the org site', 'A published public post, event or service on the organisation’s site.', 'org', 'content'),

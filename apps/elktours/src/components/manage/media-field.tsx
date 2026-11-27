@@ -1,84 +1,80 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import * as React from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@elkdonis/primitives";
-
-interface LibraryItem {
-  url: string;
-  filename: string;
-  source: "upload" | "nextcloud";
-}
+import { MediaLibrary, type MediaLibraryFile, type MediaLibrarySource } from "@elkdonis/content/media-library";
+import { Button } from "@elkdonis/primitives";
+import type { MediaDestination } from "@/lib/media-destination";
 
 interface MediaFieldProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
+  /**
+   * Where the file goes (docs/open/ELKTOURS_MEDIA_STRUCTURE_2026-11-26.md §3): a tour's cover or stop, a place.
+   * Unset: Media/Images. The server links a file that already belongs there and copies anything else in.
+   */
+  destination?: MediaDestination;
+  /** Which files to offer. Default pictures. */
+  accept?: string;
+}
+
+const SRC = "/api/media/sources";
+
+/** The sources the picker offers for a destination: its own folder first, then places, the org, the person's own. */
+function sourcesFor(dest: MediaDestination | undefined): MediaLibrarySource[] {
+  const out: MediaLibrarySource[] = [];
+  const tourId = dest?.kind === "tour" ? dest.tourId : null;
+  if (tourId) out.push({ key: "tour", label: "This tour", endpoint: `${SRC}/tour?tour=${encodeURIComponent(tourId)}` });
+  if (dest?.kind === "place") out.push({ key: "place", label: "This place", endpoint: `${SRC}/place?place=${encodeURIComponent(dest.placeId)}` });
+  out.push({ key: "places", label: "Places", endpoint: tourId ? `${SRC}/places?tour=${encodeURIComponent(tourId)}` : `${SRC}/places` });
+  out.push({ key: "org", label: "Org", endpoint: `${SRC}/org` });
+  out.push({ key: "mine", label: "My files", endpoint: `${SRC}/mine` });
+  out.push({ key: "stops", label: "Stop folders", endpoint: `${SRC}/stops` });
+  return out;
 }
 
 /**
- * Pick an image: upload a new one, or choose something already in the org's
- * Nextcloud folder (EAC_Network/<org>/Media/Images).
- *
- * Replaces the plain URL text box the form used to have — pasting a URL meant
- * either hotlinking someone else's server or uploading elsewhere first.
- *
- * The Mantine MediaUpload/FileBrowser in @elkdonis/ui do this already, but
- * this app is deliberately Mantine-free, so this is the shadcn equivalent.
+ * Pick a picture: the one picker (@elkdonis/content MediaLibrary) over this site's sources, with upload into the
+ * destination's folder. A pick from elsewhere is copied in by /api/media/attach (2026-11-26); the field stores the
+ * URL it answers with, as before.
  */
-export function MediaField({ value, onChange, label = "Image", hint }: MediaFieldProps) {
-  const [library, setLibrary] = useState<LibraryItem[] | null>(null);
-  const [loadingLibrary, setLoadingLibrary] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [dragging, setDragging] = useState(false);
+export function MediaField({ value, onChange, label = "Image", hint, destination, accept = "image/*" }: MediaFieldProps) {
+  const [open, setOpen] = React.useState(!value);
+  const [busy, setBusy] = React.useState(false);
+  // Keyed by the destination's content, not its identity: callers pass a fresh object on every render, and a new
+  // sources list would make the library fetch again.
+  const destJson = JSON.stringify(destination ?? { kind: "general" });
+  const sources = React.useMemo(() => sourcesFor(JSON.parse(destJson) as MediaDestination), [destJson]);
+  const tourId = destination?.kind === "tour" ? destination.tourId : undefined;
 
-  const loadLibrary = useCallback(async () => {
-    setLoadingLibrary(true);
-    try {
-      const res = await fetch("/api/media/library");
-      const data = await res.json();
-      setLibrary(res.ok ? (data.items ?? []) : []);
-      if (!res.ok) toast.error(data.error ?? "Could not load the library.");
-    } catch {
-      setLibrary([]);
-      toast.error("Could not load the library.");
-    } finally {
-      setLoadingLibrary(false);
-    }
-  }, []);
-
-  async function upload(file: File) {
-    if (!file.type.startsWith("image/")) {
-      toast.error("That doesn't look like an image.");
+  async function pick(file: MediaLibraryFile) {
+    if (file.source === "upload") {
+      onChange(file.url);
+      setOpen(false);
       return;
     }
-
-    setUploading(true);
+    setBusy(true);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      // Cover images are shown to the public, so they belong in the public
-      // Media folder rather than Private.
-      body.append("visibility", "PUBLIC");
-
-      const res = await fetch("/api/upload", { method: "POST", body });
-      const data = await res.json().catch(() => ({}));
-
+      const res = await fetch("/api/media/attach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: file.source, path: file.path, url: file.url, tour: tourId, destination: JSON.parse(destJson) }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; copied?: boolean; error?: string };
       if (!res.ok || !data.url) {
-        toast.error(data.error ?? "Upload failed.");
+        toast.error(data.error ?? "Could not use that file.");
         return;
       }
-
+      if (data.copied) toast.success("Copied into this tour's folder.".replace("this tour's", destination?.kind === "place" ? "the place's" : destination?.kind === "tour" ? "the tour's" : "the site's"));
       onChange(data.url);
-      setLibrary(null); // stale now
-      toast.success("Uploaded.");
+      setOpen(false);
     } catch {
-      toast.error("Upload failed — could not reach the server.");
+      toast.error("Could not reach the server.");
     } finally {
-      setUploading(false);
+      setBusy(false);
     }
   }
 
@@ -89,122 +85,39 @@ export function MediaField({ value, onChange, label = "Image", hint }: MediaFiel
       {value ? (
         <div className="flex items-start gap-4 rounded-lg border border-border p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt=""
-            className="size-24 shrink-0 rounded-md border border-border object-cover"
-          />
+          <img src={value} alt="" className="size-24 shrink-0 rounded-md border border-border object-cover" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-muted-foreground">{value}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => onChange("")}
-            >
-              <Trash2 className="size-4" aria-hidden />
-              Remove
-            </Button>
+            <p className="truncate text-sm text-muted-foreground">{decodeURI(value.split("/").pop() ?? value)}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+                {open ? "Close the library" : "Change"}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => onChange("")}>
+                <Trash2 className="size-4" aria-hidden />
+                Remove
+              </Button>
+            </div>
           </div>
         </div>
-      ) : (
-        <Tabs
-          defaultValue="upload"
-          onValueChange={(v) => {
-            if (v === "library" && library === null) void loadLibrary();
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="library">Library</TabsTrigger>
-          </TabsList>
+      ) : !open ? (
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Choose a picture
+        </Button>
+      ) : null}
 
-          <TabsContent value="upload">
-            <label
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) void upload(file);
-              }}
-              className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
-                dragging ? "border-primary bg-accent/30" : "border-border hover:bg-accent/20"
-              )}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                disabled={uploading}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void upload(file);
-                  e.target.value = "";
-                }}
-              />
-              {uploading ? (
-                <>
-                  <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-                  <span className="text-sm text-muted-foreground">Uploading…</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="size-6 text-muted-foreground" aria-hidden />
-                  <span className="text-sm">Drop an image here, or click to choose</span>
-                  <span className="text-xs text-muted-foreground">
-                    Saved to the site&rsquo;s media folder. Up to 25 MB.
-                  </span>
-                </>
-              )}
-            </label>
-          </TabsContent>
-
-          <TabsContent value="library">
-            {loadingLibrary ? (
-              <p className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Loading…
-              </p>
-            ) : !library || library.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                <ImageIcon className="mx-auto mb-2 size-6" aria-hidden />
-                Nothing in the library yet. Upload an image and it will appear here.
-              </p>
-            ) : (
-              <ul className="grid max-h-72 grid-cols-3 gap-3 overflow-y-auto p-1 sm:grid-cols-4">
-                {library.map((item) => (
-                  <li key={item.url}>
-                    <button
-                      type="button"
-                      onClick={() => onChange(item.url)}
-                      title={item.filename}
-                      className="group w-full overflow-hidden rounded-md border border-border transition hover:border-primary"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.url}
-                        alt={item.filename}
-                        loading="lazy"
-                        className="aspect-square w-full object-cover"
-                      />
-                      <span className="block truncate px-1.5 py-1 text-[0.65rem] text-muted-foreground">
-                        {item.filename}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
+      {open ? (
+        <div className="elk-media-field max-h-[34rem] overflow-y-auto rounded-lg border border-border p-3" aria-busy={busy}>
+          <MediaLibrary
+            mode="pick"
+            sources={sources}
+            value={value || undefined}
+            accept={accept}
+            rememberAs={`elk-mlib:${destination?.kind ?? "general"}`}
+            upload={{ endpoint: "/api/media/upload-to", fields: { destination: destJson }, label: "Upload" }}
+            onPick={(f) => void pick(f)}
+          />
+        </div>
+      ) : null}
 
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>

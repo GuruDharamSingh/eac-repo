@@ -10,12 +10,13 @@ import { type NextRequest } from "next/server";
 // "Type '{ params: Promise<{}>; }' has no properties in common with type
 // 'SignupOrgOptions'".
 //
-// No default org (developer decision, 2026-10-29): a fresh sign-up on the
-// network holds no membership at all. Before this it joined the core member
-// group as a viewer, which labelled every new person a follower of that group
-// and hid the "start an organisation" cards. The getting-started course's
-// first tasks give them their own space (org `oad`) and, if they want one,
-// an organisation.
+// Default org `oad` as a viewer (developer decision, 2026-11-24; it was none
+// from 2026-10-29, and `inner_group` before that). A fresh sign-up is a visitor
+// to the artist directory, not a follower of the core member group, which is
+// what labelled every new person a follower of `inner_group` and hid the "start
+// an organisation" cards. The getting-started course's first tasks raise the
+// `oad` row to `member` (gainSpace) and, if they want one, give them an
+// organisation.
 export async function POST(request: NextRequest) {
-  return handleSignup(request, { defaultOrgs: [] });
+  return handleSignup(request, { defaultOrgs: [{ id: "oad", role: "viewer" }] });
 }

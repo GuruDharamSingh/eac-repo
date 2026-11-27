@@ -26,8 +26,18 @@ export const ENTRIES: Record<string, EntryData> = {
   cloud: { address: { host: 'app', app: 'nextcloud', external: true, how: 'Sign in with Elkdonis in the cloud window' }, risk: [], roles: ['person'] },
   service: { address: hub('/hub/network', 'journey:profile', 'service', 'Offer a service under Offer and get paid'), risk: ['public', 'money'], roles: ['person'], confirmFrom: 'orgapps.money:own-service-save' },
   store: { address: hub('/hub/network', 'journey:auction', 'store', 'Open your store, step 2 of Sell your art'), risk: ['public', 'money'], roles: ['person'], confirmFrom: 'orgapps.journeys:auction-store-publish' },
-  artwork: { address: hub('/hub/network', 'artwork', 'artwork', 'Publish all in the artwork queue'), risk: ['public', 'money'], roles: ['person'], confirmFrom: 'orgapps.artwork:artwork-draft-save' },
-  payouts: { address: hub('/hub/network', 'journey:auction', 'payouts', 'Connect Stripe, step 3 of Sell your art'), risk: ['money'], roles: ['person'], confirmFrom: 'orgapps.money:payout-stripe-start' },
+  // `market`: where the same control lives on market.arts-collective.com, used by the dock there (2026-11-24).
+  artwork: {
+    address: { ...hub('/hub/network', 'artwork', 'artwork', 'Publish all in the artwork queue'), market: { path: '/studio', anchor: 'artwork', how: 'The New artwork button at the top of My art' } },
+    risk: ['public', 'money'], roles: ['person'], confirmFrom: 'orgapps.artwork:artwork-draft-save',
+  },
+  payouts: {
+    address: { ...hub('/hub/network', 'journey:auction', 'payouts', 'Connect Stripe, step 3 of Sell your art'), market: { path: '/studio/payouts', anchor: 'payouts', how: 'Connect with Stripe on the Payouts page' } },
+    risk: ['money'], roles: ['person'], confirmFrom: 'orgapps.money:payout-stripe-start',
+  },
+  // The market's store course, done in the dock (2026-11-24).
+  'store-front': { address: { host: 'app', app: 'art-auction', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'apps.art-auction.dock:store-front' },
+  'ship-from': { address: { host: 'app', app: 'art-auction', dock: true, how: 'Done in the dock' }, risk: [], roles: ['person'], confirmFrom: 'apps.art-auction.dock:ship-from' },
   org: { address: hub('/hub/network', 'journey:site', 'org', 'Create in the Create a collective dialog'), risk: ['public'], roles: ['person'] },
   'org-details': { address: hub('/hub/network', 'journey:org:{org}', 'org-details', 'Save in the organisation details'), risk: ['public'], roles: ['owner', 'guide'], confirmFrom: 'arts-collective.hub:save-org-identity' },
   'org-offering': { address: hub('/hub/organization?org={org}', undefined, 'org-offering', 'Publish in the composer'), risk: ['public'], roles: ['owner', 'guide'] },

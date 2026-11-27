@@ -23,7 +23,7 @@ export default {
       actors: ['owner', 'guide'],
       scope: 'org',
       hosts: [
-        { key: sa('tour-actions.ts', 'saveTourAction'), service: ['@elkdonis/services#ensureUniqueThreadSlug', '@elkdonis/utils#sanitizeRichText', 'elktours/lib/tour-cache#refreshTourRoute', '@elkdonis/booking#saveOffer'], address: { app: 'elktours', path: '/manage/tours/{tour}', how: 'Save in the tour form (components/tours tour form), and the hub Create a tour wizard (components/office/create-tour)' } },
+        { key: sa('tour-actions.ts', 'saveTourAction'), service: ['@elkdonis/services#ensureUniqueThreadSlug', '@elkdonis/utils#sanitizeRichText', 'elktours/lib/tour-cache#refreshTourRoute', '@elkdonis/booking#saveOffer'], address: { app: 'elktours', path: '/hub/tours/edit?tour={tour}', how: 'The Create a tour frame (components/office/create-tour), as a popup over the hub or as this page, for drafts and published tours; also Save in the old tour form (/manage/tours/{tour})' } },
         twin(sq('tour-actions.ts', 'saveTourAction')),
         { key: sa('tour-live-actions.ts', 'patchTourAction'), service: ['@elkdonis/services#ensureUniqueThreadSlug', '@elkdonis/utils#sanitizeRichText'], address: { app: 'elktours', path: '/tours/{slug}', how: 'in-place editing on the tour page (components/tours/live)' } },
         twin(sq('tour-live-actions.ts', 'patchTourAction')),
@@ -35,9 +35,9 @@ export default {
       inputs: 'title, excerpt, body, cover, price, duration, location, meeting point, highlights, includes, languages, max party, effort, city, status, film',
       drift: "saveTourAction writes the whole form (and replaces metadata keys it owns); patchTourAction merges only touched fields and restricts film urls to this site's media. Both sanitise the body. Price is a server field the editor sets; buyers cannot change it (booking recomputes it from the thread).",
       canonical: 'patchTourAction (merging, schema-limited) for edits; saveTourAction for create only.',
-      open: AUTH_OPEN + ' Also: saveTourAction accepts any coverImageUrl (up to 500 chars); patchTourAction restricts film urls only. 2026-11-19: saveTourAction also creates the set-dates booking offer when the tour has none (ensureTourOffer; tours created after migration 274 had none, so they could not be given dates), and stores metadata.tour.city.',
+      open: AUTH_OPEN + ' Also: saveTourAction accepts any coverImageUrl (up to 500 chars); patchTourAction restricts film urls only. 2026-11-19: saveTourAction also creates the set-dates booking offer when the tour has none (ensureTourOffer; tours created after migration 274 had none, so they could not be given dates), and stores metadata.tour.city. 2026-11-26: a published tour keeps its slug when renamed; the frame edits published tours and saves on leaving a step only when something changed.',
       verified: V,
-      updated: '2026-11-19',
+      updated: '2026-11-26',
     },
     {
       id: 'tour-status-set',

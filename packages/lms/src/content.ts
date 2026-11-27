@@ -5,7 +5,7 @@ import { db } from '@elkdonis/db';
 import { sanitizeRichText } from '@elkdonis/utils';
 import type {
   Course, LmsViewer, Outline, OutlineModule, PublishedCourse, PublishedModule, PublishedStep,
-  StepContent, StepRefs, StepSettings, UnlockRule, WriteResult, CourseVisibility, CourseArea, CourseTags,
+  StepContent, StepRefs, StepSettings, UnlockRule, WriteResult, CourseVisibility, CourseArea, CourseTags, ModuleLook,
 } from './types';
 import { COURSE_AREAS } from './types';
 import { DEFAULT_RULE } from './unlock';
@@ -140,7 +140,7 @@ export async function getCourseVersion(course: Course, versionId: string): Promi
       steps.push(step);
       ms.push(step);
     }
-    return { id: m.id, title: m.title, summary: m.summary ?? null, steps: ms };
+    return { id: m.id, title: m.title, summary: m.summary ?? null, steps: ms, ...(m.look ? { look: m.look } : {}) };
   });
   // The version's own title/summary are what was published, not the live row.
   return {
@@ -268,6 +268,27 @@ export async function upsertStepDraft(viewer: LmsViewer, courseId: string, input
   });
 }
 
+
+const str = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined);
+/** Keep only the module look fields we know, trimmed and capped. Returns undefined when nothing is set. */
+function cleanLook(l: ModuleLook | undefined): ModuleLook | undefined {
+  if (!l || typeof l !== 'object') return undefined;
+  const out: ModuleLook = {};
+  const colour = str(l.colour, 9);
+  if (colour && /^#[0-9a-fA-F]{6}$/.test(colour)) out.colour = colour;
+  for (const k of ['date', 'length', 'coverLabel'] as const) { const v = str(l[k], 120); if (v) out[k] = v; }
+  const cover = str(l.coverUrl, 500); if (cover) out.coverUrl = cover;
+  const desc = str(l.description, 2000); if (desc) out.description = desc;
+  if (l.hasVideo === true) out.hasVideo = true;
+  if (Array.isArray(l.materials)) {
+    const mats = l.materials.slice(0, 40).flatMap((m) => {
+      const name = str(m?.name, 160);
+      return name ? [{ id: str(m.id, 40) ?? newId().slice(0, 8), name, ...(str(m.url, 500) ? { url: str(m.url, 500) } : {}), access: m.access === 'open' ? ('open' as const) : ('participants' as const) }] : [];
+    });
+    if (mats.length) out.materials = mats;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 /** Replace the working outline. Step ids must belong to the course. */
 export async function setDraftOutline(viewer: LmsViewer, courseId: string, outline: Outline): Promise<WriteResult> {
   const course = await getCourseById(courseId);
@@ -280,6 +301,7 @@ export async function setDraftOutline(viewer: LmsViewer, courseId: string, outli
   const clean: Outline = {
     modules: outline.modules.map((m): OutlineModule => ({
       id: m.id || newId(), title: m.title.trim() || 'Untitled', summary: m.summary ?? null,
+      ...(cleanLook(m.look) ? { look: cleanLook(m.look) } : {}),
       steps: m.steps.map((s) => ({ stepId: s.stepId, required: s.required !== false, unlock: (s.unlock ?? DEFAULT_RULE) as UnlockRule })),
     })),
   };

@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import { deriveExcerpt, sanitizePostBody, sanitizeRichText } from '@elkdonis/utils';
 import { renderEssayHtml, type EssayDoc } from '@elkdonis/utils/essay';
@@ -328,6 +329,7 @@ export async function savePostContent(
       WHERE id = ${id} AND org_id = ${orgId}
     `;
     if (input.materialIds !== undefined) await attachMaterials(orgId, id, input.materialIds);
+    await indexThread(id);
 
     // Read back as an editor of its own row: the author or moderator that just wrote it.
     const record = await loadPostContent(viewerId, orgId, id);

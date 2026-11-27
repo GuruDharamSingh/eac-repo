@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { networkOrigin, safeReturn, withOutcome } from "@/lib/connections";
 
 /**
- * GET /api/connections/start?id=<connection>&return=<absolute url>
+ * GET /api/connections/start?id=<connection>&return=<absolute url>[&with=comments]
  *
  * The one place on the network that sends a person to Google's consent screen
  * for a connection (services/connections.ts, migration 192). Other sites link
@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     const here = `/api/connections/start?${request.nextUrl.searchParams.toString()}`;
     return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(here)}`);
   }
-  const r = await beginConnectionAuth(user.id, id, returnTo);
+  // `with=comments` (2026-11-24): also ask for the comment permissions (Channel → Comments).
+  const r = await beginConnectionAuth(user.id, id, returnTo, { comments: request.nextUrl.searchParams.get("with") === "comments" });
   if (r.ok === false) return NextResponse.redirect(withOutcome(returnTo ?? `${origin}/hub`, id, r.error));
   return NextResponse.redirect(r.url);
 }

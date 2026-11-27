@@ -16,9 +16,15 @@ export interface ActionRoute {
  * `null` when there is nothing to travel to: an entry done in the dock, an external
  * window, no address, or an org address with no org to name.
  */
-export function routeFor(id: string, opts: { hub: string; orgSlug?: string | null; partial?: boolean }): ActionRoute | null {
+export function routeFor(id: string, opts: { hub: string; market?: string | null; orgSlug?: string | null; partial?: boolean }): ActionRoute | null {
   const a = actionMeta(id)?.address;
-  if (!a || a.dock || a.external || !a.path) return null;
+  if (!a || a.dock || a.external) return null;
+  // On the market (the host passes its origin, '' when it is the market), an entry whose control
+  // also lives there goes there, so the trip and its return path stay on the market (2026-11-24).
+  if (a.market && typeof opts.market === 'string') {
+    return { href: `${opts.market}${a.market.path}`, anchor: a.market.anchor ?? null, how: a.market.how ?? a.how ?? null };
+  }
+  if (!a.path) return null;
   const needsOrg = a.path.includes('{org}') || (a.surface ?? '').includes('{org}');
   if (needsOrg && !opts.orgSlug) return null;
   const org = encodeURIComponent(opts.orgSlug ?? '');

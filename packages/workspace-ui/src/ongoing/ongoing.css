@@ -1,0 +1,91 @@
+/* Ongoing session (T2). Same look as the frames: head, body, foot. */
+.ws-ong-frame { border: 1px solid var(--ws-line); border-top: 3px solid var(--ws-module, var(--ws-accent)); border-radius: 6px; background: var(--ws-panel); overflow: hidden; }
+.ws-ong-frame *, .ws-ong-frame *::before, .ws-ong-frame *::after { box-sizing: border-box; }
+.ws-ong-head { padding: 8px 14px; border-bottom: 1px solid var(--ws-line); display: flex; flex-direction: column; gap: 6px; position: relative; }
+.ws-ong-headrow { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.ws-ong-titlebox { display: flex; align-items: baseline; gap: 2px 10px; flex-wrap: wrap; min-width: 0; }
+.ws-ong-tag { font-size: 11px; color: var(--ws-muted); letter-spacing: 0.04em; white-space: nowrap; }
+.ws-ong-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ws-ong-actions .ws-btn-sm { min-height: 30px; padding: 0 10px; font-size: 13px; }
+.ws-ong-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ws-ong-title { margin: 0; font-family: var(--ws-title-font); font-size: 30px; line-height: 1.15; font-weight: 600; }
+.ws-session.ws-fill-title .ws-ong-title { color: color-mix(in srgb, var(--ws-module) 30%, #ffffff); }
+.ws-ong-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; background: var(--ws-ground); }
+.ws-ong-foot { padding: 10px 18px; border-top: 1px solid var(--ws-line); font-size: 13px; color: var(--ws-muted); }
+
+/* strip */
+.ws-ong-stripwrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ws-ong-strip { flex: 1; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.ws-ong-stripl { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; width: max-content; }
+.ws-ong-iv { min-height: 28px; padding: 2px 9px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; background: transparent; color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 999px; font: inherit; font-size: 13px; line-height: 1.2; cursor: pointer; }
+.ws-ong-iv:hover:not(:disabled) { border-color: var(--ws-muted); }
+.ws-ong-iv:disabled { cursor: default; }
+.ws-ong-iv.is-locked { opacity: 0.5; border-style: dashed; }
+.ws-ong-lock { flex: none; }
+.ws-ong-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ws-module, var(--ws-accent)); }
+.ws-ong-iv.is-past { color: var(--ws-muted); }
+.ws-ong-iv.is-current { border-color: var(--ws-module, var(--ws-accent)); font-weight: 600; }
+.ws-ong-iv.is-on { background: color-mix(in srgb, var(--ws-module, var(--ws-accent)) 24%, transparent); border-color: var(--ws-module, var(--ws-accent)); border-width: 2px; padding: 1px 12px; font-size: 15px; font-weight: 700; color: var(--ws-ink); }
+
+.ws-ong-today { flex: none; min-height: 28px; padding: 0 10px; background: transparent; color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 4px; font: inherit; font-size: 12px; cursor: pointer; }
+.ws-ong-today:disabled { opacity: 0.45; cursor: default; }
+
+/* cards and controls */
+.ws-ong-card { padding: 12px 14px; border: 1px solid var(--ws-line); border-radius: 4px; background: var(--ws-panel); display: flex; flex-direction: column; gap: 8px; }
+.ws-ong-stepcard { border-left: 3px solid var(--ws-module, var(--ws-accent)); }
+.ws-ong-h { margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ws-muted); font-weight: 500; }
+.ws-ong-steptop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 16px; }
+.ws-ong-chip { flex: none; padding: 2px 8px; border: 1px solid var(--ws-line); border-radius: 999px; font-size: 11px; color: var(--ws-muted); }
+.ws-ong-prompt { margin: 0; line-height: 1.5; }
+.ws-ong-muted { margin: 0; font-size: 13px; color: var(--ws-muted); }
+.ws-ong-closed, .ws-ong-gate { margin: 0; line-height: 1.5; }
+.ws-ong-done { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wrap; border-color: var(--ws-accent); }
+.ws-ong-mats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ws-ong-mat { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ws-ong-field { display: flex; flex-direction: column; gap: 4px; }
+.ws-ong-label { font-size: 12px; color: var(--ws-muted); }
+.ws-ong-input { width: 100%; min-height: 36px; padding: 6px 10px; background: var(--ws-ground); color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 4px; font: inherit; resize: vertical; }
+.ws-ong-short { width: 96px; }
+.ws-ong-btn, .ws-ong-back { align-self: flex-start; min-height: 36px; padding: 0 12px; background: transparent; color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 4px; font: inherit; font-size: 13px; cursor: pointer; }
+.ws-ong-btn:hover, .ws-ong-back:hover { border-color: var(--ws-muted); }
+.ws-ong-btn[aria-pressed="true"] { border-color: var(--ws-accent); background: color-mix(in srgb, var(--ws-accent) 14%, transparent); }
+.ws-ong-link { background: none; border: 0; padding: 2px 0; color: var(--ws-ink); text-decoration: underline; font: inherit; font-size: 13px; cursor: pointer; align-self: flex-start; }
+.ws-ong-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ws-ong-extras { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.ws-ong-timer { display: flex; flex-direction: column; gap: 6px; }
+.ws-ong-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ws-ong-feeditem { display: flex; flex-direction: column; gap: 6px; }
+.ws-ong-who { display: flex; align-items: baseline; gap: 10px; }
+.ws-ong-name { background: none; border: 0; padding: 0; color: var(--ws-ink); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.ws-ong-persontop { display: flex; flex-direction: column; gap: 6px; }
+.ws-ong-btn:focus-visible, .ws-ong-back:focus-visible, .ws-ong-link:focus-visible, .ws-ong-name:focus-visible, .ws-ong-iv:focus-visible, .ws-ong-today:focus-visible, .ws-ong-input:focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 2px; }
+
+@media (max-width: 760px) {
+  .ws-ong-head, .ws-ong-body, .ws-ong-foot { padding-left: 12px; padding-right: 12px; }
+  .ws-ong-title { font-size: 24px; }
+  .ws-ong-head { padding-top: 6px; padding-bottom: 6px; }
+}
+
+/* step line, entry form, timer strip, icon buttons */
+.ws-ong-stepline { margin: 0; line-height: 1.45; font-size: 16px; }
+.ws-ong-form { display: flex; flex-direction: column; gap: 8px; }
+.ws-ong-tstrip { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--ws-line); border-radius: 4px; background: var(--ws-ground); }
+.ws-ong-tstrip.is-zero { border-color: #e57373; }
+.ws-ong-tface { font-size: 20px; font-variant-numeric: tabular-nums; min-width: 4ch; }
+.ws-ong-tmin { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ws-muted); }
+.ws-ong-tmin .ws-ong-input { width: 64px; min-height: 32px; }
+.ws-ong-tbtns { display: flex; gap: 6px; margin-left: auto; }
+.ws-ong-tbtns .ws-ong-btn { min-height: 32px; }
+.ws-ong-write { min-height: 150px; line-height: 1.5; }
+.ws-ong-formrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ws-ong-icon { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0; background: transparent; color: var(--ws-ink); border: 1px solid var(--ws-line); border-radius: 4px; cursor: pointer; }
+.ws-ong-icon:hover { border-color: var(--ws-muted); }
+.ws-ong-icon[aria-pressed="true"] { border-color: var(--ws-accent); background: color-mix(in srgb, var(--ws-accent) 14%, transparent); }
+.ws-ong-icon:focus-visible, .ws-ong-fold summary:focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 2px; }
+.ws-ong-fine { margin: 0; font-size: 11px; color: var(--ws-muted); }
+.ws-ong-sp { flex: 1; }
+
+/* sheet for an ongoing session */
+.ws-ong-fold { border-top: 1px solid var(--ws-line); padding: 8px 0; }
+.ws-ong-fold summary { cursor: pointer; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ws-muted); padding: 2px 0; }
+.ws-ong-fold[open] summary { margin-bottom: 8px; }

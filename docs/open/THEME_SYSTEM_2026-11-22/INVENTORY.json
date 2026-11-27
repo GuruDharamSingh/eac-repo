@@ -1,0 +1,47 @@
+{
+ "innergathering": {
+  "state": "live site holds experimental overrides: site_themes inner_group (13 vars), site_config site-style:chrome, puck:landing black/white looks, page-edits:home",
+  "sections": [
+   {"page":"/","name":"Header/menu","drawnBy":"code","file":"src/components/site-header.tsx"},
+   {"page":"/","name":"Hero","drawnBy":"saved Puck boxes with inline look","file":"puck:landing; landing.css .ig-hero*"},
+   {"page":"/","name":"Hero buttons","drawnBy":"code part hero-actions","file":"src/app/page.tsx:100"},
+   {"page":"/","name":"Current Offerings","drawnBy":"registered block offerings-band + morph","file":"src/components/landing/offerings-block.tsx"},
+   {"page":"/","name":"Sign-in banner","drawnBy":"code part","file":"src/app/page.tsx:119"},
+   {"page":"/","name":"A Mutual Aid Society","drawnBy":"saved Puck boxes with inline look (fill #000, colour #fff)","file":"puck:landing box-de7om18c"},
+   {"page":"/","name":"Gallery","drawnBy":"code part","file":"src/components/landing/GallerySlider.tsx"},
+   {"page":"/","name":"Join","drawnBy":"code part + BaroqueSignup (own palette)","file":"src/components/landing/JoinSection.tsx; packages/cms-ui/src/auth/baroque-signup.css"},
+   {"page":"/","name":"Grand Forum","drawnBy":"registered block grand-forum + morph","file":"src/components/landing/forum-block.tsx"},
+   {"page":"/","name":"Fundraising","drawnBy":"saved Puck boxes with var() inline + 2 code parts","file":"puck:landing box-5y4h4xt2"},
+   {"page":"/","name":"Cities","drawnBy":"saved Puck box, inline --ig-c-x-2a5a2a","file":"puck:landing box-qz1v9hh2"},
+   {"page":"/","name":"Board","drawnBy":"saved box + code part board-list","file":"src/app/page.tsx:172"},
+   {"page":"/","name":"Vision","drawnBy":"saved Puck box, inline","file":"puck:landing box-b3eeb7d2"},
+   {"page":"/","name":"Footer","drawnBy":"code","file":"src/components/site-footer.tsx"},
+   {"page":"/about","name":"all sections","drawnBy":"hard-coded JSX","file":"src/app/about/page.tsx"},
+   {"page":"/blog,/offerings","name":"banner, grid, shelf","drawnBy":"code + shared cms-ui","file":"src/app/[feed]/page.tsx"},
+   {"page":"/terms","name":"terms","drawnBy":"code + cms-ui data-policy","file":"src/app/terms/page.tsx"}
+  ],
+  "colours": [
+   {"value":"navy family #01124e #022278 #063179 #104b8c #4b5f85 #c9d2e8 + 3 slates","group":"navy","homes":["globals.css:212 --ig-c-*","HSL --foreground/--primary/--smoke","site_themes"],"uses":106,"themeReachable":true},
+   {"value":"gold family #b79a55 #d6c38e #8f763c #7a6431 #f0db9d #c9a962","group":"gold","homes":["--ig-c-gold*","--gold","baroque --eac-bq-gilt #b08432"],"uses":57,"themeReachable":"partly"},
+   {"value":"beige family #fffdf8 #fbf7ef #f3eadc #f6efe2 #e8dcc8 #e9dfcc #e3d3a6 #6e5f4d #5a5240","group":"beige","homes":["--ig-c-paper/parchment/section/x-*","HSL --background/--card/--secondary","baroque --eac-bq-parchment #fbf7ef/#f2eade","forum css #fbf7ef","puck look fills"],"uses":60,"themeReachable":"partly (Join and forum fields not)"},
+   {"value":"green/violet/red #64726a #2a5a2a #dde8d0 #b9e0b0 #7c3aed #a78bfa #8b2e2e #ffb4a8","group":"accents","homes":["--ig-c-*","inline in puck:landing"],"uses":14,"themeReachable":true},
+   {"value":"greys/black/white","group":"neutral","homes":["--ig-c-grey-*, black*, white-short"],"uses":19,"themeReachable":true},
+   {"value":"88 translucent rgba","group":"alpha","homes":["globals.css:290-357 --ig-a-*"],"uses":150,"themeReachable":true},
+   {"value":"hex typed into saved look/morph/page-edits/chrome (#000000 #ffffff #fffefa #fffdf8)","group":"stored-literal","homes":["puck:landing look","morph","page-edits:home","site-style:chrome"],"uses":20,"themeReachable":false},
+   {"value":"shared package literals (cms-ui, forum-ui)","group":"package","homes":["packages/cms-ui/src/*.css","packages/forum-ui/src/*.css"],"uses":null,"themeReachable":"only via --card/--foreground/--gold"}
+  ],
+  "fonts": ["Venture","Brothers","Basteleur 400/700","Roboto (Google button)","ui-sans-serif fallback","Crimson Text / Cormorant optional"],
+  "textStyles": {"liveCombos":57,"landingCssFontSizes":34,"weights":5,"letterSpacings":14},
+  "other": {"radii":"--radius .375rem; 4px 3px 6px 999px 12px 14px","shadows":7,"sectionPad":"--section-pad clamp(5rem,10vw,8rem)","contentMax":"1200px + 13 other max-widths","buttons":".cta-btn 52px/4px"},
+  "counts": {"opaqueVars":41,"alphaVars":88,"hslTokens":22,"colourStoragePlaces":14,"panelReachablePlaces":5,"liveBg":16,"liveText":24,"liveBorder":19}
+ },
+ "amritCanada": {"url":"https://amritcanada.ca","pages":30,"editorStack":"none (only @elkdonis/blocks)","themeLoader":false,"css":"Tailwind v4, globals.css 501 lines, :root HSL tokens","hexCss":27,"hexTsx":12,"fonts":["Cinzel","Lora"],"containerCreated":"2026-11-17","lastCommit":"2026-11-17"},
+ "bon": {
+  "labelled": {"file":"packages/gradients/src/palettes.ts:88-92","BON_MINERAL":[
+   {"id":"tsakli-card","ground":"#2A5A83","light":"#C3BFB5","mark":"#BC5149"},
+   {"id":"moss-orpiment","ground":"#37362D","light":"#6A7853","mark":"#C1AF6E"},
+   {"id":"mandala-dusk","ground":"#2C2B46","light":"#7F9364","mark":"#B77669"}]},
+  "fiveElements": {"file":"palettes.ts:76-77","colours":["#2C4A96","#548A5C","#E4CC4E","#C9483E","#E8E4D6"],"note":"water, wind, earth, fire, space"},
+  "elemental": ["#1F4E9A","#2CA6A4","#2E6B3F","#D4A017","#D45A1F","#B42A2A","#6B3B8F","#F5F5E5","#000000"]
+ }
+}

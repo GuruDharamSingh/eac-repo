@@ -52,6 +52,9 @@ export interface ShellOptions<D> {
   /** Tools after the page name. */
   tools?: ShellTool[];
   onTool?(id: string): void;
+  /** Text buttons the host adds to the right pill, before Undo (the host's own side panels, e.g. "Site style"). */
+  extras?: Array<{ id: string; label: string; title?: string }>;
+  onExtra?(id: string): void;
   /** The tool in use. */
   activeTool?(): string | null;
   panel?: { open(): boolean; toggle(): void };
@@ -98,7 +101,7 @@ export function mountEditShell<D>(o: ShellOptions<D>): EditShell {
       (o.zoom ? `<button type="button" class="de-pill-zoom" data-a="zoom" title="Zoom" aria-haspopup="menu">${Math.round(o.zoom.value() * 100)}%${icon("down")}</button>` : "");
     top.innerHTML = `<div class="de-pill de-pill-tools"><button type="button" class="de-pill-page" data-a="page"${o.pageMenu ? ' aria-haspopup="menu"' : ""} title="${esc(name)}"><span>${esc(name)}</span>${o.pageMenu ? icon("down") : ""}</button>${tools ? `<span class="de-pill-sep"></span>${tools}` : ""}</div>
       <div class="de-pill-note"><span class="de-editbar-hint">${esc(message ?? o.hint())}</span>${warn ? `<span class="de-editbar-warn">${esc(warn)}</span>` : ""}</div>
-      <div class="de-pill de-pill-view">${view}${view ? '<span class="de-pill-sep"></span>' : ""}<button type="button" class="de-pill-ico" data-a="undo" title="Undo (Ctrl+Z)" aria-label="Undo"${o.history.canUndo ? "" : " disabled"}>${icon("undo")}</button><button type="button" class="de-pill-ico" data-a="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"${o.history.canRedo ? "" : " disabled"}>${icon("redo")}</button><button type="button" class="de-pill-text primary" data-a="save"${o.history.dirty() && !saving ? "" : " disabled"}>${saving ? "Saving…" : esc(o.saveLabel ?? "Save")}</button><button type="button" class="de-pill-text" data-a="done">${esc(o.doneLabel ?? "Done")}</button></div>`;
+      <div class="de-pill de-pill-view">${(o.extras ?? []).map((x) => `<button type="button" class="de-pill-text" data-a="extra:${esc(x.id)}" title="${esc(x.title ?? x.label)}">${esc(x.label)}</button>`).join("")}${view}${view ? '<span class="de-pill-sep"></span>' : ""}<button type="button" class="de-pill-ico" data-a="undo" title="Undo (Ctrl+Z)" aria-label="Undo"${o.history.canUndo ? "" : " disabled"}>${icon("undo")}</button><button type="button" class="de-pill-ico" data-a="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"${o.history.canRedo ? "" : " disabled"}>${icon("redo")}</button><button type="button" class="de-pill-text primary" data-a="save"${o.history.dirty() && !saving ? "" : " disabled"}>${saving ? "Saving…" : esc(o.saveLabel ?? "Save")}</button><button type="button" class="de-pill-text" data-a="done">${esc(o.doneLabel ?? "Done")}</button></div>`;
   }
 
   let noticed = false;
@@ -176,7 +179,8 @@ export function mountEditShell<D>(o: ShellOptions<D>): EditShell {
       if (!o.pageMenu) return;
       const r = b!.getBoundingClientRect();
       openMenu({ x: r.left, y: r.bottom + 6, host: o.host, items: o.pageMenu(), onPick: (id) => o.onPageMenu?.(id) });
-    } else o.onTool?.(a);
+    } else if (a.startsWith("extra:")) o.onExtra?.(a.slice(6));
+    else o.onTool?.(a);
   });
   L.on(drawer, "click", (ev: MouseEvent) => {
     if ((ev.target as HTMLElement).closest<HTMLElement>("[data-a=close-drawer]")) closePicture();

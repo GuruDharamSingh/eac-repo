@@ -5,26 +5,27 @@ import { PHONE_THEME_KEY } from "./phone-theme-script";
 
 /**
  * Light or dark for the phone design (2026-11-16). The choice is per visitor: kept in localStorage and set as
- * `data-m-theme` on <html>, which components/mobile/mobile.css reads below 768px. Dark is the default and the
- * design as drawn; desktop pages ignore the attribute. The pre-paint script is in phone-theme-script.ts.
+ * `data-m-theme` on <html>, which components/mobile/mobile.css reads below 768px. Light is the default since
+ * 2026-11-22 (only an explicit "dark" is stored; visitors who picked dark before that date see light once);
+ * desktop pages ignore the attribute. The pre-paint script is in phone-theme-script.ts.
  */
 export type PhoneTheme = "dark" | "light";
 
 function readTheme(): PhoneTheme {
-  if (typeof document === "undefined") return "dark";
+  if (typeof document === "undefined") return "light";
   return document.documentElement.getAttribute("data-m-theme") === "light" ? "light" : "dark";
 }
 
 /** This page's choice when storage is unavailable (private mode); null until the visitor picks. */
 let picked: PhoneTheme | null = null;
 
-/** The visitor's choice: what was picked on this page, else what is stored, else dark. */
+/** The visitor's choice: what was picked on this page, else what is stored, else light. */
 function chosenTheme(): PhoneTheme {
   if (picked) return picked;
   try {
-    return localStorage.getItem(PHONE_THEME_KEY) === "light" ? "light" : "dark";
+    return localStorage.getItem(PHONE_THEME_KEY) === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
@@ -39,7 +40,7 @@ function setAttr(t: PhoneTheme) {
 function applyTheme(t: PhoneTheme) {
   picked = t;
   try {
-    if (t === "light") localStorage.setItem(PHONE_THEME_KEY, "light");
+    if (t === "dark") localStorage.setItem(PHONE_THEME_KEY, "dark");
     else localStorage.removeItem(PHONE_THEME_KEY);
   } catch {
     /* private mode: the choice lasts for this page only */
@@ -69,7 +70,7 @@ export function PhoneThemeKeeper() {
 
 /** Dark | Light, two buttons. Used in the City menu (the Paris button). */
 export function PhoneThemeToggle({ label = "Look" }: { label?: string }) {
-  const [theme, setTheme] = useState<PhoneTheme>("dark");
+  const [theme, setTheme] = useState<PhoneTheme>("light");
   useEffect(() => setTheme(readTheme()), []);
   const pick = (t: PhoneTheme) => {
     applyTheme(t);

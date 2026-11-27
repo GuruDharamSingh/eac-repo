@@ -17,3 +17,12 @@ export function officeHref(key: OfficeKey, opts: { tourId?: string; step?: Offic
 
 const STEP_NUMBER: Record<OfficeStep, 1 | 2 | 3> = { description: 1, route: 2, details: 3 };
 export const stepNumber = (s: string | null | undefined): 1 | 2 | 3 => STEP_NUMBER[s as OfficeStep] ?? 1;
+
+/** The tour editor as its own page (2026-11-26): the Create a tour frame at page size; no id = a new tour. */
+export function tourEditorHref(tourId?: string, step?: OfficeStep): string {
+  const q = new URLSearchParams();
+  if (tourId) q.set("tour", tourId);
+  if (tourId && step) q.set("step", step);
+  const s = q.toString();
+  return s ? `/hub/tours/edit?${s}` : "/hub/tours/edit";
+}

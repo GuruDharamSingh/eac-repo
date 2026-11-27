@@ -83,6 +83,28 @@ const capabilities: Capability[] = [
     verified: V,
     added: '2026-11-21',
   },
+  {
+    id: 'elktours-media-picker-file',
+    area: 'elktours.media-folders',
+    label: 'Use or upload a file from the picker',
+    does: "Puts a picked or uploaded file in the folder of what it is for (a tour's cover or a stop, a place, or Media/Images). A file that already belongs there is linked where it is; any other file (a person's own folder, a Private/ folder, another tour or place) is copied in, pictures re-encoded without their location and camera data, never replacing a file. Uploads are named after their context (pont-neuf-2026-11-26-01.jpg). Returns the file's address; the form that asked saves it.",
+    class: 'person',
+    actors: ['owner', 'guide'],
+    scope: 'org',
+    hosts: [
+      { key: 'api:apps/elktours/src/app/api/media/attach/route.ts#POST' as HostKey, service: ['getViewer (canEdit)', 'attachPick (lib/media-picker.ts)', 'copyIntoFolder (@elkdonis/services media-copy.ts: WebDAV GET + PUT If-None-Match, or COPY Overwrite: F)', 'ensureTourFolder / ensurePlaceFolder'], address: { app: APP, path: '/hub/tours/edit', how: 'clicking a file in the picker of a cover or stop picture field (components/manage/media-field.tsx)' } },
+      { key: 'api:apps/elktours/src/app/api/media/upload-to/route.ts#POST' as HostKey, service: ['getViewer (canEdit)', 'uploadTo (lib/media-picker.ts)', 'validateUploadBuffer', 'stripPictureMetadata + putUniqueFile (@elkdonis/services)'], address: { app: APP, path: '/hub/tours/edit', how: "the picker's Upload button, or a file dropped on it" } },
+    ],
+    entry: null,
+    status: 'the returned key exists in storage inside the destination folder, or is the picked file itself when it already belonged there',
+    risk: ['public'],
+    confirm: { text: 'Use this file here? A file from somewhere else is copied into this folder first.', status: 'draft' },
+    inputs: 'source and path (or an upload), destination: tour + slot (+ stop), place, or none',
+    drift: 'Older paths still write elsewhere: /api/upload (uploadRoutes kind site) files into Media/Images under a random name, and importPhotoToOrg copies My files pictures into Media/Images/tour-photo-*. Both remain for the callers not yet on the picker.',
+    open: "Files outside Private/ are public as soon as written (the copy is the moment of publication). Tour folders follow the tour editor's rule: owners any tour, guides only tours they wrote; any owner or guide may file into a place's folder. GET /api/media/sources/tour (a read) also makes the tour's folder on first open (ensureTourFolder). docs/open/ELKTOURS_MEDIA_STRUCTURE_2026-11-26.md.",
+    verified: '2026-11-26 read lib/media-picker.ts, app/api/media/{attach,upload-to,sources/[key]}/route.ts, packages/services/src/media-copy.ts',
+    added: '2026-11-26',
+  },
 ];
 
 const ignored: Area['ignored'] = [

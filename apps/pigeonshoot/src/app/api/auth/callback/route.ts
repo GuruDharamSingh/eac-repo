@@ -1,5 +1,6 @@
 import { handleOAuthCallback } from "@elkdonis/auth-server";
 import { type NextRequest, NextResponse } from "next/server";
+import { siteConfig } from "@/config/site";
 
 // Completes the Google PKCE flow started by signInWithGoogle() in
 // @elkdonis/auth-client. Without this route Google sign-in redirects back to a
@@ -23,5 +24,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return handleOAuthCallback(proxied as NextRequest);
+  // A first Google sign-in joins this site's org as a viewer, as ./signup does.
+  return handleOAuthCallback(proxied as NextRequest, {
+    defaultOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
+  });
 }

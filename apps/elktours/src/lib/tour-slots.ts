@@ -117,6 +117,8 @@ export interface TourInfo {
   title: string;
   slug: string;
   published: boolean;
+  /** Archived tours stay loadable (their past runs name them) but are not offered for new dates. */
+  archived?: boolean;
   authorId: string | null;
   authorName: string | null;
   durationMinutes: number;
@@ -159,6 +161,7 @@ export async function loadTours(): Promise<Map<string, TourInfo>> {
         title: r.title as string,
         slug: r.slug as string,
         published: r.status === "published" && r.visibility === "PUBLIC",
+        archived: r.status === "archived",
         authorId: (r.author_id as string | null) ?? null,
         authorName: (r.author_name as string | null) ?? null,
         durationMinutes: Number(r.duration_minutes) > 0 ? Number(r.duration_minutes) : DEFAULT_DURATION_MINUTES,

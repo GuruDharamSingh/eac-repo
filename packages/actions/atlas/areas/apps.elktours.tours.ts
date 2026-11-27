@@ -47,6 +47,7 @@ const capabilities: Capability[] = [
       'Departures are created one at a time in a loop with no transaction; a failure midway reports "N created, then: ..." (:98-103).',
     ].join(' '),
     verified: V,
+    updated: '2026-11-24',
   },
   {
     id: 'elktours-hero-lead-set',
@@ -139,7 +140,7 @@ const ignored: Area['ignored'] = [
   { key: sa('lib/office-actions.ts', 'getPlaceSheet'), why: 'read: one place and its website for the hub Add a place popup (2026-11-19)' },
   { key: sa('lib/office-actions.ts', 'listPlaceSheet'), why: 'read: the places list for the Add a place popup catalogue view (2026-11-19)' },
   { key: sa('lib/office-actions.ts', 'getTourSheet'), why: 'read: one tour and its stops for the Create a tour wizard (2026-11-19)' },
-  { key: sa('lib/office-actions.ts', 'listDraftTourSheet'), why: 'read: drafts the viewer may continue in the wizard (2026-11-19)' },
+  { key: sa('lib/office-actions.ts', 'listEditableTourSheet'), why: 'read: tours the viewer may open in the wizard, drafts and published (2026-11-26; was listDraftTourSheet)' },
   { key: sa('lib/office-actions.ts', 'nearbyPlaceSheet'), why: 'read: our places near a point for the wizard Route map (2026-11-19)' },
 ];
 

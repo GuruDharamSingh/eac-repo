@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { getOrgRole } from './org-membership';
@@ -198,6 +199,7 @@ export async function reviewThread(
         updated_at = NOW()
     WHERE id = ${threadId}
   `;
+  await indexThread(threadId);
 
   try {
     await db`

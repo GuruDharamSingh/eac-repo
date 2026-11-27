@@ -47,3 +47,14 @@ export { postImageWithInstagramLogin } from './instagram-login';
 // Webhooks (2026-10-31): the dashboard handshake and signed deliveries.
 export { createWebhookHandlers, verifyHubSignature } from './webhook';
 export type { WebhookEvent, WebhookOptions } from './webhook';
+
+// Comments on published posts (2026-11-24): read and reply.
+export {
+  listPagePostComments,
+  replyToPageComment,
+  listInstagramComments,
+  replyToInstagramComment,
+  listInstagramLoginComments,
+  replyToInstagramLoginComment,
+} from './comments';
+export type { PlatformComment, CommentPage } from './comments';

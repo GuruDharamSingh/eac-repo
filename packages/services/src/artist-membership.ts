@@ -3,11 +3,13 @@
  * with no storage dependency, so the storage code can call it without an
  * import cycle (artist-space.ts imports user-storage.ts).
  *
- * Rule (developer, 2026-09-27): everyone with a folder under
- * EAC_Network/users/ is an artist of the collective, i.e. an `oad` member
- * listed on ArtDirect. Storing anything in a person's own folder therefore
- * gains their space: createUserFolder (every per-person upload goes through
- * it), thread documents, and IFAC's staff upload call in here.
+ * Retracted 2026-11-24 (developer): the 2026-09-27 rule "everyone with a folder
+ * under EAC_Network/users/ is an artist of the collective" no longer holds.
+ * Writing to a person's own folder (an upload, a thread document, IFAC's staff
+ * upload) does not make them an `oad` member or list them; the folder is
+ * where their files live, nothing more. `oad` membership is a deliberate step
+ * (`joinArtistSpace`, the arts-collective wizard, ArtDirect offerings), and a
+ * person who only visited an org site stays a visitor of that org.
  */
 
 import { db } from '@elkdonis/db';
@@ -39,24 +41,6 @@ export async function markArtist(userId: string): Promise<boolean> {
     return true;
   }
   return false;
-}
-
-/**
- * markArtist for the owner of a users/<storage_folder> folder. Never throws:
- * a storage write must not fail because the membership bookkeeping did.
- * Only persons are marked; an organisation's profile user is left alone.
- */
-export async function markArtistByFolder(storageFolder: string): Promise<void> {
-  try {
-    const [row] = await db<Array<{ id: string }>>`
-      SELECT id FROM users
-      WHERE storage_folder = ${storageFolder} AND entity_type = 'person'
-      LIMIT 1
-    `;
-    if (row) await markArtist(row.id);
-  } catch (err) {
-    console.error(`[artist-membership] markArtistByFolder(${storageFolder}):`, err);
-  }
 }
 
 /** Whether the person has gained a space (holds any role above viewer in `oad`). */

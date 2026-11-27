@@ -11,9 +11,36 @@
 // ============================================================================
 
 import { fontStack, isKnownFont } from "@elkdonis/fonts";
+import { cleanGradient, gradientCss } from "@elkdonis/gradients";
 
 export type Quad = [number, number, number, number];
 export type Decl = [string, string];
+
+/**
+ * A fade (gradient) fill: a small subset of the gradient lab's `GradientSpec` (`@elkdonis/gradients`): three kinds, 2 to 5
+ * colours as #RRGGBB, an angle. Stored under `grad` on a look; it replaces the flat `fill` of that look, and only one of the two is kept.
+ */
+export type Grad = { v: 1; kind: "linear" | "radial" | "conic"; stops: Array<{ color: string; at: number }>; angle: number };
+export const GRAD_KINDS = ["linear", "radial", "conic"] as const;
+export const GRAD_MAX_STOPS = 5;
+/** The stored CSS of one fade stays under this many characters (the lab thins its ramp to fit). */
+const GRAD_CSS_MAX = 1200;
+
+/** A clean `Grad`, or undefined. Never trusts the value: unknown kind, fewer than 2 good colours, or no object = no fade. Extra stops are cut, numbers clamped, colours must be hex. */
+export function cleanGrad(raw: unknown): Grad | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  if (!(GRAD_KINDS as readonly unknown[]).includes(r.kind)) return undefined;
+  const g = cleanGradient({ kind: r.kind, angle: r.angle, stops: Array.isArray(r.stops) ? r.stops.slice(0, GRAD_MAX_STOPS) : [] });
+  if (!g) return undefined;
+  return { v: 1, kind: g.kind as Grad["kind"], stops: g.stops.map((x) => ({ color: x.color, at: x.at })), angle: g.angle };
+}
+
+/** The `background` value for a fade, written by the lab (hex colours and gradient functions only), or "" for anything that is not a fade. */
+export function gradCss(raw: unknown): string {
+  const g = cleanGrad(raw);
+  return g ? gradientCss(g, { maxLength: GRAD_CSS_MAX }) : "";
+}
 
 export type PartStyle = {
   // Family-level slots (2026-11-01 prototype).
@@ -37,7 +64,7 @@ export type PartStyle = {
   // Pass 3: pictures.
   ratio?: string; fit?: string;
   // Appearance:
-  fill?: string; opacity?: number; radius?: number | Quad; bstyle?: string; bcolor?: string; bwidth?: number;
+  fill?: string; grad?: Grad; opacity?: number; radius?: number | Quad; bstyle?: string; bcolor?: string; bwidth?: number;
   // Effects:
   // Free placement (freeMove): an offset from where the flow puts the box, px, drawn as `translate` from 768px wide up.
   fx?: number; fy?: number;
@@ -168,7 +195,10 @@ export function boxDecls(s: PartStyle, d: Decl[], skipPadding = false): void {
   layoutDecls(s, d);
   if (s.gap !== undefined) d.push(["gap", `${s.gap}px`]);
   if (s.justify) d.push(["justify-content", s.justify === "start" ? "flex-start" : s.justify === "end" ? "flex-end" : s.justify]);
-  if (s.fill && HEX.test(s.fill)) d.push(["background", s.fill]);
+  // A fade wins over a flat fill (the panel stores only one of them).
+  const fade = s.grad ? gradCss(s.grad) : "";
+  if (fade) d.push(["background", fade]);
+  else if (s.fill && HEX.test(s.fill)) d.push(["background", s.fill]);
   if (s.opacity !== undefined) d.push(["opacity", String(s.opacity)]);
   if (s.radius !== undefined) d.push(["border-radius", px(s.radius)]);
   if (s.bstyle) {
@@ -292,6 +322,9 @@ export function cleanStyle(v: unknown, headers: readonly string[] = []): PartSty
   pick("ratio", oneOf(RATIOS, s.ratio));
   pick("fit", oneOf(FITS, s.fit));
   pick("fill", hex(s.fill));
+  // One fill only: a good fade replaces the flat colour.
+  const grad = cleanGrad(s.grad);
+  if (grad) { out.grad = grad; delete out.fill; }
   pick("opacity", bound("opacity", s.opacity));
   pick("radius", numOrQuad("radius", s.radius));
   pick("bstyle", oneOf(BORDER_STYLES, s.bstyle));

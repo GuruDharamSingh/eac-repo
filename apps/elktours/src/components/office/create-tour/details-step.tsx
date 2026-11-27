@@ -175,7 +175,12 @@ export function DetailsStep({
                 ))}
               </ul>
               <div className="grid gap-3 sm:grid-cols-2">
-                <MediaField value="" onChange={(url) => void add(stop, url)} label="Add a picture" />
+                <MediaField
+                  value=""
+                  onChange={(url) => void add(stop, url)}
+                  label="Add a picture"
+                  destination={{ kind: "tour", tourId, slot: "stop", stopId: stop.id }}
+                />
                 {stop.placeId && (
                   <div>
                     <span className={label}>From the place's pictures</span>

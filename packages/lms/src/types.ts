@@ -44,11 +44,26 @@ export interface OutlineStepRef {
   required?: boolean;
   unlock?: UnlockRule;
 }
+/** A module's look and extras, kept in the outline JSON (decision D2, no migration). Every field is optional: absent = as before. */
+export interface ModuleLook {
+  /** Hex colour, e.g. #2f4d68. */
+  colour?: string;
+  /** Free text, e.g. "Thu 14 Jan, 7:00 pm". */
+  date?: string;
+  length?: string;
+  /** A label for a cover picture, and/or the stored image address. */
+  coverLabel?: string;
+  coverUrl?: string;
+  description?: string;
+  hasVideo?: boolean;
+  materials?: Array<{ id: string; name: string; url?: string; access: 'open' | 'participants' }>;
+}
 export interface OutlineModule {
   id: string;
   title: string;
   summary?: string | null;
   steps: OutlineStepRef[];
+  look?: ModuleLook;
 }
 export interface Outline {
   modules: OutlineModule[];
@@ -169,6 +184,7 @@ export interface PublishedModule {
   title: string;
   summary: string | null;
   steps: PublishedStep[];
+  look?: ModuleLook;
 }
 export interface PublishedCourse {
   course: Course;

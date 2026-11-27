@@ -8,5 +8,9 @@ export type { FieldsLoadResult, FieldsSaveInput, FieldsSaveResult, PreviousVersi
 export { siteFieldsRegistry } from "./site-registry";
 export { scanBlocks, pageSlugOf } from "./scan";
 export type { FoundField } from "./scan";
-export { blockSpecs, fieldMapOf, splitBlockId } from "./blockmap";
-export type { BlockFieldMap, BlockFieldEntry, BlockPartField, BlockMapSource } from "./blockmap";
+export { blockSpecs, fieldMapOf, settingSpec, settingsOf, splitBlockId } from "./blockmap";
+export type { BlockFieldMap, BlockFieldEntry, BlockPartField, BlockSetting, BlockMapSource, SettingKind, FieldMapOptions } from "./blockmap";
+export type { FieldsRecordSources } from "./FieldsLens";
+export type { RecordFieldHost } from "./FieldsLens";
+export { openRecordField } from "./open-record";
+export { LIVE_STYLES } from "./live";

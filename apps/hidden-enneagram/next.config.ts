@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/blocks",
     "@elkdonis/page-builder",
     "@elkdonis/direct-edit",
+    "@elkdonis/gradients",
     "@elkdonis/house-editor",
     "@elkdonis/analytics",
     "@elkdonis/redis",

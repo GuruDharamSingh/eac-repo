@@ -32,6 +32,15 @@ export const META_SCOPES = [
 ];
 export const THREADS_SCOPES = ['threads_basic', 'threads_content_publish'];
 
+/**
+ * Asked for only when the person turns on comments in Channel (2026-11-24),
+ * so the first connect asks for publishing alone. With Facebook Login for
+ * Business the permissions come from META_LOGIN_CONFIG_ID_COMMENTS (a second
+ * configuration that adds these) instead of this list.
+ */
+export const META_COMMENT_SCOPES = ['pages_read_user_content', 'pages_manage_engagement', 'instagram_manage_comments'];
+export const INSTAGRAM_COMMENT_SCOPES = ['instagram_business_manage_comments'];
+
 export interface MetaPageTarget {
   id: string;
   name: string;
@@ -71,8 +80,9 @@ async function call<T>(url: string, init?: RequestInit, who = 'Meta'): Promise<T
  * scope list, and the code exchange returns a business token. Without it,
  * the classic dialog with META_SCOPES.
  */
-export function facebookAuthorizeUrl(input: { appId: string; redirectUri: string; state: string }): string {
-  const configId = process.env.META_LOGIN_CONFIG_ID;
+export function facebookAuthorizeUrl(input: { appId: string; redirectUri: string; state: string; comments?: boolean }): string {
+  const configId = (input.comments && process.env.META_LOGIN_CONFIG_ID_COMMENTS) || process.env.META_LOGIN_CONFIG_ID;
+  const scopes = input.comments ? [...META_SCOPES, ...META_COMMENT_SCOPES] : META_SCOPES;
   const q = new URLSearchParams({
     client_id: input.appId,
     redirect_uri: input.redirectUri,
@@ -81,7 +91,7 @@ export function facebookAuthorizeUrl(input: { appId: string; redirectUri: string
     // Ask again on every connect: a person who ticked no Page the first time
     // gets the Page picker back instead of a silent "already authorised".
     auth_type: 'rerequest',
-    ...(configId ? { config_id: configId, override_default_response_type: 'true' } : { scope: META_SCOPES.join(',') }),
+    ...(configId ? { config_id: configId, override_default_response_type: 'true' } : { scope: scopes.join(',') }),
   });
   return `${FB_DIALOG}?${q.toString()}`;
 }
@@ -105,6 +115,18 @@ export async function facebookLongLivedToken(app: { appId: string; appSecret: st
     fb_exchange_token: token,
   });
   return call<{ access_token: string; expires_in?: number }>(`${FB_GRAPH}/oauth/access_token?${q}`);
+}
+
+/** The permissions the person actually granted (2026-11-24); null when Facebook did not say. */
+export async function facebookGrantedPermissions(token: string): Promise<string[] | null> {
+  try {
+    const q = new URLSearchParams({ access_token: token, limit: '200' });
+    const r = await call<{ data?: Array<{ permission: string; status: string }> }>(`${FB_GRAPH}/me/permissions?${q}`);
+    const granted = (r.data ?? []).filter((p) => p.status === 'granted').map((p) => p.permission);
+    return granted.length ? granted : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function facebookMe(token: string) {
@@ -252,11 +274,11 @@ export function instagramApp(): { appId: string; appSecret: string } | null {
   return appId && appSecret ? { appId, appSecret } : null;
 }
 
-export function instagramAuthorizeUrl(input: { appId: string; redirectUri: string; state: string }): string {
+export function instagramAuthorizeUrl(input: { appId: string; redirectUri: string; state: string; comments?: boolean }): string {
   const q = new URLSearchParams({
     client_id: input.appId,
     redirect_uri: input.redirectUri,
-    scope: INSTAGRAM_SCOPES.join(','),
+    scope: (input.comments ? [...INSTAGRAM_SCOPES, ...INSTAGRAM_COMMENT_SCOPES] : INSTAGRAM_SCOPES).join(','),
     response_type: 'code',
     state: input.state,
   });
@@ -264,7 +286,8 @@ export function instagramAuthorizeUrl(input: { appId: string; redirectUri: strin
 }
 
 export async function instagramExchangeCode(input: { appId: string; appSecret: string; redirectUri: string; code: string }) {
-  return call<{ access_token: string; user_id: number | string }>(
+  // `permissions` lists what the person granted (a comma string or an array, by API version).
+  return call<{ access_token: string; user_id: number | string; permissions?: string | string[] }>(
     `${IG_API}/oauth/access_token`,
     {
       method: 'POST',

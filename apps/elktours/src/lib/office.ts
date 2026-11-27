@@ -6,13 +6,14 @@ import { db } from "@elkdonis/db";
 import { siteConfig } from "@/config/site";
 import { boardCounts } from "@/lib/tour-slots";
 import { departuresSql } from "@/lib/departures";
+import { countOverlaps } from "@/lib/slot-overlaps";
 
 const ORG = siteConfig.orgId;
 type Row = Record<string, unknown>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
 
 export interface OfficeNeed {
-  key: "calls" | "review" | "posts" | "suggestions" | "artists";
+  key: "calls" | "overlaps" | "review" | "posts" | "suggestions" | "artists";
   label: string;
   count: number;
   href: string;
@@ -36,8 +37,9 @@ export async function getOfficeSummary(opts: { guideUserId?: string; isOwner: bo
     try { return await p; } catch (err) { console.error("[elktours] office:", err); return fallback; }
   };
 
-  const [counts, review, posts, suggestions, waiting, places, onTours, fresh] = await Promise.all([
+  const [counts, overlapCount, review, posts, suggestions, waiting, places, onTours, fresh] = await Promise.all([
     safe(boardCounts({ guideUserId: g ?? undefined }), { belowMinimum: 0, withWaitlist: 0, nextSlot: null }),
+    countOverlaps({ guideUserId: g ?? undefined }),
     safe(db`SELECT count(*) AS c FROM threads WHERE org_id = ${ORG} AND kind = 'experience' AND status = 'pending'` as unknown as Promise<Row[]>, [] as Row[]),
     safe(db`SELECT count(*) AS c FROM threads WHERE org_id = ${ORG} AND kind = 'post' AND section = 'feed' AND status = 'pending'` as unknown as Promise<Row[]>, [] as Row[]),
     safe(db`SELECT count(*) AS c FROM visitor_suggestions WHERE org_id = ${ORG} AND status = 'pending'` as unknown as Promise<Row[]>, [] as Row[]),
@@ -78,6 +80,7 @@ export async function getOfficeSummary(opts: { guideUserId?: string; isOwner: bo
 
   const needs: OfficeNeed[] = [
     { key: "calls", label: "Calls to make", count: counts.belowMinimum, href: "/manage/decisions", ownerOnly: false },
+    { key: "overlaps", label: "Overlapping runs", count: overlapCount, href: "/manage/overlaps", ownerOnly: false },
     { key: "review", label: "Experiences to review", count: n(review[0]?.c), href: "/manage/experiences", ownerOnly: true },
     { key: "posts", label: "Posts to confirm", count: n(posts[0]?.c), href: "/manage/feed-review", ownerOnly: true },
     { key: "suggestions", label: "Suggestions", count: n(suggestions[0]?.c), href: "/manage/suggestions", ownerOnly: false },

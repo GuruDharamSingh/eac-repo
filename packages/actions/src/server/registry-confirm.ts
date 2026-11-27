@@ -45,6 +45,11 @@ export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
     "status": "approved",
     "wave": 1
   },
+  "ship-from": {
+    "text": "Save this as your ship-from address? It is private: only the city shows, and couriers quote and label from it.",
+    "status": "draft",
+    "wave": 5
+  },
   "show-on": {
     "text": "Show “{title}” on {where}. Visitors there can read it; some sites review first.",
     "title": "Choose sites for post",
@@ -56,6 +61,11 @@ export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
     "title": "Open my store",
     "status": "approved",
     "wave": 1
+  },
+  "store-front": {
+    "text": "Save this description on your store? It shows at the top of your store page.",
+    "status": "draft",
+    "wave": 5
   },
   "studio": {
     "text": "Save your changes to “{title}”? If it is published, readers see the new version.",

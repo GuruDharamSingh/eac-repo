@@ -135,6 +135,17 @@ async function orgEditor(ctx: ActorContext): Promise<Allowed> {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/** Plain text from a form as HTML paragraphs: escaped, blank lines split paragraphs, single newlines become <br>. */
+function paragraphsHtml(text: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
 /** A Channel piece key (`thread:<id>` / `artwork:<id>`; ./channel.ts parses it) and an identity (`user:<uuid>` / `org:<id>`). */
 const CH_PIECE = z.string().trim().max(90);
 const CH_IDENTITY = z.string().trim().max(80).nullable().optional();
@@ -348,6 +359,47 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
       const { saveOrgEmailIdentity } = await import('@elkdonis/email');
       const r = await saveOrgEmailIdentity(ctx.orgId!, save);
       return r.ok ? { ok: true, data: { replyToKept: Boolean(row?.inbound) } } : { ok: false, error: r.error ?? 'Could not save the mail settings.' };
+    },
+  }),
+
+  // The market's store course (2026-11-24). The person's OWN market store only (owner_user_id),
+  // never an org store: org stores have teams, and their description is the team's to write.
+  // Writes store.bio_html alone through commerce's updateStore (no owner id passed, so the
+  // network profile is untouched); updateStore sanitises the HTML.
+  'store-front': runner({
+    input: z.object({ note: z.string().trim().max(1200) }),
+    failure: 'Could not save the store description. Try again.',
+    async run(ctx, input) {
+      const [s] = await db<Array<{ id: string }>>`SELECT id FROM store WHERE owner_user_id = ${ctx.userId} AND org_id = 'market' LIMIT 1`;
+      if (!s) return { ok: false, error: 'Open a store first.', code: 'input' };
+      const { updateStore } = await import('@elkdonis/commerce/server');
+      await updateStore(s.id, { bioHtml: input.note ? paragraphsHtml(input.note) : null });
+      return { ok: true };
+    },
+  }),
+
+  // The ship-from address (commerce setShipFrom: users.ship_from, private, one per person).
+  // The email Easyship needs is the account's own, never a field.
+  'ship-from': runner({
+    input: z.object({
+      recipientName: z.string().trim().min(1, 'A name for the label is required.').max(120),
+      line1: z.string().trim().min(1, 'A street address is required.').max(200),
+      city: z.string().trim().min(1, 'A city is required.').max(120),
+      region: z.string().trim().max(120).optional(),
+      postalCode: z.string().trim().min(1, 'A postal code is required.').max(20),
+      country: z.string().trim().regex(/^[A-Za-z]{2}$/, 'Country: a two-letter code (CA, US, FR…).'),
+      phone: z.string().trim().min(5, 'A phone number is required for the courier.').max(40),
+    }),
+    failure: 'Could not save the address. Try again.',
+    async run(ctx, input) {
+      let email = ctx.email;
+      if (!email) {
+        const [u] = await db<Array<{ email: string | null }>>`SELECT email FROM users WHERE id = ${ctx.userId} LIMIT 1`;
+        email = u?.email ?? '';
+      }
+      const { setShipFrom } = await import('@elkdonis/commerce/shipping');
+      const r = await setShipFrom(ctx.userId, { ...input, region: input.region || null, country: input.country.toUpperCase(), email });
+      return r.ok ? { ok: true } : { ok: false, error: r.error ?? 'Could not save the address.', code: 'input' };
     },
   }),
 

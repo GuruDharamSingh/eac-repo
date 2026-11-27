@@ -6,7 +6,7 @@ import { toNetworkProfile } from "@/lib/profile-bio";
 import { siteConfig } from "@/config/site";
 import { ArtistProfileForm } from "../_components/artist-profile-form";
 import { ShipFromForm, type ShipFromValue } from "../_components/shipping-forms";
-import { getShipFrom, getStoreShippingMode } from "@elkdonis/commerce/shipping";
+import { getShipFrom, getShipFromDefaults, getStoreShippingMode } from "@elkdonis/commerce/shipping";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Profile · My art" };
@@ -17,6 +17,8 @@ export default async function StudioProfilePage() {
     getShipFrom(userId).catch(() => null),
     getStoreShippingMode(store.id).catch(() => "arranged" as const),
   ]);
+  // Nothing saved yet: start the form from what the network profile holds.
+  const shipFromDefaults = shipFrom ? null : await getShipFromDefaults(userId).catch(() => null);
   const isOwn = store.ownerKind === "user";
   // From users, not the store: the store's slug falls back to a raw id, which
   // ArtDirect cannot resolve.
@@ -54,6 +56,19 @@ export default async function StudioProfilePage() {
           Back to My art
         </Link>
       </header>
+      <section id="ship-from" className="mb-12 border-b border-border pb-8">
+        <h2 className="font-serif text-2xl tracking-tight">Shipping</h2>
+        <p className="mt-2 mb-4 text-sm text-muted-foreground">
+          {shippingMode === "arranged"
+            ? "This store arranges shipping with each buyer. "
+            : shippingMode === "platform"
+              ? "Buyers pick a courier at checkout and the collective buys the label; you print it from Sales. "
+              : "Buyers pick a courier at checkout and pay for it; you buy your own label and add tracking in Sales, which releases the shipping money to you. "}
+          Couriers quote from your own ship-from address below, for every store that sells your work. Set a
+          packed size on each piece (Edit → Shipping).
+        </p>
+        <ShipFromForm initial={(shipFrom as ShipFromValue | null) ?? null} defaults={shipFromDefaults ?? undefined} />
+      </section>
       <ArtistProfileForm
         mode="edit"
         storeKind={store.ownerKind}
@@ -65,19 +80,6 @@ export default async function StudioProfilePage() {
         }}
       />
 
-      <section className="mt-12 border-t border-border pt-8">
-        <h2 className="font-serif text-2xl tracking-tight">Shipping</h2>
-        <p className="mt-2 mb-4 text-sm text-muted-foreground">
-          {shippingMode === "arranged"
-            ? "This store arranges shipping with each buyer. "
-            : shippingMode === "platform"
-              ? "Buyers pick a courier at checkout and the collective buys the label; you print it from Sales. "
-              : "Buyers pick a courier at checkout and pay for it; you buy your own label and add tracking in Sales, which releases the shipping money to you. "}
-          Couriers quote from your own ship-from address below, for every store that sells your work. Set a
-          packed size on each piece (Edit → Shipping).
-        </p>
-        <ShipFromForm initial={(shipFrom as ShipFromValue | null) ?? null} />
-      </section>
     </main>
   );
 }

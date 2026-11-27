@@ -14,10 +14,14 @@ import { siteConfig } from "@/config/site";
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-/** Most departures one repeat submission may create. */
-export const MAX_SCHEDULE_BATCH = 120;
-/** Longest date range a repeat submission may span, in days. */
-export const MAX_SCHEDULE_SPAN_DAYS = 366;
+/**
+ * Longest date range a repeat submission may span, in days. A sanity bound on the loop, not a limit on how many
+ * departures a run creates (2026-11-24: the per-run count cap was removed).
+ */
+export const MAX_SCHEDULE_SPAN_DAYS = 1100;
+
+/** How far ahead a standing rule keeps slots made: six months. */
+export const MAX_STANDING_AHEAD_DAYS = 183;
 
 /** Mon = 1 … Sun = 7 (ISO), for the weekday pickers. */
 export const WEEKDAYS = [
@@ -121,7 +125,7 @@ export interface RepeatPlanInput {
   to: string;
 }
 
-export type PlannedStatus = "new" | "exists" | "past" | "over_cap";
+export type PlannedStatus = "new" | "exists" | "past";
 
 export interface PlannedDeparture {
   day: string;
@@ -133,10 +137,8 @@ export interface PlannedDeparture {
 
 export interface RepeatPlan {
   items: PlannedDeparture[];
-  /** How many would be created by this submission (≤ MAX_SCHEDULE_BATCH). */
+  /** How many would be created by this submission. */
   creatable: number;
-  /** New slots beyond the cap; schedule them with a second submission. */
-  overCap: number;
   existing: number;
   past: number;
 }
@@ -145,7 +147,7 @@ export interface RepeatPlan {
 export function checkRepeatInput(input: RepeatPlanInput): string | null {
   if (!isDay(input.from) || !isDay(input.to)) return "Pick a start and an end date.";
   if (input.to < input.from) return "The end date is before the start date.";
-  if (daysBetween(input.from, input.to) > MAX_SCHEDULE_SPAN_DAYS) return "Schedule at most a year at a time.";
+  if (daysBetween(input.from, input.to) > MAX_SCHEDULE_SPAN_DAYS) return "Schedule at most three years at a time.";
   const weekdays = input.weekdays.filter((n) => Number.isInteger(n) && n >= 1 && n <= 7);
   if (weekdays.length === 0) return "Pick at least one weekday.";
   if (input.times.length === 0) return "Add at least one start time.";
@@ -156,21 +158,18 @@ export function checkRepeatInput(input: RepeatPlanInput): string | null {
 /**
  * Every slot a repeat request names, in order, each marked: `new` (will be
  * created), `exists` (a scheduled departure of this tour already starts at
- * that instant), `past`, or `over_cap` (new, but beyond this submission's
- * limit). `existing` holds the start instants (ms) of the tour's scheduled
- * departures.
+ * that instant), or `past`. `existing` holds the start instants (ms) of the
+ * tour's scheduled departures. There is no count limit per submission.
  */
 export function planRepeat(
   input: RepeatPlanInput,
   existing: ReadonlySet<number>,
-  now: Date = new Date(),
-  cap: number = MAX_SCHEDULE_BATCH
+  now: Date = new Date()
 ): RepeatPlan {
   const weekdays = new Set(input.weekdays);
   const times = [...new Set(input.times.filter(isTime))].sort();
   const items: PlannedDeparture[] = [];
   let creatable = 0;
-  let overCap = 0;
   let exists = 0;
   let past = 0;
   const span = Math.min(daysBetween(input.from, input.to), MAX_SCHEDULE_SPAN_DAYS);
@@ -187,17 +186,14 @@ export function planRepeat(
       } else if (existing.has(at.getTime())) {
         status = "exists";
         exists += 1;
-      } else if (creatable < cap) {
+      } else {
         status = "new";
         creatable += 1;
-      } else {
-        status = "over_cap";
-        overCap += 1;
       }
       items.push({ day, time, startsAt: at.toISOString(), status });
     }
   }
-  return { items, creatable, overCap, existing: exists, past };
+  return { items, creatable, existing: exists, past };
 }
 
 // ── month strip ───────────────────────────────────────────────────────────

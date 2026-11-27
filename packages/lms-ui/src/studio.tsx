@@ -1,5 +1,5 @@
 import {
-  canEditCourse, draftDiff, getCourseBySlug, getDraft, getRealms, listAuthorOrgs, listEditableCourses, listLooseSteps, listRunGuides, listRuns,
+  canEditCourse, draftDiff, getCourseBySlug, getCourseKinds, getDraft, getRealms, listAuthorOrgs, listEditableCourses, listLooseSteps, listRunGuides, listRuns,
   listStepTypes, stepTypeDef, type OutlineStepRef, type Run, type UnlockRule,
 } from "@elkdonis/lms";
 import type { LmsConnectors } from "./connectors";
@@ -22,6 +22,8 @@ export async function StudioHomePage({ c, q }: { c: LmsConnectors; q: PageQuery 
   const viewer = await c.viewer();
   if (!viewer.userId) return { kind: "redirect", to: c.hrefs.signIn(c.hrefs.studio()) };
   const [courses, orgs] = await Promise.all([listEditableCourses(viewer), listAuthorOrgs(viewer)]);
+  // Workspaces are marked as such (migration 287); empty until it exists.
+  const kinds = await getCourseKinds(courses.map((k) => k.slug));
   if (!courses.length && !orgs.length) return { kind: "not-found" };
   const node = (
     <main className="so-page">
@@ -35,9 +37,10 @@ export async function StudioHomePage({ c, q }: { c: LmsConnectors; q: PageQuery 
       <ul className="so-cards">
         {courses.map((k) => (
           <li key={k.id} className="so-card">
-            <span className="so-kicker">{k.orgName} · {k.visibility}{k.hasPublished ? "" : " · never published"}</span>
+            <span className="so-kicker">{kinds[k.slug] === "workspace" ? "Workspace · " : ""}{k.orgName} · {k.visibility}{k.hasPublished ? "" : " · never published"}</span>
             <h3><a href={c.hrefs.studioCourse(k.slug)}>{k.title}</a></h3>
             {k.summary && <p>{k.summary}</p>}
+            {kinds[k.slug] === "workspace" && <p><a href={c.hrefs.course(k.slug)}>Open the workspace</a></p>}
           </li>
         ))}
       </ul>

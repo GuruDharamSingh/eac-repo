@@ -249,7 +249,7 @@ export default {
       hosts: [
         { key: sa(SLOT, 'createSlots'), service: ['@elkdonis/checkout/booking-server#createSlots', '@elkdonis/commerce/server#createDeparture'], address: { app: 'elktours', path: '/manage/schedule', how: 'New slots screen (components/mobile schedule, SlotsNew) and the New slots button on /manage/schedule' } },
         { key: sa(TOUR, 'addDeparturesAction'), service: ['@elkdonis/commerce/server#createDeparture'], address: { app: 'elktours', path: '/manage/tours/{tour}', how: 'Add dates in the tour editor departures panel (components/tours departures form)' } },
-        pk(BK('slots', 'createSlots'), 'booking tables (BOOKING_TABLES=1); transaction, skips clashes'),
+        pk(BK('slots', 'createSlots'), 'booking tables (BOOKING_TABLES=1); transaction, skips a guide clash unless allowClash is set (elktours sets it, 2026-11-24: a clash is warned, not refused)'),
         pk(CM('tours', 'createDeparture'), 'legacy tour_departures; capacity validated 1-500'),
       ],
       entry: null,
@@ -261,6 +261,7 @@ export default {
       canonical: 'slot-actions createSlots on the booking tables; retire addDeparturesAction at the cutover.',
       open: "slot-actions restricts a guide to their own tours (denyUnlessMine, plan); tour-actions addDeparturesAction, saveDepartureAction, cancelDepartureAction and cancelBookingAction only call requireOrgEditor, so any guide can add, edit or cancel departures and bookings on another guide's tour.",
       verified: V,
+      updated: '2026-11-24',
     },
     {
       id: 'slot-edit',

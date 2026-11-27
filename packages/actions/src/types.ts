@@ -71,6 +71,12 @@ export interface ActionAddress {
   /** Another origin (Nextcloud): a popup, no return ticket. */
   external?: true;
   how?: string;
+  /**
+   * Where the same control lives on the market (market.arts-collective.com), used when the
+   * dock runs there (`ActionLinks.market` set). Added 2026-11-24 for the market's store course:
+   * on the market, "Take me there" stays on the market and its return path stays local.
+   */
+  market?: { path: string; anchor?: string; how?: string };
 }
 
 /** Confirm-card wording. Only `approved` / `changed` text may show on a live dock (wording waves, D-16). */
@@ -198,4 +204,9 @@ export interface ActionLinks {
   networkHost: string;
   /** Nextcloud origin, when the host has one configured. */
   nextcloud?: string;
+  /**
+   * The market's origin, set only by a host that wants `ActionAddress.market` routes: '' on the
+   * market itself (2026-11-24). Absent elsewhere, so hub hosts keep the hub addresses.
+   */
+  market?: string;
 }

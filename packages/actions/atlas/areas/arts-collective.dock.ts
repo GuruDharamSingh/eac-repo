@@ -4,6 +4,8 @@
 import type { Area, Capability } from '../types';
 
 const A = 'apps/arts-collective/src/lib/actions/dock-actions.ts';
+// The market's copy of the same four actions (2026-11-24, dock mounted on art-auction).
+const M = 'apps/art-auction/src/lib/dock-actions.ts';
 const S = 'packages/actions/src/server/dock-state.ts';
 
 const capabilities: Capability[] = [
@@ -15,12 +17,13 @@ const capabilities: Capability[] = [
     class: 'internal',
     actors: ['person'],
     scope: 'person',
-    hosts: [{ key: `sa:${A}#dockChooseCourse` }, { key: `sql:${S}#dockChoose`, note: 'sql twin of dockChooseCourse (via dockChoose)' }],
+    hosts: [{ key: `sa:${A}#dockChooseCourse` }, { key: `sa:${M}#dockChooseCourse` }, { key: `sql:${S}#dockChoose`, note: 'sql twin of dockChooseCourse (via dockChoose)' }],
     risk: ['none'],
     status: 'lms_dock_state has the course slug for the person',
     inputs: 'course slug',
     verified: '2026-11-16 read',
     added: '2026-11-16',
+    updated: '2026-11-24',
   },
   {
     id: 'dock-step-leave-return',
@@ -30,12 +33,20 @@ const capabilities: Capability[] = [
     class: 'internal',
     actors: ['person'],
     scope: 'person',
-    hosts: [{ key: `sa:${A}#dockDepart` }, { key: `sa:${A}#dockReturn` }, { key: `sql:${S}#dockDepart`, note: 'sql twin of dockDepart' }],
+    hosts: [
+      { key: `sa:${A}#dockDepart` },
+      { key: `sa:${A}#dockReturn` },
+      { key: `sa:${M}#dockDepart`, note: 'the market copy; its return path is a market path' },
+      { key: `sa:${M}#dockReturn` },
+      { key: `sql:${S}#dockDepart`, note: 'sql twin of dockDepart' },
+    ],
     risk: ['none'],
     status: 'lms_dock_state has the step and return path for the person',
     inputs: 'course slug, step slug, return path',
+    open: 'A return path is local to the host that stored it (isLocalPath): a trip from the market to a hub address comes back to a hub path. Market-local addresses avoid it.',
     verified: '2026-11-16 read',
     added: '2026-11-16',
+    updated: '2026-11-24',
   },
   {
     id: 'dock-step-record',
@@ -47,6 +58,7 @@ const capabilities: Capability[] = [
     scope: 'person',
     hosts: [
       { key: `sa:${A}#dockAckDone` },
+      { key: `sa:${M}#dockAckDone` },
       { key: `sql:${S}#dockMarkDoneSeen`, note: 'sql twin of dockAckDone' },
       { key: `sql:${S}#dockMarkDone` },
       { key: `sql:${S}#writeDockStep` },
@@ -56,6 +68,7 @@ const capabilities: Capability[] = [
     inputs: 'course slug, step slug',
     verified: '2026-11-16 read',
     added: '2026-11-16',
+    updated: '2026-11-24',
   },
 ];
 

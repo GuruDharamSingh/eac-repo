@@ -78,6 +78,15 @@ export const tourCards = defineBlock(
     dataDriven: true,
     styling: "tokens",
     props,
+    // What a page may restyle, once per name: a look set on "Card title" applies to every card's title (2026-11-23). Data only; the markup is the card's own.
+    parts: {
+      card: { label: "Card", sel: ".tour-card", repeat: true },
+      kicker: { label: "Card kicker", sel: ".tour-card-kicker", repeat: true },
+      title: { label: "Card title", sel: ".tour-card-title", repeat: true },
+      excerpt: { label: "Card summary", sel: ".tour-card-excerpt", repeat: true },
+      price: { label: "Card price", sel: ".tour-card-price", repeat: true },
+      next: { label: "Card next date", sel: ".tour-card-next", repeat: true },
+    },
     reads: [
       { from: "site", what: "org" },
       { from: "record", via: "picks", kinds: ["tour"] },

@@ -42,13 +42,15 @@ export interface HouseWholePageProps {
   handBack?: boolean;
   /** The Code tab and Detach. Default false. */
   developer?: boolean;
+  /** The zoomed popup ("Edit look" in the action bar). Default false: no popup; a block's look is edited in the canvas. */
+  largeView?: boolean;
   /** Free placement in the popup canvas. Default false. */
   freeMove?: boolean;
   /** Puck's editor chrome in a page-builder theme (`PuckEditor` `theme`). Default: Puck's own look. */
   theme?: "studio";
 }
 
-export function HouseWholePage({ slug, orgId, initial, version, config, save, records, plugins, metadata, title, handBack = true, developer = false, freeMove = false, theme }: HouseWholePageProps) {
+export function HouseWholePage({ slug, orgId, initial, version, config, save, records, plugins, metadata, title, handBack = true, developer = false, freeMove = false, largeView = false, theme }: HouseWholePageProps) {
   const { canvasConfig, puckConfig, contract } = config;
   // Made once per mount: Puck rebuilds its whole UI when a plugin changes identity.
   const all = useMemo(
@@ -62,12 +64,12 @@ export function HouseWholePage({ slug, orgId, initial, version, config, save, re
               panel: (host: HTMLElement) => mountLookPanel(host, { blkStyleDecls }),
               developer,
               handBack,
-              popup: (ctx) => openStudioPopup({ config: canvasConfig as never, contract: contract as never, records, blkStyleDecls, ...(freeMove ? { freeMove } : {}) }, ctx),
+              ...(largeView ? { popup: (ctx: Parameters<typeof openStudioPopup>[1]) => openStudioPopup({ config: canvasConfig as never, contract: contract as never, records, blkStyleDecls, ...(freeMove ? { freeMove } : {}) }, ctx) } : {}),
             }),
           ]
         : []),
     ],
-    [plugins, contract, canvasConfig, records, developer, handBack, freeMove],
+    [plugins, contract, canvasConfig, records, developer, handBack, freeMove, largeView],
   );
   return <PuckEditor slug={slug} initial={initial} config={puckConfig} orgId={orgId} metadata={metadata} onPublish={save} version={version} plugins={all} title={title ?? `/${slug}`} theme={theme} />;
 }

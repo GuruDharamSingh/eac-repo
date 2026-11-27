@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import type { Meeting, MeetingVisibility } from '@elkdonis/types';
 import { slugify } from '@elkdonis/utils';
@@ -67,6 +68,7 @@ export async function createMeeting(data: CreateMeetingData): Promise<Meeting> {
     RETURNING *, body AS description, author_id AS guide_id
   `;
 
+  await indexThread(meeting.id);
   return mapMeetingFromDb(meeting);
 }
 
@@ -154,6 +156,7 @@ export async function updateMeeting(
     RETURNING *, body AS description, author_id AS guide_id
   `;
 
+  await indexThread(id);
   return mapMeetingFromDb(meeting);
 }
 
@@ -166,6 +169,7 @@ export async function deleteMeeting(id: string): Promise<void> {
     SET status = 'archived', updated_at = NOW()
     WHERE kind = 'meeting' AND id = ${id}
   `;
+  await indexThread(id);
 }
 
 /**

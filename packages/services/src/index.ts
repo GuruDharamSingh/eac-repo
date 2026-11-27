@@ -370,8 +370,15 @@ export type { UserFile, UserMediaFolder, UploadResult } from './user-storage';
 
 // "Gain your space": oad membership marks an artist of the collective; also
 // lists them on ArtDirect, files their artist profile and creates storage.
-export { gainSpace, hasGainedSpace, ARTIST_SPACE_ORG_ID } from './artist-space';
-export { markArtist, markArtistByFolder } from './artist-membership';
+export {
+  gainSpace,
+  hasGainedSpace,
+  ARTIST_SPACE_ORG_ID,
+  getArtistAgreement,
+  listAffiliationOrgs,
+  joinArtistSpace,
+} from './artist-space';
+export { markArtist } from './artist-membership';
 // A person's own offerings on ArtDirect (meeting, service), homed in oad.
 export {
   OFFERING_KINDS,
@@ -384,7 +391,7 @@ export {
   getOwnOffering,
 } from './artist-offerings';
 export type { Offering, OfferingInput, OfferingKind, OfferingSaveResult } from './artist-offerings';
-export type { GainSpaceResult } from './artist-space';
+export type { GainSpaceResult, ArtistAgreement, AffiliationOrg, JoinArtistSpaceResult } from './artist-space';
 
 // Where an org lives — its verified primary custom domain from org_domains,
 // or null when it sits at its network subdomain. Data only; URL assembly is
@@ -664,7 +671,16 @@ export {
 } from './org-storage';
 export type { OrgFile, OrgMediaFolder, OrgUploadResult } from './org-storage';
 export { davListDeep, davList, davMkcol, davMove, davPut, davUrl, davAuthHeader } from './dav';
+export { davCopy, davGetBytes, davPutNew } from './dav';
 export type { DavEntry } from './dav';
+
+// The one picker's server half (docs/open/ELKTOURS_MEDIA_STRUCTURE_2026-11-26.md):
+// attach-by-copy into a destination folder, and one folder of a source in the
+// listing contract cms-ui MediaLibrary reads.
+export { copyIntoFolder, putUniqueFile, stripPictureMetadata, safeFileBase, contextFileBase } from './media-copy';
+export type { CopyIntoFolderOptions, CopyIntoFolderResult } from './media-copy';
+export { listMediaSource, cleanSourcePath, mediaFamilyOf } from './media-source';
+export type { MediaFamily, MediaSourceItem, MediaSourceListing, ListMediaSourceOptions } from './media-source';
 
 // One implementation of "serve a media file from Nextcloud": prefix check,
 // canReadMedia, range passthrough, correct Cache-Control for private bytes,
@@ -1348,7 +1364,7 @@ export { logConnectionEvent, listConnectionEvents, type ConnectionEventName, typ
 export { getNetworkTerms, hasAcceptedNetworkTerms, acceptNetworkTerms, NETWORK_TERMS_ORG, NETWORK_TERMS_KEY, type NetworkTerms } from './network-terms';
 export { refreshStaleConnections, type MaintenanceReport } from './connection-maintenance';
 // Comments from the outside copy of a thread (migration 225, 2026-11-01).
-export { listExternalComments, threadForExternalPost, recordExternalComment, removeExternalComment, processMetaWebhookEvent, subscribePageFeed, subscribeAllPageFeeds, type ExternalComment } from './external-comments';
+export { listExternalComments, threadForExternalPost, jobForExternalPost, recordExternalComment, removeExternalComment, processMetaWebhookEvent, subscribePageFeed, subscribeAllPageFeeds, listChannelCommentPosts, getChannelCommentPost, getChannelComment, storeFetchedComments, listCommentConnections, type ExternalComment, type ChannelCommentPost, type ChannelComment } from './external-comments';
 
 // Meetings and events for any org: the Studio's save path (2026-11-01).
 export { MEETING_KINDS, meetingComposeContext, listOrgMeetings, loadMeetingContent, saveMeetingContent, removeMeetingContent, type MeetingKind, type MeetingInput, type MeetingSummary, type MeetingRecord, type MeetingComposeContext, type MeetingResult } from "./meeting-content";
@@ -1424,3 +1440,5 @@ export { cleanNav, groupNav, NAV_MAX_ITEMS } from "./nav-core";
 export type { NavItem, NavGroup } from "./nav-core";
 export { listSitePages } from "./site-pages";
 export type { SitePage } from "./site-pages";
+export { indexThread, indexArtwork, unindexContent, reindexAll, reconcileContentIndex, drainContentQueue, INDEXED_THREAD_KINDS } from './content-index';
+export type { DrainResult, ReindexResult, ReconcileResult, StoreDrift } from './content-index';

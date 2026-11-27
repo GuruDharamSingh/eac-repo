@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/channel",
     "@elkdonis/content",
     "@elkdonis/direct-edit",
+    "@elkdonis/gradients",
     "@elkdonis/house-editor",
     "@elkdonis/pipeline",
     "@elkdonis/chat",

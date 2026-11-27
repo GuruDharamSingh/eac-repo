@@ -30,13 +30,13 @@ module.exports = async ({ p, ok, h, open }) => {
   await h.click(TITLE); await h.click(TITLE); await h.click(TITLE);
   ok("B2 three clicks reach Title", (await h.head()) === "Title");
   await p.keyboard.press("Escape"); await h.pause(30);
-  ok("B2 Esc walks out: Words", (await h.head()) === "Words");
+  ok("B2 Esc walks out: the block", (await h.head()) === "Hero banner", await h.head());
   await p.keyboard.press("Enter"); await h.pause(30);
-  ok("B2 Enter goes in: Title", (await h.head()) === "Title", await h.head());
-  await p.keyboard.press("Escape"); await p.keyboard.press("Escape"); await h.pause(30);
-  ok("B2 Esc again: Hero banner", (await h.head()) === "Hero banner");
+  ok("B2 Enter goes in: its first part", (await h.head()) === "Picture", await h.head());
   await p.keyboard.press("Escape"); await h.pause(30);
-  ok("B2 Esc again: the page", (await h.head()) === "Page", await h.head());
+  ok("B2 Esc again: the part goes out to its block", (await h.head()) === "Hero banner", await h.head());
+  await p.keyboard.press("Escape"); await h.pause(30);
+  ok("B2 Esc again: nothing is selected", (await h.head()) !== "Hero banner" && (await h.head()) !== "Picture", await h.head());
   await h.sel(null);
   const hov = await p.locator(TITLE).boundingBox(); await p.mouse.move(hov.x + hov.width / 2, hov.y + hov.height / 2); await h.pause(40);
   ok("B2 hover outlines what a click would select", (await p.$eval(".de-layer-sheet .de-box.hov .de-tag", (e) => e.textContent)) === "Hero banner", await p.$eval(".de-layer-sheet .de-box.hov .de-tag", (e) => e.textContent).catch(() => null));

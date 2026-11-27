@@ -8,8 +8,12 @@
 // Pass 2 fills the same shape server-side with loadContentDetail.
 // ============================================================================
 
+// Type-only import; search-types imports this file back (types only, no runtime cycle).
+import type { ContentSale } from "./search-types";
+
 /** Which table an item lives in. Kept apart from ContentType (how it is shown). */
-export type ContentStore = "thread" | "artwork";
+/** v1 (2026-11-26, docs/open/CONTENT_CORNERSTONE_2026-11-26/CONTRACT.md §1) adds "file". */
+export type ContentStore = "thread" | "artwork" | "file";
 
 export interface ContentRef {
   store: ContentStore;
@@ -17,7 +21,13 @@ export interface ContentRef {
 }
 
 /** How an item is shown. Pass 1: Channel's piece kinds, one to one. */
-export type ContentType = "artwork" | "product" | "writing" | "video" | "series" | "meeting" | "event" | "workshop" | "questionnaire" | "poll";
+export type ContentType =
+  | "artwork" | "product" | "writing" | "video" | "series" | "meeting" | "event" | "workshop" | "questionnaire" | "poll"
+  // v1 (CONTRACT.md §2): file families. A video file is type "video" with store "file".
+  | "image" | "audio" | "document" | "file";
+
+/** The library's Published | Files | All toggle (CONTRACT.md §2). published = thread + artwork, files = file. */
+export type ContentView = "published" | "files" | "all";
 
 /** Every outlet an item can go to (Channel's Outlet). */
 export type ContentOutlet =
@@ -217,6 +227,23 @@ export interface ContentListItem {
   /** Newest last. The lightbox shows the last four. */
   timeline: ContentEvent[];
   links: { public: string | null; studio: string | null; manage?: string | null };
+  // ── v1 additions (CONTRACT.md §3), all optional so existing producers stay valid ──
+  /** Filled by searchContent; derive from `key` when absent. */
+  store?: ContentStore;
+  /** Files only: where it sits. */
+  file?: { source: string; path: string; mime: string | null; size: number | null; folder: string } | null;
+  /** From the server only, never inferred client-side; the host's action allow-list narrows it further. */
+  can?: { edit: boolean; hide: boolean; publish: boolean; archive: boolean; pick: boolean };
+  /** v1.1 (CONTRACT.md §10.2): artwork sale state and price. */
+  sale?: ContentSale | null;
+  /** v1.1: hidden by a keeper. Sent to keepers only; the server decides. */
+  hidden?: boolean;
+  /** v1.1 (CONTRACT.md §10.10): the market store an artwork is listed in, for groupBy "store". Not `store` (that is the table). */
+  storefront?: { id: string; name: string } | null;
+  /** v1.2 (CONTRACT.md §11.4): the piece's public images, cover first, so a picker can take one image of it. */
+  images?: string[];
+  /** v1.2 (CONTRACT.md §11.3): the owner's public display name for attribution ("Photo: <ownerName> · <siteName>"). */
+  ownerName?: string | null;
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -230,7 +257,7 @@ export function parseContentKey(key: string): ContentRef | null {
   if (i <= 0) return null;
   const store = key.slice(0, i);
   const id = key.slice(i + 1);
-  if ((store !== "thread" && store !== "artwork") || !id) return null;
+  if ((store !== "thread" && store !== "artwork" && store !== "file") || !id) return null;
   return { store, id };
 }
 

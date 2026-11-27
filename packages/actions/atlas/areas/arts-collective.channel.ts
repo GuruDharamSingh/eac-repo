@@ -507,6 +507,64 @@ const capabilities: Capability[] = [
     canonical: 'one createSocialPost wrapper',
     verified: '2026-11-16 read lib/channel-actions.ts',
   },
+  // ---------------- channel.comments (2026-11-24) ----------------
+  {
+    id: 'channel-comment-reply',
+    area: 'channel.comments',
+    label: 'Reply to a comment on Facebook or Instagram',
+    does: 'Posts a reply under a comment on one of the person\'s own Facebook Page or Instagram posts, as that Page or account, and keeps a copy for Channel and the piece page.',
+    class: 'person',
+    actors: ['person', 'owner', 'guide'],
+    scope: 'person',
+    hosts: [
+      {
+        key: 'sa:apps/arts-collective/src/lib/channel/comments.ts#replyToChannelCommentAction',
+        service: ['getChannelComment', 'getMetaPageTarget', 'getInstagramLoginTarget', 'replyToPageComment', 'replyToInstagramComment', 'replyToInstagramLoginComment', 'recordExternalComment'],
+        address: {
+          app: 'arts-collective',
+          path: '/channel/comments',
+          anchor: 'channel-comment-reply',
+          how: 'Reply under a comment, then Send reply (components/channel/Comments.tsx).',
+        },
+        note: 'Only posts sent through the person\'s own connection (split_part(target_id) owned by them); the reply uses that connection\'s token.',
+      },
+    ],
+    entry: null,
+    status: 'A thread_external_comments row with from_self = true under the comment',
+    risk: ['public'],
+    confirm: {
+      text: 'Reply to {author} on {platform} as {account}? Everyone who can see the post will see your reply.',
+      status: 'draft',
+      wave: 3,
+    },
+    open: 'Facebook replies need pages_manage_engagement; Instagram needs instagram_manage_comments or instagram_business_manage_comments (App Review round 2).',
+    verified: '2026-11-24 read lib/channel/comments.ts',
+    added: '2026-11-24',
+  },
+  {
+    id: 'channel-comments-fetch',
+    area: 'channel.comments',
+    label: 'Fetch comments on outside posts',
+    does: 'Reads the comments on the person\'s recent Facebook and Instagram posts and stores a local copy; comments removed on the platform are removed here.',
+    class: 'internal',
+    actors: ['person', 'owner', 'guide'],
+    scope: 'person',
+    hosts: [
+      {
+        key: 'sa:apps/arts-collective/src/lib/channel/comments.ts#refreshChannelCommentsAction',
+        service: ['listChannelCommentPosts', 'listPagePostComments', 'listInstagramComments', 'listInstagramLoginComments', 'storeFetchedComments'],
+        address: { app: 'arts-collective', path: '/channel/comments', how: 'Runs on opening Comments, and from Check now.' },
+      },
+      {
+        key: 'sa:apps/arts-collective/src/lib/channel/comments.ts#refreshOnePostAction',
+        service: ['getChannelCommentPost', 'storeFetchedComments'],
+        address: { app: 'arts-collective', path: '/channel/comments', how: 'The Check button on one post.' },
+      },
+    ],
+    risk: ['none'],
+    verified: '2026-11-24 read lib/channel/comments.ts',
+    added: '2026-11-24',
+  },
 ];
 
 const ignored: Area['ignored'] = [

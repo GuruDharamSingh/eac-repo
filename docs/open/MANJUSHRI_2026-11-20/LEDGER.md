@@ -58,3 +58,29 @@ Kept by the PM. Newest at the bottom. This file is the recovery map after a cont
 - 2026-11-21 ~20:30 innergathering LIVE MGrRQaruIyxO9UvLBD6pN with the three editor faults fixed and SEEN SIGNED IN on a test copy (reports/IG-fix.md): the blank settings sheet was the RSVP panel calling the Next router inside an editor root (fixed with an editor-only router shim; any other block using useRouter in an editor root needs the same), an error boundary in block-settings.tsx, resolved rows passed to the editor, and the other PM SiteStyleButton change. The other PM went live on sunjay at 20:20 with Sections and a Content tab. REORIENT.md holds the review, six proposed sessions and the ten questions (answered on the liaison board, entry 18:40).
 - innergathering LIVE aQEWJhfYZRnsFyVuc0-tb: stored looks now drawn on the landing blocks. First attempt auto-restored because the band colour change (the intended one, about 1/255) tripped the pixel check; rebuilt without the gate after looking at the shots.
 - 2026-11-22 Session closed by Justin request: SESSION_DUMP.md (what, why, how, what I got wrong) and HANDOFF.md sections 8-11 written. Nothing running. Next session proposed: /codemap in apps/development, then the conventions deck.
+- 2026-11-22 Snapshot 46284b9b committed (1,459 files, everything on disk), pushed to origin/work/2026-11-16, and main fast-forwarded to it (local and remote). Working tree left on work/2026-11-16. Practice agreed with Justin: snapshot + secret scan + push at the end of each working day; a day branch merged into main when live.
+
+## 2026-11-22 evening: three editing lanes live; theming begins
+
+**Justin:** "also rebuild the apps." Then: "cautious with the editor.. im still practically minded. but the idea of translation of design to real is small steps. focus more on themeing id say now" and "use frontend design skill".
+
+**Live (wave 4, `~/scratch/manjushri/rollout-wave4.sh` and its log):** CANVAS (a handle writes the block's `resize` setting; typing a part's words in place), GRADIENT (Fill: colour / fade), DOOR2 (`unset`, `bind`; wider Fields lens). Reports: `reports/CANVAS.md`, `GRADIENT.md`, `DOOR2.md`.
+
+| App | Build id | Check |
+|---|---|---|
+| sunjay | `IhSlWW6VguWA2xJAyR4cp` | public pages pixel-identical |
+| innergathering | `_n2zeJu6Vq4Az5-jZO5RO` | pixel-identical |
+| hidden-enneagram | `N8HI4qzcw5JM7QV8CPDgW` | pixel-identical |
+| elktours | `_XTSYKE9YK_4lIaa6bcYN` | pixel-identical (phone /tours noisy, as before) |
+| katie-the-potter | `RqhCBhJw9OjsRPjg8Igk2` | pixel-identical |
+| art-auction | `7FBrZwicvIxIM3uSvtNGX` | smoke 200 |
+| arts-collective | rebuilt 22:25 | smoke 200 |
+| danamccool | `fpF2LnO1XRVHCDtUMdhd-` | by eye: /art-archive draws 151 pictures in columns |
+
+danamccool: the pixel check restored the old build once. False alarm, second time: both "before" shots of desktop /art-archive were the collapsed one-column state and the new build drew the grid. Rebuilt without the verdict. Lesson: for Dana's art-archive, a "changed" verdict means look, not restore.
+
+Not checked signed in on the live hosts (rule: test account never on live hosts). Each lane was seen signed in on a test copy before the rebuild.
+
+**Loft versioning, as explained to Justin:** three versions of one pattern (art-auction landing loft: working copy + stamped copy; development sandbox `dev_versions`: versions, branches, one working copy per person, table now exists; site page drafts `puck-draft:<slug>`). Shared rule: a save never touches what visitors see. No translation step from a free design to a real block exists yet; free move is an offset drawn at 768 px and wider. Parked behind theming at his word.
+
+**Theming (new folder `docs/open/THEME_SYSTEM_2026-11-22/`):** `REVIEW.md` (what exists: Site style live on six sites, role names proposal only, 12 core roles agreed), `INVENTORY.md` + `.json` (elkdonis-arts.org: 14 places a colour can live, 148 variables, about 57 text styles; Amrit Canada: no stored theme; Bon five-elements palette at `packages/gradients/src/palettes.ts:76`), `STRUCTURE.md` (palette of five -> shades worked out -> roles as pointers -> tones per section -> blocks read roles), `PAGE.md` (the review page). Review page in source: `apps/development/src/ideas/five-colour-theme.tsx` and folder; the other PM agreed and rebuilds `eac-development`. Eight pinned questions N1-N8 wait for Justin.

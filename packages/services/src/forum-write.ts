@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { sanitizeRichText } from '@elkdonis/utils';
@@ -457,6 +458,7 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
   });
   if (audienceStorage?.minRole) {
     await db`UPDATE threads SET min_role = ${audienceStorage.minRole} WHERE id = ${post.id}`;
+    await indexThread(post.id);
   }
   if (ncForum) {
     const pushed = await pushTopicToNextcloud(post.id).catch((err) => ({ ok: false, error: String(err) }));
@@ -503,6 +505,7 @@ export async function setTopicAudience(viewer: ForumViewer, threadId: string, au
   await db`
     UPDATE threads SET visibility = ${st.visibility}, min_role = ${st.minRole}, updated_at = NOW() WHERE id = ${threadId}
   `;
+  await indexThread(threadId);
   return { ok: true, audience };
 }
 
@@ -821,6 +824,7 @@ export async function moderateThread(viewer: ForumViewer, threadId: string, acti
       break;
     }
   }
+  if (action === 'delete' || action === 'move') await indexThread(threadId);
   await logModeration(viewer, t.org_id, threadId, action, arg);
   if (action !== 'move') await pushModerationToNextcloud(threadId, action).catch((err) => console.error('[forum] nc moderation push:', err));
   return { ok: true };

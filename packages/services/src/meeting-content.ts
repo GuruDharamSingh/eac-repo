@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import { sanitizePostBody, sanitizeRichText } from '@elkdonis/utils';
 import { renderEssayHtml, type EssayDoc } from '@elkdonis/utils/essay';
@@ -482,6 +483,7 @@ async function writeColumns(threadId: string, orgId: string, input: MeetingInput
       updated_at        = NOW()
     WHERE id = ${threadId} AND org_id = ${orgId}
   `;
+  await indexThread(threadId);
 }
 
 /** Talk room and document: "there should be one", never "make another". Best-effort. */

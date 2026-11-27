@@ -12,3 +12,9 @@ export { listContent } from "./list";
 export type { ContentListQuery, ContentListResult } from "./list";
 export { mayManageOrg, PERSONAL_ORG, resolveRights, threadReadSql } from "./access";
 export type { ContentRights, ContentViewer } from "./access";
+
+// Search core (CONTRACT.md §3, §4, §10), added 2026-11-26.
+export { searchContent, resolveContentRefs } from "./search";
+export { contentReadSql, isSiteKeeper, siteOrgIds } from "./access";
+export type { ContentReadOptions } from "./access";
+export type { ContentQuery, ContentRefResult, ContentScope, ContentSearchResult, ContentSort, ContentSale, ContentSaleState } from "../search-types";

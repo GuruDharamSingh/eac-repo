@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chooseShippingAction, quoteShippingAction } from "./shipping-actions";
 
+// Same list as STATE_REQUIRED in @elkdonis/commerce/shipping (server only: it imports the
+// database client, so a client component cannot import the value).
+const STATE_REQUIRED = ["CA", "US", "AU"];
+
 const FIELDS: Array<{ key: keyof Address; label: string; auto: string; span?: boolean; required?: boolean }> = [
   { key: "recipientName", label: "Name", auto: "name", span: true, required: true },
   { key: "line1", label: "Street address", auto: "address-line1", span: true, required: true },
   { key: "line2", label: "Apartment, suite (optional)", auto: "address-line2", span: true },
   { key: "city", label: "City", auto: "address-level2", required: true },
-  { key: "region", label: "Province / state", auto: "address-level1" },
+  { key: "region", label: "Province / state (ON, QC, NY…)", auto: "address-level1" },
   { key: "postalCode", label: "Postal / ZIP code", auto: "postal-code", required: true },
   { key: "country", label: "Country (CA, US, FR…)", auto: "country", required: true },
   { key: "phone", label: "Phone (for the courier)", auto: "tel", span: true },
@@ -45,7 +49,7 @@ export function ShippingPicker({
 }) {
   const router = useRouter();
   const [address, setAddress] = useState<Address>(
-    initialAddress ?? { recipientName: "", line1: "", line2: "", city: "", region: "", postalCode: "", country: "US", phone: "" }
+    initialAddress ?? { recipientName: "", line1: "", line2: "", city: "", region: "", postalCode: "", country: originCountry ?? "US", phone: "" }
   );
   const [options, setOptions] = useState<ShippingOption[] | null>(null);
   const [selected, setSelected] = useState<string>("");
@@ -61,6 +65,11 @@ export function ShippingPicker({
   const getRates = () =>
     start(async () => {
       setError(null);
+      if (STATE_REQUIRED.includes(address.country.trim().toUpperCase()) && !String(address.region ?? "").trim()) {
+        setOptions([]);
+        setError("Enter the province or state (for example ON).");
+        return;
+      }
       const r = await quoteShippingAction(orderId, address);
       if (!r.ok) {
         setOptions([]);

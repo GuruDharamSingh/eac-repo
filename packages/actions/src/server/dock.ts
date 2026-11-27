@@ -285,7 +285,7 @@ async function dockStepRead(opts: DockOptions): Promise<StepResult> {
         const present = presentAction({ id: t.id, status, orgId, links: opts.links, params });
         const money = meta ? isMoneyMeta(meta) : false;
         const kind: DockStep['kind'] = present.kind === 'run' || present.kind === 'form' ? (money || !meta?.runnable ? 'go' : 'do') : present.kind === 'none' ? 'check' : 'go';
-        const route = kind === 'go' ? routeFor(t.id, { hub: hubOf(opts.links), orgSlug: await orgSlugOf(orgId), partial: Boolean(status.partial) }) : null;
+        const route = kind === 'go' ? routeFor(t.id, { hub: hubOf(opts.links), market: opts.links.market ?? null, orgSlug: await orgSlugOf(orgId), partial: Boolean(status.partial) }) : null;
         const confirm = kind === 'do' && meta ? confirmView({ ...meta, confirm: REGISTRY_CONFIRM[meta.id] ?? meta.confirm }, opts.confirmMode ?? 'live') : null;
         picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm, dockForm: meta?.dockForm ?? null }, kind };
         break;

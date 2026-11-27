@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Mail,
   Menu,
+  MessageSquare,
   Palette,
   PanelsTopLeft,
   PenLine,
@@ -30,7 +31,7 @@ import { fmtWeekdayTime, type PieceKind } from "@/lib/channel/model";
 import { CHANNEL_BASE, useChannel } from "./context";
 import { IdentityMark, OUTLET_ICON } from "./icons";
 
-export type NavActive = "home" | "matrix" | "new" | "queue" | "piece" | "outlets" | "routines";
+export type NavActive = "home" | "matrix" | "new" | "queue" | "piece" | "outlets" | "routines" | "comments";
 
 interface Row {
   id: string;
@@ -123,8 +124,9 @@ export function ChannelNav({ active, outletTab }: { active: NavActive; outletTab
     {
       id: "audience",
       title: "Audience",
-      open: isOrg,
+      open: isOrg || active === "comments",
       rows: [
+        { id: "comments", label: "Comments", icon: MessageSquare, href: href(`${CHANNEL_BASE}/comments`), meta: "FB · IG", metaTone: "muted", active: active === "comments" },
         { id: "newsletter", label: "Newsletter", icon: Mail, href: href(`${CHANNEL_BASE}/outlets`, { tab: "newsletter" }), meta: "Email", metaTone: "muted", active: active === "outlets" && outletTab === "newsletter" },
         { id: "people", label: "People", icon: Users, href: model.links.people, meta: model.counts.people ?? null },
       ],

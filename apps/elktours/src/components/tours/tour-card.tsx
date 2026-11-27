@@ -69,14 +69,15 @@ export function TourCard({ tour, next }: { tour: Tour; next?: TourDeparture | nu
         )}
       </div>
       <div className="p-5">
-        <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <p className="tour-card-kicker font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
           {[length, tour.details.languages[0]].filter(Boolean).join(" · ") || "Tour"}
         </p>
-        <h3 className="mt-1 font-serif text-xl leading-snug group-hover:underline">{tour.title}</h3>
-        {tour.excerpt && <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{tour.excerpt}</p>}
+        {/* data-words-from: where these words are kept, so the page editor can open that record's field (house-editor, double-click on a selected title). */}
+        <h3 className="tour-card-title mt-1 font-serif text-xl leading-snug group-hover:underline" data-words-from={`record:tour:${tour.id}:title`}>{tour.title}</h3>
+        {tour.excerpt && <p className="tour-card-excerpt mt-2 line-clamp-3 text-sm text-muted-foreground" data-words-from={`record:tour:${tour.id}:excerpt`}>{tour.excerpt}</p>}
         <div className="mt-4 flex items-baseline justify-between gap-3 text-sm">
-          <span className="font-medium">{formatPrice(tour.price, tour.currency)}</span>
-          <span className="text-muted-foreground">
+          <span className="tour-card-price font-medium">{formatPrice(tour.price, tour.currency)}</span>
+          <span className="tour-card-next text-muted-foreground">
             {next ? `Next: ${formatDeparture(next.startsAt)}` : "Dates coming"}
           </span>
         </div>

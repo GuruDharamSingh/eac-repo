@@ -112,7 +112,7 @@ Run with `EMAIL_SANDBOX=1`, throwaway tsx scripts from apps/artdirect that delet
 5. Hold expiry frees the seats; a late payment still confirms and is logged.
 6. Cutoff: after `closesAt` booking is refused ("Booking for that date has closed.").
 7. Cancel slot: bookings cancelled, `refund_due` flagged, mail sandboxed.
-8. Guide clash across tours is refused at `createSlots`/`updateSlot`.
+8. Guide clash across tours is refused at `createSlots`/`updateSlot`. ~~(createSlots)~~ 2026-11-24: elktours creates with `allowClash`, so a clash at creation is a warning in the preview and the slot is still created; `updateSlot` (moving a slot) still refuses it. The 120-per-run cap is removed (`createSlots` sends 200 per call to the booking package).
 9. Old token resolves on the page; the order's return hop finds its token.
 10. `listTourSlots` / `listBoardSlots` output equal (field by field) before and after the switch for the same data.
 

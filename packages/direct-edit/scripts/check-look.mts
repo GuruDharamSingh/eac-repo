@@ -348,5 +348,115 @@ ok("selectionWhere / rememberWhere exist", typeof wh.selectionWhere === "functio
 }
 ok("reading a clash writes nothing", JSON.stringify(read.root) === JSON.stringify(rl2.readLook({ props: { morph: { v: 1, parts: { root: { fill: "#00ff00" } } }, blkStyle: { bg: "#ff0000" } } }, { parts: PARTS }, blkDecls).root));
 }
+// ---------------------------------------------------------------------------
+section("Gradient (lane GRADIENT, 2026-11-22): a fade fill from the gradient lab");
+{
+  const gs: any = await import("/app/packages/direct-edit/src/block/style.ts");
+  const fd: any = await import("/app/packages/direct-edit/src/panel/fade.ts");
+  const lab: any = await import("@elkdonis/gradients");
+  const patchMod: any = await import("/app/packages/direct-edit/src/block/patch.ts");
+  const good = { v: 1, kind: "linear", angle: 120, stops: [{ color: "#112233", at: 0 }, { color: "#aabbcc", at: 100 }] };
+  const clean = gs.cleanGrad(good);
+  ok("a good fade is kept as it is (v, kind, stops, angle only)", clean.v === 1 && clean.kind === "linear" && clean.angle === 120 && JSON.stringify(clean.stops).toLowerCase() === JSON.stringify(good.stops).toLowerCase(), JSON.stringify(clean));
+  ok("an extra lab key (shader, grain, base, mute) is dropped", JSON.stringify(Object.keys(gs.cleanGrad({ ...good, shader: "aurora", grain: 90, base: "#000000", mute: 50, cx: 3 }))) === '["v","kind","stops","angle"]');
+  ok("a fade with fewer than two good colours is no fade", gs.cleanGrad({ ...good, stops: [{ color: "#112233", at: 0 }] }) === undefined && gs.cleanGrad({ ...good, stops: [] }) === undefined && gs.cleanGrad({ ...good, stops: "x" }) === undefined);
+  const many = { ...good, stops: Array.from({ length: 200 }, (_, i) => ({ color: "#" + (i % 256).toString(16).padStart(2, "0").repeat(3), at: i % 101 })) };
+  ok("200 colours are cut to 5", gs.cleanGrad(many).stops.length === 5);
+  const hostile = { ...good, stops: [{ color: "url(http://e/x.png)", at: 0 }, { color: "#112233", at: 10 }, { color: "red", at: 20 }, { color: "rgb(0,0,0)", at: 30 }, { color: "#445566", at: 40 }] };
+  const hc = gs.cleanGrad(hostile);
+  ok("a url(, a colour name and a colour function are dropped; the two hex colours stay", hc && hc.stops.length === 2 && hc.stops.every((s: any) => /^#[0-9A-F]{6}$/i.test(s.color)), JSON.stringify(hc));
+  ok("only hostile colours leave no fade", gs.cleanGrad({ ...good, stops: [{ color: "url(x)", at: 0 }, { color: "expression(1)", at: 1 }] }) === undefined);
+  ok("a colour that tries to end the rule is dropped", gs.cleanGrad({ ...good, stops: [{ color: "#112233;} body{display:none", at: 0 }, { color: "#112233}", at: 1 }, { color: "#abcdef", at: 2 }, { color: "#fedcba", at: 3 }] }).stops.length === 2);
+  const wild = gs.cleanGrad({ ...good, angle: 987654321, stops: [{ color: "#112233", at: -50 }, { color: "#aabbcc", at: 5000 }] });
+  ok("a huge angle wraps into 0 to 359 and positions clamp to 0..100", wild.angle >= 0 && wild.angle <= 359 && wild.stops[0].at === 0 && wild.stops[1].at === 100, JSON.stringify(wild));
+  ok("an angle that is not a number gets the lab's default, never NaN", Number.isFinite(gs.cleanGrad({ ...good, angle: "90; x" }).angle) && Number.isFinite(gs.cleanGrad({ ...good, angle: NaN }).angle));
+  ok("an unknown shape (mesh, halo, a url) is no fade", ["mesh", "halo", "bands", "url(x)", "", 5, null].every((k) => gs.cleanGrad({ ...good, kind: k }) === undefined));
+  ok("not an object, an array, null: no fade", [null, undefined, "x", 4, [], [good]].every((v) => gs.cleanGrad(v) === undefined));
+  ok("a polluted key does not reach the output", (() => { const r = gs.cleanGrad(JSON.parse('{"kind":"radial","stops":[{"color":"#112233","at":0},{"color":"#445566","at":9}],"__proto__":{"x":1},"constructor":{"y":2}}')); return !!r && !("x" in r) && ({} as any).x === undefined; })());
+
+  const three = [
+    { v: 1, kind: "linear", angle: 90, stops: [{ color: "#0B3C5D", at: 0 }, { color: "#F4E1C1", at: 100 }] },
+    { v: 1, kind: "radial", angle: 0, stops: [{ color: "#C1AF6E", at: 0 }, { color: "#6A7853", at: 45 }, { color: "#37362D", at: 100 }] },
+    { v: 1, kind: "conic", angle: 30, stops: [{ color: "#B77669", at: 0 }, { color: "#7F9364", at: 40 }, { color: "#4E455A", at: 70 }, { color: "#B77669", at: 100 }] },
+  ];
+  const css3 = three.map((g) => gs.gradCss(g));
+  ok("three fades compile: straight, round, sweep", /^linear-gradient\(90deg, #/.test(css3[0]) && /^radial-gradient\(ellipse at 50% 50%, #/.test(css3[1]) && /^conic-gradient\(from 30deg at 50% 50%, #/.test(css3[2]), css3.map((c: string) => c.slice(0, 60)).join(" | "));
+  ok("each compiled fade is only gradient functions, hex colours and numbers (the lab's own test), under 1200 characters", css3.every((c: string) => lab.isSafeGradientCss(c) && c.length <= 1200 && !/url|var\(|;|\{|\}/i.test(c)), css3.map((c: string) => c.length).join());
+  ok("a stored fade compiles to the lab's own value", gs.gradCss(three[0]) === lab.gradientCss(three[0], { maxLength: 1200 }));
+  ok("a hostile or empty fade compiles to nothing", gs.gradCss({ ...good, stops: [] }) === "" && gs.gradCss("x") === "" && gs.gradCss(undefined) === "" && gs.gradCss({ kind: "mesh", stops: good.stops }) === "");
+
+  // Drawn: a fade wins over a flat fill; no fade is byte-identical to today.
+  const flat = patchMod.lookDecls({ fill: "#112233", size: 20 });
+  ok("no fade: a look compiles exactly as before (flat fill is one background declaration)", JSON.stringify(flat) === JSON.stringify([["font-size", "20px"], ["background", "#112233"]]), JSON.stringify(flat));
+  const withFade = patchMod.lookDecls({ grad: three[0], size: 20 });
+  ok("a fade is one background declaration written by the lab", JSON.stringify(withFade) === JSON.stringify([["font-size", "20px"], ["background", css3[0]]]));
+  const both = patchMod.lookDecls({ grad: three[0], fill: "#112233" });
+  ok("a hand-written look with both draws the fade only", both.filter(([k]: string[]) => k === "background").length === 1 && both[0][1] === css3[0]);
+  ok("cleanStyle keeps one of the two: the fade replaces the colour", (() => { const c = gs.cleanStyle({ fill: "#112233", grad: three[1], size: 20 }); return !!c.grad && c.fill === undefined && c.size === 20; })() && gs.cleanStyle({ fill: "#112233", grad: { kind: "mesh" } }).fill === "#112233");
+  ok("a look with no fade cleans to what it did (no grad key appears)", !("grad" in gs.cleanStyle({ fill: "#112233", size: 20 })));
+  ok("a raw gradient in the code box still goes through the same safe-CSS path as before", (() => { const c = gs.cleanStyle({ css: "background: url(http://e/x.png)" }); return c === undefined || !/url/.test(c.css ?? ""); })());
+
+  // In a part's look: base, hover, phones; cleaned by cleanMorph and compiled by morphCss.
+  const morph = { v: 1, parts: { title: { grad: three[0], states: { hover: { grad: three[1] } }, at: { sm: { grad: three[2] } } } } };
+  const cm2 = cleanMorph(morph);
+  ok("cleanMorph keeps a fade on the base look, on a state and on a screen size", !!cm2.parts.title.grad && !!cm2.parts.title.states.hover.grad && !!cm2.parts.title.at.sm.grad, JSON.stringify(cm2).slice(0, 200));
+  const pub2 = morphCss(cm2, PARTS, {})!.css;
+  ok("the base rule draws the straight fade", pub2.includes(`background:${css3[0]} !important`), pub2.slice(0, 300));
+  ok("a hover-only fade is under :hover and not in the base rule", /\.blk-hero-title:hover\{background:radial-gradient\(ellipse at 50% 50%, #/.test(pub2));
+  ok("a phones fade is inside the 480px media rule", /@media \(max-width:480px\)\{[^@]*conic-gradient\(from 30deg/.test(pub2));
+  const onlyHover = morphCss(cleanMorph({ v: 1, parts: { title: { states: { hover: { grad: three[1] } } } } }), PARTS, {})!.css;
+  ok("a look with only a hover fade writes nothing for the base", onlyHover.split("\n").length === 1 && onlyHover.includes(":hover{background:radial-gradient("), onlyHover);
+  ok("every declaration is still !important and no rule is ended early", [...pub2.matchAll(/\{([^{}]*)\}/g)].every((m) => m[1]!.split(";").every((d) => / !important$/.test(d))));
+  const evil = cleanMorph({ v: 1, parts: { title: { grad: { kind: "linear", angle: 0, stops: [{ color: "url(http://e/x)", at: 0 }, { color: "#fff;}*{display:none", at: 50 }] } } } });
+  ok("a hostile fade leaves no look at all", evil === null, JSON.stringify(evil));
+  ok("a stored morph with a fade stays small and re-cleans to itself", JSON.stringify(cleanMorph(cm2)) === JSON.stringify(cm2) && JSON.stringify(cm2).length < 1200);
+  ok("morphCss compiles an UNCLEANED hostile fade to nothing harmful (render does not rely on the save path)", (() => { const css = morphCss({ v: 1, parts: { title: { grad: { kind: "linear", stops: [{ color: "#111111;}x{", at: 0 }, { color: "url(a)", at: 1 }] } } } } as any, PARTS, {}); return !css || !/url|\}x\{/.test(css.css); })());
+
+  // The panel's control.
+  ok("there are lab presets to choose from, all drawable and all clean", fd.FADE_PRESETS.length >= 5 && fd.FADE_PRESETS.every((p: any) => JSON.stringify(gs.cleanGrad(p.grad)) === JSON.stringify(p.grad) && lab.isSafeGradientCss(gs.gradCss(p.grad))), String(fd.FADE_PRESETS.length));
+  ok("the presets are the lab's (same ids)", fd.FADE_PRESETS.every((p: any) => lab.PRESETS.some((q: any) => q.id === p.id)));
+  let g = fd.startFade("#336699");
+  ok("a first fade starts from the part's colour to white, straight", g.kind === "linear" && g.stops[0].color.toLowerCase() === "#336699" && g.stops[1].color.toLowerCase() === "#ffffff");
+  ok("a first fade with no colour known is a preset", gs.cleanGrad(fd.startFade()) !== undefined);
+  for (let i = 0; i < 6; i++) g = fd.fadeAdd(g);
+  ok("Add a colour stops at five", g.stops.length === 5);
+  for (let i = 0; i < 6; i++) g = fd.fadeRemove(g, 1);
+  ok("Remove stops at two", g.stops.length === 2);
+  g = fd.fadeShape(g, "conic"); g = fd.fadeAngle(g, 400); g = fd.fadeColour(g, 0, "#102030"); g = fd.fadePlace(g, 1, 70);
+  ok("shape, angle, colour and place edits clean as they go", g.kind === "conic" && g.angle === 40 && g.stops[0].color.toLowerCase() === "#102030" && g.stops[1].at === 70, JSON.stringify(g));
+  const s1: any = { fill: "#112233", size: 12 };
+  fd.setFade(s1, three[0]);
+  ok("choosing a fade removes the flat colour on that look (and only that)", !!s1.grad && s1.fill === undefined && s1.size === 12);
+  fd.setFlat(s1, "#445566");
+  ok("choosing a colour removes the fade", s1.fill === "#445566" && s1.grad === undefined);
+  fd.setFade(s1, three[1]); fd.setFade(s1, null);
+  ok("taking the fade away leaves no fill and no fade", s1.grad === undefined && s1.fill === undefined && s1.size === 12);
+  fd.setFade(s1, { kind: "mesh" });
+  ok("a fade the cleaner refuses is not stored", s1.grad === undefined);
+  const wh2: any = await import("/app/packages/direct-edit/src/panel/where.ts");
+  const props2: Record<string, unknown> = {};
+  wh2.editLookAt(props2, "title", {}, (s: any) => { s.fill = "#112233"; });
+  wh2.editLookAt(props2, "title", { state: "hover" }, (s: any) => fd.setFade(s, three[1]));
+  wh2.editLookAt(props2, "title", { at: "sm" }, (s: any) => fd.setFade(s, three[2]));
+  const st2: any = (props2.morph as any).parts.title;
+  ok("through the panel's writer: a hover fade and a phones fade sit beside the base colour, which is kept", st2.fill === "#112233" && !!st2.states.hover.grad && !!st2.at.sm.grad && st2.grad === undefined);
+  wh2.editLookAt(props2, "title", {}, (s: any) => fd.setFade(s, three[0]));
+  ok("setting a fade on the base look removes the base colour but not the others", (props2.morph as any).parts.title.fill === undefined && !!(props2.morph as any).parts.title.grad && !!(props2.morph as any).parts.title.states.hover.grad);
+  {
+    const pr3: Record<string, unknown> = {};
+    morphMod.setPartLookAt(pr3, "title", {}, { fill: "#112233", grad: three[0], size: 9 } as any);
+    const w3: any = (pr3.morph as any).parts.title;
+    ok("a look written with both a fade and a colour (the door, a hand edit) stores the fade only", !!w3.grad && w3.fill === undefined && w3.size === 9, JSON.stringify(w3).slice(0, 120));
+    morphMod.setPartLookAt(pr3, "title", { state: "hover" }, { fill: "#445566", grad: three[1] } as any);
+    ok("…the same on a hover look", !(pr3.morph as any).parts.title.states.hover.fill && !!(pr3.morph as any).parts.title.states.hover.grad);
+  }
+  const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+  const html: string = fd.fadeHtml(three[1], esc), modes: string = fd.fadeModeHtml(true, esc);
+  ok("the control says Fill, Colour, Fade, Shape, Straight, Round, Sweep, Add a colour in plain words", ["Fill", "Colour", "Fade"].every((w) => modes.includes(w)) && ["Shape", "Straight", "Round", "Sweep", "Add a colour", "A fade replaces the colour"].every((w) => html.includes(w)), html.slice(0, 200));
+  ok("no jargon in what a person reads", !/gradient|stop|oklch|conic|linear|radial|css|hex/i.test(html.replace(/<[^>]+>/g, " ")) && !/gradient|oklch/i.test(modes.replace(/<[^>]+>/g, " ")));
+  ok("Round has no angle; Straight and Sweep do", !/data-fade-angle/.test(html) && /data-fade-angle/.test(fd.fadeHtml(three[0], esc)) && /data-fade-angle/.test(fd.fadeHtml(three[2], esc)));
+  ok("three colours show three colour inputs; a fifth hides Add; two hides Remove", (html.match(/data-fade-colour/g) ?? []).length === 3 && /data-fade-add/.test(html) && !/data-fade-add/.test(fd.fadeHtml(fd.fadeAdd(fd.fadeAdd(three[1])), esc)) && !/data-fade-remove/.test(fd.fadeHtml(three[0], esc)));
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

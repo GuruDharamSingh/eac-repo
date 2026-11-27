@@ -18,6 +18,8 @@
 import { db } from "@elkdonis/db";
 import { getIdentityIds, listUserMemberships } from "@elkdonis/services";
 import { RANK_OF, type ThreadRole } from "@elkdonis/services/thread-audience";
+import type { ContentHost } from "../host";
+import type { ContentScope } from "../search-types";
 
 /** The personal org every "Just me" row lives under: a role on it manages nobody else's posts. */
 export const PERSONAL_ORG = "oad";
@@ -89,4 +91,82 @@ export function threadReadSql(r: ContentRights) {
       OR (t.visibility = 'INVITE_ONLY' AND t.min_role IS NOT NULL AND ${strict})
     ))
   )`;
+}
+
+// ── content_index rights (CONTRACT.md §4), added 2026-11-26 ─────────────────
+
+/** Anyone with the owner role on the host's site org, plus platform admins. Generalises `isMarketKeeper`. */
+export function isSiteKeeper(r: ContentRights | null, host: ContentHost): boolean {
+  return Boolean(r && (r.isAdmin || r.roles[host.site.orgId] === "owner"));
+}
+
+/** The org ids a site covers: its own org plus `storeOrgIds`. A row belongs when its site_org_id or org_id is among them. */
+export const siteOrgIds = (host: ContentHost): string[] => [host.site.orgId, ...(host.site.storeOrgIds ?? [])];
+
+export interface ContentReadOptions {
+  /** A keeper or admin asks for hidden rows too; ignored (never honoured) for anyone else. */
+  includeHidden?: boolean;
+}
+
+/**
+ * SQL over alias `ci` (content_index): the rows of `scope` this viewer may read, by the one rule of
+ * CONTRACT §4. Rights come from `rights` (resolveRights), never from the query.
+ *
+ *   network     public, published, not hidden: for everyone, signed in or not (`rights` may be null).
+ *   otherwise   admin: every row. Else any of: site keeper (rows on the site, including drafts and
+ *               hidden-by-keepers), owner (own rows), org manager (unpublished rows of the org, subject
+ *               to min_role, same as `threadReadSql`), or the public clause (published; PUBLIC;
+ *               ORGANIZATION for members; INVITE_ONLY when min_role is met). Hidden rows are removed
+ *               for everyone unless a keeper or admin passes `includeHidden`.
+ *
+ * A null `scope` means no scope restriction (rights only), used to resolve stored references.
+ * Throws for a null `rights` outside the network and person scopes.
+ */
+export function contentReadSql(rights: ContentRights | null, scope: ContentScope | null, host: ContentHost, opts: ContentReadOptions = {}) {
+  if (scope?.kind === "network" || (scope === null && !rights)) {
+    return db`(ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
+  }
+  if (scope?.kind === "person" && !rights) {
+    // A signed-out visitor sees a person's published public work only.
+    return db`((ci.owner_user_id = ${scope.userId}::uuid OR ci.owner_identity_id = ${scope.userId}::uuid)
+      AND ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
+  }
+  if (!rights) throw new Error("contentReadSql: this scope needs a signed-in viewer");
+  const r = rights;
+  const ids = r.identityIds;
+  const sites = siteOrgIds(host);
+
+  const scopeSql =
+    scope === null ? db`true`
+    : scope.kind === "mine" || (scope.kind === "person" && scope.userId === r.userId) ? db`(ci.owner_user_id = ANY(${ids}::uuid[]) OR ci.owner_identity_id = ANY(${ids}::uuid[]))`
+    : scope.kind === "person" ? db`(ci.owner_user_id = ${scope.userId}::uuid OR ci.owner_identity_id = ${scope.userId}::uuid)`
+    : scope.kind === "org" ? db`(ci.org_id = ${scope.orgId} OR ci.store_id = ANY(ARRAY(
+        SELECT (c.value->>'storeId')::uuid FROM site_config c
+        WHERE c.org_id = ${scope.orgId} AND c.key = 'shop:store'
+          AND c.value->>'storeId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')))`
+    : db`(ci.site_org_id = ANY(${sites}::text[]) OR ci.org_id = ANY(${sites}::text[]))`;
+
+  const keeper = isSiteKeeper(r, host);
+  const hiddenOk = keeper && opts.includeHidden === true;
+  const hiddenSql = hiddenOk ? db`true` : db`NOT ci.hidden`;
+  if (r.isAdmin) return db`(${scopeSql} AND ${hiddenSql})`;
+
+  const atLeast = (min: ThreadRole) => orgs(Object.entries(r.roles).filter(([, role]) => RANK_OF[role] >= RANK_OF[min]).map(([org]) => org));
+  const strict = db`(
+    (ci.min_role = 'viewer' AND ci.org_id = ANY(${atLeast("viewer")}::text[]))
+    OR (ci.min_role = 'member' AND ci.org_id = ANY(${atLeast("member")}::text[]))
+    OR (ci.min_role = 'guide' AND ci.org_id = ANY(${atLeast("guide")}::text[]))
+    OR (ci.min_role = 'owner' AND ci.org_id = ANY(${atLeast("owner")}::text[]))
+  )`;
+  const keeperSql = keeper ? db`(ci.site_org_id = ANY(${sites}::text[]) OR ci.org_id = ANY(${sites}::text[]))` : db`false`;
+  return db`(${scopeSql} AND ${hiddenSql} AND (
+    ${keeperSql}
+    OR ci.owner_user_id = ANY(${ids}::uuid[]) OR ci.owner_identity_id = ANY(${ids}::uuid[])
+    OR (ci.status <> 'published' AND NOT ci.hidden AND ci.org_id = ANY(${orgs(r.managedOrgIds)}::text[]) AND (ci.min_role IS NULL OR ${strict}))
+    OR (ci.status = 'published' AND NOT ci.hidden AND (
+      ci.visibility = 'PUBLIC'
+      OR (ci.visibility = 'ORGANIZATION' AND ci.org_id = ANY(${orgs(Object.keys(r.roles))}::text[]))
+      OR (ci.visibility = 'INVITE_ONLY' AND ci.min_role IS NOT NULL AND ${strict})
+    ))
+  ))`;
 }

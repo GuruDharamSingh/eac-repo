@@ -1,0 +1,61 @@
+/* Channel → Comments (2026-11-24). Channel tokens only (channel.css):
+   ink, muted and alert on surface are the pairs channel.css already uses. */
+
+.chn-cm-posts { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; max-width: 820px; }
+.chn-cm-post {
+  background: var(--ch-surface);
+  border: 1px solid var(--ch-line);
+  border-radius: var(--ch-radius);
+  padding: 16px 18px;
+}
+.chn-cm-post-head { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.chn-cm-post-what { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.chn-cm-post-what strong { font-weight: 600; color: var(--ch-ink); overflow-wrap: anywhere; }
+.chn-cm-post-what small { color: var(--ch-muted); font-size: 12.5px; }
+.chn-cm-post-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.chn-cm-post-acts .chn-btn { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.chn-cm-excerpt { color: var(--ch-muted); font-size: 13.5px; margin: 8px 0 0 26px; overflow-wrap: anywhere; }
+
+.chn-cm-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.chn-cm-list > li { border-top: 1px solid var(--ch-line-soft); padding-top: 10px; }
+.chn-cm-replies { list-style: none; margin: 8px 0 0 22px; padding: 0 0 0 12px; border-left: 2px solid var(--ch-line-soft); display: flex; flex-direction: column; gap: 8px; }
+
+.chn-cm-row { display: flex; flex-direction: column; gap: 3px; }
+.chn-cm-meta { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13px; }
+.chn-cm-meta strong { color: var(--ch-ink); font-weight: 600; }
+.chn-cm-meta time { color: var(--ch-muted); font-size: 12px; }
+.chn-cm-meta a { color: var(--ch-accent); font-size: 12px; text-decoration: none; }
+.chn-cm-meta a:hover { text-decoration: underline; }
+.chn-cm-text { color: var(--ch-ink); font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chn-cm-row.is-self .chn-cm-meta strong::after { content: " · sent from Channel"; font-weight: 400; color: var(--ch-muted); font-size: 12px; }
+
+.chn-cm-reply-btn {
+  align-self: flex-start;
+  background: none; border: 0; padding: 2px 0;
+  color: var(--ch-accent); font: inherit; font-size: 13px; cursor: pointer;
+}
+.chn-cm-reply-btn:hover { text-decoration: underline; }
+.chn-cm-form { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.chn-cm-form textarea {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  font: inherit; font-size: 14px; color: var(--ch-ink);
+  background: var(--ch-bg); border: 1px solid var(--ch-line); border-radius: var(--ch-radius); padding: 8px 10px;
+}
+.chn-cm-form textarea:focus { outline: 2px solid var(--ch-accent); outline-offset: 1px; }
+.chn-cm-form-acts { display: flex; gap: 6px; }
+.chn-cm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.chn-cm-error { color: var(--ch-alert); font-size: 13px; margin: 8px 0 0; }
+.chn-cm-allow { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; max-width: 820px; }
+.chn-cm-allow p {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between;
+  background: var(--ch-raised); border: 1px solid var(--ch-line); border-radius: var(--ch-radius);
+  padding: 10px 14px; font-size: 13.5px; color: var(--ch-ink);
+}
+.chn-cm-allow p span { flex: 1 1 320px; }
+.chn-cm-allow .chn-btn { text-decoration: none; display: inline-flex; align-items: center; }
+.chn-head .chn-btn { display: inline-flex; align-items: center; gap: 6px; }
+
+@keyframes chn-cm-spin { to { transform: rotate(360deg); } }
+.chn-cm-spin { animation: chn-cm-spin 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .chn-cm-spin { animation: none; } }

@@ -1,3 +1,4 @@
+import { indexThread } from './content-index';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import type { Post, PostStatus, PostVisibility } from '@elkdonis/types';
@@ -123,6 +124,7 @@ export async function createThread(data: CreateThreadData): Promise<Post> {
     RETURNING *
   `;
 
+  await indexThread(post.id);
   return mapPostFromDb(post);
 }
 
@@ -281,6 +283,7 @@ export async function updatePost(
     throw new Error(`Post ${id} not found in org ${orgId}`);
   }
 
+  await indexThread(id);
   return mapPostFromDb(post);
 }
 
@@ -296,6 +299,7 @@ export async function deletePost(id: string, orgId: string): Promise<void> {
     SET status = 'archived', updated_at = NOW()
     WHERE kind = 'post' AND id = ${id} AND org_id = ${orgId}
   `;
+  await indexThread(id);
 }
 
 function mapPostFromDb(row: any): Post {

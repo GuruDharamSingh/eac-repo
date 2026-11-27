@@ -9,10 +9,8 @@ import { type NextRequest, NextResponse } from "next/server";
 // route-handler type by coincidence, when the shared function happens to
 // take exactly one parameter — it breaks the moment handleOAuthCallback
 // gains a second (options) parameter, which it now has so per-app callers
-// can scope which orgs a fresh Google signup joins. No options passed here
-// — unchanged behaviour (the shared network defaults), since arts-collective's
-// own org model (one org per member, via the wizard) doesn't map onto a
-// single defaultOrgs list the way a single-org site's does.
+// can scope which orgs a fresh Google signup joins. A first Google sign-in
+// becomes a viewer of `oad`, as a password signup does (./signup, 2026-11-24).
 //
 // Behind Nginx Proxy Manager the internal request.url is http://0.0.0.0:3007/...
 // Proxy the NextRequest so `url` reports the public origin (which
@@ -31,6 +29,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  // No default org, as in the signup route next door (2026-10-29).
-  return handleOAuthCallback(proxied as NextRequest, { defaultOrgs: [] });
+  return handleOAuthCallback(proxied as NextRequest, {
+    defaultOrgs: [{ id: "oad", role: "viewer" }],
+  });
 }

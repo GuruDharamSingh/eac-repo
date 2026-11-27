@@ -77,11 +77,20 @@ wrappers under `apps/<app>/src/app/api/auth/`:
 - Signup: optional Cloudflare Turnstile (`TURNSTILE_SECRET_KEY`), signs out
   any existing session, calls `signUp`, then for each `defaultOrgs` entry
   inserts a `user_organizations` row and an `org_profiles` row
-  (`api-routes.ts:290-311`). The default is `[{ id: 'inner_group', role: 'viewer' }]`.
-  Single-org apps pass `{ id: siteConfig.orgId, role: 'viewer' }`
-  (e.g. `apps/ifac/src/app/api/auth/signup/route.ts`). `arts-collective` and
-  `danamccool` pass nothing and so enrol signups in `inner_group`.
+  (`api-routes.ts:290-311`). The default is `[{ id: 'oad', role: 'viewer' }]`
+  (changed from `inner_group` on 2026-11-24, developer's decision: `oad`, the
+  artist directory, is the home of "artist of the collective"; a viewer there
+  becomes a member through `gainSpace`). The first entry also names the welcome
+  email. Single-org apps pass `{ id: siteConfig.orgId, role: 'viewer' }`
+  (e.g. `apps/ifac/src/app/api/auth/signup/route.ts`; `danamccool` and
+  pigeonshoot's callback since 2026-11-24). `arts-collective` passes `oad` viewer
+  explicitly (2026-11-24; `[]` from 2026-10-29). art-auction passes `market` then `oad`; artdirect
+  passes nothing and takes the default. `blog-tester` and
+  `elkdonis-arts-collective` (not running) also take it.
   The OAuth callback applies the same defaults (`api-routes.ts:543-571`).
+  Existing accounts keep the `inner_group` viewer row they were given earlier.
+  Source only until each app is rebuilt and `@elkdonis/auth-server`'s `dist` is
+  rebuilt. (claude, 2026-11-24)
 - Google sign-in (`packages/auth-client/src/index.ts:98-134`): the browser
   builds a PKCE pair, stores the verifier in cookie `eac_pkce_cv`, and
   navigates to `<NEXT_PUBLIC_SUPABASE_URL>/authorize?provider=google&redirect_to=<origin><basePath>/api/auth/callback`.
@@ -237,12 +246,26 @@ There are two role/tier vocabularies and one global flag:
   `/wizard/business` and their submit routes, so neither wizard needs an owned
   org. `users.directory_listed` defaults to false since migration 170; on
   2026-09-27 every listed person was an `oad` member (24). (claude, 2026-09-27)
-- Storing anything in a person's own folder also gains the space:
-  `markArtistByFolder` (`packages/services/src/artist-membership.ts`) runs from
-  `createUserFolder` (every per-person upload), thread documents, and IFAC's
-  staff upload. Rule: everyone with a `users/<folder>` is an `oad` member and
-  listed. Hub band (`components/hub/GainSpaceBand.tsx`) and `/center`
-  (`CenterLinks.gainSpaceHref`) link non-artists to `/wizard`. (claude, 2026-09-27)
+- ~~Storing anything in a person's own folder also gains the space:
+  `markArtistByFolder` runs from `createUserFolder` (every per-person upload),
+  thread documents, and IFAC's staff upload. Rule: everyone with a
+  `users/<folder>` is an `oad` member and listed.~~ **Retracted 2026-11-24
+  (developer):** `markArtistByFolder` is deleted and no upload, thread document
+  or IFAC staff upload makes anyone an `oad` member. A person who only visited
+  an org site stays a visitor of that org (viewer or member there, no `oad`
+  row, not listed). People marked by an earlier upload keep their rows; the
+  data does not show which ones. Hub band (`components/hub/GainSpaceBand.tsx`) and
+  `/center` (`CenterLinks.gainSpaceHref`) link non-artists to `/wizard`.
+- Platform membership (2026-11-24): a non-viewer row in `oad`. Doors that grant
+  it on purpose: `joinArtistSpace` (art-auction `/studio/apply`, with the
+  `oad/artist-space` agreement, migration 290, draft until published), the
+  arts-collective wizard (`gainSpace`), ArtDirect offerings (`markArtist`).
+  `gainSpace` also fills a blank avatar and bio from the person's org profiles
+  (`portOrgProfile`). `canClaimStore` needs that `oad` row plus an accepted
+  active agreement (passes when none is active). Files a person posted while
+  only an org visitor stay where they are; avatar uploads on an org site still
+  go to the person's own folder (not changed: the profile surface would need to
+  know an upload was org-scoped). (claude, 2026-11-24)
 - Tiers 2026-09-23: `ifac`, `inner_group` partner; `amrit_canada`,
   `hidden-enneagram` supported; the rest free.
 
@@ -386,7 +409,8 @@ Owner-role accounts per org on 2026-09-23: `inner_group` 6; `ifac`,
   `ownerEmails`): the allow-list was once an org's only administrator path.
 - Wrap `handleSignup` / `handleOAuthCallback` in a function that passes
   `defaultOrgs`; do not bare-export them: a bare export type-checks only by
-  coincidence and enrols signups in `inner_group`.
+  coincidence and enrols signups in the shared default (`oad` viewer since
+  2026-11-24; `inner_group` before).
 - Add a new public host to `ADDITIONAL_REDIRECT_URLS` and restart
   `supabase-auth` before announcing it: without it Google sign-in lands on
   `SITE_URL` and the handoff refuses the host.
@@ -430,8 +454,10 @@ Owner-role accounts per org on 2026-09-23: `inner_group` 6; `ifac`,
    enforced); whether moderators may reveal a holder is undecided; Nextcloud
    has no pen-name storage; only arts-collective hosts the picker;
    `gather.ts:191` not widened.
-7. `danamccool` and `arts-collective` signups default to `inner_group` viewer;
-   whether that is intended for danamccool is unknown.
+7. ~~`danamccool` and `arts-collective` signups default to `inner_group` viewer;
+   whether that is intended for danamccool is unknown.~~ 2026-11-24: the shared
+   default is now `oad` viewer; danamccool passes its own org (source only);
+   arts-collective passes `oad` viewer.
 8. `hiddenenneagram.com` and `artdirect.arts-collective.com` are missing from
    `ADDITIONAL_REDIRECT_URLS` (assumed effect: Google sign-in there returns to
    `SITE_URL`; artdirect still passes the handoff as a network subdomain).

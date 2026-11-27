@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SurfaceFrame, SurfaceSkeleton, type SurfaceAction, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import { getScheduleSheet, type ScheduleSheet, type ScheduleSheetSlot } from "@/lib/office-actions";
-import { createSlots } from "@/lib/slot-actions";
+import { createSlots, previewSlots } from "@/lib/slot-actions";
 import { formatDay } from "@/lib/schedule-plan";
+import { StandingPanel } from "@/components/office/standing-panel";
+import { tourEditorHref } from "@/lib/office-links";
 
 /** The hub card's descriptor (registered as `office-schedule` in HubSurfaces). */
 export const scheduleTourDescriptor: SurfaceDescriptor = {
@@ -28,6 +30,26 @@ interface Row {
   guideId: string;
 }
 
+interface Group {
+  tourId: string;
+  guideId: string;
+  times: string[];
+  dates: string[];
+}
+
+/** One createSlots / previewSlots call per (tour, guide, set of times); days that share all three go together. */
+function groupRows(rows: Row[]): Group[] {
+  const groups = new Map<string, Group>();
+  for (const r of rows) {
+    const times = [...new Set(r.times)].sort();
+    const key = `${r.tourId}|${r.guideId}|${times.join(",")}`;
+    const g = groups.get(key) ?? { tourId: r.tourId, guideId: r.guideId, times, dates: [] };
+    g.dates.push(r.day);
+    groups.set(key, g);
+  }
+  return [...groups.values()];
+}
+
 const addMinutes = (t: string, mins: number) => {
   const m = ((Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + mins) % 1440 + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -39,6 +61,9 @@ const addMinutes = (t: string, mins: number) => {
  * for that day. Publishing creates the runs through slot-actions createSlots (the same planner as the phone's
  * New slots screen: clashes and duplicates are skipped, a guide schedules only their own tours). A tour is listed
  * on the public tours page once it has an upcoming run.
+ *
+ * There is no limit on how many days are published at once. A run that overlaps another run of the same guide is
+ * flagged on its day (previewSlots) and is still published (2026-11-24).
  */
 export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceDescriptor, { type: "custom" }> }) {
   const router = useRouter();
@@ -52,6 +77,10 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
   const [rows, setRows] = React.useState<Row[]>([]);
   const [lastTime, setLastTime] = React.useState("10:00");
   const [busy, setBusy] = React.useState(false);
+  // Overlap warnings by day: "10:00 Clashes with Latin Quarter at 10:00".
+  // "days": specific days and times. "standing": weekdays kept open for registration (StandingPanel).
+  const [mode, setMode] = React.useState<"days" | "standing">("days");
+  const [warnings, setWarnings] = React.useState<Map<string, string[]>>(new Map());
 
   const load = React.useCallback(async () => {
     try {
@@ -66,6 +95,35 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
   React.useEffect(() => {
     void load();
   }, [load]);
+
+  // Check the picked days for overlaps (debounced); a late answer for older rows is dropped.
+  const warnSeq = React.useRef(0);
+  React.useEffect(() => {
+    if (!sheet || rows.length === 0) {
+      setWarnings(new Map());
+      return;
+    }
+    const mine = ++warnSeq.current;
+    const t = setTimeout(async () => {
+      const next = new Map<string, string[]>();
+      for (const g of groupRows(rows)) {
+        const r = await previewSlots({
+          tourId: g.tourId,
+          dates: g.dates,
+          times: g.times,
+          maxPlaces: places,
+          guideUserId: sheet.isOwner ? g.guideId || null : sheet.selfGuideId,
+        }).catch(() => null);
+        if (!r || !r.ok) continue;
+        for (const it of r.preview.items) {
+          if (it.reason !== "clash") continue;
+          next.set(it.day, [...(next.get(it.day) ?? []), `${it.time}: ${it.message ?? "overlaps another run"}`]);
+        }
+      }
+      if (mine === warnSeq.current) setWarnings(next);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [rows, places, sheet]);
 
   if (error) {
     return (
@@ -83,7 +141,7 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
   }
   if (sheet.tours.length === 0) {
     return (
-      <SurfaceFrame kind="event" kicker="Office" title="Offer a tour" actions={[{ label: "Create a tour", href: "/manage/tours/new", primary: true }]}>
+      <SurfaceFrame kind="event" kicker="Office" title="Offer a tour" actions={[{ label: "Create a tour", href: tourEditorHref(), primary: true }]}>
         <p className="text-sm text-muted-foreground">There are no tours to schedule yet.</p>
       </SurfaceFrame>
     );
@@ -109,20 +167,12 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
   async function publish() {
     if (total === 0) return;
     setBusy(true);
-    // One createSlots call per (tour, guide, set of times); days that share all three go together.
-    const groups = new Map<string, { tourId: string; guideId: string; times: string[]; dates: string[] }>();
-    for (const r of rows) {
-      const times = [...new Set(r.times)].sort();
-      const key = `${r.tourId}|${r.guideId}|${times.join(",")}`;
-      const g = groups.get(key) ?? { tourId: r.tourId, guideId: r.guideId, times, dates: [] };
-      g.dates.push(r.day);
-      groups.set(key, g);
-    }
     let created = 0;
     let skipped = 0;
     const problems: string[] = [];
     const done = new Set<string>();
-    for (const g of groups.values()) {
+    let clashes = 0;
+    for (const g of groupRows(rows)) {
       const r = await createSlots({
         tourId: g.tourId,
         dates: g.dates,
@@ -133,13 +183,15 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
       if (r.ok) {
         created += r.created;
         skipped += r.skipped;
+        clashes += r.clashes;
         g.dates.forEach((d) => done.add(d));
       } else {
         problems.push(`${tourTitle(g.tourId)}: ${r.error}`);
       }
     }
     setBusy(false);
-    if (created) toast.success(`${created} departure${created === 1 ? "" : "s"} published${skipped ? `; ${skipped} skipped (clash or already there)` : ""}.`);
+    if (created) toast.success(`${created} departure${created === 1 ? "" : "s"} published${skipped ? `; ${skipped} skipped (past or already there)` : ""}.`);
+    if (clashes) toast.message(`${clashes} departure${clashes === 1 ? " overlaps" : "s overlap"} another run of the same guide.`);
     problems.forEach((p) => toast.error(p));
     setRows((rs) => rs.filter((r) => !done.has(r.day)));
     await load();
@@ -160,12 +212,12 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
 
   const actions: SurfaceAction[] = [
     { label: "Full schedule", href: "/manage/schedule", quiet: true },
-    {
+    ...(mode === "standing" ? [] : [{
       label: busy ? "Publishing…" : total ? `Publish ${total} departure${total === 1 ? "" : "s"}` : "Publish departures",
       primary: true,
       disabled: busy || total === 0,
       onClick: publish,
-    },
+    } satisfies SurfaceAction]),
   ];
 
   return (
@@ -174,8 +226,30 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
       kicker="Office"
       title="Offer a tour"
       actions={actions}
-      status={total ? `${rows.length} day${rows.length === 1 ? "" : "s"} · ${total} start time${total === 1 ? "" : "s"}` : "Click days on the calendar"}
+      status={mode === "standing" ? "Open for registration" : total ? `${rows.length} day${rows.length === 1 ? "" : "s"} · ${total} start time${total === 1 ? "" : "s"}` : "Click days on the calendar"}
     >
+      <div role="tablist" aria-label="How to offer" className="mb-4 inline-flex rounded-md border border-border p-0.5 text-sm">
+        {(
+          [
+            ["days", "Specific days"],
+            ["standing", "Standing listing"],
+          ] as const
+        ).map(([m, text]) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={`rounded px-3 py-1.5 ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+      {mode === "standing" ? (
+        <StandingPanel sheet={sheet} initialTourId={tourId} />
+      ) : (
       <div className="grid gap-6 text-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-[1fr_6rem]">
@@ -283,6 +357,7 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
             <ul className="mt-2 divide-y divide-border rounded-md border border-border">
               {rows.map((r) => {
                 const already = byDay.get(r.day) ?? [];
+                const clash = warnings.get(r.day) ?? [];
                 return (
                   <li key={r.day} className="space-y-2 px-3 py-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -357,6 +432,11 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
                         </button>
                       )}
                     </div>
+                    {clash.length > 0 && (
+                      <p className="text-xs text-amber-700 dark:text-amber-400" role="status">
+                        Overlap, will still be published. {clash.join(" · ")}
+                      </p>
+                    )}
                     {already.length > 0 && (
                       <p className="text-xs text-muted-foreground">
                         Already that day:{" "}
@@ -376,6 +456,7 @@ export function ScheduleTourPopup({ descriptor }: { descriptor: Extract<SurfaceD
           <p className="mt-2 text-xs text-muted-foreground">Times are Paris time. Length, minimum and booking cutoff come from the tour's own settings.</p>
         </section>
       </div>
+      )}
     </SurfaceFrame>
   );
 }

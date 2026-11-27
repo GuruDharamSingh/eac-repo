@@ -12,6 +12,7 @@
     "./fields": "./src/fields/index.ts",
     "./fields/server": "./src/fields/server.ts",
     "./fields/marks": "./src/fields/marks.ts",
+    "./entry": "./src/entry/index.ts",
     "./steps": "./src/steps/index.ts"
   },
   "scripts": {

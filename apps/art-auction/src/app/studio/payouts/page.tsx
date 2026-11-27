@@ -64,7 +64,8 @@ export default async function StudioPayoutsPage({
         </p>
       )}
 
-      <section className="mb-12">
+      {/* data-eac-anchor: the dock outlines this on arrival from "Finish your store" (registry entry payouts). */}
+      <section className="mb-12" data-eac-anchor="payouts">
         <h2 className="mb-4 font-serif text-2xl tracking-tight">{isOwn ? "Payouts" : "Money"}</h2>
         {isOwn ? (
           <PayoutPanel

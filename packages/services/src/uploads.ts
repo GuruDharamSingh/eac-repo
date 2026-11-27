@@ -153,7 +153,7 @@ export interface UploadIO {
   /** make the folder and every missing parent below `root` (idempotent) */
   mkdirs(root: string, folderPath: string): Promise<boolean>;
   storageSlug(userId: string): Promise<string | null>;
-  /** create a folder in a person's tree (also marks them an artist: see the doc, open question 3) */
+  /** create a folder in a person's tree (no longer marks them an artist, 2026-11-24: doc open question 3) */
   ensureUserFolder(slug: string, relative: string): Promise<boolean>;
   /** THE SEAM for the content library: see registerLibraryItem below */
   registerLibraryItem(item: LibraryItem): Promise<string | null>;

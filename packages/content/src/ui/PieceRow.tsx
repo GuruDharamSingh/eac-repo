@@ -5,6 +5,7 @@ import { fmtDay, type ContentListItem } from "../model";
 import { typeGlyph, typeLabel } from "../registry";
 import { Thumb } from "./atoms";
 import { OutletMarks, StatusChip } from "./piece-atoms";
+import { ItemBadges } from "./library/badges";
 
 export interface PieceRowProps {
   item: ContentListItem;
@@ -18,6 +19,14 @@ export interface PieceRowProps {
   /** Name the site in the sub line (when the list spans several). */
   showSite?: boolean;
   current?: boolean;
+  /** pick / pickMany: a click chooses the piece (aria-pressed) instead of opening the lightbox. Default: open it. */
+  mode?: "browse" | "pick" | "pickMany";
+  /** Chosen (pick, pickMany). */
+  selected?: boolean;
+  /** pick modes: the piece cannot be chosen (server said can.pick is false). */
+  disabled?: boolean;
+  /** pick modes, someone else's piece: "Owner name · Site". */
+  attribution?: string | null;
 }
 
 /**
@@ -26,7 +35,8 @@ export interface PieceRowProps {
  * PieceList do it. A container query drops the date under the title when the
  * room is narrow (phone, compact pop-up).
  */
-export function PieceRow({ item, timeZone, onOpen, href, density = "compact", showSite, current }: PieceRowProps) {
+export function PieceRow({ item, timeZone, onOpen, href, density = "compact", showSite, current, mode = "browse", selected, disabled, attribution }: PieceRowProps) {
+  const picking = mode !== "browse";
   const date = fmtDay(item.date, timeZone);
   const sub = (
     <span className="eac-c-row-sub">
@@ -41,6 +51,8 @@ export function PieceRow({ item, timeZone, onOpen, href, density = "compact", sh
       <span className="eac-c-row-main">
         <strong>{item.title}</strong>
         {density === "compact" ? sub : <span className="eac-c-row-sub">{item.meta || item.excerpt}</span>}
+        <ItemBadges item={item} />
+        {attribution ? <span className="eac-c-row-sub eac-c-attrib">{attribution}</span> : null}
       </span>
       {density === "regular" && (
         <span className="eac-c-row-main">
@@ -61,7 +73,15 @@ export function PieceRow({ item, timeZone, onOpen, href, density = "compact", sh
           {inner}
         </a>
       ) : (
-        <button type="button" className="eac-c-row" data-density={density} aria-haspopup="dialog" aria-current={current ? "true" : undefined} onClick={(e) => onOpen?.(item, e.currentTarget)}>
+        <button
+          type="button"
+          className={`eac-c-row${selected ? " is-selected" : ""}${disabled ? " is-disabled" : ""}`}
+          data-density={density}
+          aria-haspopup={picking ? undefined : "dialog"}
+          aria-pressed={picking ? Boolean(selected) : undefined}
+          aria-disabled={disabled ? true : undefined}
+          aria-current={current ? "true" : undefined}
+          onClick={(e) => onOpen?.(item, e.currentTarget)}>
           {inner}
         </button>
       )}

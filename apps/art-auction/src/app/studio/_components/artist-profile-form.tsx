@@ -294,7 +294,7 @@ export function ArtistProfileForm({
             required
           />
           <p className={hintCls}>
-            Where buyers send eTransfers. Card payouts via Stripe can be added after approval.
+            Where buyers send eTransfers. Card payouts via Stripe can be added once your store is open.
           </p>
         </div>
       )}

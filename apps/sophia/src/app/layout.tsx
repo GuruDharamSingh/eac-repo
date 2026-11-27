@@ -50,6 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   {me.unseen > 0 && <><span className="so-dot" aria-hidden /><span className="so-sr"> — your guide has answered</span></>}
                 </a>
               )}
+              {me.signedIn && <a href="/workspaces">Workspaces</a>}
               {me.isGuide && <a href="/studio">Studio</a>}
               {me.signedIn ? <span className="so-meta">{me.name}</span> : <a href="/login">Sign in</a>}
             </nav>

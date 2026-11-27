@@ -355,6 +355,9 @@ importers:
 
   apps/art-auction:
     dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../../packages/actions
       '@elkdonis/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -385,6 +388,12 @@ importers:
       '@elkdonis/direct-edit':
         specifier: workspace:*
         version: link:../../packages/direct-edit
+      '@elkdonis/dock':
+        specifier: workspace:*
+        version: link:../../packages/dock
+      '@elkdonis/lms':
+        specifier: workspace:*
+        version: link:../../packages/lms
       '@elkdonis/messaging':
         specifier: workspace:*
         version: link:../../packages/messaging
@@ -1117,6 +1126,9 @@ importers:
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@elkdonis/workspace-ui':
+        specifier: workspace:*
+        version: link:../../packages/workspace-ui
       '@puckeditor/core':
         specifier: 0.24.0
         version: 0.24.0(@floating-ui/dom@1.7.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
@@ -1381,6 +1393,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -2442,6 +2457,9 @@ importers:
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@elkdonis/workspace-ui':
+        specifier: workspace:*
+        version: link:../../packages/workspace-ui
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
@@ -3305,6 +3323,9 @@ importers:
       '@elkdonis/fonts':
         specifier: workspace:*
         version: link:../fonts
+      '@elkdonis/gradients':
+        specifier: workspace:*
+        version: link:../gradients
       react:
         specifier: ^19
         version: 19.1.0
@@ -4587,6 +4608,34 @@ importers:
         version: 8.5.0(@swc/core@1.15.33(@swc/helpers@0.5.15))(jiti@2.6.0)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.2)
       typescript:
         specifier: ^5.0.0
+        version: 5.9.2
+
+  packages/workspace-ui:
+    dependencies:
+      '@elkdonis/lms':
+        specifier: workspace:*
+        version: link:../lms
+      '@elkdonis/lms-ui':
+        specifier: workspace:*
+        version: link:../lms-ui
+      next:
+        specifier: ^15 || ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5.3.3
         version: 5.9.2
 
 packages:

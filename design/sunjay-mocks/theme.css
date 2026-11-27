@@ -1,0 +1,131 @@
+/* Para Theater (apps/sunjay) mock theme: the five-colour structure, muted Bon pigments.
+   Source of the pigments: packages/gradients/src/palettes.ts BON_MINERAL (tsakli card, moss and orpiment, mandala dusk).
+   Structure: docs/open/THEME_SYSTEM_2026-11-22/STRUCTURE.md. Five stored colours; every other colour is worked out.
+   Mocks only. Shared by every page in this folder: do not put page-specific rules here. */
+
+:root {
+  /* 1. Palette: the only colours typed in. */
+  --p-space: #C3BFB5;   /* bone */
+  --p-water: #2A5A83;   /* tsakli blue */
+  --p-fire:  #BC5149;   /* cinnabar */
+  --p-earth: #C1AF6E;   /* orpiment */
+  --p-wind:  #6A7853;   /* moss */
+
+  /* 2. Shades: worked out, never typed. l = toward light, d = toward dark. */
+  --space-l3: color-mix(in oklch, var(--p-space) 22%, white);
+  --space-l2: color-mix(in oklch, var(--p-space) 45%, white);
+  --space-l1: color-mix(in oklch, var(--p-space) 72%, white);
+  --space-d1: color-mix(in oklch, var(--p-space) 70%, black);
+  --space-d2: color-mix(in oklch, var(--p-space) 42%, black);
+  --space-d3: color-mix(in oklch, var(--p-space) 22%, black);
+  --space-d4: color-mix(in oklch, var(--p-space) 12%, black);
+  --water-l2: color-mix(in oklch, var(--p-water) 30%, white);
+  --water-l1: color-mix(in oklch, var(--p-water) 62%, white);
+  --water-d1: color-mix(in oklch, var(--p-water) 68%, black);
+  --water-d2: color-mix(in oklch, var(--p-water) 40%, black);
+  --water-d3: color-mix(in oklch, var(--p-water) 22%, black);
+  --fire-l1:  color-mix(in oklch, var(--p-fire) 62%, white);
+  --fire-d1:  color-mix(in oklch, var(--p-fire) 74%, black);
+  --earth-l1: color-mix(in oklch, var(--p-earth) 60%, white);
+  --earth-d1: color-mix(in oklch, var(--p-earth) 62%, black);
+  --wind-l1:  color-mix(in oklch, var(--p-wind) 55%, white);
+  --wind-d1:  color-mix(in oklch, var(--p-wind) 62%, black);
+
+  /* 3. Roles (light). Pointers at a colour and a shade. */
+  --ground: var(--space-l3);
+  --panel: var(--space-l2);
+  --ground-soft: var(--space-l1);
+  --ink: var(--water-d3);
+  --ink-muted: color-mix(in oklch, var(--water-d2) 70%, var(--p-space));
+  --line: color-mix(in oklch, var(--water-d2) 22%, var(--space-l2));
+  --accent: var(--fire-d1);
+  --on-accent: var(--space-l3);
+  --accent-2: var(--p-earth);
+  --accent-3: var(--p-wind);
+  --danger: var(--fire-d1);
+
+  /* Type and shape */
+  --font-title: "Fraunces", "Spectral", Georgia, serif;
+  --font-body: "Spectral", Georgia, serif;
+  --font-record: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 0px;
+
+  color-scheme: light;
+}
+
+/* Dark: the same five colours, shades mirrored. Chosen by the visitor's system, or forced with data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: color-mix(in oklch, var(--p-water) 16%, var(--space-d3));
+    --panel: color-mix(in oklch, var(--p-water) 14%, var(--space-d2));
+    --ground-soft: color-mix(in oklch, var(--p-water) 26%, var(--space-d3));
+    --ink: var(--space-l2);
+    --ink-muted: color-mix(in oklch, var(--space-l2) 72%, var(--space-d3));
+    --line: color-mix(in oklch, var(--p-space) 30%, var(--space-d3));
+    --accent: var(--fire-l1);
+    --on-accent: var(--space-d4);
+    --accent-2: var(--p-earth);
+    --accent-3: var(--wind-l1);
+    --danger: var(--fire-l1);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: color-mix(in oklch, var(--p-water) 16%, var(--space-d3));
+  --panel: color-mix(in oklch, var(--p-water) 14%, var(--space-d2));
+  --ground-soft: color-mix(in oklch, var(--p-water) 26%, var(--space-d3));
+  --ink: var(--space-l2);
+  --ink-muted: color-mix(in oklch, var(--space-l2) 72%, var(--space-d3));
+  --line: color-mix(in oklch, var(--p-space) 30%, var(--space-d3));
+  --accent: var(--fire-l1);
+  --on-accent: var(--space-d4);
+  --accent-2: var(--p-earth);
+  --accent-3: var(--wind-l1);
+  --danger: var(--fire-l1);
+  color-scheme: dark;
+}
+
+/* 4. Tones: a section names one; it re-points the roles inside. */
+[data-tone="soft"] { --ground: var(--ground-soft); }
+[data-tone="deep"] {
+  --ground: var(--water-d3); --panel: var(--water-d2); --ink: var(--space-l2);
+  --ink-muted: var(--space-d1); --line: color-mix(in oklch, var(--p-space) 26%, var(--water-d3));
+  --accent: var(--p-earth); --on-accent: var(--water-d3);
+}
+[data-tone="accent"] {
+  --ground: var(--fire-d1); --panel: color-mix(in oklch, var(--fire-d1) 80%, black); --ink: var(--space-l3);
+  --ink-muted: var(--space-l1); --line: color-mix(in oklch, var(--space-l3) 35%, var(--fire-d1));
+  --accent: var(--space-l3); --on-accent: var(--fire-d1);
+}
+[data-tone] { background: var(--ground); color: var(--ink); }
+
+/* 5. The surface design system reads these (packages/cms-ui/src/surface/surface.css): map roles onto its hooks,
+   and use its --sf-* names and widths in the mocks so they translate straight into surface blocks. */
+:root, [data-tone] {
+  --eac-surface-bg: var(--panel);
+  --eac-surface-fg: var(--ink);
+  --eac-surface-muted: var(--ink-muted);
+  --eac-surface-line: var(--line);
+  --eac-surface-accent: var(--accent);
+  --eac-surface-on-accent: var(--on-accent);
+  --eac-surface-radius: var(--radius);
+  --sf-bg: var(--eac-surface-bg);
+  --sf-bg-soft: color-mix(in srgb, var(--ink) 4%, var(--panel));
+  --sf-fg: var(--eac-surface-fg);
+  --sf-muted: var(--eac-surface-muted);
+  --sf-line: var(--eac-surface-line);
+  --sf-rule: color-mix(in srgb, var(--ink) 55%, var(--line));
+  --sf-accent: var(--eac-surface-accent);
+  --sf-on-accent: var(--eac-surface-on-accent);
+  --sf-radius: var(--eac-surface-radius);
+  --sf-font-title: var(--font-title);
+  --sf-font-body: var(--font-body);
+  --sf-font-record: var(--font-record);
+  --sf-w-compact: 440px; --sf-w-standard: 640px; --sf-w-wide: 940px; --sf-w-full: 1180px;
+}
+
+html { background: var(--ground); color: var(--ink); font-family: var(--font-body); }
+body { margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

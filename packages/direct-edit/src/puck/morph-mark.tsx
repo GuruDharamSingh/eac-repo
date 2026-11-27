@@ -27,9 +27,9 @@ export type { BlkStyleDecls } from "../block/read-look";
 // its font after a reload and before anything is selected.
 // ============================================================================
 
-export function MorphMark({ def, morph, editing, children }: { def: { parts?: MorphParts }; morph: unknown; editing: boolean; children?: ReactNode }): ReactNode {
+export function MorphMark({ def, morph, editing, children }: { def: { parts?: MorphParts; resize?: unknown }; morph: unknown; editing: boolean; children?: ReactNode }): ReactNode {
   const clean = morph ? cleanMorph(morph) : null;
-  const c = clean ? morphCss(clean, def.parts, { editor: editing }) : null;
+  const c = clean ? morphCss(clean, def.parts, { editor: editing, setsHeight: !!def.resize }) : null;
   if (editing) {
     if (c) loadFonts(c.fonts);
     return createElement(Fragment, null,

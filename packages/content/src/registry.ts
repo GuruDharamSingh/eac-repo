@@ -29,6 +29,11 @@ export const CONTENT_TYPES: ContentTypeMeta[] = [
   { id: "workshop", label: "Workshop", glyph: "◈", surfaceKind: "workshop", panels: ["coverage", "plan"] },
   { id: "questionnaire", label: "Questionnaire", glyph: "▤", surfaceKind: "questionnaire", panels: [] },
   { id: "poll", label: "Poll", glyph: "▥", surfaceKind: "poll", panels: [] },
+  // v1 file families (CONTRACT.md §2). No panels: a file's detail is its lightbox.
+  { id: "image", label: "Image", glyph: "◧", surfaceKind: "gallery", panels: [] },
+  { id: "audio", label: "Audio", glyph: "♪", surfaceKind: "file", panels: [] },
+  { id: "document", label: "Document", glyph: "▦", surfaceKind: "file", panels: [] },
+  { id: "file", label: "File", glyph: "▢", surfaceKind: "file", panels: [] },
 ];
 
 export function typeMeta(type: ContentType): ContentTypeMeta {

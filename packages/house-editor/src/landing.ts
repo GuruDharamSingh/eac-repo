@@ -6,6 +6,7 @@ import type { PuckDoc, PuckNode } from "@elkdonis/direct-edit/block";
 import type { RecordSources } from "@elkdonis/direct-edit/puck";
 import type { Plugin } from "@puckeditor/core";
 import type { HouseConfig, HouseFlags } from "./open";
+import type { RecordFieldHost } from "./fields/FieldsLens";
 import { holdVersion, type HouseSave } from "./save";
 import { resolvedRows, withProps, type ResolvedKeys } from "./walk";
 type PictureChooser = NonNullable<TreePageOptions["choosePicture"]>;
@@ -50,13 +51,18 @@ export interface HouseLandingOptions {
   liveNote?: TreePageOptions["liveNote"];
   onDone?: () => void;
   onRestore?: () => void;
-  flags?: Pick<HouseFlags, "designTools" | "developer" | "inception" | "sheetParts">;
+  /** Words that come from a record (a tour's name on its card) open that record's field in the Fields lens's panel, with its own save. Absent: a plain line says they cannot be opened from here. */
+  recordFields?: RecordFieldHost;
+  flags?: Pick<HouseFlags, "designTools" | "developer" | "inception" | "sheetParts" | "largeView">;
+  /** Buttons the host adds to the edit bar (the Edit button's "Site style") and what they do. */
+  barExtras?: TreePageOptions["barExtras"];
+  onBarExtra?: TreePageOptions["onBarExtra"];
 }
 
 export async function openHouseLanding(o: HouseLandingOptions) {
   const de = await import("@elkdonis/direct-edit/puck");
   await import("@elkdonis/direct-edit/direct-edit.css" as string);
-  const { designTools = true, developer = false, inception = true, sheetParts = true } = o.flags ?? {};
+  const { designTools = true, developer = false, inception = true, sheetParts = true, largeView = false } = o.flags ?? {};
   const puckConfig = o.config.puckConfig;
   const contract = o.config.contract;
   // Settings... only where the app has an editor-shape config to open a block in; the extra libraries load only then.
@@ -78,7 +84,7 @@ export async function openHouseLanding(o: HouseLandingOptions) {
           panel: (host: HTMLElement) => de.mountLookPanel(host, { blkStyleDecls }),
           developer,
           handBack: true,
-          popup: (ctx) => de.openStudioPopup({ config: o.config.canvasConfig as never, contract: contract as never, records: o.records, blkStyleDecls }, ctx),
+          ...(largeView ? { popup: (ctx: Parameters<typeof de.openStudioPopup>[1]) => de.openStudioPopup({ config: o.config.canvasConfig as never, contract: contract as never, records: o.records, blkStyleDecls }, ctx) } : {}),
         })]
       : [];
     sheet = {
@@ -114,12 +120,16 @@ export async function openHouseLanding(o: HouseLandingOptions) {
     records: o.records,
     developer,
     designTools,
+    largeView,
+    ...(o.recordFields ? { recordWords: { open: (ref: string) => { void import("./fields/open-record").then((m) => m.openRecordField(o.recordFields!, ref)); } } } : {}),
     pageName: o.title,
     saveNotice: o.saveNotice,
     liveNote: o.liveNote,
     onSave: holdVersion(o.save, o.slug, o.version),
     onDone: o.onDone ?? (() => window.location.reload()),
     onRestore: o.onRestore,
+    barExtras: o.barExtras,
+    onBarExtra: o.onBarExtra,
   };
   const opened = await (o.mode === "visitor"
     ? de.openVisitorPage({ ...base, root: o.root, selector: o.selector ?? "main", tree: o.tree, title: o.title })

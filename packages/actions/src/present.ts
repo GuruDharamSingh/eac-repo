@@ -76,6 +76,27 @@ export function presentAction({ id, status, orgId, links, params }: PresentInput
       return { kind: 'surface', label: status.partial ? 'See your store' : 'Open a store', descriptor: { type: 'journey', id: 'auction' }, hint: 'Step 2 of “Sell your art”.' };
     case 'artwork':
       return { kind: 'surface', label: status.partial ? 'Finish and publish' : 'Add a work', descriptor: { type: 'artwork' } };
+    // The market's store course (2026-11-24). The dock draws 'store-front' with its own module
+    // form (packages/dock/src/forms.tsx); this plain form is what a lesson's task box shows.
+    case 'store-front':
+      return {
+        kind: 'form', label: 'Save to my store', busyLabel: 'Saving…',
+        fields: [{ name: 'note', label: 'Store front description', type: 'text', maxLength: 1200, placeholder: 'Two or three lines collectors read above your work' }],
+      };
+    case 'ship-from':
+      return {
+        kind: 'form', label: 'Save', busyLabel: 'Saving…',
+        fields: [
+          { name: 'recipientName', label: 'Name on the label', type: 'text', maxLength: 120 },
+          { name: 'line1', label: 'Street', type: 'text', maxLength: 200 },
+          { name: 'city', label: 'City', type: 'text', maxLength: 120 },
+          { name: 'region', label: 'Province or state', type: 'text', maxLength: 120 },
+          { name: 'postalCode', label: 'Postal code', type: 'text', maxLength: 20 },
+          { name: 'country', label: 'Country (two letters: CA, US, FR…)', type: 'text', maxLength: 2 },
+          { name: 'phone', label: 'Phone, for the courier', type: 'text', maxLength: 40 },
+        ],
+        note: 'Private: only the city shows on your store. Couriers quote and label from it, for every store that sells your work.',
+      };
     case 'payouts':
       return { kind: 'surface', label: status.partial ? 'Finish with Stripe' : 'Set up payouts', descriptor: { type: 'journey', id: 'auction' }, hint: 'Step 3 of “Sell your art”. Stripe brings you back here.' };
     case 'org':
