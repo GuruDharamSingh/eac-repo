@@ -92,6 +92,15 @@ export interface Store {
   headline?: string | null;
   city?: string | null;
   photoUrl?: string | null;
+  /** The wide picture behind the store front's hero (migration 296). */
+  coverUrl?: string | null;
+  /** The store front's colours, e.g. { accent: "#2f4a63" } (migration 296). */
+  theme?: Record<string, unknown>;
+  /** The artist profile's timeline and downloadable files (migration 297). */
+  profile?: { timeline?: Array<{ year: string; text: string }>; files?: Array<{ name: string; url: string; size?: number | null }> };
+  /** What the store itself set, and what shows when it set nothing (the owner's network profile). */
+  own?: { displayName: string | null; headline: string | null; city: string | null; photoUrl: string | null };
+  fallback?: { displayName: string | null; headline: string | null; city: string | null; photoUrl: string | null };
   links: StoreLink[];
 
   /** Application / review audit trail. */

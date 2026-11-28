@@ -25,7 +25,6 @@ import {
 import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
-import { ChannelSurface } from "./ChannelSurface";
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
 import dynamic from "next/dynamic";
@@ -229,8 +228,6 @@ export function HubSurfaces({
           />
         ),
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
-        // The Channel card (2026-11-15): reads /api/hub/channel; writes through the Channel door.
-        channel: () => <ChannelSurface />,
         // Opened by a block's "Opens" (2026-11-07): a person, perhaps with one onward page.
         person: ({ descriptor }) => <PersonPopup descriptor={descriptor} />,
         whiteboard: () => (

@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import type { Metadata } from "next";
 import { ARTIST_SPACE_ORG_ID, listMyHostBookings } from "@elkdonis/services";
+import { bookerLabel, listHostNetworkBookings } from "@elkdonis/booking";
 import { BookingCancel, BookingScheduler } from "@elkdonis/checkout/components";
 import { requireUser } from "@/lib/session";
 import { hostCancelAction, hostConfirmAction, hostProposeAction } from "@/lib/booking-actions";
@@ -20,7 +21,11 @@ export default async function HostBookingsPage({ searchParams }: { searchParams:
   const user = await requireUser("/login?redirect=/bookings");
   const query = await searchParams;
   const includePast = query.past === "1";
-  const bookings = await listMyHostBookings(ARTIST_SPACE_ORG_ID, user.id, { includePast });
+  const own = await listMyHostBookings(ARTIST_SPACE_ORG_ID, user.id, { includePast });
+  // Services of theirs sold through the content library on other sites (booking in the thread's org).
+  const network = await listHostNetworkBookings(ARTIST_SPACE_ORG_ID, user.id, { includePast }).catch((): typeof own => []);
+  const sortKey = (b: (typeof own)[number]) => b.scheduledAt ?? b.createdAt;
+  const bookings = network.length ? [...own, ...network].sort((a, b) => sortKey(a).localeCompare(sortKey(b))) : own;
   const waiting = bookings.filter((b) => b.status === "awaiting_seller");
   const rest = bookings.filter((b) => b.status !== "awaiting_seller");
 
@@ -36,7 +41,7 @@ export default async function HostBookingsPage({ searchParams }: { searchParams:
         <dl className="eac-booking-facts">
           <dt>Who</dt>
           <dd>
-            {b.bookerName ?? ""} (<a href={`mailto:${b.bookerEmail}`}>{b.bookerEmail}</a>)
+            {bookerLabel(b)} (<a href={`mailto:${b.bookerEmail}`}>{b.bookerEmail}</a>)
           </dd>
           <dt>Status</dt>
           <dd>{STATUS_WORD[b.status]}</dd>
@@ -78,7 +83,7 @@ export default async function HostBookingsPage({ searchParams }: { searchParams:
           <BookingScheduler
             role="seller"
             booking={schedulerBooking(b)}
-            otherName={b.bookerName ?? "the booker"}
+            otherName={bookerLabel(b)}
             confirm={hostConfirmAction.bind(null, b.id)}
             propose={hostProposeAction.bind(null, b.id)}
             cancel={hostCancelAction.bind(null, b.id)}

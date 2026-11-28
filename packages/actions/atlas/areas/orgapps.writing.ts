@@ -76,13 +76,15 @@ const capabilities: Capability[] = [
         }
       },
     ],
-    entry: "studio",
+    entry: "writing-start",
+    updated: '2026-11-27',
     status: 'a threads row kind article, status draft, author = viewer, exists',
     risk: ['none'],
     confirm: {
-      text: 'Start a draft called “{title}”? Only you can see it until you publish.',
+      text: 'Start a draft with this title? It stays a draft in your own space, and nobody else sees it until you publish it.',
+      title: 'Start a piece of writing',
       status: 'draft',
-      wave: 3,
+      wave: 2,
     },
     inputs: 'title, feed',
     drift: "Four apps wrap services createWritingPost (ifac, artdirect, danamccool, innergathering) with 'signed in' + canEditProfile(viewer, author) (author = self, or global admin); danamccool takes the author from getSiteOwnerUserId (only the owner, or an admin via canEditProfile, may write). hidden-enneagram does NOT use createWritingPost: its own copy inserts the thread with raw SQL after getApiEditor() (owner/guide only), uses its own slug and excerpt/sanitise path (@elkdonis/utils sanitizeRichText, essay renderer) so its stored rows may differ from the services path. artdirect has two start variants. Auth strengths differ by design: self for ifac/artdirect/inner, owner for dana, editor for HE.\nMerged 2026-11-16 (consolidation 2): 2 rows, 2 apps (ifac, arts-collective). Differences by app:\n- arts-collective (was start-writing-piece): Third post-creation path next to createThreadAction (org compose) and registry org-publish (createThread). Writing uses createWritingPost.\nDirection (Justin, 2026-11-16): copy-per-page forms are giving way to inline on-page editing (the house editor). The canonical should be the house-editor / hub path, not a per-app /manage form.",
@@ -92,6 +94,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'writing-piece-save',
+    where: {"mode": "place", "why": "Writing in a full editor, with its own page.", "deep": "/studio"},
     area: 'orgapps.writing',
     label: 'Save changes to a piece of writing',
     does: 'Saves edits, publishing state and body of an existing writing post; the author, read from the row, is the only one (besides a global admin) who may change it.',

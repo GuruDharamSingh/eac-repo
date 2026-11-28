@@ -16,6 +16,7 @@ export default {
   capabilities: [
     {
       id: 'tour-save',
+      where: {"mode": "place", "why": "A long tour page with a price and a map: its own editor.", "deep": "/hub/tours/edit?tour={tour}"},
       area: 'orgapps.commerce.tours',
       label: 'Save a tour',
       does: "Creates or edits a tour: title, body, price per person, duration, meeting point, highlights, maximum party, and (in-page editing) its film.",

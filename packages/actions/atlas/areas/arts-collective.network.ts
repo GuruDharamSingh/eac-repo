@@ -255,6 +255,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'link-cloud-sign-in',
+    where: {"mode": "place", "why": "Signing in happens on the cloud’s own login page.", "deep": "/nextcloud"},
     area: 'network.account',
     label: 'Link your cloud sign-in',
     does: 'Creates or links the person’s Nextcloud account so their folders follow them.',
@@ -388,6 +389,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'upload-image',
+    where: {"mode": "place", "why": "Plumbing inside the editors that need a picture."},
     area: 'network.files',
     label: 'Upload an image from a composer',
     does: 'Image upload used by the post, workshop and cover-image composers; allowed for admins and org owners, guides and members.',
@@ -478,6 +480,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'save-business-wizard',
+    where: {"mode": "place", "why": "A multi-step wizard with its own pages.", "deep": "/wizard/business"},
     area: 'network.wizard',
     label: 'Save your business questionnaire as you go',
     does: 'Saves partial answers of the business wizard (biz_* columns of artist_profiles).',
@@ -514,6 +517,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'submit-business-wizard',
+    where: {"mode": "place", "why": "The last step of a multi-step wizard.", "deep": "/wizard/business"},
     area: 'network.wizard',
     label: 'Finish your business questionnaire',
     does: 'Stores the full business wizard answers.',

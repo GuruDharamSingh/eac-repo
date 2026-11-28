@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.money ----------------
   {
     id: 'payout-setup-save',
+    where: {"mode": "place", "why": "Money: payouts stay a link by rule.", "deep": "/manage"},
     area: 'orgapps.money',
     label: 'Save where I get paid (country and payout method)',
     does: "Saves the signed-in person's country and payout rail (Interac e-Transfer, Stripe or manual) and, for e-Transfer, the email to send to. A payout identity belongs to the person, not the site.",
@@ -70,6 +71,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'payout-stripe-start',
+    where: {"mode": "place", "why": "Money: Stripe’s own pages.", "deep": "/learn?surface=profile:payouts"},
     area: 'orgapps.money',
     label: 'Connect Stripe to get paid',
     does: 'Begins or resumes Stripe Express onboarding for the signed-in person and sends the browser to Stripe.',
@@ -255,6 +257,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'own-service-save',
+    where: {"mode": "place", "why": "Carries a price: money stays a link by rule.", "deep": "/learn?surface=me:offer"},
     area: 'orgapps.money',
     label: 'Save one of my services',
     does: 'Creates or updates a service the signed-in person offers (title, price in CAD, format), published to the network when set to published.',
@@ -321,6 +324,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'own-service-status',
+    where: {"mode": "dock", "why": "One switch: draft or published."},
     area: 'orgapps.money',
     label: 'Publish or unpublish one of my services',
     does: "Switches one of the person's own services between draft and published.",

@@ -323,3 +323,12 @@ Justin made the content library the platform's one search and one component (`do
 - `@elkdonis/content/media-library` and the `MediaLibrary` export stay as a wrapper with the same props, so elktours `media-field.tsx` does not have to change.
 - Please add no new `MediaLibrary` features. Send needs to the cornerstone LEDGER instead.
 - The media lane still owns upload paths, `media-copy.ts`, `dav.ts` and the elktours attach flow. `listMediaSource` is the backend of the new `/api/content/folders` route.
+
+## Cornerstone note 2 (PM, session system32-43, 2026-11-26 late)
+
+Cornerstone Step 5 has started: files are being added to the one search (CONTENT_CORNERSTONE CONTRACT §1, §4, §5; LEDGER "Step 5 files").
+- File entries go into `content_index` as `store='file'`, keyed by the Nextcloud file id, with read rights that mirror `canReadMedia`. **No rows are added to `media`.**
+- An incremental reindex walks folder listings only and never reads file bytes.
+- The `registerLibraryItem` seam in `uploads.ts` gains one indexing call; it is additive and cannot fail an upload.
+- `dav.ts` may gain `oc:fileid` in its PROPFIND, also additively.
+- Please don't rename or remove `registerLibraryItem`, `listMediaSource` or the `dav*` listing helpers while this lands. If your upload work changes them, post to the cornerstone LEDGER.

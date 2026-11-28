@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from "next";
 import { EB_Garamond } from "next/font/google";
 import { chromeState } from "@elkdonis/lms-ui";
 import { connectors } from "@/lib/connectors";
+import { Dock } from "@elkdonis/dock";
+import { runDockAction, dockDepart, dockReturn, dockChooseCourse, dockAckDone } from "@/lib/dock-actions";
 import { NETWORK_URL, SITE, SOPHIA_URL } from "@/lib/site";
 
 // The newsroom face of arts-collective.com; labels and controls are Arial, as there.
@@ -61,6 +63,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <a href={NETWORK_URL}>Elkdonis Arts Collective</a>
           </footer>
         </div>
+        {/* The course rail (packages/dock): only for signed-in people; the route also answers 401 signed out. */}
+        {me.signedIn && <Dock run={runDockAction} trail={{ depart: dockDepart, back: dockReturn, choose: dockChooseCourse, ack: dockAckDone }} />}
       </body>
     </html>
   );

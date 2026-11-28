@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.meetings ----------------
   {
     id: 'meeting-save',
+    where: {"mode": "dock", "why": "Title, date, place and a few switches."},
     area: 'orgapps.meetings',
     label: 'Save a meeting or event',
     does: "Creates or updates a meeting or event on the org's calendar (draft or published) from the shared compose pop-up. Events are meetings with kind 'event'.",
@@ -109,6 +110,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'workshop-save',
+    where: {"mode": "dock", "why": "Title, dates, price and a section: a longer form."},
     area: 'orgapps.meetings',
     label: 'Save a workshop offering',
     does: 'Creates or updates a workshop offering (a thread of kind workshop) through the shared workshop form, and shares its materials folder with the author.',

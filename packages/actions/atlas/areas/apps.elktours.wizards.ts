@@ -22,6 +22,7 @@ const WIZ = 'components/mobile/artist-wizard-view.tsx';
 const capabilities: Capability[] = [
   {
     id: 'elktours-artist-profile-save',
+    where: {"mode": "dock", "why": "A craft and a few lines."},
     area: 'elktours.wizards',
     label: 'Save your artist profile',
     does: "Step I of the artist wizard: the artist's craft and a few lines about them in this org. Name and area only fill gaps in their shared profile; empty fields never blank what is there.",
@@ -109,6 +110,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-artist-availability-save',
+    where: {"mode": "dock", "why": "Switches for weekdays and parts of the day."},
     area: 'elktours.wizards',
     label: 'Save your free times',
     does: 'Step III of the wizard and the artist home: replaces the artist\'s free weekday and part-of-day grid (7 x 3) and the notice they need (1, 2 or 7 days). Needs the artist_availability tables, otherwise answers "available after migration".',
@@ -151,6 +153,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-artist-invite-for-departure',
+    where: {"mode": "dock", "why": "Pick a departure and an artist."},
     area: 'elktours.wizards',
     label: 'Invite the artist for one run',
     does: "A guide (their own tour) or the office manually invites the stop's artist for one upcoming run, even if the artist is not marked free.",
@@ -173,6 +176,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-invitation-respond',
+    where: {"mode": "dock", "why": "Pick an invitation, accept or decline."},
     area: 'elktours.wizards',
     label: 'Accept or decline an invitation',
     does: 'The artist answers an invitation addressed to them to take part in a tour run.',

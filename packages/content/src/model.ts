@@ -13,7 +13,8 @@ import type { ContentSale } from "./search-types";
 
 /** Which table an item lives in. Kept apart from ContentType (how it is shown). */
 /** v1 (2026-11-26, docs/open/CONTENT_CORNERSTONE_2026-11-26/CONTRACT.md §1) adds "file". */
-export type ContentStore = "thread" | "artwork" | "file";
+/** v1.3 (2026-11-26, CONTRACT §15) adds "person": a directory identity (migration 298). */
+export type ContentStore = "thread" | "artwork" | "file" | "person";
 
 export interface ContentRef {
   store: ContentStore;
@@ -24,10 +25,16 @@ export interface ContentRef {
 export type ContentType =
   | "artwork" | "product" | "writing" | "video" | "series" | "meeting" | "event" | "workshop" | "questionnaire" | "poll"
   // v1 (CONTRACT.md §2): file families. A video file is type "video" with store "file".
-  | "image" | "audio" | "document" | "file";
+  | "image" | "audio" | "document" | "file"
+  // v1.3 (CONTRACT §15): a directory identity, store "person". Its entity type (person | organization) is item.person.entityType.
+  | "person"
+  // v1.4 (CONTRACT §16 revised): a bookable service thread. Read only through the "offers" view; published/all/people never return one.
+  | "service";
 
 /** The library's Published | Files | All toggle (CONTRACT.md §2). published = thread + artwork, files = file. */
-export type ContentView = "published" | "files" | "all";
+/** v1.3 (CONTRACT §15) adds "people": the directory (store person). published, files and all never include people. */
+/** v1.4 adds "offers": paid or RSVP work (store thread + artwork) with `item.offer`; the only view that returns type "service". */
+export type ContentView = "published" | "files" | "all" | "people" | "offers";
 
 /** Every outlet an item can go to (Channel's Outlet). */
 export type ContentOutlet =
@@ -244,6 +251,51 @@ export interface ContentListItem {
   images?: string[];
   /** v1.2 (CONTRACT.md §11.3): the owner's public display name for attribution ("Photo: <ownerName> · <siteName>"). */
   ownerName?: string | null;
+  /** v1.3 (CONTRACT §15): a directory identity's public card. Store "person" only. Never an email, never the account behind a pseudonym. */
+  person?: ContentPerson | null;
+  /** v1.4 (CONTRACT §16 revised): filled in the "offers" view only. How a visitor takes the offer up; never any money logic. */
+  offer?: ContentOffer;
+}
+
+/** v1.4: the offers view's kinds. Meetings read as "event". */
+export type ContentOfferKind = "event" | "service" | "series" | "artwork" | "workshop";
+
+/** v1.4: how a visitor takes an offer up. The string values equal cms-ui's offer-surface TakeUp (types.ts); kept identical by hand. */
+export type ContentTakeUp = "rsvp" | "pay" | "order" | "subscribe" | "enquire" | "none";
+
+/** v1.4: what the offers view says about one offer. Prices are stored list prices in minor units. */
+export interface ContentOffer {
+  kind: ContentOfferKind;
+  price: { amountMinor: number; currency: string } | null;
+  /** Pay-what-you-can range in minor units (a workshop with a floor below its list price). */
+  sliding?: { minMinor: number; maxMinor: number };
+  takeUp: ContentTakeUp;
+  /** True when takeUp is pay/order, card payments are on, and the payee has a payout route (checkout's bookingAvailability test). */
+  checkout: boolean;
+  /** Start of the next session or event; null for a service or an artwork. */
+  when: { start: string } | null;
+  /** Places and RSVPs so far; null when the offer has neither a limit nor RSVP. */
+  capacity: { limit: number | null; coming: number } | null;
+}
+
+/** v1.3 §16 (Justin, 2026-11-27): the directory's three kinds of listing. */
+export type ContentListingKind = "artist" | "organization" | "associated";
+
+/** v1.3: what the directory shows for one public identity (users row with a slug, directory_listed). */
+export interface ContentPerson {
+  slug: string;
+  entityType: "person" | "organization";
+  /** v1.3 §16: artist; organization (an org-user: some organizations.profile_user_id); associated (a business or place with no org). */
+  listingKind?: ContentListingKind;
+  headline: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  /** oad_dossier.location, the directory's free-text place line. */
+  location: string | null;
+  verified: boolean;
+  vouches: number;
+  claimStatus: "unclaimed" | "pending" | "claimed";
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────

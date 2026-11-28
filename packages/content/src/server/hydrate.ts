@@ -23,6 +23,7 @@ import { fmtDay } from "../model";
 import { typeLabel } from "../registry";
 import { ARTDIRECT_URL, MARKET_URL, NETWORK_HOST, type ContentHost } from "../host";
 import type { ContentSaleState, ContentScope } from "../search-types";
+import { cardAvailable, offerOfArtwork, offerOfThread, payoutRoutes } from "./offers";
 import { isSiteKeeper, mayManageOrg, PERSONAL_ORG, threadReadSql, type ContentRights } from "./access";
 
 export interface IndexRow {
@@ -49,6 +50,8 @@ export interface HydrateCtx {
   scope: ContentScope;
   host: ContentHost;
   now: Date;
+  /** v1.4: also fill `item.offer` (the offers view). Off by default, so other views' items carry no offer field. */
+  offers?: boolean;
 }
 
 const TIME_ZONE = process.env.CHANNEL_TIME_ZONE ?? "America/Toronto";
@@ -90,6 +93,8 @@ const OUTLET_NAME: Record<string, string> = {
 /** Thread kinds that are pieces, and how each is shown (services content-index INDEXED_THREAD_KINDS). */
 const THREAD_TYPES: Record<string, ContentType> = {
   writing: "writing", post: "writing", meeting: "meeting", reading_group: "meeting", series: "series", workshop: "workshop", event: "event",
+  // v1.4: without this a service thread hydrated as "writing" and its offer kind as "artwork" (found 2026-11-27, first real service rows).
+  service: "service",
 };
 
 interface Share { label?: string; kind?: string; url?: string | null; at?: string }
@@ -110,6 +115,13 @@ interface ArtRow {
   owner_name: string | null;
 }
 
+interface FileDbRow {
+  key: string; title: string; type: string; cover: string | null; file_path: string | null; file_mime: string | null;
+  file_size: string | null; org_id: string | null; owner_user_id: string | null; owner_name: string | null;
+}
+
+const fmtBytes = (n: number): string => (n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : n < 1073741824 ? `${(n / 1048576).toFixed(1)} MB` : `${(n / 1073741824).toFixed(1)} GB`);
+
 interface PostRow {
   id: string; org_id: string; owner_id: string; link: string | null;
   shares: Array<Share & { kind: string; label: string; at: string }> | null;
@@ -121,7 +133,7 @@ const hostOf = (url: string | null | undefined): string | null => {
   try { return new URL(url).host; } catch { return null; }
 };
 
-function orgUrlOf(home: OrgHome | undefined): string | null {
+export function orgUrlOf(home: OrgHome | undefined): string | null {
   if (!home) return null;
   if (home.primaryDomain) return `https://${home.primaryDomain}`;
   const proto = /^(localhost|127\.0\.0\.1)(:|$)/.test(NETWORK_HOST) ? "http" : "https";
@@ -210,11 +222,13 @@ function finish(
 }
 
 /** Fill the items for one page of index rows. Rows that cannot be read any more are reported in `missing`, not dropped silently. */
-export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ items: Map<string, ContentListItem>; missing: string[] }> {
+export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ items: Map<string, ContentListItem>; missing: string[]; notes: string[] }> {
   const { rights, scope, host, now } = ctx;
-  const missing: string[] = ["publish_jobs", "plan"];
+  // `missing` is real failed or absent reads only; by-design gaps go to `notes`.
+  const missing: string[] = [];
+  const notes: string[] = ["publish_jobs and the plan-based open steps are not read here"];
   const items = new Map<string, ContentListItem>();
-  if (!rows.length) return { items, missing };
+  if (!rows.length) return { items, missing, notes };
 
   const orgId = scope.kind === "org" ? scope.orgId : null;
   const keeper = isSiteKeeper(rights, host);
@@ -277,7 +291,7 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
       artRows = await db<ArtRow[]>`
         SELECT a.id::text AS id, a.slug, a.title, a.description_html, a.medium, a.height_cm::text AS height_cm, a.width_cm::text AS width_cm,
                a.status, a.kind, a.store_id::text AS store_id, a.created_at, a.updated_at, pm.url AS cover,
-               pv.price_minor, pv.currency, COALESCE(st.display_name, a.store_id::text) AS store_name,
+               pv.price_minor, pv.currency, COALESCE(NULLIF(st.display_name, ''), NULLIF(sou.display_name, ''), NULLIF(soo.name, ''), 'Store') AS store_name,
                COALESCE(CASE WHEN a.credit_status = 'credited' THEN cu.display_name END, a.metadata->>'artistName', au.display_name, st.display_name) AS owner_name,
                EXISTS (SELECT 1 FROM auction_lot l JOIN artwork_variant v ON v.id = l.artwork_variant_id
                         WHERE v.artwork_id = a.id AND l.status IN ('scheduled', 'live')) AS open_lot
@@ -285,6 +299,8 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
         LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
         LEFT JOIN store st ON st.id = a.store_id
         LEFT JOIN users au ON au.id = a.artist_user_id
+        LEFT JOIN users sou ON sou.id = st.owner_user_id
+        LEFT JOIN organizations soo ON soo.id = st.owner_org_id
         LEFT JOIN users cu ON cu.id = a.credited_artist_user_id
         LEFT JOIN LATERAL (SELECT v.price_minor, v.currency FROM artwork_variant v WHERE v.artwork_id = a.id
                             ORDER BY v.price_minor ASC, v.position ASC LIMIT 1) pv ON true
@@ -358,7 +374,7 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
     ]);
     posts = p; letters = l; deliveries = d;
   } else {
-    missing.push("owner-only sources (social posts, letters, deliveries) not read for this viewer");
+    notes.push("owner-only sources (social posts, letters, deliveries) not read for this viewer");
   }
   const postsByLink = new Map<string, PostRow[]>();
   for (const p of posts) if (p.link) postsByLink.set(p.link, [...(postsByLink.get(p.link) ?? []), p]);
@@ -382,6 +398,7 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
   };
   const postIdentity = (p: PostRow) => (p.org_id === PERSONAL_ORG ? meId : `org:${p.org_id}`);
 
+  const ownsRow = (r: IndexRow): boolean => Boolean(rights) && ((r.owner_user_id != null && authorIds.includes(r.owner_user_id)) || (r.owner_identity_id != null && authorIds.includes(r.owner_identity_id)));
   const manageLink = (ref: { store: "thread" | "artwork"; id: string }): { manage?: string | null } => {
     const m = host.urls.manage?.(ref);
     return m === undefined ? {} : { manage: m };
@@ -443,7 +460,7 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
     item.ownerName = t.author_name ?? null;
     item.images = withCover(key, t.cover);
     item.can = canFor(row, item.status);
-    if (keeper) item.hidden = row.hidden;
+    if (keeper || ownsRow(row)) item.hidden = row.hidden;
     items.set(key, item);
   }
 
@@ -497,11 +514,163 @@ export async function hydrateRows(rows: IndexRow[], ctx: HydrateCtx): Promise<{ 
       : a.open_lot ? "in_auction" : row.sale_state === "passed" ? "passed" : "for_sale";
     item.sale = { state: sale, price };
     item.can = canFor(row, item.status);
-    if (keeper) item.hidden = row.hidden;
+    if (keeper || ownsRow(row)) item.hidden = row.hidden;
     items.set(key, item);
+  }
+
+  // ── offers (v1.4): how each piece is taken up. Read-only; no money is computed here ──
+  if (ctx.offers && (threadRows.length || artRows.length)) {
+    try {
+      type OfferFact = {
+        id: string; price_major: string | null; currency: string | null; sliding_min: string | null; rsvp: boolean; lim: number | null;
+        coming: number; reg: string | null;
+      };
+      const facts: OfferFact[] = threadRows.length
+        ? await db<OfferFact[]>`
+            SELECT t.id, COALESCE(wp.price_member, t.price)::text AS price_major, t.currency, wp.price_sliding_min::text AS sliding_min,
+                   t.is_rsvp_enabled AS rsvp, t.attendee_limit AS lim, wp.registration_status AS reg,
+                   (SELECT count(*) FROM thread_rsvps r WHERE r.thread_id = t.id AND r.status = 'yes')::int AS coming
+            FROM threads t LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
+            WHERE t.id = ANY(${threadRows.map((t) => t.id)})`
+        : [];
+      const factOf = new Map<string, OfferFact>(facts.map((f) => [f.id, f] as [string, OfferFact]));
+      const payees = await payoutRoutes([...threadRows.map((t) => t.author_id), ...artRows.map((a) => rowOf.get(`artwork:${a.id}`)?.owner_user_id ?? "")]);
+      const card = cardAvailable();
+      for (const t of threadRows) {
+        const item = items.get(`thread:${t.id}`);
+        const f = factOf.get(t.id);
+        if (!item || !f) continue;
+        const major = f.price_major == null ? 0 : Number(f.price_major);
+        const priced = major > 0;
+        const sliding = f.sliding_min == null ? null : Math.round(Number(f.sliding_min) * 100);
+        const start = t.next_session ?? t.scheduled_at;
+        item.offer = offerOfThread({
+          kind: t.kind, type: THREAD_TYPES[t.kind] ?? "writing",
+          priceMinor: priced ? Math.round(major * 100) : null, currency: priced ? f.currency || "CAD" : null, slidingMinMinor: sliding,
+          rsvp: f.rsvp, limit: f.lim, coming: f.coming, registrationOpen: (f.reg ?? "open") === "open", start: iso(start),
+        }, { cardAvailable: card, payoutOk: payees.get(t.author_id) === true });
+      }
+      for (const a of artRows) {
+        const item = items.get(`artwork:${a.id}`);
+        if (!item) continue;
+        const owner = rowOf.get(`artwork:${a.id}`)?.owner_user_id ?? "";
+        item.offer = offerOfArtwork({ priceMinor: a.price_minor == null ? null : Number(a.price_minor), currency: a.currency }, { cardAvailable: card, payoutOk: payees.get(owner) === true });
+      }
+    } catch (err) {
+      console.error("[content] offers:", err instanceof Error ? err.message : err);
+      missing.push("offers");
+    }
+  }
+
+  // ── files (Step 5): the index row is the source; the bytes stay behind /api/media and serveMedia ──
+  const fileKeys = rows.filter((r) => r.store === "file").map((r) => r.key);
+  if (fileKeys.length) {
+    try {
+      const frs = await db<FileDbRow[]>`
+        SELECT ci.key, ci.title, ci.type, ci.cover, ci.file_path, ci.file_mime, ci.file_size::text AS file_size, ci.org_id,
+               ci.owner_user_id::text AS owner_user_id, u.display_name AS owner_name
+        FROM content_index ci LEFT JOIN users u ON u.id = ci.owner_user_id
+        WHERE ci.key = ANY(${fileKeys}::text[])`;
+      // The viewer's own source keys, so a file in their tree reads as { source: "mine", path: <below the root> }.
+      const sources = rights && host.fileSources ? await host.fileSources({ userId: rights.userId }).catch(() => []) : [];
+      const roots = sources.filter((x) => x.root).map((x) => ({ ...x, root: x.root.replace(/\/+$/, "") })).sort((x, y) => y.root.length - x.root.length);
+      for (const f of frs) {
+        const row = rowOf.get(f.key);
+        if (!row || !f.file_path) continue;
+        const type = (f.type || "file") as ContentType;
+        const owns = ownsRow(row);
+        const manages = Boolean(rights && row.org_id && mayManageOrg(rights, row.org_id));
+        const hasPrivate = /(^|\/)private(\/|$)/i.test(f.file_path);
+        const src = roots.find((x) => f.file_path!.startsWith(`${x.root}/`) && (x.showPrivate || !hasPrivate));
+        const rel = src ? f.file_path.slice(src.root.length + 1) : f.file_path;
+        const slash = rel.lastIndexOf("/");
+        const folder = slash > 0 ? rel.slice(0, slash) : "";
+        const size = f.file_size == null ? null : Number(f.file_size);
+        const url = `/api/media/${f.file_path}`;
+        const orgName = row.org_id ? homeOf(row.org_id)?.orgName ?? row.org_id : null;
+        const ownerName = f.owner_name ?? orgName;
+        const item: ContentListItem = {
+          key: f.key, type, title: f.title,
+          meta: [typeLabel(type), size == null ? null : fmtBytes(size), folder || null].filter(Boolean).join(" · "),
+          excerpt: folder,
+          cover: type === "image" ? f.cover ?? url : null,
+          status: "published",
+          siteIdentityId: row.owner_user_id ? `user:${row.owner_user_id}` : row.org_id ? `org:${row.org_id}` : "",
+          siteName: orgName ?? (owns ? "My files" : `${f.owner_name ?? "Member"}'s files`),
+          siteHost: null,
+          ownerIdentityId: row.owner_user_id ? `user:${row.owner_user_id}` : row.org_id ? `org:${row.org_id}` : null,
+          series: null, createdAt: row.sort_iso, date: row.sort_iso, marks: [], note: null, timeline: [],
+          links: { public: url, studio: null },
+          store: "file",
+          file: { source: src?.key ?? "network", path: rel, mime: f.file_mime, size, folder },
+        };
+        item.ownerName = ownerName;
+        item.images = type === "image" ? [item.cover ?? url] : [];
+        // A file is not published, archived or hidden here; the owner and the org's managers may change it in their folders.
+        item.can = { edit: owns || manages || keeper, hide: false, publish: false, archive: false, pick: owns || Boolean(rights && row.org_id && (rights.affiliateOrgIds ?? Object.entries(rights.roles).filter(([, role]) => role !== "viewer").map(([o]) => o)).includes(row.org_id)) };
+        items.set(f.key, item);
+      }
+    } catch (err) {
+      console.error("[content] files:", err instanceof Error ? err.message : err);
+      missing.push("files");
+    }
+  }
+
+  // ── people (v1.3, CONTRACT §15): directory identities, public by construction ──
+  // Read from the identity's own users row, re-checking the directory rule (slug + directory_listed) so an
+  // identity unlisted since its row was indexed never shows. Never reads email or identity_control.
+  const personKeys = rows.filter((r) => r.store === "person").map((r) => r.key);
+  if (personKeys.length) {
+    try {
+      const prs = await db<Array<{
+        key: string; id: string; title: string; excerpt: string | null; cover: string | null; slug: string;
+        entity_type: string | null; city: string | null; region: string | null; country: string | null;
+        location: string | null; verified: boolean | null; claim_status: string | null; vouches: number; org_user: boolean;
+      }>>`
+        SELECT ci.key, u.id::text AS id, ci.title, ci.excerpt, ci.cover, u.slug, u.entity_type, u.city, u.region, u.country,
+               u.oad_dossier->>'location' AS location, u.verified, u.claim_status,
+               (SELECT count(*) FROM profile_vouches v WHERE v.subject_id = u.id)::int AS vouches,
+               EXISTS (SELECT 1 FROM organizations o WHERE o.profile_user_id = u.id) AS org_user
+        FROM content_index ci JOIN users u ON u.id::text = ci.id
+        WHERE ci.key = ANY(${personKeys}::text[]) AND ci.store = 'person' AND u.slug IS NOT NULL AND u.directory_listed`;
+      for (const pr of prs) {
+        const row = rowOf.get(pr.key);
+        if (!row) continue;
+        const entityType = pr.entity_type === "organization" ? "organization" : "person";
+        const claim = pr.claim_status === "pending" || pr.claim_status === "claimed" ? pr.claim_status : "unclaimed";
+        const place = [pr.city, pr.region, pr.country].filter(Boolean).join(", ") || pr.location || null;
+        const item: ContentListItem = {
+          key: pr.key, type: "person", title: pr.title,
+          meta: [pr.excerpt, place].filter(Boolean).join(" · "),
+          excerpt: pr.excerpt ?? "",
+          cover: pr.cover,
+          status: "published",
+          siteIdentityId: pr.key, siteName: pr.title, siteHost: null,
+          // The identity is its own owner here; nothing points past it to an account.
+          ownerIdentityId: null,
+          series: null, createdAt: row.sort_iso, date: null, marks: [], note: null, timeline: [],
+          links: { public: host.urls.person?.({ id: pr.id, slug: pr.slug, entityType }) ?? null, studio: null },
+          store: "person",
+        };
+        item.ownerName = pr.title;
+        item.images = pr.cover ? [pr.cover] : [];
+        // Signed-in viewers may pick (reference) a public identity; nothing else is offered on a person row.
+        item.can = { edit: false, hide: false, publish: false, archive: false, pick: Boolean(rights) };
+        item.person = {
+          slug: pr.slug, entityType,
+          listingKind: pr.org_user ? "organization" : entityType === "organization" ? "associated" : "artist",
+          headline: pr.excerpt, city: pr.city, region: pr.region, country: pr.country,
+          location: pr.location, verified: Boolean(pr.verified), vouches: pr.vouches, claimStatus: claim,
+        };
+        items.set(pr.key, item);
+      }
+    } catch (err) {
+      console.error("[content] people:", err instanceof Error ? err.message : err);
+      missing.push("people");
+    }
   }
 
   const gone = rows.filter((r) => !items.has(r.key) && r.store !== "file").length;
   if (gone && !missing.some((m) => m.startsWith("threads") || m === "artwork")) missing.push(`${gone} indexed row(s) no longer exist or are unreadable`);
-  return { items, missing };
+  return { items, missing, notes };
 }

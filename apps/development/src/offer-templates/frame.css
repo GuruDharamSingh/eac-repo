@@ -1,0 +1,6 @@
+/* The one-dialog surface system's own styles (hosts load this in globals.css; the dev app did not). */
+@import "@elkdonis/cms-ui/surface.css";
+/* A template route fills the window: the dev app's own chrome steps aside. */
+.dev-app:has(.ot-frame) > :not(.dev-main) { display: none !important; }
+.dev-main:has(.ot-frame) { padding: 0 !important; margin: 0 !important; max-width: none !important; width: 100% !important; }
+body:has(.ot-frame) { margin: 0; background: #1b1e20; }

@@ -39,6 +39,29 @@ export async function register() {
     setInterval(topUp, 60 * 60 * 1000);
   }
 
+  // Connected Google Calendars: every minute, write the schedule where it has changed.
+  // A no-op until migration 295 is applied and a Google client is set.
+  if (process.env.DISABLE_GOOGLE_CALENDAR !== "1") {
+    let running = false;
+    const syncCalendars = async () => {
+      if (running) return;
+      running = true;
+      try {
+        const [{ syncOrgCalendarLinks }, { calendarSite }] = await Promise.all([
+          import("@elkdonis/services/google-calendar"),
+          import("@/lib/google-calendar"),
+        ]);
+        await syncOrgCalendarLinks(calendarSite);
+      } catch (err) {
+        console.error("[elktours] google calendar tick error:", err);
+      } finally {
+        running = false;
+      }
+    };
+    setTimeout(syncCalendars, 45_000);
+    setInterval(syncCalendars, 60_000);
+  }
+
   if (process.env.DISABLE_REMINDER_SCHEDULER === "1") return;
 
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3021";

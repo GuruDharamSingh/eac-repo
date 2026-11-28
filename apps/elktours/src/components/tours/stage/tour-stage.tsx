@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, Suspense, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useSyncExternalStore, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   SurfaceFrame,
@@ -23,7 +23,13 @@ import {
   type TourStageData,
   type TourStageOptions,
 } from "./types";
+import { StageEditProvider, createStageEditStore, useStageEdit } from "./edit/stage-edit-store";
+import { StageEditHost } from "./edit/stage-edit-host";
+import { StopEditRow } from "./edit/route-chips";
+import { StopLineEdit } from "./edit/stop-line-edit";
+import { PlacePicturesEdit, StopPicturesEdit } from "./edit/pictures";
 import "./tour-stage.css";
+import "./edit/stage-edit.css";
 
 // Desktop tour stage, reworked toward design 1a (developer, 2026-11-20): the strip's cards are the cover with the
 // stop's number centred and grow over the stage on hover; Book is always in the foot and the last card; the place
@@ -93,6 +99,16 @@ export function TourStage({ host, ...props }: Partial<TourStageOptions> & { host
   // null until the visitor picks a face: the backdrop then follows the face the stage opened on (startAt).
   const [active, setActive] = useState<string | null>(null);
   const pageHref = host?.pageHref ?? null;
+  // Editors only, on the tour page itself (not the popup, not the phone): the stage can be edited where it is read.
+  const [store] = useState(createStageEditStore);
+  const editable = !host && !!page?.canEdit;
+  const editing = useStageEdit_(store, editable);
+  useEffect(() => {
+    if (!editable) return;
+    const on = () => store.set({ editing: true });
+    window.addEventListener("elk:stage-edit", on);
+    return () => window.removeEventListener("elk:stage-edit", on);
+  }, [editable, store]);
 
   const ctx = useMemo<Ctx | null>(() => {
     if (!page || !data) return null;
@@ -154,6 +170,7 @@ export function TourStage({ host, ...props }: Partial<TourStageOptions> & { host
   const backdropUrl = activeStop ? activeStop.cover : data!.overviewPhotos[0]?.url ?? null;
 
   return (
+    <StageEditProvider value={editable ? store : null}>
     <StageCtx.Provider value={ctx}>
       <SurfaceStage
         faces={faces}
@@ -163,7 +180,7 @@ export function TourStage({ host, ...props }: Partial<TourStageOptions> & { host
         showStrip={o.showStrip}
         height={host?.height ?? o.height}
         urlParam={null}
-        className={`ts-root${host ? " ts-root--popup" : ""}`}
+        className={`ts-root${host ? " ts-root--popup" : ""}${editing ? " ts-root--editing" : ""}`}
         onClose={host?.onClose}
         onSelect={(id: string) => {
           if (id !== BOOK) setActive(id);
@@ -185,8 +202,16 @@ export function TourStage({ host, ...props }: Partial<TourStageOptions> & { host
           ) : null
         }
       />
+      {editing && page ? <StageEditHost tourId={page.tour.id} store={store} /> : null}
     </StageCtx.Provider>
+    </StageEditProvider>
   );
+}
+
+/** Whether edit mode is on (only ever true where editing is offered). */
+function useStageEdit_(store: ReturnType<typeof createStageEditStore>, editable: boolean): boolean {
+  const on = useSyncExternalStore(store.subscribe, () => store.get().editing, () => false);
+  return editable && on;
 }
 
 const CUSTOM: Record<string, (p: { descriptor: Custom }) => ReactNode> = {
@@ -220,7 +245,9 @@ function FootStatus() {
 function useFootActions(own: SurfaceAction[]): SurfaceAction[] {
   const stage = useSurfaceStage();
   const { pageHref } = useStageCtx();
+  const edit = useStageEdit();
   return [
+    ...(edit && !edit.editing ? [{ label: "Edit this page", quiet: true, onClick: () => edit.store.set({ editing: true }) } as SurfaceAction] : []),
     ...(pageHref ? [{ label: "Tour page", href: pageHref, quiet: true } as SurfaceAction] : []),
     ...own,
     { label: "Book", primary: true, onClick: () => stage?.select(BOOK) },
@@ -519,7 +546,8 @@ function StopSurface({ stopId }: { stopId: string }) {
   const narrative = stop.narrative ? clip(stop.narrative, o.narrativeMax) : null;
   const lines = [stop.place?.excerpt ?? null].filter(Boolean) as string[];
   const walk = next && next.number === stop.number + 1 && stop.walkMinutesToNext ? stop.walkMinutesToNext : null;
-  const showPlace = placeHasDetails(stop);
+  const editing = !!useStageEdit()?.editing;
+  const showPlace = placeHasDetails(stop) || (editing && !!stop.place);
 
   const crumb = (
     <>
@@ -538,7 +566,10 @@ function StopSurface({ stopId }: { stopId: string }) {
     <SurfaceFrame kind="neutral" title={stop.title} kicker={crumb} flush status={<FootStatus />} actions={actions}>
       <div className="ts-body">
         <div className={`ts-left ts-left--stop${showPlace ? " has-panel" : ""}`}>
-          {narrative ? (
+          {editing && <StopEditRow stopId={stop.id} />}
+          {editing ? (
+            <StopLineEdit stopId={stop.id} fallback={stop.narrativeIsFallback ? stop.narrative : null} />
+          ) : narrative ? (
             <p className="ts-narr">{narrative}</p>
           ) : lines.length ? (
             <p className="ts-narr ts-narr--quiet">{clip(lines[0]!, o.narrativeMax)}</p>
@@ -578,6 +609,7 @@ function StopSurface({ stopId }: { stopId: string }) {
         </div>
         <div className="ts-right">
           <StopMedia key={stop.id} stop={stop} media={over.media ?? o.media} lead={over.lead ?? o.lead} caption={over.caption} />
+          {editing && <StopPicturesEdit stopId={stop.id} />}
         </div>
       </div>
     </SurfaceFrame>
@@ -603,6 +635,7 @@ export function placeLine(stop: StageStopData): string {
 /** The stop's place, grown in place over the narrative (design 1a), not a layer over the whole stage. */
 function PlacePanel({ stop }: { stop: StageStopData }) {
   const place = stop.place!;
+  const editing = !!useStageEdit()?.editing;
   const facts: [string, string][] = [];
   if (stop.durationMinutes) facts.push(["Time here", formatDuration(stop.durationMinutes) ?? ""]);
   if (place.address) facts.push(["Address", place.address]);
@@ -637,6 +670,7 @@ function PlacePanel({ stop }: { stop: StageStopData }) {
       <Facts facts={facts} />
       {place.excerpt && <p className="ts-about">{place.excerpt}</p>}
       <Takes takes={stop.takes} />
+      {editing && <PlacePicturesEdit placeId={place.id} placeTitle={place.title} />}
       {links.length > 0 && (
         <div className="ts-links">
           {links.map((l) => (

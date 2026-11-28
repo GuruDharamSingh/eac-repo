@@ -28,6 +28,7 @@
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/content": "workspace:*",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/hub": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "@elkdonis/utils": "workspace:*"
   },

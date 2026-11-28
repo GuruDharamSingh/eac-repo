@@ -38,6 +38,9 @@ const DEFS: StepTypeDef[] = [
   { type: 'session', label: 'Gathering', describe: 'A live meeting, event or workshop that already exists on the network.', completion: 'manual', doneLabel: 'I was there', invitesReflection: true, needsThread: true },
   { type: 'thread', label: 'Conversation', describe: 'A forum thread to read and take part in.', completion: 'manual', doneLabel: "I've joined the conversation", invitesReflection: false, needsThread: true },
   { type: 'resource', label: 'Resource', describe: 'A file, a link, a reference. Usually optional.', completion: 'manual', doneLabel: 'Seen', invitesReflection: false, needsThread: false },
+  // A thing done on another page of the network, which the platform cannot see or run yet (2026-11-27, rails desk lane A):
+  // the body says what it does and where, with a "Take me there" link; the person says when it is done.
+  { type: 'place', label: 'Somewhere to do it', describe: 'A thing done on another page of the network. Take me there, then say it is done.', completion: 'manual', doneLabel: 'I did it', invitesReflection: false, needsThread: false },
   { type: 'task', label: 'Something to set up', describe: 'A thing to do on the network itself — your profile, a page, a store, an organisation. It ticks itself when it is done.', completion: 'derived', doneLabel: 'Done', invitesReflection: false, needsThread: false },
 ];
 

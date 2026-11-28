@@ -38,6 +38,12 @@ export interface ContentRights {
   roles: Record<string, ThreadRole>;
   /** Orgs the viewer owns or guides, "oad" excluded (managing rights). */
   managedOrgIds: string[];
+  /**
+   * Orgs the viewer is affiliated with in media-authz's sense (isOrgAffiliate): a non-viewer role, or an
+   * org_profiles row without a viewer membership. Gates private org files. Optional so synthetic rights keep
+   * working; when absent, the non-viewer roles in `roles` stand in.
+   */
+  affiliateOrgIds?: string[];
 }
 
 export async function resolveRights(viewer: ContentViewer): Promise<ContentRights> {
@@ -48,7 +54,15 @@ export async function resolveRights(viewer: ContentViewer): Promise<ContentRight
   ]);
   const roles: Record<string, ThreadRole> = {};
   for (const m of memberships) roles[m.orgId] = m.role as ThreadRole;
+  const affiliateOrgIds = await db<Array<{ org_id: string }>>`
+    SELECT org_id FROM user_organizations WHERE user_id = ${viewer.userId} AND role <> 'viewer'
+    UNION
+    SELECT op.org_id FROM org_profiles op WHERE op.user_id = ${viewer.userId}
+      AND NOT EXISTS (SELECT 1 FROM user_organizations uo WHERE uo.user_id = op.user_id AND uo.org_id = op.org_id AND uo.role = 'viewer')`
+    .then((rows) => rows.map((x) => x.org_id))
+    .catch(() => Object.entries(roles).filter(([, role]) => role !== "viewer").map(([org]) => org));
   return {
+    affiliateOrgIds,
     userId: viewer.userId,
     isAdmin: admin,
     identityIds,
@@ -106,7 +120,26 @@ export const siteOrgIds = (host: ContentHost): string[] => [host.site.orgId, ...
 export interface ContentReadOptions {
   /** A keeper or admin asks for hidden rows too; ignored (never honoured) for anyone else. */
   includeHidden?: boolean;
+  /**
+   * v1.3 (CONTRACT §15): also admit directory identity rows (store person, and org once indexed), by their own
+   * rule only: published, PUBLIC, not hidden, for every viewer. Without it identity rows are never admitted, so
+   * every caller that predates migration 298 (search views, suggest, resolve, MCP) reads exactly what it did.
+   */
+  people?: boolean;
+  /**
+   * v1.4 (CONTRACT §16 revised): admit rows of type `service`. Without it a service row is never read, so every
+   * existing caller (published/all/files views, suggest, resolveContentRefs, MCP) returns what it did. Only the
+   * offers view sets it. It changes nothing else: services follow the same rights as any thread.
+   */
+  offers?: boolean;
 }
+
+/** The identity stores of migration 298. */
+const IDENTITY_STORES = ["person", "org"];
+
+/** Directory identities: public and published for everyone, and nothing else (no owner, keeper or admin widening). */
+const identityReadSql = () =>
+  db`(ci.store = ANY(${IDENTITY_STORES}::text[]) AND ci.status = 'published' AND ci.visibility = 'PUBLIC' AND NOT ci.hidden)`;
 
 /**
  * SQL over alias `ci` (content_index): the rows of `scope` this viewer may read, by the one rule of
@@ -123,13 +156,21 @@ export interface ContentReadOptions {
  * Throws for a null `rights` outside the network and person scopes.
  */
 export function contentReadSql(rights: ContentRights | null, scope: ContentScope | null, host: ContentHost, opts: ContentReadOptions = {}) {
+  // Pieces never include identity rows; identities are added by their own clause, only when asked for.
+  const noService = opts.offers ? db`true` : db`ci.type <> 'service'`;
+  const pieces = db`(NOT (ci.store = ANY(${IDENTITY_STORES}::text[])) AND ${noService} AND ${pieceReadSql(rights, scope, host, opts)})`;
+  return opts.people ? db`(${pieces} OR ${identityReadSql()})` : pieces;
+}
+
+/** The pieces rule of CONTRACT §4 (threads, artwork, files), as contentReadSql had it before v1.3. */
+function pieceReadSql(rights: ContentRights | null, scope: ContentScope | null, host: ContentHost, opts: ContentReadOptions) {
   if (scope?.kind === "network" || (scope === null && !rights)) {
-    return db`(ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
+    return db`(ci.store <> 'file' AND ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
   }
   if (scope?.kind === "person" && !rights) {
     // A signed-out visitor sees a person's published public work only.
     return db`((ci.owner_user_id = ${scope.userId}::uuid OR ci.owner_identity_id = ${scope.userId}::uuid)
-      AND ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
+      AND ci.store <> 'file' AND ci.status = 'published' AND NOT ci.hidden AND ci.visibility = 'PUBLIC')`;
   }
   if (!rights) throw new Error("contentReadSql: this scope needs a signed-in viewer");
   const r = rights;
@@ -138,6 +179,7 @@ export function contentReadSql(rights: ContentRights | null, scope: ContentScope
 
   const scopeSql =
     scope === null ? db`true`
+    : scope.kind === "mine" && scope.includeManagedOrgs ? db`(ci.owner_user_id = ANY(${ids}::uuid[]) OR ci.owner_identity_id = ANY(${ids}::uuid[]) OR ci.org_id = ANY(${r.managedOrgIds}::text[]))`
     : scope.kind === "mine" || (scope.kind === "person" && scope.userId === r.userId) ? db`(ci.owner_user_id = ANY(${ids}::uuid[]) OR ci.owner_identity_id = ANY(${ids}::uuid[]))`
     : scope.kind === "person" ? db`(ci.owner_user_id = ${scope.userId}::uuid OR ci.owner_identity_id = ${scope.userId}::uuid)`
     : scope.kind === "org" ? db`(ci.org_id = ${scope.orgId} OR ci.store_id = ANY(ARRAY(
@@ -148,7 +190,8 @@ export function contentReadSql(rights: ContentRights | null, scope: ContentScope
 
   const keeper = isSiteKeeper(r, host);
   const hiddenOk = keeper && opts.includeHidden === true;
-  const hiddenSql = hiddenOk ? db`true` : db`NOT ci.hidden`;
+  // `mine` is the viewer's own rows, hidden ones included (flagged; the status filter decides what shows).
+  const hiddenSql = hiddenOk || scope?.kind === "mine" || (scope?.kind === "person" && scope.userId === r.userId) ? db`true` : db`NOT ci.hidden`;
   if (r.isAdmin) return db`(${scopeSql} AND ${hiddenSql})`;
 
   const atLeast = (min: ThreadRole) => orgs(Object.entries(r.roles).filter(([, role]) => RANK_OF[role] >= RANK_OF[min]).map(([org]) => org));
@@ -158,12 +201,22 @@ export function contentReadSql(rights: ContentRights | null, scope: ContentScope
     OR (ci.min_role = 'guide' AND ci.org_id = ANY(${atLeast("guide")}::text[]))
     OR (ci.min_role = 'owner' AND ci.org_id = ANY(${atLeast("owner")}::text[]))
   )`;
+  // Files (Step 5, CONTRACT s14): a file is never network- or person-discoverable for anyone but its owner (the owner
+  // clause below). Others read it only as an affiliate of its org (public and private files of the org, media-authz
+  // isOrgAffiliate), as a manager of its org (workshop files), as a site keeper (keeperSql), or as admin. Being reachable
+  // by URL is not being discoverable; reuse goes through a published piece's `images`.
+  const affil = orgs(r.affiliateOrgIds ?? Object.entries(r.roles).filter(([, role]) => role !== "viewer").map(([org]) => org));
+  const fileSql = db`(ci.store = 'file' AND ci.status = 'published' AND NOT ci.hidden AND (
+    (ci.owner_user_id IS NULL AND ci.visibility IN ('PUBLIC', 'PRIVATE') AND ci.org_id = ANY(${affil}::text[]))
+    OR (ci.visibility = 'WORKSHOP' AND ci.org_id = ANY(${orgs(r.managedOrgIds)}::text[]))
+  ))`;
   const keeperSql = keeper ? db`(ci.site_org_id = ANY(${sites}::text[]) OR ci.org_id = ANY(${sites}::text[]))` : db`false`;
   return db`(${scopeSql} AND ${hiddenSql} AND (
     ${keeperSql}
+    OR ${fileSql}
     OR ci.owner_user_id = ANY(${ids}::uuid[]) OR ci.owner_identity_id = ANY(${ids}::uuid[])
     OR (ci.status <> 'published' AND NOT ci.hidden AND ci.org_id = ANY(${orgs(r.managedOrgIds)}::text[]) AND (ci.min_role IS NULL OR ${strict}))
-    OR (ci.status = 'published' AND NOT ci.hidden AND (
+    OR (ci.store <> 'file' AND ci.status = 'published' AND NOT ci.hidden AND (
       ci.visibility = 'PUBLIC'
       OR (ci.visibility = 'ORGANIZATION' AND ci.org_id = ANY(${orgs(Object.keys(r.roles))}::text[]))
       OR (ci.visibility = 'INVITE_ONLY' AND ci.min_role IS NOT NULL AND ${strict})

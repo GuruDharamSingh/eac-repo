@@ -1,0 +1,8 @@
+/* join: the one quick sign-up layer (layers-join.tsx). Fields, labels and the bronze focus come from the
+   shared .osf-field / .osf-input in offer.css (the packet's #1b1e20 field, border turning bronze on focus);
+   this file only spaces the layer's own pieces. Tokens only. */
+
+.osf-root .osf-join-lead { color: var(--os-ink-bone); font-size: 14px; line-height: 1.45; }
+.osf-root .osf-join-pitch { max-width: 46ch; }
+.osf-root .osf-join-fields { display: grid; gap: 10px; min-width: 0; }
+.osf-root .osf-join-ts { min-height: 0; }

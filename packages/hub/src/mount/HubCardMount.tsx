@@ -35,12 +35,31 @@ export interface HubMountLinks {
   loginPath?: string;
 }
 
+/** What a host's edit form is told (Content round 2, 2026-11-26). */
+export interface HubRenderEditArgs {
+  /** The piece's content key, e.g. "artwork:<id>". */
+  key: string;
+  /** Saved: the card pops back to the piece and refreshes. */
+  onDone(): void;
+  /** Cancelled: the card pops back to the piece. */
+  onCancel(): void;
+}
+
+/**
+ * Function-valued host extras a card may read beyond HubCardHost. Optional, so existing mounts are unchanged.
+ * `renderEdit`: the host's own edit form for a piece, drawn INSIDE the card's popup as the third frame
+ * (list > piece > edit). Absent: the card links out to the Studio instead.
+ */
+export interface HubCardHostExtras {
+  renderEdit?(args: HubRenderEditArgs): React.ReactNode;
+}
+
 export interface HubCardMountBase<H extends HubCardHost> {
   /** The write door: a host server action bound to this site. */
   act: HubCardHost['act'];
   links?: HubMountLinks;
   /** Function-valued host members (puckEditHref, uploadImage, hubHref…). Only possible from a client module. */
-  host?: Partial<H>;
+  host?: Partial<H> & HubCardHostExtras;
   /** router.push. Default: window.location.assign. */
   navigate?: (href: string) => void;
   /** router.refresh. Default: window.location.reload. */

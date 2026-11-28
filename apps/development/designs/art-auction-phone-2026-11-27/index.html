@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art-auction on a phone · sheets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Design prototype, 2026-11-27. Market look read from apps/art-auction/src/app/globals.css:85-122
+   (HSL triplets converted): paper ground, white card, warm ink, vermilion primary, auction green.
+   Sheet rules from the publication handoff (designs/publication-surfaces-2026-11-27/README.md).
+   Contrast (WCAG, computed): ink #201b18 on #fff 17.0, on #f9f8f6 16.0; muted ink #67615b on #fff 6.1,
+   on #f2f0ee 5.4; white on vermilion #bf3122 5.9; live green #20794f on #fff 5.5; line #e0dbd7 is
+   decoration only; input border #8c847d on #fff 3.7 (the 3:1 rule for controls). */
+:root{
+  --bg:#f9f8f6; --card:#fff; --ink:#201b18; --muted:#67615b; --soft:#f2f0ee; --line:#e0dbd7; --field:#8c847d;
+  --primary:#bf3122; --on-primary:#fff; --accent:#f6e6cb; --live:#20794f; --danger:#b81e1e; --wall:#f0edea;
+  --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --k-artwork:#bf3122; --k-lot:#20794f; --k-order:#8a5a2b; --k-pay:#201b18; --k-done:#20794f; --k-artist:#6b4f8a; --k-work:#2d55c8; --k-share:#67615b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#e9e5df;color:var(--ink);font:14px/1.45 var(--sans)}
+button{font:inherit;color:inherit}
+.wrap{display:flex;gap:28px;justify-content:center;align-items:flex-start;padding:0}
+.rules{display:none}
+@media (min-width:900px){
+  .wrap{padding:24px}
+  .rules{display:block;max-width:520px;font-size:13px}
+  .phone{border-radius:38px;box-shadow:0 0 0 10px #1c1a18,0 30px 60px -20px rgba(0,0,0,.5)}
+}
+.rules h1{font:600 22px/1.2 var(--serif);margin:0 0 4px}
+.rules h2{font:600 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:20px 0 6px}
+.rules ol,.rules ul{margin:0;padding-left:18px}
+.rules li{margin:3px 0}
+.rules code{font:12px var(--mono);background:#fff;padding:0 4px;border:1px solid var(--line)}
+.rules .q{background:#fff;border:1px solid var(--line);border-left:3px solid var(--primary);padding:8px 10px;margin:6px 0}
+
+/* ── the phone ── */
+.phone{position:relative;width:390px;height:844px;overflow:hidden;background:var(--bg);flex:none}
+.urlbar{height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#efece8;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden}
+.urlbar b{color:var(--ink);font-weight:500}
+.urlbar .u{overflow:hidden;text-overflow:ellipsis}
+.page{position:absolute;inset:44px 0 56px 0;overflow-y:auto;scrollbar-width:none}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:56px;display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid var(--line)}
+.tabs button{border:0;background:none;font-size:11px;color:var(--muted);display:grid;place-items:center;gap:0;padding:6px 0;cursor:pointer}
+.tabs button span{font-size:17px;line-height:1}
+.tabs button[aria-current=true]{color:var(--ink);font-weight:600}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px}
+.brand{font:600 19px var(--serif)}
+.hdr small{color:var(--muted);font-size:12px}
+.sec{padding:6px 16px 14px}
+.sec h2{font:600 22px/1.15 var(--serif);margin:4px 0 2px}
+.sec p.lede{color:var(--muted);margin:0 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{border:0;background:none;padding:0;text-align:left;cursor:pointer}
+.card .img{aspect-ratio:4/5}
+.card b{display:block;font:500 14px/1.25 var(--serif);margin-top:6px}
+.card small{display:block;color:var(--muted);font-size:12px}
+.card .pr{font-size:13px;font-weight:600;margin-top:2px}
+.img{background:repeating-linear-gradient(135deg,var(--tone,#d9cfc4) 0 8px,color-mix(in srgb,var(--tone,#d9cfc4) 80%,#fff) 8px 9px);border:1px solid rgba(0,0,0,.06);display:grid;place-items:center;color:rgba(0,0,0,.35);font:10px var(--mono)}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;cursor:pointer}
+.row .img{width:64px;height:76px}
+.row b{font:500 15px/1.2 var(--serif);display:block}
+.row small{color:var(--muted);font-size:12px}
+.clock{font:500 11px var(--mono);color:var(--live)}
+.pill{display:inline-block;font:500 11px var(--sans);padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--ink)}
+.pill.live{background:#e3f1ea;color:var(--live)}
+.pill.warn{background:#fbe9e6;color:var(--danger)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600;cursor:pointer}
+.btn.p{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.btn.full{width:100%}
+.note{font-size:12px;color:var(--muted)}
+.box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+
+/* ── sheets ── */
+.scrim{position:absolute;inset:0;background:rgba(32,27,24,.45);opacity:0;transition:opacity .3s;pointer-events:none}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -18px 40px -10px rgba(0,0,0,.35);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .42s cubic-bezier(.2,.9,.25,1),height .3s cubic-bezier(.2,.9,.25,1)}
+.sheet.on{transform:none}
+.grab{display:grid;place-items:center;padding:8px 0 2px}
+.grab i{width:38px;height:4px;border-radius:2px;background:var(--line)}
+.sh-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 12px 10px 16px;border-bottom:2px solid var(--kc)}
+.kick{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden}
+.kick .crumb{border:0;background:none;padding:0;color:var(--primary);font:inherit;letter-spacing:inherit;text-transform:none;cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.kick i{width:8px;height:8px;border-radius:2px;background:var(--kc);flex:none}
+.sh-title{font:600 20px/1.12 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb{min-width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:15px}
+.sh-body{flex:1;overflow-y:auto;padding:14px 16px;display:grid;gap:12px;align-content:start;animation:push .3s cubic-bezier(.2,.9,.25,1)}
+@keyframes push{from{opacity:0;transform:translateX(22px)}}
+.sh-foot{padding:10px 16px 26px;border-top:1px solid var(--line);display:grid;gap:8px;background:#fff}
+.sh-foot .status{text-align:center;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sh-foot .acts{display:flex;gap:8px}
+.sh-foot .acts .btn.p{flex:1}
+.specs{display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px}
+.specs dt{color:var(--muted)}
+.specs dd{margin:0}
+.thumbs{display:flex;gap:6px}
+.thumbs .img{width:52px;height:62px;cursor:pointer}
+.thumbs .img.sel{outline:2px solid var(--ink);outline-offset:1px}
+.name{border:0;background:none;padding:0;font-weight:600;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;cursor:pointer}
+.opt{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;cursor:pointer;text-align:left;width:100%;min-height:48px}
+.opt .dot{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--field);display:grid;place-items:center}
+.opt[aria-pressed=true]{border-color:var(--ink)}
+.opt[aria-pressed=true] .dot::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--ink)}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.field{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.field input,.field textarea,.field select{min-height:44px;border:1px solid var(--field);border-radius:10px;padding:0 12px;font:15px var(--sans);color:var(--ink);background:#fff}
+.field textarea{padding:10px 12px;min-height:72px}
+.ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ladder button{min-height:48px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font:600 15px var(--sans);cursor:pointer}
+.ladder button[aria-pressed=true]{border-color:var(--live);background:#e3f1ea;color:var(--live)}
+.bidhead{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bidhead .box b{display:block;font:600 22px var(--serif)}
+.bidhead .box small{font:500 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.totals{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:13px}
+.totals .t{font-weight:700;font-size:15px;border-top:1px solid var(--line);padding-top:6px}
+.check{width:52px;height:52px;border-radius:50%;background:var(--live);color:#fff;display:grid;place-items:center;font-size:26px;animation:pop .5s cubic-bezier(.3,1.5,.5,1);margin:4px auto 0}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}}
+.center{text-align:center}
+.strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.strip .img{flex:none;width:96px;height:116px}
+.steps{display:flex;gap:4px}
+.steps i{flex:1;height:3px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--k-work)}
+.drop{border:1.5px dashed var(--field);border-radius:12px;min-height:150px;display:grid;place-items:center;text-align:center;color:var(--muted);cursor:pointer}
+.toast{position:absolute;left:12px;right:12px;top:52px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center;transform:translateY(-12px);opacity:0;visibility:hidden;transition:transform .3s,opacity .3s,visibility 0s .3s;z-index:5}
+.toast.on{transform:none;opacity:1;visibility:visible;transition:transform .3s,opacity .3s}
+.toast button{background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone" id="phone">
+    <div class="urlbar"><span>🔒</span><span class="u" id="url"></span></div>
+    <div class="page" id="page"></div>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" id="sheet"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <aside class="rules">
+    <h1>Art-auction on a phone</h1>
+    <p class="note">Design prototype, 2026-11-27. Tap through it on the left. Placeholder pieces and prices; nothing here talks to the market.</p>
+
+    <h2>What stays a page</h2>
+    <ul>
+      <li>Lists you browse: the gallery, <code>/lots</code>, a series page, a store front, <code>/center</code>.</li>
+      <li>Each piece and lot keeps its own page (<code>/artworks/[id]</code>, <code>/lots/[id]</code>) for shared links and search; on a phone a card opens the same content as a sheet, and the head's ⤢ goes to the page.</li>
+    </ul>
+
+    <h2>What opens as a sheet</h2>
+    <ul>
+      <li>Piece, lot, artist, and every step of buying, registering, bidding, paying and launching a work.</li>
+      <li>Sheets stack. The crumb <code>‹ Previous</code> or Esc pops one; ✕ or the dimmed page closes all. The URL follows the top sheet (<code>?surface=artwork:…</code>), as the cms-ui surface system does today.</li>
+    </ul>
+
+    <h2>Sheet rules</h2>
+    <ol>
+      <li>Head: kind, crumb, title, and at most one button for the object (Share on a piece or lot, ⤢ its page). Transactions show only the crumb and ✕.</li>
+      <li>Foot: a status line, then one primary under the thumb, full width, vermilion. A quiet second button only where named (Add to basket, Message).</li>
+      <li>Heights: piece, lot, delivery and pay rise high; artist sits mid; done sits low.</li>
+      <li>Names open the artist sheet, everywhere.</li>
+      <li>Money stays on Stripe's hosted page; the return reopens the done sheet over the page the buyer left.</li>
+      <li>Kinds carry a colour on the head rule only (artwork, lot, order, pay, done, artist, new work); the primary stays vermilion.</li>
+    </ol>
+
+    <h2>Flows</h2>
+    <ul>
+      <li>Buy: piece → delivery → pay → Stripe → done.</li>
+      <li>Bid: lot → register (phone, card on file) → lot, registered → bid placed. Outbid: a notice reopens the lot. Won: lot → pay → done.</li>
+      <li>Artist: any name → artist (follow, message, works) → piece.</li>
+      <li>Launch (seller, from /center): photos → details → price and where → preview (the buyer's sheet) → published → share.</li>
+    </ul>
+
+    <h2>Changes from the market today</h2>
+    <ul>
+      <li>Buy now skips the cart on a phone (the basket stays as the quiet button).</li>
+      <li>Shipping is chosen before paying, inside the delivery sheet; today the quote comes after the order, on <code>/orders/[id]</code>.</li>
+      <li>Collect and "arrange with the artist" are offered as choices, not a link.</li>
+      <li>Registration returns to the lot with a "You can bid" notice (<code>?registration=done</code> is not read today).</li>
+      <li>Buy-now on a lot is a sheet, not <code>window.confirm</code>.</li>
+      <li>The artist sheet adds Follow; visitors have no follow today.</li>
+    </ul>
+
+    <h2>For the developer to decide</h2>
+    <div class="q">D1. Shipping quoted before payment (this prototype) or after the order, as today?</div>
+    <div class="q">D2. Keep the basket on a phone, or Buy now only?</div>
+    <div class="q">D3. Interac eTransfer in the pay sheet for every store, or only where the store accepts it?</div>
+    <div class="q">D4. The support choice (where the commission goes): shown in the pay sheet, or folded under "Where your money goes"?</div>
+    <div class="q">D5. The market's light paper look, or the handoff's dark shell, for sheets?</div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => "$" + n.toLocaleString("en-CA");
+  const PIECES = [
+    { id: "p1", title: "Harbour at Dusk", artist: "Mira Chen", medium: "Oil on linen", size: "61 × 76 cm", year: 2025, edition: "Original", price: 1450, tone: "#c9b8a6", ship: [{ n: "Canada Post Expedited", d: "3–5 days", p: 38 }, { n: "Purolator Ground", d: "4–6 days", p: 44 }] },
+    { id: "p2", title: "Field Notes III", artist: "Ade Okafor", medium: "Ink and wash on paper", size: "30 × 40 cm", year: 2024, edition: "1 of 1", price: 420, tone: "#b7c4b4", ship: [{ n: "Canada Post Expedited", d: "3–5 days", p: 22 }] },
+    { id: "p3", title: "Blue Hours", artist: "Mira Chen", medium: "Gouache on paper", size: "24 × 32 cm", year: 2025, edition: "Original", price: 380, tone: "#a9b6c9", ship: [{ n: "Canada Post Expedited", d: "3–5 days", p: 20 }] },
+    { id: "p4", title: "Kiln Study", artist: "Katie Ross", medium: "Stoneware, ash glaze", size: "18 cm tall", year: 2025, edition: "Unique", price: 160, tone: "#d6c2a8", ship: [{ n: "Canada Post Regular", d: "6–9 days", p: 18 }] },
+  ];
+  const LOTS = [
+    { id: "l7", n: 7, title: "Night Market", artist: "Ade Okafor", medium: "Acrylic on panel", size: "50 × 50 cm", tone: "#c4a9a9", bid: 600, bids: 5, mins: 47, buyNow: null, est: "800–1,100" },
+    { id: "l8", n: 8, title: "Two Birches", artist: "Mira Chen", medium: "Oil on board", size: "30 × 30 cm", tone: "#b9c4a6", bid: 0, start: 250, bids: 0, mins: 51, buyNow: 650, est: "400–600" },
+  ];
+  const ARTISTS = {
+    "Mira Chen": { line: "Painter · Halifax", bio: "Paints the harbour at the hour the lights come on.", tone: "#c9b8a6", following: 128 },
+    "Ade Okafor": { line: "Ink and acrylic · Toronto", bio: "Notebooks first, panels after.", tone: "#b7c4b4", following: 76 },
+    "Katie Ross": { line: "Potter · pottery.arts-collective.com", bio: "Wood-fired stoneware.", tone: "#d6c2a8", following: 41 },
+  };
+  const ladderStep = (b) => (b < 500 ? 25 : b < 1000 ? 50 : 100);
+
+  const ctx = { tab: "gallery", stack: [], ship: "ship", rate: 0, pay: "card", support: "market", registered: false, ladder: 0, max: "", followed: {}, img: 0, lead: {}, outbid: false, draft: { title: "", price: "", where: "store" }, wstep: 0 };
+
+  // ── pages ──
+  function pageHtml() {
+    if (ctx.tab === "gallery") {
+      return `<div class="hdr"><span class="brand">Collect Art</span><small>Market</small></div>
+      <div class="sec"><h2>New this week</h2><p class="lede">Original work from artists across the network.</p>
+      <div class="grid">${PIECES.map((p) => `<button class="card" data-open="artwork:${p.id}"><div class="img" style="--tone:${p.tone}">image</div><b>${p.title}</b><small>${p.artist}</small><div class="pr">${money(p.price)}</div></button>`).join("")}</div></div>`;
+    }
+    if (ctx.tab === "lots") {
+      return `<div class="hdr"><span class="brand">Collect Art</span><small>Auction</small></div>
+      <div class="sec"><span class="pill live">Silent bidding</span><h2>Winter Series</h2><p class="lede">Staggered close tonight, one lot every 90 seconds from 8:00 pm.</p>
+      ${LOTS.map((l) => `<button class="row" data-open="lot:${l.id}"><div class="img" style="--tone:${l.tone}"></div><div><b>Lot ${l.n} · ${l.title}</b><small>${l.artist}</small><div class="clock">closes in ${l.mins} min</div></div><div style="text-align:right"><small>${l.bid ? "bid" : "start"}</small><div style="font-weight:600">${money(l.bid || l.start)}</div></div></button>`).join("")}</div>`;
+    }
+    return `<div class="hdr"><span class="brand">Center</span><small>Mira Chen</small></div>
+    <div class="sec"><div class="box" style="display:grid;gap:10px"><b style="font:600 18px var(--serif)">Your store</b><span class="note">3 listed · 0 sales needing you</span>
+    <button class="btn p full" data-open="work:new">+ Add a work</button></div>
+    <h2 style="margin-top:16px;font-size:18px">My work</h2>
+    ${PIECES.filter((p) => p.artist === "Mira Chen").map((p) => `<button class="row" data-open="artwork:${p.id}"><div class="img" style="--tone:${p.tone}"></div><div><b>${p.title}</b><small>${money(p.price)} · for sale</small></div><span class="pill">12 views</span></button>`).join("")}</div>`;
+  }
+  function tabsHtml() {
+    const t = [["gallery", "◫", "Gallery"], ["lots", "◷", "Auction"], ["center", "◉", "Center"]];
+    return t.map(([k, i, l]) => `<button data-tab="${k}" aria-current="${ctx.tab === k}"><span>${i}</span>${l}</button>`).join("");
+  }
+
+  // ── layers ──
+  const piece = (id) => PIECES.find((p) => p.id === id);
+  const lot = (id) => LOTS.find((l) => l.id === id);
+  function layer(key) {
+    const [type, id, sub] = key.split(":");
+    if (type === "artwork") {
+      const p = piece(id);
+      return { kind: "artwork", kc: "var(--k-artwork)", label: "Artwork", title: p.title, head: "⤢", headTitle: "Its page", h: 0.92,
+        body: `<div class="img" style="--tone:${p.tone};aspect-ratio:4/5;max-height:330px;width:100%">image ${ctx.img + 1} of 3</div>
+          <div class="thumbs">${[0, 1, 2].map((i) => `<div class="img ${ctx.img === i ? "sel" : ""}" data-img="${i}" style="--tone:${p.tone}"></div>`).join("")}</div>
+          <div><button class="name" data-push="artist:${p.artist}">${p.artist}</button> · ${p.year}</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font:600 24px var(--serif)">${money(p.price)}</b><span class="pill">${p.edition}</span></div>
+          <dl class="specs"><dt>Medium</dt><dd>${p.medium}</dd><dt>Size</dt><dd>${p.size}</dd><dt>Ships</dt><dd>from Halifax, NS</dd></dl>
+          <p style="margin:0">A note from the artist about the work: where it was made and what it is after.</p>
+          <p class="note" style="margin:0">5% of the price supports the market; you choose where at payment.</p>`,
+        status: "Original · ships in 5 days", primary: ["Buy · " + money(p.price), `push:order:${p.id}`], quiet: ["Add to basket", "toast:Added to your basket"] };
+    }
+    if (type === "order") {
+      const p = piece(id);
+      const rate = p.ship[ctx.rate] || p.ship[0];
+      const shipCost = ctx.ship === "ship" ? rate.p : 0;
+      return { kind: "order", kc: "var(--k-order)", label: "Delivery", title: "How it reaches you", h: 0.9,
+        body: `${opt("ship", "ship", "Ship to me", "Quote from the address below")}
+          ${opt("ship", "collect", "Collect from the artist", "Halifax, NS · free")}
+          ${opt("ship", "artist", "Arrange with the artist", "They message you after you pay")}
+          ${ctx.ship === "ship" ? `<label class="field">Address<input value="12 Elm St, Toronto ON M5V 1A1"></label>
+            <div class="note">Rates for this address</div>
+            ${p.ship.map((r, i) => `<button class="opt" data-set="rate" data-v="${i}" aria-pressed="${ctx.rate === i}"><span class="dot"></span><span>${r.n}<small>${r.d}</small></span><b>${money(r.p)}</b></button>`).join("")}` : ""}
+          <div class="totals"><span>${p.title}</span><span>${money(p.price)}</span><span>Delivery</span><span>${ctx.ship === "ship" ? money(shipCost) : "—"}</span><span class="t">Total</span><span class="t">${money(p.price + shipCost)}</span></div>`,
+        status: "Total " + money(p.price + shipCost), primary: ["Continue to pay", `push:pay:${p.id}`] };
+    }
+    if (type === "pay") {
+      const isLot = id.startsWith("l");
+      const it = isLot ? lot(id) : piece(id);
+      const price = isLot ? it.bid : it.price;
+      const shipCost = !isLot && ctx.ship === "ship" ? (it.ship[ctx.rate] || it.ship[0]).p : 0;
+      const total = price + shipCost;
+      return { kind: "pay", kc: "var(--k-pay)", label: "Pay", title: "Confirm and pay", h: 0.9,
+        body: `<div class="box"><dl class="specs"><dt>For</dt><dd>${it.title}${isLot ? " · lot " + it.n : ""}</dd><dt>Delivery</dt><dd>${isLot ? "chosen after payment" : ctx.ship === "ship" ? "Ship · " + money(shipCost) : ctx.ship === "collect" ? "Collect" : "With the artist"}</dd><dt>Total</dt><dd><b>${money(total)}</b> CAD</dd></dl></div>
+          <div class="note">Paying as <b style="color:var(--ink)">Sam Lee</b> · <u>change</u></div>
+          ${opt("pay", "card", "Card", "On Stripe's secure page")}
+          ${opt("pay", "etransfer", "Interac eTransfer", "Instructions after you confirm; pay within 72 hours")}
+          <details><summary style="cursor:pointer;font-size:13px">Where your money goes</summary>
+            <p class="note">${it.artist} receives the price less 5% and the card fee. Choose who the 5% supports:</p>
+            ${opt("support", "market", "The market", "Collect Art")}${opt("support", "ifac", "IFAC", "")}${opt("support", "split", "Half and half", "")}</details>`,
+        status: ctx.pay === "card" ? "Secure · Stripe" : "Interac eTransfer",
+        primary: [ctx.pay === "card" ? "Pay " + money(total) : "Place order · " + money(total), `stripe:${id}`] };
+    }
+    if (type === "done") {
+      const flow = id;
+      const text = {
+        buy: ["It's yours", "We've emailed your receipt. The artist ships within 5 days and you get tracking by email."],
+        etransfer: ["Order placed", "Send the eTransfer within 72 hours; the instructions are in your email too."],
+        bid: ["You're winning", "We'll tell you by email and here if someone outbids you. Closes in 47 min."],
+        registered: ["You can bid", "Card saved for this series. Nothing is charged unless you win."],
+        follow: ["You're following", "New work from this artist, by email. At most one a week."],
+        published: ["Your work is live", "It shows in your store and in the gallery. Share it now or later from /center."],
+      }[flow];
+      return { kind: "done", kc: "var(--k-done)", label: "Done", title: text[0], h: flow === "published" ? 0.62 : 0.5,
+        body: `<div class="check">✓</div><p class="center" style="margin:0;font:600 18px var(--serif)">${text[0]}</p><p class="center note" style="margin:0">${text[1]}</p>
+          ${flow === "published" ? `<div class="box" style="display:grid;gap:8px"><b>Share it</b><div class="note">market.arts-collective.com/artworks/new-work</div><div style="display:flex;gap:8px"><button class="btn" data-toast="Link copied">Copy link</button><button class="btn" data-toast="Opens Channel → New post">Post to Channel</button></div></div>` : ""}`,
+        status: "", primary: [flow === "registered" ? "Back to the lot" : "Done", flow === "registered" ? "pop" : "close"], quiet: flow === "buy" ? ["Your orders", "toast:Opens /orders"] : null };
+    }
+    if (type === "lot") {
+      const l = lot(id);
+      const cur = l.bid || l.start;
+      const step = ladderStep(cur);
+      const steps = l.bid ? [cur + step, cur + 2 * step, cur + 3 * step] : [l.start, l.start + step, l.start + 2 * step];
+      const leading = ctx.lead[l.id] && !ctx.outbid;
+      const reg = ctx.registered;
+      return { kind: "lot", kc: "var(--k-lot)", label: "Lot " + l.n, title: l.title, head: "↗", headTitle: "Share", h: 0.92,
+        body: `${ctx.outbid && ctx.lead[l.id] ? `<div class="box" style="border-color:var(--danger);color:var(--danger)"><b>You've been outbid.</b> Bid again to lead.</div>` : ""}
+          ${leading ? `<div class="box" style="border-color:var(--live)"><b style="color:var(--live)">You lead this lot.</b> <span class="note">Your maximum: ${ctx.max ? money(+ctx.max) : money(l.bid)}</span></div>` : ""}
+          <div class="img" style="--tone:${l.tone};aspect-ratio:1;max-height:240px;width:100%">image</div>
+          <div><button class="name" data-push="artist:${l.artist}">${l.artist}</button> · ${l.medium} · ${l.size}</div>
+          <div class="bidhead"><div class="box"><small>${l.bid ? "Current bid" : "Starting bid"}</small><b>${money(cur)}</b><span class="note">${l.bids} bids · reserve met</span></div><div class="box"><small>Closes in</small><b style="color:var(--live)">${l.mins} min</b><span class="note">est. $${l.est}</span></div></div>
+          ${reg ? `<div class="note">Your bid</div><div class="ladder">${steps.map((s, i) => `<button data-set="ladder" data-v="${i}" aria-pressed="${ctx.ladder === i}">${money(s)}</button>`).join("")}</div>
+            <label class="field">Maximum, bid for me up to (optional)<input inputmode="numeric" placeholder="e.g. ${money(steps[2] + 2 * step)}" value="${ctx.max}" data-max></label>`
+            : `<div class="box note">Bidding needs a phone number and a card on file for this series. Nothing is charged unless you win.</div>`}
+          ${l.buyNow && !l.bids ? `<button class="btn full" data-push="buynow:${l.id}">Buy now for ${money(l.buyNow)}</button>` : ""}
+          <p class="note" style="margin:0">5-minute soft close: a bid in the last 5 minutes adds 5. Winners pay within 72 hours.</p>`,
+        status: reg ? `${l.bids} bids · ${l.mins} min left` : "Register once per series",
+        primary: reg ? ["Bid " + money(steps[ctx.ladder]), `bid:${l.id}:${steps[ctx.ladder]}`] : ["Register to bid", `push:register:${l.id}`] };
+    }
+    if (type === "register") {
+      return { kind: "register", kc: "var(--k-lot)", label: "Register", title: "Register to bid", h: 0.72,
+        body: `<p style="margin:0">Once per series. We save a card with Stripe; it is charged only if you win and don't pay within 72 hours.</p>
+          <label class="field">Phone, for the closing night<input type="tel" value="+1 416 555 0134"></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px"><input type="checkbox" checked style="width:20px;height:20px"> I agree to the series rules: soft close, 72-hour payment.</label>`,
+        status: "Card on Stripe's secure page", primary: ["Save a card", `register:${id}`] };
+    }
+    if (type === "buynow") {
+      const l = lot(id);
+      return { kind: "lot", kc: "var(--k-lot)", label: "Buy now", title: "Buy it now?", h: 0.52,
+        body: `<p style="margin:0">Ends the auction for lot ${l.n} and the piece is yours for <b>${money(l.buyNow)}</b>. Pay within 72 hours.</p>`,
+        status: "Only while nobody has bid", primary: ["Buy for " + money(l.buyNow), `buynow-go:${l.id}`] };
+    }
+    if (type === "artist") {
+      const a = ARTISTS[id]; const f = ctx.followed[id];
+      const works = PIECES.filter((p) => p.artist === id);
+      return { kind: "artist", kc: "var(--k-artist)", label: "Artist", title: id, head: "⤢", headTitle: "Their store", h: 0.78,
+        body: `<div style="display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center"><div class="img" style="--tone:${a.tone};width:72px;height:72px;border-radius:50%"></div><div><div class="note">${a.line}</div><div class="note">${a.following + (f ? 1 : 0)} following</div></div></div>
+          <p style="margin:0">${a.bio}</p>
+          <div class="note">Work for sale</div>
+          <div class="strip">${works.map((p) => `<button class="card" data-push="artwork:${p.id}" style="flex:none;width:96px"><div class="img" style="--tone:${p.tone};height:116px"></div><small>${money(p.price)}</small></button>`).join("") || `<span class="note">Nothing listed right now.</span>`}</div>`,
+        status: f ? "Following · by email" : "New work by email, at most weekly",
+        primary: f ? ["✓ Following", `unfollow:${id}`] : ["Follow", `follow:${id}`], quiet: ["Message", "toast:Opens a message to the artist"] };
+    }
+    if (type === "work") {
+      const s = ctx.wstep;
+      const stepsBar = `<div class="steps">${[0, 1, 2, 3].map((i) => `<i class="${i <= s ? "on" : ""}"></i>`).join("")}</div>`;
+      const bodies = [
+        `${stepsBar}<div class="drop" data-toast="Opens your photos (camera or files)">Add photos<br><small>Up to 10 · the first is the cover</small></div><div class="note">Or pick from My work / your Nextcloud folder.</div>`,
+        `${stepsBar}<label class="field">Title<input value="${ctx.draft.title || "Low Tide"}"></label><label class="field">Medium<input value="Oil on linen"></label><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><label class="field">W cm<input value="40"></label><label class="field">H cm<input value="50"></label><label class="field">Year<input value="2025"></label></div><label class="field">A few words<textarea>Painted on the morning ebb.</textarea></label>`,
+        `${stepsBar}${opt("where", "store", "Sell in my store", "Fixed price")}${ctx.draft.where === "store" ? `<label class="field">Price (CAD)<input inputmode="numeric" value="${ctx.draft.price || "900"}"></label>` : ""}${opt("where", "request", "Price on request", "Listed; buyers message you")}${opt("where", "series", "Enter a series", "Winter Series · auction, 5 Dec")}<div class="note">Ships from Halifax, NS · 5% to the market</div>`,
+        `${stepsBar}<div class="note">How buyers will see it</div><div class="box" style="display:grid;gap:8px"><div class="img" style="--tone:#c7bfae;aspect-ratio:4/5;max-height:220px"></div><b style="font:600 18px var(--serif)">Low Tide</b><span class="note">Mira Chen · Oil on linen · 40 × 50 cm</span><b>${ctx.draft.where === "store" ? money(+(ctx.draft.price || 900)) : ctx.draft.where === "request" ? "Price on request" : "Lot in Winter Series"}</b></div>`,
+      ];
+      const labels = ["Photos", "Details", "Price and where", "Preview"];
+      return { kind: "work", kc: "var(--k-work)", label: "New work · " + (s + 1) + " of 4", title: labels[s], h: 0.92,
+        body: bodies[s], status: s < 3 ? "Saved as a draft as you go" : "Visible in your store and the gallery",
+        primary: s < 3 ? ["Next", "wnext"] : ["Publish", "publish"], quiet: s > 0 ? ["Back", "wback"] : null };
+    }
+    return { kind: "x", kc: "var(--line)", label: "", title: key, body: "", status: "", primary: ["Close", "close"], h: 0.5 };
+  }
+  function opt(field, v, title, sub) {
+    const cur = field === "ship" ? ctx.ship : field === "pay" ? ctx.pay : field === "support" ? ctx.support : ctx.draft.where;
+    return `<button class="opt" data-set="${field}" data-v="${v}" aria-pressed="${cur === v}"><span class="dot"></span><span>${title}${sub ? `<small>${sub}</small>` : ""}</span><span></span></button>`;
+  }
+
+  // ── render ──
+  function url() {
+    const top = ctx.stack[ctx.stack.length - 1];
+    const path = { gallery: "/", lots: "/series/winter", center: "/center" }[ctx.tab];
+    $("url").innerHTML = `<b>market.arts-collective.com</b>${path}${top ? "?surface=" + top.split(":").slice(0, 2).join(":").replace(/ /g, "-").toLowerCase() : ""}`;
+  }
+  function render(anim) {
+    $("page").innerHTML = pageHtml();
+    $("tabs").innerHTML = tabsHtml();
+    const sh = $("sheet"), scrim = $("scrim");
+    const top = ctx.stack[ctx.stack.length - 1];
+    if (!top) { sh.classList.remove("on"); scrim.classList.remove("on"); url(); return; }
+    const L = layer(top);
+    const prev = ctx.stack.length > 1 ? layer(ctx.stack[ctx.stack.length - 2]).title : "";
+    sh.style.setProperty("--kc", L.kc);
+    sh.style.height = Math.round(L.h * 800) + "px";
+    sh.innerHTML = `<div class="grab"><i></i></div>
+      <div class="sh-head"><div style="min-width:0"><div class="kick">${prev ? `<button class="crumb" data-act="pop">‹ ${prev}</button><span>·</span>` : ""}<i></i><span>${L.label}</span></div><div class="sh-title">${L.title}</div></div>
+      ${L.head ? `<button class="hb" title="${L.headTitle}" aria-label="${L.headTitle}" data-toast="${L.headTitle}: opens ${L.head === "↗" ? "the share sheet" : "the full page"}">${L.head}</button>` : "<span></span>"}
+      <button class="hb" aria-label="Close" data-act="close">✕</button></div>
+      <div class="sh-body" ${anim ? "" : 'style="animation:none"'}>${L.body}</div>
+      <div class="sh-foot">${L.status ? `<div class="status">${L.status}</div>` : ""}<div class="acts">${L.quiet ? `<button class="btn" data-act="${L.quiet[1]}">${L.quiet[0]}</button>` : ""}<button class="btn p" data-act="${L.primary[1]}">${L.primary[0]}</button></div></div>`;
+    requestAnimationFrame(() => { sh.classList.add("on"); scrim.classList.add("on"); });
+    url();
+  }
+  function toast(msg, action) {
+    const t = $("toast");
+    t.innerHTML = `<span>${msg}</span>${action ? `<button data-act="${action[1]}">${action[0]}</button>` : ""}`;
+    t.classList.add("on");
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => t.classList.remove("on"), action ? 6000 : 2200);
+  }
+  const push = (k) => { ctx.stack.push(k); render(true); };
+  const replaceTop = (k) => { ctx.stack[ctx.stack.length - 1] = k; render(true); };
+  const pop = () => { ctx.stack.pop(); render(true); };
+  const close = () => { ctx.stack = []; render(false); };
+
+  function act(a) {
+    const [cmd, ...rest] = a.split(":");
+    const arg = rest.join(":");
+    if (cmd === "push") return push(arg);
+    if (cmd === "pop") return pop();
+    if (cmd === "close") return close();
+    if (cmd === "toast") return toast(arg);
+    if (cmd === "stripe") {
+      toast("Stripe's hosted page opens here; the return lands back on this page");
+      const flow = ctx.pay === "card" ? "buy" : "etransfer";
+      setTimeout(() => { ctx.stack = ["done:" + flow]; render(true); }, 900);
+      return;
+    }
+    if (cmd === "register") {
+      toast("Stripe saves the card (setup mode), then returns to the lot");
+      setTimeout(() => { ctx.registered = true; ctx.stack = ["lot:" + arg, "done:registered"]; render(true); }, 900);
+      return;
+    }
+    if (cmd === "bid") {
+      const [id, amt] = rest; const l = lot(id);
+      l.bid = +amt; l.bids += 1; ctx.lead[id] = true; ctx.outbid = false; ctx.ladder = 0;
+      push("done:bid");
+      setTimeout(() => { l.bid += ladderStep(l.bid); l.bids += 1; ctx.outbid = true; toast(`Outbid on lot ${l.n}: now ${money(l.bid)}`, ["Bid again", "push:lot:" + id]); if (ctx.stack[ctx.stack.length - 1]?.startsWith("lot:")) render(false); }, 7000);
+      return;
+    }
+    if (cmd === "buynow-go") { toast("Order made; pay within 72 hours"); ctx.stack = ["pay:" + arg]; ctx.pay = "card"; const l = lot(arg); l.bid = l.buyNow; render(true); return; }
+    if (cmd === "follow") { ctx.followed[arg] = true; push("done:follow"); return; }
+    if (cmd === "unfollow") { ctx.followed[arg] = false; render(false); return; }
+    if (cmd === "wnext") { ctx.wstep = Math.min(3, ctx.wstep + 1); render(true); return; }
+    if (cmd === "wback") { ctx.wstep = Math.max(0, ctx.wstep - 1); render(true); return; }
+    if (cmd === "publish") { ctx.wstep = 0; replaceTop("done:published"); return; }
+  }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-open],[data-push],[data-act],[data-tab],[data-set],[data-img],[data-toast]");
+    if (!el) { if (e.target === $("scrim")) close(); return; }
+    if (el.dataset.tab) { ctx.tab = el.dataset.tab; ctx.stack = []; render(false); return; }
+    if (el.dataset.open) { ctx.img = 0; if (el.dataset.open === "work:new") ctx.wstep = 0; ctx.stack = [el.dataset.open]; render(true); return; }
+    if (el.dataset.push) { ctx.img = 0; push(el.dataset.push); return; }
+    if (el.dataset.act) return act(el.dataset.act);
+    if (el.dataset.toast) return toast(el.dataset.toast);
+    if (el.dataset.img) { ctx.img = +el.dataset.img; render(false); return; }
+    if (el.dataset.set) {
+      const f = el.dataset.set, v = el.dataset.v;
+      if (f === "ship") ctx.ship = v; else if (f === "pay") ctx.pay = v; else if (f === "support") ctx.support = v;
+      else if (f === "rate") ctx.rate = +v; else if (f === "ladder") ctx.ladder = +v; else if (f === "where") ctx.draft.where = v;
+      const open = document.querySelector(".sh-body details")?.open;
+      render(false);
+      if (open) document.querySelector(".sh-body details").open = true;
+    }
+  });
+  document.addEventListener("input", (e) => { if (e.target.matches("[data-max]")) ctx.max = e.target.value.replace(/\D/g, ""); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ctx.stack.length) pop(); });
+  render(false);
+})();
+</script>
+</body>
+</html>

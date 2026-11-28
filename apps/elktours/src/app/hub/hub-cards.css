@@ -79,3 +79,15 @@
   border-radius: var(--sf-radius);
   color: var(--sf-fg);
 }
+
+/* Sync to Google Calendar, on the Tours offered card (2026-11-26). */
+.el-gcal { display: grid; gap: 6px; margin-top: 8px; padding: 10px 0 2px; border-top: 1px solid var(--sf-line); white-space: normal; }
+.el-gcal-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.el-gcal button, .el-gcal select { font: inherit; font-size: 0.9rem; color: var(--sf-fg); cursor: pointer; }
+.el-gcal button:disabled, .el-gcal select:disabled { opacity: 0.6; cursor: default; }
+.el-gcal-main { min-height: 38px; padding: 6px 14px; border: 1px solid var(--sf-fg); border-radius: 999px; background: transparent; font-weight: 600; }
+.el-gcal-which { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--sf-muted); }
+.el-gcal-which select { min-height: 36px; padding: 4px 8px; border: 1px solid var(--sf-line); border-radius: 8px; background: var(--sf-bg); }
+.el-gcal-quiet { margin-left: auto; padding: 4px 0; border: 0; background: transparent; text-decoration: underline; text-underline-offset: 3px; }
+.el-gcal-note { margin: 0; font-size: 0.8rem; color: var(--sf-muted); overflow-wrap: anywhere; }
+.el-gcal-error { margin: 0; font-size: 0.85rem; color: #b3261e; }

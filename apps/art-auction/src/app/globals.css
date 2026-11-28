@@ -6,6 +6,9 @@
    are mapped to this site's own below. */
 @import "@elkdonis/cms-ui/article.css";
 @import "@elkdonis/commerce/commerce.css";
+/* The surface system (cms-ui): /center's popups — the store, a piece, adding a work, a series entry, money.
+   Plain CSS on --eac-surface-* hooks, mapped to this site's tokens at the end of this file. */
+@import "@elkdonis/cms-ui/surface.css";
 /* The page blocks a store panel is built from (/panel/[orgSlug]). Without it
    the panel editor drew every block unstyled — headings, picture walls and
    grids with no layout — which read as blocks "not rendering". */
@@ -298,4 +301,31 @@ a[data-eac-anchor="artwork"][data-eac-outlined="true"]::after {
   line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The surface system in this site's colours (2026-11-26, /center popups).
+   Hooks take hsl(): this app stores its tokens as HSL triplets.
+   One colour per popup kind, each with white text on its filled button:
+   store (product) #2f4a63 9.4:1, piece (gallery) #a5521b 5.1:1,
+   series (meeting/series) #7a3e7a 7.2:1, money (service) #1b6a45 6.6:1.
+   ------------------------------------------------------------------------ */
+:root {
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-danger: hsl(var(--destructive));
+  --eac-surface-radius: var(--radius);
+  --eac-kind-product: #2f4a63;
+  --eac-kind-product-on: #ffffff;
+  --eac-kind-gallery: #a5521b;
+  --eac-kind-gallery-on: #ffffff;
+  --eac-kind-meeting: #7a3e7a;
+  --eac-kind-meeting-on: #ffffff;
+  --eac-kind-service: #1b6a45;
+  --eac-kind-service-on: #ffffff;
 }

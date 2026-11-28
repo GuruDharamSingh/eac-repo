@@ -35,6 +35,7 @@
     "check:rails": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-rails.mts",
     "atlas:q": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-q.mts",
     "atlas:reports": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-reports.mts",
+    "atlas:readiness": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-readiness.mts",
     "atlas:emit": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/atlas-emit.mts",
     "seed:rails": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/seed-rails-courses.mts"
   }

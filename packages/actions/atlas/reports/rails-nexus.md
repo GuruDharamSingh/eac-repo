@@ -216,9 +216,9 @@ Course, then its ordered tracks and their steps. `[gap]` marks a step with no ca
 
 Set up a profile. Builds on: nothing. Derived from gates: nothing.
 
-- **profile-basics**: `edit-my-profile` (entry profile); `upload-profile-photo`
+- **profile-basics**: `edit-my-profile` (entry profile); `upload-profile-photo` (entry profile-photo)
 - **profile-take-space**: `take-your-space` (entry gain-space); `link-cloud-sign-in` (entry cloud)
-- **profile-listing**: `set-where-i-show`; `profile-section-toggle`
+- **profile-listing**: `set-where-i-show` (entry listing); `profile-section-toggle` (entry profile-sections)
 
 ### profile-in-an-org (profile)
 
@@ -230,9 +230,9 @@ A profile inside an organisation. Builds on: profile-setup. Derived from gates: 
 
 Keep the profile current. Builds on: profile-setup. Derived from gates: profile-setup.
 
-- **profile-basics**: `edit-my-profile` (entry profile); `upload-profile-photo`
+- **profile-basics**: `edit-my-profile` (entry profile); `upload-profile-photo` (entry profile-photo)
 - **profile-look**: `user-theme-save`
-- **profile-pen-name**: `create-pen-name`; `retire-pen-name`; `restore-pen-name`
+- **profile-pen-name**: `create-pen-name` (entry pen-name); `retire-pen-name` (entry pen-name-retire); `restore-pen-name` (entry pen-name-restore)
 
 ### publish-a-post (publishing)
 
@@ -244,8 +244,8 @@ Publish a post. Builds on: profile-setup. Derived from gates: profile-setup.
 
 Publish a work. Builds on: profile-setup. Derived from gates: profile-setup.
 
-- **publish-first-work**: `writing-piece-start` (entry studio); `writing-piece-save` (entry studio)
-- **publish-more-sites**: `choose-sites-for-post` (entry show-on); `post-to-a-site`
+- **publish-first-work**: `writing-piece-start` (entry writing-start); `writing-piece-save` (entry studio)
+- **publish-more-sites**: `choose-sites-for-post` (entry show-on); `post-to-a-site` (entry post-anywhere)
 - **publish-share-social**: `connect-social-account` (entry channel-connect); `create-social-post`; `publish-social-post`
 
 ### publish-paid-work (publishing)
@@ -343,7 +343,7 @@ Add a page, nav and footer. Builds on: site-look. Derived from gates: organisati
 
 A studio piece. Builds on: profile-setup. Derived from gates: profile-setup.
 
-- **production-studio-piece**: `writing-piece-start` (entry studio); `writing-piece-save` (entry studio); `start-piece-plan` (entry channel-plan); [gap] the piece summary and the publish kinds as dock-readable steps
+- **production-studio-piece**: `writing-piece-start` (entry writing-start); `writing-piece-save` (entry studio); `start-piece-plan` (entry channel-plan); [gap] the piece summary and the publish kinds as dock-readable steps
 
 ### production-video (production)
 
@@ -383,7 +383,6 @@ A newsletter. Builds on: organisation-start. Derived from gates: organisation-st
 - booking-time-confirm: service-booking-setup, booking-handling
 - booking-times-propose: booking-handling
 - capture-from-phone: production-record
-- create-pen-name: profile-pen-name
 - create-social-post: publish-share-social
 - create-video-project: production-video-project
 - elktours-artist-availability-save: tour-guide-setup
@@ -413,22 +412,17 @@ A newsletter. Builds on: organisation-start. Derived from gates: organisation-st
 - pkg-email-contacts: email-contacts
 - pkg-newsletter-letter: email-newsletter
 - pkg-newsletter-send: email-newsletter
-- post-to-a-site: publish-more-sites
-- profile-section-toggle: profile-listing
 - publish-org-landing-page: site-landing-design
 - publish-silex-site: site-silex
 - publish-social-post: publish-share-social
 - publish-video: production-video-project
 - render-video: production-video-project
-- restore-pen-name: profile-pen-name
-- retire-pen-name: profile-pen-name
 - save-booth-recording: production-record
 - save-business-wizard: business-listing
 - save-classifieds-page: business-listing
 - save-silex-layout: site-silex
 - save-video-project: production-video-project
 - set-up-relay-destinations: production-go-live
-- set-where-i-show: profile-listing
 - set-workshop-listing: publish-event
 - site-banner-save: site-home-hero
 - site-feed-save: site-add-page
@@ -445,7 +439,6 @@ A newsletter. Builds on: organisation-start. Derived from gates: organisation-st
 - tour-booking-defaults-save: tour-create
 - tour-save: tour-create, tour-stops
 - upload-image: artwork-first-piece
-- upload-profile-photo: profile-basics
 - upload-recording: production-record
 - upload-reel-media: production-video-project
 - user-theme-save: profile-look

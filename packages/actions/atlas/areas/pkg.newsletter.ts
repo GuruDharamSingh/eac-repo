@@ -12,6 +12,7 @@ const h = (fn: string, service: string[], note?: string): Host => ({ key: sql(fn
 const capabilities: Capability[] = [
   {
     id: 'pkg-newsletter-letter',
+    where: {"mode": "place", "why": "Writing the letter in the email editor."},
     area: 'newsletter.letters',
     label: 'Save or delete a saved letter',
     does: 'Upserts a letter (title, editor project, html; sentAt and sentCount kept) as a site_config row keyed by slug and audience (the org list or one series), or deletes it.',
@@ -31,6 +32,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'pkg-newsletter-send',
+    where: {"mode": "place", "why": "Sends to a whole list and cannot be taken back: looked over on its own page."},
     area: 'newsletter.send',
     label: 'Send a letter to the list (or three test addresses)',
     does: 'Renders the letter per recipient with an unsubscribe footer, emails every recipient (org contacts minus unsubscribed, or a series\' subscribers) one by one through sendEmail, and records sentAt and sentCount on the letter.',

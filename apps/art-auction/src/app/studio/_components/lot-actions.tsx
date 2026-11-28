@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAfterSave } from "@/lib/popup-refresh";
 import { toast } from "sonner";
 import { cancelLotAction } from "../actions";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export function LotActions({ lotId, bidCount }: { lotId: string; bidCount: number }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [pending, setPending] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   if (bidCount > 0) return null;
@@ -20,7 +22,7 @@ export function LotActions({ lotId, bidCount }: { lotId: string; bidCount: numbe
       if (!res.ok) return toast.error(res.error ?? "Could not withdraw.");
       toast.success("Auction withdrawn.");
       setOpen(false);
-      router.refresh();
+      afterSave();
     } finally {
       setPending(false);
     }

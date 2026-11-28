@@ -11,13 +11,21 @@ import type { ActionMeta } from './types';
 import { HUB_ACTIONS } from './hub';
 import { withAgent } from './agent';
 import { REGISTRY_DATA } from './registry-data';
+import { ACTION_FORMS } from './forms';
+import { ENTRIES_WAVE1 } from './entries-wave1';
 
-/** Entry id -> module form key (packages/dock/src/forms.tsx). Stub: one example. */
-const DOCK_FORM: Record<string, string> = { profile: 'profile-basics', 'store-front': 'store-front' };
+/**
+ * Entry id -> a custom module form key (packages/dock/src/forms.tsx `DOCK_FORMS`): the escape hatch, for a form the
+ * declaration (./fields.ts, ./forms-*.ts) cannot draw. Empty since 2026-11-27: every in-dock form is declared.
+ */
+const DOCK_FORM: Record<string, string> = {};
+
+/** The entry's `dockForm`: a custom key if one is named, else the entry id itself when it has a declared form. */
+const dockFormOf = (id: string): string | undefined => DOCK_FORM[id] ?? (ACTION_FORMS[id] ? id : undefined);
 
 const d = (id: string, label: string, describe: string, scope: ActionMeta['scope'], area: ActionMeta['area'], runnable = false, derived = true): ActionMeta => ({
   id, label, describe, scope, area, derived, runnable,
-  ...(DOCK_FORM[id] ? { dockForm: DOCK_FORM[id] } : {}),
+  ...(dockFormOf(id) ? { dockForm: dockFormOf(id) } : {}),
 });
 
 export const ACTION_CATALOGUE: readonly ActionMeta[] = [
@@ -26,6 +34,9 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   d('listing', 'Your page in the directory', 'A page address and the switch that lists it on ArtDirect.', 'person', 'directory', true),
   d('studio', 'A published piece of writing', 'Write in the Studio and publish one piece.', 'person', 'writing'),
   d('show-on', 'Shown on another site', 'A published piece listed on a site besides the author’s own.', 'person', 'writing'),
+  // Done in the dock (2026-11-27, rails desk lane A): a second public name, and a first draft piece in the person's own space.
+  d('pen-name', 'A pen name', 'A second public name you can write and post under. It is not in the directory until you list it.', 'person', 'profile', true),
+  d('writing-start', 'A piece of writing started', 'A draft piece of writing in your own space. Nobody sees it until you publish it.', 'person', 'writing', true),
   d('cloud', 'Cloud sign-in linked', 'Sign in to the collective’s Nextcloud once, so the folders follow the person.', 'person', 'cloud'),
   d('service', 'A service offered', 'A published service (lesson, commission, reading…) on the person’s page.', 'person', 'market'),
   d('store', 'A store on the market', 'The person’s own store on the collective’s market.', 'person', 'market', true),
@@ -76,6 +87,25 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
     ...d('thread-pin', 'Lead the site with a post', 'Pin a published public post so it leads the organisation’s site (one at a time).', 'thread', 'content', true),
     performs: 'Pins or unpins one published public post; pinning unpins the org’s other posts. Only from the host’s own pages.',
   },
+  // Market artwork entries (2026-11-26, Content Cornerstone Step 6). One artwork, named by `artworkId` in the input;
+  // the org is the marketplace org the host resolves. Keepers only (owner of the org, or users.is_admin), checked
+  // by the runner. Human-only: no agent exposure (./agent.ts has no row), and only from the host's own pages.
+  {
+    ...d('artwork-hide', 'Hide an artwork from the site', 'A keeper hides one artwork from the public site (reversible). The piece stays with its artist.', 'org', 'market', true, false),
+    performs: 'Archives one available, sold or draft artwork and records who hid it (commerce adminHideArtwork); refused for a piece with an open order. Only from the host’s own pages, by a keeper.',
+  },
+  {
+    ...d('artwork-show', 'Show a hidden artwork again', 'A keeper restores an artwork they hid to the status it had before.', 'org', 'market', true, false),
+    performs: 'Restores the status a hidden artwork had (commerce adminShowArtwork). Only from the host’s own pages, by a keeper.',
+  },
+  // Admin refund (2026-11-27, /hub/admin/sales). A network admin refunds one order in full. Human-only (no agent
+  // exposure), money risk (the dock never runs it), not a course step (COURSE_ACTIONS leaves it out).
+  {
+    ...d('sales-refund', 'Refund an order', 'A network admin refunds one paid order in full, with a reason.', 'person', 'payments', true, false),
+    performs: 'Refunds one paid, fulfilled or completed order in full: through Stripe for a card order when card payment is configured (checkout refundStripeOrder), otherwise recorded only (commerce refundOrder). Only from the admin sales page, by a network admin.',
+    risk: ['money', 'irreversible'],
+    roles: ['admin'],
+  },
   // The Akhand Path's day (2026-11-06; docs/open/DAILY_ROUTINE_BRIEF_2026-11-06.md §3.2), for a
   // daily routine course. Each reads one day: the status context's `day`, else today in the
   // reading's zone. Readers only; others see "not one of its readers".
@@ -124,8 +154,15 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   },
   // Hub card entries (2026-11-08), kept in ./hub.ts.
   ...HUB_ACTIONS,
+  ...ENTRIES_WAVE1,
   // Agent exposure (2026-11-08, ./agent.ts): default deny, never on appOnly entries.
-].map(withAgent).map(withRegistry);
+].map(withAgent).map(withRegistry).map(withDeclaredForm);
+
+/** Any entry with a declared form (./forms.ts) is a dock form, whichever file declared the entry. */
+function withDeclaredForm(meta: ActionMeta): ActionMeta {
+  const key = dockFormOf(meta.id);
+  return key && meta.dockForm !== key ? { ...meta, dockForm: key } : meta;
+}
 
 /** Applies the generated entry data (address, confirm, risk, roles; src/registry-data.ts) to an entry. */
 function withRegistry(meta: ActionMeta): ActionMeta {
@@ -134,7 +171,7 @@ function withRegistry(meta: ActionMeta): ActionMeta {
 }
 
 /** The entries a course step can name: person and org entries (`CourseActionScope`). */
-export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => (m.scope === 'person' || m.scope === 'org') && !m.appOnly) as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
+export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => (m.scope === 'person' || m.scope === 'org') && !m.appOnly && m.id !== 'sales-refund') as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
 
 const BY_ID = new Map(ACTION_CATALOGUE.map((m) => [m.id, m]));
 

@@ -1,4 +1,5 @@
 import type { SurfaceDescriptor, SurfaceProfileTab, SurfaceMeTab } from "./types";
+import { OFFER_FLOWS, OFFER_KEY, OFFER_LAYERS, offerDescriptor, offerProps, offerSurfaceValue, type OfferFlow, type OfferLayerId } from "../offer-surface/descriptor";
 
 // ============================================================================
 // A surface in the address bar.
@@ -19,6 +20,8 @@ const PROFILE_TABS = new Set<string>(["details", "show", "page", "payouts", "con
 const JOURNEY_IDS = new Set<string>(["auction", "org", "profile", "site"]);
 const ME_TABS = new Set<string>(["details", "offer", "show", "links", "connections"]);
 const SAFE_ORG = /^[A-Za-z0-9_-]{1,50}$/;
+/** `thread:<id>`, `artwork:<id>` or a profile id. */
+const OFFER_KEY_RE = /^[A-Za-z0-9_-]{1,64}(:[A-Za-z0-9_-]{1,64})?$/;
 
 export function serializeDescriptor(d: SurfaceDescriptor): string | null {
   switch (d.type) {
@@ -84,8 +87,15 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return d.tab ? `me:${d.tab}` : "me";
     case "artwork":
       return "artwork";
-    case "custom":
+    case "custom": {
+      // The single-page site's offer layers (offer-surface): layer, offer key or profile id, flow.
+      // The in-memory choices (slot, amount, delivery, address) never reach the address bar.
+      if (d.key === OFFER_KEY) {
+        const p = offerProps(d);
+        return p && p.key ? offerSurfaceValue(p.layer, p.key, p.ctx?.flow) : null;
+      }
       return null;
+    }
   }
 }
 
@@ -165,6 +175,28 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       const term = decodeTerm(a);
       if (!term) return null;
       return { type: "define", term, sourceThreadId: b && SAFE.test(b) ? b : undefined };
+    }
+    case "offer": {
+      // offer:<layer>:<encoded key>[:<flow>], from the single-page site's share links and checkout return.
+      // The key may arrive encoded (`thread%3Aid`, as the kit writes it: one part) or plain (`thread:id`:
+      // the address bar decodes once before this runs, so it is two parts). A content key is `thread:<id>` or
+      // `artwork:<id>`; a profile id is one part. Whatever follows the key is the flow. (A flow id such as
+      // "svc" is never taken for the second half of a content key: the prefix decides.)
+      const [, layer, ...rest] = value.split(":");
+      if (!layer || !(OFFER_LAYERS as readonly string[]).includes(layer) || rest.length === 0 || !rest[0]) return null;
+      const plainContent = rest.length >= 2 && (rest[0] === "thread" || rest[0] === "artwork");
+      const rawKey = plainContent ? `${rest[0]}:${rest[1]}` : rest[0]!;
+      const flow: string | undefined = plainContent ? rest[2] : rest[1];
+      if (rest.length > (plainContent ? 3 : 2)) return null;
+      let key: string;
+      try {
+        key = decodeURIComponent(rawKey);
+      } catch {
+        return null;
+      }
+      if (!OFFER_KEY_RE.test(key)) return null;
+      if (flow && !(OFFER_FLOWS as readonly string[]).includes(flow)) return null;
+      return offerDescriptor(layer as OfferLayerId, key, flow ? { flow: flow as OfferFlow } : undefined);
     }
     default:
       return null;

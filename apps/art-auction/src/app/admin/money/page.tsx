@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { adminListActiveCarts } from "@elkdonis/commerce/queries";
-import { listHeld, listPayable, getMarketplaceSettings } from "@elkdonis/commerce/server";
-import { db } from "@elkdonis/db";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { siteConfig } from "@/config/site";
-import { OwedTable, ReleaseButton, SettingsForm, ApprovePayeeButton, type OwedRow } from "./money-panels";
+import { OwedTable, ReleaseButton, SettingsForm, ApprovePayeeButton } from "./money-panels";
+import { loadAdminMoney } from "./data";
 import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
@@ -23,27 +21,7 @@ export default async function AdminMoneyPage() {
   // the layout's redirect did not stop this page's data from streaming to a
   // signed-out visitor (verified on the live sites, 2026-11-06).
   await requireAdmin();
-  const [held, carts, payable, settings, suggested] = await Promise.all([
-    listHeld({ limit: 50 }).catch(() => []),
-    adminListActiveCarts({ limit: 25 }),
-    listPayable({ limit: 100 }).catch(() => []),
-    getMarketplaceSettings("market"),
-    db<Array<{ id: string; name: string; website: string | null; managed_by_org_id: string | null }>>`
-      SELECT p.id, p.name, p.website, p.managed_by_org_id
-      FROM payee p WHERE p.status = 'suggested' ORDER BY p.created_at ASC
-    `.catch(() => []),
-  ]);
-  const owed: OwedRow[] = payable.map((p) => ({
-    partyKind: p.party.kind,
-    partyId: p.party.userId ?? p.party.orgId ?? p.party.payeeId ?? "",
-    partyName: p.partyName ?? p.party.userId ?? p.party.orgId ?? p.party.payeeId ?? "platform",
-    payableMajor: p.payableMinor / 100,
-    heldMajor: p.heldMinor / 100,
-    currency: p.currency,
-    owedSince: p.owedSince,
-    payoutMethod: p.payoutMethod,
-    payoutEmail: p.payoutEmail,
-  }));
+  const { held, carts, owed, settings, suggested } = await loadAdminMoney();
 
   return (
     <>

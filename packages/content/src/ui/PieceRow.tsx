@@ -60,7 +60,7 @@ export function PieceRow({ item, timeZone, onOpen, href, density = "compact", sh
           <OutletMarks marks={item.marks} />
         </span>
       )}
-      <StatusChip status={item.status} label={item.statusNote} />
+      <StatusChip status={item.status} label={item.hidden ? "Hidden" : item.statusNote} />
       <time className="eac-c-row-date" dateTime={item.date ?? undefined}>
         {date}
       </time>

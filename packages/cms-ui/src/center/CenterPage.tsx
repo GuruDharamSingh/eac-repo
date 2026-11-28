@@ -73,6 +73,12 @@ export interface CenterPageProps {
   journeyTab?: JourneyTabId | null;
   /** The org's full manage console, for the organisation journey's rail. */
   manageHref?: string | null;
+  /**
+   * The content library for the `content` section (Content Cornerstone Step 6), e.g.
+   * <ContentLibrary source={{ endpoint: "/api/content/search" }} scope={{ kind: "mine" }} />.
+   * Drawn only when the layout places `content`; nothing when absent.
+   */
+  contentSlot?: React.ReactNode;
 }
 
 /** What the move handle calls each section. */
@@ -89,6 +95,7 @@ const SECTION_LABEL: Record<CenterSectionId, string> = {
   feed: "the feed",
   featured: "the featured thread",
   network: "the network strip",
+  content: "the content library",
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -159,6 +166,7 @@ function Panel({
 }
 
 export function CenterPage({
+  contentSlot,
   data,
   links,
   signedIn,
@@ -697,6 +705,7 @@ export function CenterPage({
         )}
       </>
     ),
+    content: contentSlot ?? null,
     network:
       network.length === 0 ? null : (
         <div className="eac-center-network">

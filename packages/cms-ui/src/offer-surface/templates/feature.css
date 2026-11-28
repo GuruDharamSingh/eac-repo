@@ -1,0 +1,60 @@
+/* Feature (packet 2h). Classes ost-feature-* only. Natural height; the page scrolls. */
+.ost-feature { display: block; }
+.ost-feature-cover { position: relative; min-height: 270px; display: flex; flex-direction: column; justify-content: flex-end; padding: 26px max(30px, calc((100% - 920px) / 2)); background-size: cover; background-position: center; }
+.ost-feature-covertag { position: absolute; top: 12px; right: 14px; font: 9.5px var(--os-mono); color: var(--os-ink-faint); }
+.ost-feature-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(20, 22, 24, 0.94)); }
+.ost-feature-head { position: relative; display: grid; gap: 10px; }
+.ost-feature-kick { font-family: var(--fk); font-size: 10px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-bronze); }
+.ost-feature-title { margin: 0; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 0.98; font-size: calc(46px * var(--fhx)); max-width: 460px; color: var(--os-ink-bone); }
+.ost-page .ost-feature-author { text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; }
+.ost-page .ost-feature-author:hover { color: var(--os-bronze); }
+.ost-feature-meta { font: 500 9.5px var(--os-mono); letter-spacing: 0.08em; color: var(--os-ink-2); }
+
+.ost-feature-body { padding: 26px 0 28px; display: grid; grid-template-columns: minmax(30px, 1fr) minmax(0, 920px) minmax(30px, 1fr); row-gap: 20px; }
+.ost-feature-body > * { grid-column: 2; min-width: 0; }
+.ost-feature-body > .ost-feature-break { grid-column: 1 / -1; }
+.ost-feature-stand { margin: 0; font-family: var(--fq); font-style: var(--fqi); font-size: 21px; line-height: 1.4; color: var(--os-ink-bone); }
+.ost-feature-cols { column-count: 2; column-gap: 26px; }
+.ost-feature-cols > *, .ost-feature-text > * { min-width: 0; margin: 0 0 10px; font-family: var(--fb); font-size: 13.5px; line-height: 1.65; color: var(--os-ink-body); }
+.ost-feature-cols > :last-child, .ost-feature-text > :last-child { margin-bottom: 0; }
+.ost-feature-break { margin: 0; display: grid; gap: 7px; grid-template-columns: subgrid; }
+.ost-feature-break > * { grid-column: 1 / -1; }
+.ost-feature-pic { height: 180px; border-top: 1px solid var(--os-line-soft); border-bottom: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9.5px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-feature-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ost-feature-pic.is-real { height: clamp(180px, 38vw, 340px); }
+.ost-feature-cover.is-bare { min-height: 150px; }
+.ost-feature-cover.is-bare .ost-feature-shade { display: none; }
+.ost-feature-body, .ost-feature-cover { min-width: 0; }
+.ost-feature-cards { min-width: 0; }
+.ost-feature-break figcaption { grid-column: 2;  font: 500 9.5px var(--os-mono); letter-spacing: 0.06em; color: var(--os-ink-faint); }
+.ost-feature-pull { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: start; }
+.ost-feature-q { font-family: var(--fh); font-weight: var(--fhw); font-size: 72px; line-height: 0.75; color: var(--os-bronze); }
+.ost-feature-pull p { margin: 0; font-family: var(--fq); font-style: var(--fqi); font-size: 24px; line-height: 1.3; color: var(--os-ink-bone); }
+.ost-feature-more { border-top: 1px solid var(--os-line-soft); padding-top: 16px; display: grid; gap: 12px; }
+.ost-feature-more-h { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-feature-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ost-page .ost-feature-card { background: none; border: 0; padding: 0; text-align: left; font: inherit; cursor: pointer; display: grid; gap: 7px; align-content: start; color: inherit; text-decoration: none; transition: transform 0.2s; }
+.ost-feature-card:hover { transform: translateY(-3px); }
+.ost-feature-thumb { height: 74px; border: 1px solid var(--os-line-soft); background-size: cover; background-position: center; }
+.ost-feature-card-t { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); font-size: calc(15px * var(--fhx)); line-height: 1.15; }
+.ost-feature-card-m { font: 500 9px var(--os-mono); color: var(--os-ink-faint); }
+
+@media (max-width: 639px) {
+  .ost-feature-cover { min-height: 250px; padding: 22px 16px; }
+  .ost-feature-title { font-size: calc(36px * var(--fhx)); }
+  .ost-feature-body { padding: 20px 0 24px; row-gap: 16px; grid-template-columns: 16px minmax(0, 1fr) 16px; }
+  .ost-feature-stand { font-size: 18px; }
+  .ost-feature-cols { column-count: 1; }
+  .ost-feature-pic { height: 140px; }
+  .ost-feature-pull p { font-size: 20px; }
+  .ost-feature-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .ost-feature-thumb { height: 50px; }
+  .ost-feature-card-t { font-size: calc(12px * var(--fhx)); }
+}
+
+/* Design width of the packet frame (px, unitless); the shell scales the page from it. */
+.ost-page[data-template="feature"] { --ost-base: 620; }
+
+/* A real cover picture: a stronger shade so the kicker and title read over any image. */
+.ost-feature-cover:not(.osf-ph):not(.is-bare) .ost-feature-shade { background: linear-gradient(180deg, rgba(20, 22, 24, 0.45), rgba(20, 22, 24, 0.96) 85%); }
+.ost-feature-text.ost-body h2 { margin-top: 0; }

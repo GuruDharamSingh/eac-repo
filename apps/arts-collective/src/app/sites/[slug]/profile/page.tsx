@@ -15,6 +15,10 @@ import { SiteNav } from "@/components/sites/SiteNav";
 import { SiteFooter } from "@/components/sites/SiteFooter";
 import { FollowButton } from "@/components/sites/FollowButton";
 import { JoinWorkshopButton } from "@/components/sites/workshop/JoinWorkshopButton";
+import { OfferSitePage } from "@/components/sites/OfferSitePage";
+import { loadSiteContext } from "@/lib/site-context";
+import { loadOfferPage } from "@/lib/offer-load";
+import { readOfferLook } from "@/lib/offer-site";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +38,35 @@ export const dynamic = "force-dynamic";
  */
 export default async function SiteProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
   const org = await getOrgBySlug(slug);
   if (!org) notFound();
+
+  // The second page of the new single-offer site: the profile template, for a site that opted in
+  // (`offer:look` enabled) or `?look=preview` in development. Same gate as the site root.
+  const offerLook = await readOfferLook(org.id);
+  const offerPreview = process.env.NODE_ENV === "development" && sp.look === "preview";
+  if (offerLook?.enabled || offerPreview) {
+    const octx = await loadSiteContext(slug);
+    if (octx && (octx.org.subdomain_confirmed || octx.canEdit || offerPreview)) {
+      const data = await loadOfferPage(
+        slug,
+        octx.user ? { userId: octx.user.id, name: null, email: octx.user.email } : null,
+        `${octx.proto}://${octx.host}`,
+        { featuredKey: offerPreview && typeof sp.featured === "string" ? sp.featured : null }
+      );
+      if (data) {
+        const shown = offerPreview && !offerLook?.enabled ? data : { ...data, look: offerLook!.look };
+        return <OfferSitePage data={shown} template="profile" signInHref={octx.loginUrl} />;
+      }
+    }
+  }
 
   const identity = await getOrgIdentity(slug);
   const user = await getCurrentUser();

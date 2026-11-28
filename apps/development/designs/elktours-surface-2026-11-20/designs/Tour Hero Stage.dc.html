@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Brothers";src:url("apps/elktours/public/fonts/BrothersTypeface-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Venture";src:url("apps/elktours/public/fonts/Venture-nRqOR.otf") format("opentype");font-weight:400;font-display:swap}
+html{background:#1b1e22}
+body{margin:0;background:#1b1e22;color:#f1ece2;font-family:"Basteleur",Georgia,serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+a{color:#dcc08a;text-underline-offset:3px}a:hover{color:#f1ece2}
+</style>
+</helmet>
+<div style="--bg:#343941;--soft:#393e46;--sunk:#2e3239;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;--k:#c9a25c;--ok:#1b1e23;--pc:#8fb3c4;--route:#e8805c;--t:'Brothers','Venture',Georgia,serif;--b:'Basteleur',Georgia,serif;--r:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--v:'Venture',Georgia,serif;display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start;padding:56px;min-height:100vh;background:#1b1e22">
+
+  <header style="flex:1 1 100%;display:grid;gap:8px;max-width:900px">
+    <span style="font-family:var(--v);font-size:.8rem;letter-spacing:.16em;color:var(--k)">TOUR PAGE HERO · REDESIGNED AS A DOCKED SURFACE</span>
+    <h1 style="margin:0;font-family:var(--t);font-weight:400;font-size:2.4rem;line-height:1.1">The stage and the strip</h1>
+    <p style="margin:0;color:var(--mu);line-height:1.6;max-width:72ch;text-wrap:pretty">Your hero is already a surface: the mini cards are faces, and the big card is what one of them opens into. So instead of a new one-off component, this treats it as the surface <span style="color:var(--fg)">docked into the page</span>. A strip of small faces stays visible and the open surface sits on a stage above them, with the usual masthead, body and foot. "About the place" and "Book" are layers pushed onto that stage's stack, the same way they would stack in the popup. Hover a card in the strip, click through the stops, open the place, press Book.</p>
+  </header>
+
+  <figure id="1a" style="margin:0;display:grid;gap:10px">
+    <figcaption style="display:flex;gap:10px;align-items:baseline;font-family:var(--r);font-size:12px;color:var(--mu)"><span style="padding:3px 7px;background:var(--fg);color:var(--ok);font-weight:600">1a</span><span><b style="color:var(--fg)">Desktop · 1440</b> · stage over the stop's photo, strip on the hero's lower edge</span></figcaption>
+    <div style="position:relative;width:1440px;height:780px;padding:30px 60px;background:#2a2e35">
+      <div style="position:relative;width:1320px;height:720px;overflow:hidden;background:{{heroBg}};transition:background .4s">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,26,0) 55%,rgba(20,22,26,.75) 100%)"></div>
+        <span style="position:absolute;right:28px;top:590px;font-family:var(--r);font-size:10.5px;color:rgba(241,236,226,.55)">hero photo · {{heroCaption}}</span>
+
+        <article data-kind="tour" style="position:absolute;left:24px;right:24px;top:24px;height:552px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:rgba(52,57,65,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(184,185,185,.6);box-shadow:0 28px 70px -24px rgba(0,0,0,.7);transform:{{stageT}};opacity:{{stageO}};transition:transform .26s cubic-bezier(.2,.8,.2,1),opacity .22s">
+          <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-bottom:2px solid var(--k)">
+            <span style="display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-family:var(--v);font-size:.95rem;letter-spacing:.06em">{{card.glyph}}</span>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap">
+                <sc-if value="{{card.crumb}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{toOverview}}" style="padding:0;border:0;background:none;color:var(--fg);font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(241,236,226,.3);text-underline-offset:3px">‹ The walk</button><span style="color:var(--fa)">·</span></sc-if>
+                <span>{{card.kicker}}</span>
+              </div>
+              <h2 style="margin:2px 0 0;font-family:var(--t);font-weight:400;font-size:1.22rem;line-height:1.2;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{card.title}}</h2>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button type="button" onClick="{{prevStop}}" aria-label="Previous" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);cursor:pointer;font-size:1rem" style-hover="border-color:#f1ece2">‹</button>
+              <span style="min-width:62px;text-align:center;font-family:var(--r);font-size:.72rem;color:var(--mu)">{{counter}}</span>
+              <button type="button" onClick="{{nextStop}}" aria-label="Next" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);cursor:pointer;font-size:1rem" style-hover="border-color:#f1ece2">›</button>
+            </div>
+          </header>
+
+          <div style="display:grid;grid-template-columns:540px minmax(0,1fr);min-height:0">
+            <div style="position:relative;min-height:0;overflow:hidden;padding:26px 30px 84px">
+              <p style="margin:0;font-family:var(--t);font-size:1.5rem;line-height:1.5;color:#ece6da;text-wrap:pretty">{{card.narrative}}</p>
+              <button type="button" onClick="{{flowGo}}" style="margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--mu);font-family:var(--r);font-size:.74rem;cursor:pointer" style-hover="color:#f1ece2"><span style="width:18px;height:0;border-top:2px dashed var(--route)"></span>{{card.flow}}</button>
+
+              <section style="--pk:{{sheetK}};position:absolute;left:14px;right:14px;bottom:14px;height:{{sheetH}};display:flex;flex-direction:column;background:var(--bg);border:1px solid {{sheetLine}};box-shadow:0 -18px 34px -18px rgba(0,0,0,.75);transition:height .28s cubic-bezier(.2,.8,.2,1);overflow:hidden">
+                <sc-if value="{{closed}}" hint-placeholder-val="{{true}}">
+                  <button type="button" onClick="{{toggleSheet}}" aria-expanded="false" style="position:relative;flex:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;height:62px;padding:0 14px 0 14px;border:0;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--pk) 8%,transparent),transparent 64%),var(--bg);color:var(--fg);cursor:pointer;text-align:left">
+                    <span style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--pk),color-mix(in srgb,var(--pk) 34%,transparent) 40%,transparent 66%)"></span>
+                    <span style="display:grid;place-items:center;width:32px;height:32px;background:color-mix(in srgb,var(--pk) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--pk) 26%,transparent);color:var(--pk);font-size:1rem">{{card.sheetGlyph}}</span>
+                    <span style="display:grid;gap:2px;min-width:0"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">{{card.sheetKicker}}</span><span style="font-size:.85rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{card.sheetLine}}</span></span>
+                    <span style="width:24px;height:24px;display:grid;place-items:center;border-radius:999px;border:1px solid color-mix(in srgb,var(--pk) 32%,transparent);background:color-mix(in srgb,var(--pk) 9%,transparent);color:var(--pk);font-family:var(--r);font-size:.8rem">+</span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{open}}" hint-placeholder-val="{{false}}">
+                  <header style="flex:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-bottom:2px solid var(--pk)">
+                    <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--pk) 14%,transparent);color:var(--pk);font-size:1rem">{{card.sheetGlyph}}</span>
+                    <div style="min-width:0"><div style="display:flex;gap:8px;font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden"><button type="button" onClick="{{toggleSheet}}" style="padding:0;border:0;background:none;color:var(--fg);font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(241,236,226,.3);text-underline-offset:3px">‹ {{card.crumbBack}}</button><span style="color:var(--fa)">·</span><span>{{card.sheetKind}}</span></div><div style="font-family:var(--t);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{card.sheetTitle}}</div></div>
+                    <button type="button" onClick="{{toggleSheet}}" aria-label="Back" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);cursor:pointer" style-hover="border-color:#f1ece2">←</button>
+                  </header>
+                </sc-if>
+                <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px 18px;display:grid;gap:14px;align-content:start">
+                  <dl style="margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content minmax(0,1fr);column-gap:14px;row-gap:8px;font-size:.88rem">
+                    <sc-for list="{{card.facts}}" as="f" hint-placeholder-count="4"><dt style="font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">{{f.k}}</dt><dd style="margin:0">{{f.v}}</dd></sc-for>
+                  </dl>
+                  <p style="margin:0;font-size:.95rem;line-height:1.55">{{card.about}}</p>
+                  <div style="display:flex;gap:10px;align-items:baseline;padding:9px 12px;border:1px dashed rgba(232,128,92,.55);font-size:.88rem;color:var(--mu)"><span style="flex:none;font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--route)">From your guide</span><span>[The guide's note for this departure.]</span></div>
+                  <sc-if value="{{card.hasLinks}}" hint-placeholder-val="{{true}}">
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                      <sc-for list="{{card.links}}" as="l" hint-placeholder-count="2"><a href="#" style="padding:4px 11px;border-radius:999px;border:1px solid var(--ln);font-size:.8rem;color:var(--fg);text-decoration:none" style-hover="border-color:#f1ece2">{{l}} ↗</a></sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{open}}" hint-placeholder-val="{{false}}">
+                  <footer style="flex:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.7rem;color:var(--mu)">{{card.sheetStatus}}</span><sc-if value="{{card.hasLinks}}" hint-placeholder-val="{{true}}"><a href="#" style="padding:7px 12px;border:1px solid var(--ln);color:var(--fg);font-size:.85rem;text-decoration:none" style-hover="border-color:#f1ece2">Open the place page →</a></sc-if></footer>
+                </sc-if>
+              </section>
+            </div>
+
+            <div style="position:relative;min-width:0;border-left:1px solid var(--ln);background:{{media.bg}};overflow:hidden">
+              <sc-if value="{{media.hasTabs}}" hint-placeholder-val="{{true}}">
+                <div style="position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:6px">
+                  <sc-for list="{{media.tabs}}" as="t" hint-placeholder-count="2">
+                    <sc-if value="{{t.on}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{t.pick}}" aria-pressed="true" style="padding:6px 13px;border-radius:999px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-family:var(--b);font-size:.8rem;cursor:pointer">{{t.label}}</button></sc-if>
+                    <sc-if value="{{t.off}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{t.pick}}" aria-pressed="false" style="padding:6px 13px;border-radius:999px;border:1px solid rgba(241,236,226,.45);background:rgba(27,30,35,.6);color:var(--fg);font-family:var(--b);font-size:.8rem;cursor:pointer" style-hover="border-color:#f1ece2">{{t.label}}</button></sc-if>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">
+                <sc-if value="{{media.isPhoto}}" hint-placeholder-val="{{true}}"><span style="font-family:var(--r);font-size:11px;letter-spacing:.06em;color:rgba(241,236,226,.7)">[photo · {{media.caption}}]</span></sc-if>
+                <sc-if value="{{media.showLoad}}" hint-placeholder-val="{{false}}">
+                  <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:#dcc08a">{{media.loadKicker}}</span>
+                  <button type="button" onClick="{{media.load}}" style="display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 20px;border:1px solid var(--k);background:{{media.loadBg}};color:{{media.loadFg}};font-family:var(--b);font-size:.95rem;cursor:pointer"><span style="font-size:.9rem">{{media.loadGlyph}}</span>{{media.loadLabel}}</button>
+                  <span style="font-family:var(--r);font-size:.66rem;color:var(--mu)">Nothing loads until this is pressed</span>
+                </sc-if>
+                <sc-if value="{{media.showLive}}" hint-placeholder-val="{{false}}"><span style="font-family:var(--r);font-size:11px;letter-spacing:.06em;color:rgba(241,236,226,.8)">[{{media.liveLabel}}]</span></sc-if>
+              </div>
+              <sc-if value="{{media.arrows}}" hint-placeholder-val="{{true}}">
+                <button type="button" onClick="{{media.prev}}" aria-label="Previous picture" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(241,236,226,.35);background:rgba(27,30,35,.55);color:var(--fg);cursor:pointer">‹</button>
+                <button type="button" onClick="{{media.next}}" aria-label="Next picture" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(241,236,226,.35);background:rgba(27,30,35,.55);color:var(--fg);cursor:pointer">›</button>
+              </sc-if>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:12px;padding:28px 16px 12px;background:linear-gradient(180deg,transparent,rgba(27,30,35,.82));font-size:.85rem">
+                <span style="font-style:italic">{{media.caption}}</span><span style="font-family:var(--r);font-size:.68rem;color:var(--mu)">{{media.count}}</span>
+              </div>
+            </div>
+          </div>
+
+          <footer style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-top:1px solid var(--rl);background:rgba(57,62,70,.96)">
+            <div style="display:flex;align-items:baseline;gap:12px;min-width:0;font-family:var(--r);font-size:.74rem;color:var(--mu);white-space:nowrap;overflow:hidden">
+              <span style="color:var(--fg)">Discover the Heart of Paris: Île de la Cité</span><span>Next walk [Sat date] · [€ price] per person</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-left:auto">
+              <sc-if value="{{isOverview}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{flowGo}}" style="padding:8px 14px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-family:var(--b);font-size:.88rem;line-height:1.2;cursor:pointer;white-space:nowrap" style-hover="border-color:#f1ece2">Start at stop I</button></sc-if>
+              <button type="button" onClick="{{openBook}}" style="padding:8px 18px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-family:var(--b);font-size:.88rem;line-height:1.2;cursor:pointer;white-space:nowrap" style-hover="filter:brightness(.94)">Book</button>
+            </div>
+          </footer>
+        </article>
+
+        <sc-if value="{{book}}" hint-placeholder-val="{{false}}">
+          <article data-kind="event" style="position:absolute;left:50%;top:64px;width:440px;margin-left:-220px;display:grid;background:var(--bg);border:1px solid var(--rl);box-shadow:0 30px 80px -20px rgba(0,0,0,.85)">
+            <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px 12px 16px;border-bottom:2px solid var(--k)">
+              <span style="display:grid;place-items:center;width:36px;height:36px;background:color-mix(in srgb,var(--k) 16%,transparent);color:var(--k)">◆</span>
+              <div style="min-width:0"><div style="display:flex;gap:8px;font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden"><button type="button" onClick="{{closeBook}}" style="padding:0;border:0;background:none;color:var(--fg);font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(241,236,226,.3);text-underline-offset:3px">‹ {{card.title}}</button><span style="color:var(--fa)">·</span><span>Book</span></div><div style="font-family:var(--t);font-size:1.2rem">Book this walk</div></div>
+              <button type="button" onClick="{{closeBook}}" aria-label="Back" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);cursor:pointer">←</button>
+            </header>
+            <div style="padding:18px 20px;display:grid;gap:16px">
+              <p style="margin:0;font-family:var(--t);font-size:2rem;line-height:1">[€ price] <span style="font-family:var(--b);font-size:.9rem;color:var(--mu)">per person</span></p>
+              <div style="display:grid;gap:8px"><span style="font-size:.86rem;font-weight:700">Pick a date</span><div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{dates}}" as="d" hint-placeholder-count="3">
+                  <sc-if value="{{d.on}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{d.pick}}" aria-pressed="true" style="padding:7px 14px;border-radius:999px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-family:var(--b);font-size:.85rem;cursor:pointer">{{d.label}}</button></sc-if>
+                  <sc-if value="{{d.off}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{d.pick}}" aria-pressed="false" style="padding:7px 14px;border-radius:999px;border:1px solid var(--ln);background:transparent;color:var(--mu);font-family:var(--b);font-size:.85rem;cursor:pointer" style-hover="border-color:#f1ece2;color:#f1ece2">{{d.label}}</button></sc-if>
+                </sc-for></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.86rem;font-weight:700">People</span><span style="display:inline-flex;align-items:center;gap:12px"><button type="button" onClick="{{less}}" aria-label="Fewer people" style="width:34px;height:34px;border:1px solid var(--ln);background:transparent;color:var(--fg);cursor:pointer">−</button><span style="min-width:18px;text-align:center;font-family:var(--r)">{{party}}</span><button type="button" onClick="{{more}}" aria-label="More people" style="width:34px;height:34px;border:1px solid var(--ln);background:transparent;color:var(--fg);cursor:pointer">+</button></span></div>
+              <dl style="margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:6px;font-size:.85rem"><dt style="font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Meet at</dt><dd style="margin:0">[Meeting place]</dd><dt style="font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Cancel</dt><dd style="margin:0">[Cancellation policy]</dd></dl>
+            </div>
+            <footer style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.72rem;color:var(--mu)">{{party}} × [€ price]</span><button type="button" style="padding:8px 18px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-family:var(--b);font-size:.88rem;cursor:pointer">Book now</button></footer>
+          </article>
+        </sc-if>
+
+        <div style="position:absolute;left:36px;right:36px;bottom:16px;display:flex;gap:8px;align-items:flex-end">
+          <sc-for list="{{row}}" as="c" hint-placeholder-count="11">
+            <button type="button" onClick="{{c.pick}}" onMouseEnter="{{c.enter}}" onMouseLeave="{{c.leave}}" aria-pressed="{{c.on}}" aria-label="{{c.label}}" style="position:relative;flex:1 1 0;min-width:0;padding:6px 6px 9px;display:flex;flex-direction:column;gap:7px;text-align:left;color:var(--fg);background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 7%,transparent),transparent 64%),rgba(52,57,65,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:{{c.border}};box-shadow:{{c.shadow}};transform:{{c.lift}};transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .18s;cursor:pointer;overflow:hidden">
+              <span style="position:absolute;inset:0 0 auto 0;height:2px;z-index:2;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></span>
+              <span style="position:relative;display:block;height:{{c.picH}};background:{{c.bg}};transition:height .2s">
+                <span style="position:absolute;top:5px;left:5px;min-width:22px;height:22px;padding:0 3px;display:grid;place-items:center;background:{{c.medBg}};border:1px solid {{c.medLine}};color:{{c.medFg}};font-family:var(--v);font-size:.6rem;letter-spacing:.04em">{{c.mark}}</span>
+                <sc-if value="{{c.grown}}" hint-placeholder-val="{{false}}"><span style="position:absolute;top:5px;right:5px;width:22px;height:22px;display:grid;place-items:center;border-radius:999px;border:1px solid color-mix(in srgb,var(--k) 32%,transparent);background:rgba(27,30,35,.7);color:var(--k);font-family:var(--r);font-size:.75rem">{{c.cue}}</span></sc-if>
+              </span>
+              <span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.3em;padding:0 2px;font-family:var(--t);font-size:.8rem;line-height:1.15">{{c.title}}</span>
+              <sc-if value="{{c.grown}}" hint-placeholder-val="{{false}}"><span style="display:grid;gap:4px;padding:0 2px"><span style="font-family:var(--r);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">{{c.line2}}</span><span style="font-size:.7rem;line-height:1.35;color:var(--mu)">{{c.line1}}</span></span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <sc-if value="{{annotate}}" hint-placeholder-val="{{true}}">
+    <aside style="flex:1 1 100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px 40px;max-width:1440px;padding-top:26px;border-top:1px solid var(--rl)">
+      <div style="display:grid;gap:8px;align-content:start">
+        <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--k)">New in Surface</span>
+        <h3 style="margin:0;font-family:var(--t);font-weight:400;font-size:1.4rem">SurfaceStage: the dialog, docked</h3>
+        <p style="margin:0;color:var(--mu);font-size:.92rem;line-height:1.55">A second host for the same descriptors. <span style="font-family:var(--r);font-size:.85em;color:var(--fg)">open()</span> renders into a stage in the page instead of the &lt;dialog&gt;: no scrim, no ✕, and ‹ › walk the sibling faces. The stack, crumbs and URL work as they do in the popup, so you can call it "herohybrid", but it needs no new parts. The surface size is <span style="font-family:var(--r);font-size:.85em;color:var(--fg)">stage</span>: fills its host.</p>
+      </div>
+      <ol style="margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:.9rem;line-height:1.5">
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">1</span><span><span style="color:var(--fg)">Strip.</span> <span style="color:var(--mu)">SurfaceCardGrid variant="strip": small faces with a cover preview. The open one wears the filled medallion; hover grows the preview and shows the cue.</span></span></li>
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">2</span><span><span style="color:var(--fg)">Masthead.</span> <span style="color:var(--mu)">The stop numeral takes the glyph tile; the kicker crumbs back to the overview. Same 2px brass line as the face's edge.</span></span></li>
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">3</span><span><span style="color:var(--fg)">Body, split.</span> <span style="color:var(--mu)">Narrative as main (540px), media flush beside it with SurfaceTabs. Street View, the film and the 3D map load on press.</span></span></li>
+      </ol>
+      <ol start="4" style="margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:.9rem;line-height:1.5">
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">4</span><span><span style="color:var(--fg)">Place.</span> <span style="color:var(--mu)">A one-line place face (proposed "place" kind, blue) that opens the place surface over the narrative: pushed on the stage's stack, ← returns.</span></span></li>
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">5</span><span><span style="color:var(--fg)">Foot.</span> <span style="color:var(--mu)">The tour line as status, Book as the one primary. Always on screen, whatever stop is open.</span></span></li>
+        <li style="display:grid;grid-template-columns:26px 1fr;gap:6px"><span style="font-family:var(--r);color:var(--route)">6</span><span><span style="color:var(--fg)">Book.</span> <span style="color:var(--mu)">A compact event surface pushed over the stage; the stage dims beneath as an under-layer, like stacked popups.</span></span></li>
+      </ol>
+    </aside>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;annotate&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sheet&quot;}}">
+class Component extends DCLogic {
+  state = { sel: 3, hover: -1, slide: {}, open: false, book: false, date: 0, party: 2, loaded: {} };
+  renderVals() {
+    const st = this.state, set = o => this.setState(o);
+    const NUM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+    const TONES = ['#6d6559', '#5f6a6e', '#5f5a6e', '#5b5f66', '#6e6150', '#566259', '#6a5d52', '#5d6470', '#6b6457'];
+    const STOPS = [
+      { title: 'Notre-Dame', kind: 'Cathedral', entry: 'Free entry', built: '1163–1345', photos: ['West front', 'Rose window', 'Flying buttresses'], narrative: 'We begin at the cathedral at the heart of the island, newly reopened after the fire, and read its west front like a book in stone.', about: 'Gothic cathedral begun in 1163; it reopened in December 2024 after the 2019 fire.', links: ['Official site', 'Wikipedia'] },
+      { title: 'Hôtel-Dieu', kind: 'Hospital', entry: 'Free', built: 'Rebuilt 1867–1878', photos: [], narrative: 'Next door, the city’s oldest hospital reminds us the island was a place of living and healing, not only of worship.', about: "Paris's oldest hospital, founded in the 7th century beside the cathedral.", links: ['Wikipedia'] },
+      { title: 'Sainte-Chapelle', kind: 'Royal chapel', entry: 'Ticket · not included', built: '1242–1248', photos: ['Upper chapel glass', 'From the courtyard'], narrative: 'Inside the palace walls the mood changes: a royal chapel made as a reliquary, all light and coloured glass.', about: "Finished in 1248 for Louis IX's relics; the upper chapel is almost all stained glass.", links: ['Tickets', 'Official site', 'Wikipedia'] },
+      { title: 'Conciergerie', kind: 'Palace & prison', entry: 'Ticket · not included', built: '14th century', photos: ['Hall of the Men-at-Arms'], narrative: 'The same palace keeps a darker story. When the kings left, it became the prison of the Revolution.', about: "Medieval royal palace, later the Revolution's prison; Marie-Antoinette was held here in 1793.", links: ['Tickets', 'Wikipedia'] },
+      { title: 'Place Dauphine', kind: 'Square', entry: 'Free', built: 'From 1607', photos: [], narrative: 'Out of history’s heavy rooms and into Henri IV’s quiet triangle of houses, one of the first planned squares in Paris.', about: 'A triangular square laid out under Henri IV from 1607.', links: ['Wikipedia'] },
+      { title: 'Square du Vert-Galant', kind: 'Garden', entry: 'Free', built: '', photos: ['The island tip', 'Henri IV on the Pont Neuf'], narrative: 'At the island’s western tip we meet Henri IV again, on horseback on the Pont Neuf, and the river opens out.', about: 'The western point of the island, below the statue of Henri IV on the Pont Neuf.', links: ['Wikipedia'] },
+      { title: 'The bouquinistes', kind: 'Booksellers', entry: 'Free', built: '', photos: ['Green book boxes on the quay'], narrative: 'Along the parapets, the green boxes of the booksellers carry us from the island towards the city of print.', about: "Second-hand booksellers in green boxes along the Seine's parapets.", links: ['Wikipedia'] },
+      { title: 'Pont des Arts', kind: 'Footbridge', entry: 'Free', built: '1801–04, rebuilt 1984', photos: [], narrative: 'We cross between the Institut de France and the Louvre: the academies on one bank, the palace on the other.', about: 'Footbridge to the Institut de France, first built in 1801–04.', links: ['Wikipedia'] },
+      { title: 'Louvre Pyramid', kind: 'Museum', entry: 'Ticket for the museum', built: '1989', photos: ['The pyramid at night', 'Cour Napoléon'], narrative: 'And we finish where the old palace meets the glass pyramid, the crossing of the river complete.', about: "I. M. Pei's glass pyramid, opened in 1989.", links: ['Museum site', 'Wikipedia'] }
+    ];
+    const N = STOPS.length, sel = st.sel, isOv = sel === 0, i = sel - 1, s = STOPS[i];
+    const STR = 'repeating-linear-gradient(135deg, rgba(241,236,226,.05) 0 6px, transparent 6px 12px)';
+    const tone = isOv ? '#5b5650' : TONES[i];
+    const go = k => set({ sel: Math.max(0, Math.min(N, k)), open: false, book: false });
+
+    let slides;
+    if (isOv) slides = [{ kind: 'photo', label: 'Photo', caption: 'Notre-Dame from the Seine' }, { kind: 'film', label: 'Fly-over', caption: 'Fly-over · rendered film' }, { kind: 'map', label: '3D route', caption: '3D route · interactive map' }];
+    else { slides = s.photos.map(p => ({ kind: 'photo', label: 'Photos', caption: p })); slides.push({ kind: 'sv', label: 'Street View', caption: 'Street View at ' + s.title }); }
+    const n = slides.length, gi = Math.min(st.slide[sel] || 0, n - 1), cur = slides[gi];
+    const setIdx = k => set({ slide: Object.assign({}, st.slide, { [sel]: (k + n) % n }) });
+    const key = sel + ':' + cur.kind, loaded = !!st.loaded[key];
+    const photos = slides.filter(x => x.kind === 'photo'), pi = photos.indexOf(cur);
+    const seen = {}, tabs = [];
+    slides.forEach((sl, k) => { if (seen[sl.label]) return; seen[sl.label] = 1; const on = sl.label === cur.label; tabs.push({ label: sl.label, on, off: !on, pick: () => setIdx(k) }); });
+    const LOAD = { sv: ['Street View', '◎', 'Load Street View', 'Street View · drag to look around'], film: ['Fly-over · rendered film', '▶', 'Watch the fly-over', 'Fly-over playing · muted'], map: ['3D route · interactive map', '⌖', 'Explore the 3D route', '3D route · drag to orbit'] }[cur.kind];
+    const media = {
+      bg: STR + ', linear-gradient(160deg, ' + (cur.kind === 'photo' ? tone : '#3a3f47') + ', #1f2228)',
+      caption: cur.caption, isPhoto: cur.kind === 'photo',
+      showLoad: !!LOAD && !loaded, showLive: !!LOAD && loaded,
+      loadKicker: LOAD ? LOAD[0] : '', loadGlyph: LOAD ? LOAD[1] : '', loadLabel: LOAD ? LOAD[2] : '', liveLabel: LOAD ? LOAD[3] : '',
+      loadBg: cur.kind === 'map' ? '#c9a25c' : 'rgba(27,30,35,.65)', loadFg: cur.kind === 'map' ? '#1b1e23' : '#f1ece2',
+      load: () => set({ loaded: Object.assign({}, st.loaded, { [key]: true }) }),
+      count: cur.kind === 'photo' ? (pi + 1) + ' / ' + photos.length : (loaded ? 'loaded' : 'on demand'),
+      arrows: n > 1, prev: () => setIdx(gi - 1), next: () => setIdx(gi + 1),
+      tabs: tabs.length > 1 ? tabs : [], hasTabs: tabs.length > 1
+    };
+
+    let card;
+    if (isOv) card = {
+      glyph: '⌖', crumb: false, kicker: 'The walk · 9 stops', title: 'The island where Paris began',
+      narrative: 'On this walk we cross the Île de la Cité from the cathedral at its heart, through the royal palace and its prison, out to the island’s tip, and over the river to the Louvre.',
+      flow: 'Start with stop I, Notre-Dame', sheetGlyph: '⌖', sheetKicker: 'About this tour', sheetLine: '[Length] · Small group · [Language] · Meet at [Meeting place]',
+      facts: [{ k: 'Length', v: '[Length]' }, { k: 'Group', v: 'Small group' }, { k: 'Meet at', v: '[Meeting place]' }, { k: 'Included', v: 'Licensed guide · [item]' }],
+      about: 'Not included: [entry tickets, e.g. Sainte-Chapelle], [food and drinks].', links: [], hasLinks: false,
+      crumbBack: 'The walk', sheetKind: 'Tour', sheetTitle: 'About this tour', sheetStatus: '9 stops · [Length]'
+    };
+    else {
+      const facts = [{ k: 'Time here', v: '[20 min]' }, { k: 'Entry', v: s.entry }];
+      if (s.built) facts.push({ k: 'Built', v: s.built });
+      facts.push({ k: 'Open', v: '[Opening hours]' });
+      card = {
+        glyph: NUM[i], crumb: true, kicker: 'Stop ' + NUM[i] + ' of IX', title: s.title, narrative: s.narrative,
+        flow: i < N - 1 ? 'Then on to ' + NUM[i + 1] + ', ' + STOPS[i + 1].title + ' · [3 min walk]' : 'The end of the walk · back to the overview',
+        sheetGlyph: '⊙', sheetKicker: 'Place · ' + s.title, sheetLine: s.kind + ' · ' + s.entry + ' · [20 min]',
+        facts, about: s.about, links: s.links, hasLinks: true,
+        crumbBack: 'Stop ' + NUM[i], sheetKind: 'Place', sheetTitle: s.title, sheetStatus: 'In the catalogue · added by [guide]'
+      };
+    }
+
+    const row = [];
+    for (let k = 0; k <= N + 1; k++) {
+      const on = k === sel && !st.book || (k === N + 1 && st.book), grown = k === st.hover;
+      const c = {
+        on, grown, isStop: false, glyph: '', cue: k === N + 1 ? '→' : '+',
+        picH: grown ? '84px' : '44px', lift: grown ? 'translateY(-10px)' : 'none',
+        shadow: grown ? '0 18px 36px -12px rgba(0,0,0,.75)' : '0 6px 14px -8px rgba(0,0,0,.6)',
+        border: on ? '1px solid #c9a25c' : grown ? '1px solid rgba(241,236,226,.6)' : '1px solid rgba(241,236,226,.22)',
+        medBg: on ? '#c9a25c' : 'rgba(27,30,35,.85)', medFg: on ? '#1b1e23' : '#c9a25c', medLine: on ? '#c9a25c' : 'rgba(201,162,92,.26)',
+        pick: () => k === N + 1 ? set({ book: true, hover: -1 }) : go(k),
+        enter: () => set({ hover: k }), leave: () => set({ hover: -1 })
+      };
+      if (k === 0) Object.assign(c, { mark: '⌖', title: 'The walk', label: 'Tour overview', bg: STR + ', #3a3f47', line1: 'The island where Paris began', line2: 'Overview · 9 stops' });
+      else if (k === N + 1) Object.assign(c, { mark: '◆', title: 'Book', label: 'Book this tour', bg: STR + ', linear-gradient(135deg, #c9a25c, #8a6d3a)', line1: '[€ price] per person', line2: 'Next [Sat date]' });
+      else {
+        const x = STOPS[k - 1];
+        Object.assign(c, { isStop: true, mark: NUM[k - 1], numeral: NUM[k - 1], title: x.title, label: 'Stop ' + NUM[k - 1] + ': ' + x.title,
+          glyph: x.photos.length ? '' : '◎', glyphFg: '#dcc08a',
+          bg: STR + ', ' + (x.photos.length ? TONES[k - 1] : 'radial-gradient(ellipse at 50% 120%, #4a5160 0%, #1d2026 70%)'),
+          badgeBg: on ? '#c9a25c' : 'rgba(27,30,35,.85)', badgeFg: on ? '#1b1e23' : '#dcc08a',
+          line1: x.narrative.split(/[,:.]/)[0] + '…', line2: x.kind + (x.photos.length ? '' : ' · Street View') });
+      }
+      row.push(c);
+    }
+
+    const dates = ['[Sat date]', '[Sun date]', '[Wed date]'].map((d, j) => ({ label: d, on: j === st.date, off: j !== st.date, pick: () => set({ date: j }) }));
+
+    return {
+      heroBg: STR + ', linear-gradient(135deg, ' + tone + ', #1f2228)',
+      heroCaption: isOv ? 'Notre-Dame from the Seine' : (s.photos[0] || s.title),
+      isOverview: isOv, card, media, row, dates, party: st.party, book: st.book, open: st.open,
+      counter: isOv ? 'Overview' : NUM[i] + ' / IX',
+      stageT: st.book ? 'translateY(-14px) scale(.985)' : 'none', stageO: st.book ? '0.4' : '1',
+      sheetH: st.open ? 'calc(100% - 28px)' : '62px', closed: !st.open, sheetK: isOv ? '#c9a25c' : '#8fb3c4',
+      sheetLine: st.open ? '#b8b9b9' : 'rgba(241,236,226,.22)',
+      toggleSheet: () => set({ open: !st.open }),
+      toOverview: () => go(0), prevStop: () => go(sel - 1), nextStop: () => go(sel + 1),
+      flowGo: () => go(isOv ? 1 : (sel < N ? sel + 1 : 0)),
+      openBook: () => set({ book: true }), closeBook: () => set({ book: false }),
+      less: () => set({ party: Math.max(1, st.party - 1) }), more: () => set({ party: Math.min(12, st.party + 1) }),
+      annotate: this.props.annotate ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

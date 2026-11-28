@@ -4,6 +4,7 @@ import { fontsHref } from "@/theme/fonts";
 import type { Metadata } from "next";
 import { TopBar } from "@/components/TopBar";
 import { requireNetworkAdmin } from "@/lib/gate";
+import { DeskNotes } from "@/desk/DeskNotes";
 
 export const metadata: Metadata = {
   title: { default: "Development", template: "%s · Development" },
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="dev-app">
           <TopBar email={admin.email} />
           <main className="dev-main">{children}</main>
+          <DeskNotes email={admin.email} />
         </div>
       </body>
     </html>

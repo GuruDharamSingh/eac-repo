@@ -1,0 +1,75 @@
+/* Note page (packet frame 2i). Prefix ost-note-. */
+@keyframes ost-note-ping { 0% { transform: scale(1); opacity: 0.9; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+
+.ost-note-empty { padding: 40px var(--ost-pad); color: var(--os-ink-muted); font-family: var(--fb); }
+.ost-note { display: grid; grid-template-columns: 136px minmax(0, 1fr); }
+
+/* Timeline */
+.ost-note-line { position: relative; padding: 22px 14px 22px 18px; border-right: 1px solid var(--os-line-soft); }
+.ost-note-line-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; align-content: start; position: relative; }
+.ost-note-line::before { content: ""; position: absolute; left: 22px; top: 28px; bottom: 28px; width: 1px; background: var(--os-line-dotted); }
+.ost-note-pt { position: relative; display: grid; grid-template-columns: 10px 1fr; gap: 10px; }
+.ost-note-dot { position: relative; width: 9px; height: 9px; margin-top: 3px; border-radius: 50%; background: var(--os-input); border: 1px solid var(--os-ink-placeholder); }
+.ost-note-pt.is-current .ost-note-dot { background: var(--os-bronze); border-color: var(--os-bronze); }
+.ost-note-pt.is-current .ost-note-dot::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid var(--os-bronze); animation: ost-note-ping 2.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.ost-note-pt-text { display: grid; gap: 2px; min-width: 0; }
+.ost-note-pt-date { font: 500 9px var(--os-mono); color: var(--os-ink-faint); }
+.ost-note-pt-title { font-family: var(--fb); font-size: 11.5px; color: var(--os-ink-muted); }
+.ost-note-pt.is-current .ost-note-pt-date { color: var(--os-bronze); }
+.ost-note-pt.is-current .ost-note-pt-title { color: var(--os-ink-bone); }
+
+/* The note */
+.ost-note-main { padding: 24px 30px 26px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-content: start; max-width: 380px; min-width: 0; }
+.ost-note-meta { font: 500 9.5px var(--os-mono); letter-spacing: 0.08em; color: var(--os-ink-faint); }
+.ost-note-title { margin: 0; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 1.1; font-size: calc(23px * var(--fhx)); }
+.ost-note-text { font-family: var(--fb); font-size: 13.5px; line-height: 1.6; color: var(--os-ink-body); }
+.ost-note-text > * { margin: 0; }
+.ost-note-text > * + * { margin-top: 0.7em; }
+.ost-note-text a { color: var(--os-bronze); }
+.ost-note-pic { width: 62%; height: 110px; border: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9.5px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-note-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ost-note-pic.is-real { height: auto; display: block; }
+.ost-note-pic.is-real img { height: auto; max-height: 280px; display: block; }
+.ost-note-text, .ost-note-replies, .ost-note-reply-body { min-width: 0; overflow-wrap: anywhere; }
+@media (min-width: 640px) { .ost-note-pt-title { overflow-wrap: anywhere; } }
+.ost-note-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ost-note-tag { font: 500 9.5px var(--os-mono); color: var(--os-ink-muted); border: 1px solid var(--os-line-dotted); padding: 2px 7px; }
+
+/* Replies */
+.ost-note-replies { border-top: 1px solid var(--os-line-soft); padding-top: 12px; display: grid; gap: 10px; }
+.ost-note-replies-label { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-note-reply { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.ost-note-reply-av { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--os-line-strong); background: #2a2f32; }
+.ost-note-reply-body { display: grid; gap: 2px; }
+.ost-note-reply-name { font-family: var(--fb); font-size: 12px; color: var(--os-ink-bone); }
+.ost-note-reply-ago { font: 500 9px var(--os-mono); color: var(--os-ink-faint); }
+.ost-note-reply-text { font-family: var(--fb); font-size: 12.5px; line-height: 1.5; color: var(--os-ink-2); }
+.ost-note-form { display: flex; gap: 6px; }
+.ost-note-input { flex: 1; min-width: 0; background: var(--os-input); border: 1px solid var(--os-line-strong); color: var(--os-ink-bone); padding: 7px 9px; font-family: var(--fb); font-size: 12px; outline: none; border-radius: 0; }
+.ost-note-input:focus { border-color: var(--os-bronze); }
+.ost-note-send { font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 10.5px; background: var(--os-bronze); color: var(--os-on-bronze); border: 0; padding: 8px 13px; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) { .ost-note-pt.is-current .ost-note-dot::after { animation: none; } }
+
+/* Phone: the timeline becomes a strip along the top. */
+@media (max-width: 639px) {
+  .ost-note { display: block; }
+  .ost-note-line { padding: 14px 16px; border-right: 0; border-bottom: 1px solid var(--os-line-soft); overflow-x: auto; scrollbar-width: none; }
+  .ost-note-line-list { display: flex; gap: 20px; }
+  .ost-note-line::before { display: none; }
+  .ost-note-pt { flex: none; }
+  .ost-note-pt-title { white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+  .ost-note-pt-text { min-width: 0; }
+  .ost-note-main { padding: 20px 16px 24px; max-width: none; }
+  .ost-note-pic { width: 100%; }
+}
+
+.ost-page .ost-note-send { font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 10.5px; }
+.ost-page .ost-note-input { font-family: var(--fb); font-size: 12px; }
+
+
+button.ost-note-pt { width: 100%; background: none; border: 0; padding: 0; margin: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+button.ost-note-pt:hover .ost-note-pt-title { color: var(--os-ink-bone); }
+button.ost-note-pt:hover .ost-note-dot { border-color: var(--os-bronze); }
+/* The packet frame is 560px wide: keep its proportions on a wide window. */
+.ost-page[data-template="note"] { --ost-base: 560; }

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Brothers";src:url("apps/elktours/public/fonts/BrothersTypeface-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Venture";src:url("apps/elktours/public/fonts/Venture-nRqOR.otf") format("opentype");font-weight:400;font-display:swap}
+body{margin:0;background:#1f2227;color:#f1ece2;font-family:"Basteleur",Georgia,serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#dcc08a;text-underline-offset:3px}a:hover{color:#f1ece2}
+.dv-turn{padding:44px 44px 36px;border-bottom:1px solid rgba(241,236,226,.12);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#f1ece2;color:#1b1e23;text-decoration:none}
+.dv-tname{font:400 1.5rem/1.2 "Brothers",Georgia,serif;color:#f1ece2}
+.dv-tsub{margin:0 0 24px;max-width:760px;color:#b9b2a5;font-size:.95rem;line-height:1.55}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px;max-width:100%}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(241,236,226,.12);color:#f1ece2;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.4 ui-monospace,Menlo,monospace;color:#b9b2a5;max-width:520px}
+.dv-olabel b{color:#f1ece2;font-weight:600}
+.dv-card{max-width:100%;background:#343941;border:1px solid #b8b9b9;box-shadow:0 24px 60px -24px rgba(0,0,0,.7);overflow:hidden}
+.dv-opt:target .dv-oid{background:#c9a25c;color:#1b1e23}
+.dv-next{margin:24px 0 0;font:12px/1.5 ui-monospace,Menlo,monospace;color:#b9b2a5}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2" style="--bg:#343941;--soft:#393e46;--sunk:#2e3239;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;--k:#c9a25c;--ok:#1b1e23;--t:'Brothers','Venture',Georgia,serif;--b:'Basteleur',Georgia,serif;--r:ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Where a wizard's steps can live in a surface</span></div>
+  <p class="dv-tsub">The surface frame is masthead, body (with an optional rail) and foot, so a wizard can put its steps in any of the three. All four keep one primary action in the foot and let you jump back and forth; none blocks a step on validation. The prototype uses <a class="dv-oid" href="#2a">2a</a>: <a href="Create Tour Wizard.html">open Create Tour Wizard</a>.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a><span><b>Hairline split into steps.</b> The masthead's 2px kind line becomes three segments, each a button with a live status. Costs one thin row.</span></div>
+      <div class="dv-card" style="width:560px">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px 10px 16px">
+          <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">⌖</span>
+          <div style="min-width:0"><div style="display:flex;gap:6px;font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase"><span style="text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(241,236,226,.3)">‹ Hub</span><span style="color:var(--fa)">·</span><span>New tour</span><span style="padding:0 7px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent)">Draft</span></div><div style="font-family:var(--t);font-size:1.1rem">Le Marais at dusk</div></div>
+          <span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">✕</span>
+        </header>
+        <nav style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--ln)">
+          <div style="display:grid;gap:1px;padding:8px 14px 10px;border-top:2px solid color-mix(in srgb,var(--k) 55%,transparent)"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--fa)">01 <span style="color:var(--k)">✓</span></span><span style="font-size:.92rem">Description</span><span style="font-family:var(--r);font-size:.62rem;color:var(--fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Paris · Le Marais at dusk</span></div>
+          <div style="display:grid;gap:1px;padding:8px 14px 10px;border-top:2px solid var(--k);background:color-mix(in srgb,var(--k) 7%,transparent);box-shadow:inset 1px 0 0 rgba(114,122,134,.45)"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--k)">02</span><span style="font-size:.92rem">Route</span><span style="font-family:var(--r);font-size:.62rem;color:var(--fa)">5 stops · 1.4 km</span></div>
+          <div style="display:grid;gap:1px;padding:8px 14px 10px;border-top:2px solid var(--ln);box-shadow:inset 1px 0 0 rgba(114,122,134,.45)"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--fa)">03</span><span style="font-size:.92rem;color:var(--mu)">Details</span><span style="font-family:var(--r);font-size:.62rem;color:var(--fa)">1 of 5 captioned</span></div>
+        </nav>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 170px;height:170px">
+          <div style="background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#2b2f35;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">route map</div>
+          <div style="border-left:1px solid var(--ln);background:var(--soft);display:grid;align-content:start">
+            <div style="display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--ln);background:var(--bg);font-size:.8rem"><span style="width:20px;height:20px;display:grid;place-items:center;background:var(--k);color:var(--ok);font:600 10px var(--r)">1</span>Place des Vosges</div>
+            <div style="display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--ln);background:var(--bg);font-size:.8rem"><span style="width:20px;height:20px;display:grid;place-items:center;background:var(--k);color:var(--ok);font:600 10px var(--r)">2</span>Hôtel de Sully</div>
+            <div style="display:flex;gap:8px;align-items:center;padding:8px 10px;font-size:.8rem;color:var(--mu)"><span style="width:20px;height:20px;display:grid;place-items:center;border:1px dashed var(--k);color:var(--k);font:600 10px var(--r)">+</span>Add a stop</div>
+          </div>
+        </div>
+        <footer style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.7rem;color:var(--mu)">Draft saved 14:32</span><div style="display:flex;gap:6px"><span style="padding:7px 12px;font-size:.85rem;color:var(--mu)">Save &amp; close</span><span style="padding:7px 12px;border:1px solid var(--ln);font-size:.85rem">Back</span><span style="padding:7px 12px;background:var(--k);color:var(--ok);font-size:.85rem">Next: Details</span></div></footer>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a><span><b>Chips in the masthead.</b> cms-ui's StepIndicator "chips" variant, moved into the head under the title. Familiar, but it doubles the masthead's height.</span></div>
+      <div class="dv-card" style="width:500px">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:12px;padding:12px 14px 12px 16px;border-bottom:2px solid var(--k)">
+          <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">⌖</span>
+          <div style="min-width:0;display:grid;gap:8px"><div><div style="font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase">New tour · Draft</div><div style="font-family:var(--t);font-size:1.1rem">Le Marais at dusk</div></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="display:flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--ln);font-size:.75rem"><b style="font-family:var(--r)">1</b>Description</span>
+              <span style="display:flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-size:.75rem"><b style="font-family:var(--r)">2</b>Route</span>
+              <span style="display:flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid #e8805c;color:#e8805c;font-size:.75rem"><b style="font-family:var(--r)">3</b>Details !</span>
+            </div>
+          </div>
+          <span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">✕</span>
+        </header>
+        <div style="padding:16px;display:grid;gap:10px;height:160px;align-content:start">
+          <div style="font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:5px;border-bottom:1px solid var(--rl)">Stops</div>
+          <div style="font-size:.88rem;color:var(--mu)">A step flagged "!" stays clickable, so a failed finish never becomes a dead end (the reason the chips replaced arts-collective's inert version).</div>
+        </div>
+        <footer style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.7rem;color:var(--mu)">Step 2 of 3</span><div style="display:flex;gap:6px"><span style="padding:7px 12px;border:1px solid var(--ln);font-size:.85rem">Back</span><span style="padding:7px 12px;background:var(--k);color:var(--ok);font-size:.85rem">Next</span></div></footer>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a><span><b>The rail as a table of contents.</b> Steps sit in a left rail with what you've filled in, so the whole tour is in view while one part is edited. Best on wide screens; on a phone it collapses to <a class="dv-oid" href="#2d">2d</a>.</span></div>
+      <div class="dv-card" style="width:600px">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px 12px 16px;border-bottom:2px solid var(--k)">
+          <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">⌖</span>
+          <div style="min-width:0"><div style="font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase">New tour · Draft</div><div style="font-family:var(--t);font-size:1.1rem">Le Marais at dusk</div></div>
+          <span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">✕</span>
+        </header>
+        <div style="display:grid;grid-template-columns:200px minmax(0,1fr);min-height:230px">
+          <ol style="margin:0;padding:0;list-style:none;border-right:1px solid var(--ln);background:var(--soft)">
+            <li style="display:grid;gap:3px;padding:12px 14px;border-bottom:1px solid var(--ln)"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--k)">01 ✓</span><span style="font-size:.92rem">Description</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu);line-height:1.5">Paris · €35 · 2 h 30<br>Meets at Place des Vosges</span></li>
+            <li style="display:grid;gap:3px;padding:12px 14px;border-bottom:1px solid var(--ln);background:var(--bg);box-shadow:inset 2px 0 0 var(--k)"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--k)">02</span><span style="font-size:.92rem">Route</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu);line-height:1.5">1 Place des Vosges<br>2 Hôtel de Sully<br>3 Sainte-Catherine</span></li>
+            <li style="display:grid;gap:3px;padding:12px 14px"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;color:var(--fa)">03</span><span style="font-size:.92rem;color:var(--mu)">Details</span><span style="font-family:var(--r);font-size:.62rem;color:var(--fa)">Not started</span></li>
+          </ol>
+          <div style="background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#2b2f35;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">current step</div>
+        </div>
+        <footer style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.7rem;color:var(--mu)">Draft saved 14:32</span><div style="display:flex;gap:6px"><span style="padding:7px 12px;border:1px solid var(--ln);font-size:.85rem">Back</span><span style="padding:7px 12px;background:var(--k);color:var(--ok);font-size:.85rem">Next: Details</span></div></footer>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2d">
+      <div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a><span><b>Foot-led, phone sheet.</b> The head stays a plain masthead; progress is a three-segment bar in the foot between Back and Next (StepIndicator "bar"). Tapping the bar opens the step list.</span></div>
+      <div class="dv-card" style="width:300px;height:560px;display:flex;flex-direction:column;justify-content:flex-end;background:#1f2227;border-color:#444a53">
+        <div style="flex:1;background:rgba(20,18,16,.5)"></div>
+        <div style="display:grid;background:var(--bg);border-top:1px solid var(--rl)">
+          <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-bottom:2px solid var(--k)">
+            <span style="display:grid;place-items:center;width:30px;height:30px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">⌖</span>
+            <div style="min-width:0"><div style="font-family:var(--r);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase">New tour · Route</div><div style="font-family:var(--t);font-size:1rem;line-height:1.2">Le Marais at dusk</div></div>
+            <span style="display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--ln)">✕</span>
+          </header>
+          <div style="height:150px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#2b2f35;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10px;color:var(--mu)">map</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--ln);font-size:.85rem"><span style="width:22px;height:22px;display:grid;place-items:center;background:var(--k);color:var(--ok);font:600 10px var(--r)">1</span>Place des Vosges</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--ln);font-size:.85rem;color:var(--mu)"><span style="width:22px;height:22px;display:grid;place-items:center;border:1px dashed var(--k);color:var(--k);font:600 10px var(--r)">+</span>Add a stop</div>
+          <footer style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--rl);background:var(--soft)">
+            <span style="padding:7px 10px;border:1px solid var(--ln);font-size:.8rem">Back</span>
+            <div style="display:grid;gap:4px"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px"><span style="height:4px;border-radius:999px;background:var(--k)"></span><span style="height:4px;border-radius:999px;background:color-mix(in srgb,var(--k) 70%,transparent)"></span><span style="height:4px;border-radius:999px;background:var(--ln)"></span></div><span style="font-family:var(--r);font-size:.6rem;color:var(--mu);text-align:center">Step 2 of 3</span></div>
+            <span style="padding:7px 10px;background:var(--k);color:var(--ok);font-size:.8rem">Next</span>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "use <a class="dv-oid" href="#2c">2c</a> on desktop and <a class="dv-oid" href="#2d">2d</a> on phones" · "put the step statuses from <a class="dv-oid" href="#2a">2a</a> into <a class="dv-oid" href="#2b">2b</a>'s chips"</p>
+</section>
+
+<section class="dv-turn" id="t1" style="--bg:#343941;--soft:#393e46;--sunk:#2e3239;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;--k:#c9a25c;--ok:#1b1e23;--pc:#8fb3c4;--t:'Brothers','Venture',Georgia,serif;--b:'Basteleur',Georgia,serif;--r:ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Ways a surface can hold fields</span></div>
+  <p class="dv-tsub">The same four fields (title, summary, price, languages) in five treatments, then two patterns for lists and phones. All use the surface tokens; only <a class="dv-oid" href="#1a">1a</a> exists in cms-ui today (fields.css). The wizard prototype mixes <a class="dv-oid" href="#1a">1a</a> for Description, <a class="dv-oid" href="#1f">1f</a> for stops and <a class="dv-oid" href="#1c">1c</a> for captions.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span><b>Stacked.</b> fields.css as shipped: label above, hint below. Here the input is sunken and lined with --sf-line; shipped, it uses the brighter --sf-rule.</span></div>
+      <div class="dv-card" style="width:420px;padding:18px 20px;display:grid;gap:16px">
+        <div style="display:grid;gap:6px"><span style="font-size:.86rem;font-weight:700">Title</span><div style="padding:10px 12px;border:1px solid var(--k);outline:2px solid var(--k);outline-offset:1px;background:var(--sunk);font-family:var(--t);font-size:1.35rem">Le Marais at dusk</div></div>
+        <div style="display:grid;gap:6px"><span style="display:flex;font-size:.86rem;font-weight:700">One-line summary<span style="margin-left:auto;font-family:var(--r);font-size:.66rem;font-weight:400;color:var(--fa)">72 / 140</span></span><div style="padding:9px 11px;border:1px solid var(--ln);background:var(--sunk);font-size:.95rem">Two and a half hours through the old quarter as the lamps come on.</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:grid;gap:6px"><span style="font-size:.86rem;font-weight:700">Price per person</span><div style="display:grid;grid-template-columns:auto 1fr"><span style="display:grid;place-items:center;padding:0 9px;border:1px solid var(--ln);border-right:0;background:var(--soft);font-family:var(--r);font-size:.75rem;color:var(--mu)">EUR</span><div style="padding:9px 11px;border:1px solid var(--ln);background:var(--sunk)">35</div></div></div>
+          <div style="display:grid;gap:6px"><span style="font-size:.86rem;font-weight:700">Max per booking</span><div style="padding:9px 11px;border:1px solid var(--ln);background:var(--sunk)">10</div></div>
+        </div>
+        <p style="margin:-8px 0 0;font-size:.78rem;color:var(--mu)">Leave the price empty for "price on request".</p>
+        <div style="display:grid;gap:6px"><span style="font-size:.86rem;font-weight:700">Languages</span><div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 13px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:.82rem">English</span><span style="padding:5px 13px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:.82rem">Français</span><span style="padding:5px 13px;border-radius:999px;border:1px solid var(--ln);color:var(--mu);font-size:.82rem">Español</span></div></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><span><b>Registry.</b> The SurfaceFacts list made editable: mono labels on the left, underlined values on the right. A record and its form look the same.</span></div>
+      <div class="dv-card" style="width:420px;padding:18px 20px">
+        <div style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl);margin-bottom:6px">The tour</div>
+        <div style="display:grid;grid-template-columns:92px minmax(0,1fr);column-gap:14px;align-items:baseline">
+          <span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:12px 0">Title</span><div style="padding:10px 0 8px;border-bottom:2px solid var(--k);font-family:var(--t);font-size:1.25rem">Le Marais at dusk</div>
+          <span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:12px 0">Summary</span><div style="padding:10px 0 8px;border-bottom:1px solid var(--ln);font-size:.92rem;line-height:1.45">Two and a half hours through the old quarter as the lamps come on.</div>
+          <span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:12px 0">Price</span><div style="display:flex;gap:8px;align-items:baseline;padding:10px 0 8px;border-bottom:1px solid var(--ln)"><span>€35</span><span style="font-family:var(--r);font-size:.66rem;color:var(--mu)">per person</span></div>
+          <span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:12px 0">Languages</span><div style="display:flex;gap:10px;padding:10px 0 8px;border-bottom:1px solid var(--ln);font-size:.92rem"><span>English</span><span>Français</span><span style="color:var(--fa)">+ add</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><span><b>Edit in place.</b> The popup reads as the record; hovering a value shows a pencil, clicking turns that one value into a field with ✓ and ✕. Fits "editing in place without opening the studio".</span></div>
+      <div class="dv-card" style="width:420px">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;padding:12px 16px;border-bottom:2px solid var(--k)"><span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">⌖</span><div><div style="font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase">Tour · draft</div><div style="font-family:var(--t);font-size:1.1rem">Le Marais at dusk</div></div></header>
+        <dl style="margin:0;padding:14px 16px 18px;display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:10px;font-size:.9rem">
+          <dt style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Summary</dt><dd style="margin:0;display:flex;gap:8px;justify-content:space-between"><span>Two and a half hours through the old quarter as the lamps come on.</span></dd>
+          <dt style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Price</dt><dd style="margin:0;display:flex;gap:8px;justify-content:space-between;padding:2px 6px;margin-left:-6px;background:rgba(241,236,226,.05);outline:1px dashed rgba(241,236,226,.3)"><span>€35 per person</span><span style="font-size:.8rem;color:var(--k)">✎</span></dd>
+          <dt style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:9px">Languages</dt><dd style="margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center"><div style="padding:6px 9px;border:1px solid var(--k);background:var(--sunk);font-size:.88rem">English, Français, Español|</div><span style="display:grid;place-items:center;width:28px;height:28px;background:var(--k);color:var(--ok);font-size:.8rem">✓</span><span style="display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--ln);font-size:.8rem">✕</span></dd>
+          <dt style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Meets</dt><dd style="margin:0">Place des Vosges</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a><span><b>Sentence.</b> The essentials as one sentence with fill-in slots. Quick for an experienced guide; the slots open small pickers. Good for "Offer a tour" too.</span></div>
+      <div class="dv-card" style="width:420px;padding:22px 22px 18px;display:grid;gap:16px">
+        <p style="margin:0;font-family:var(--t);font-size:1.4rem;line-height:1.7">A walking tour in <span style="padding:0 6px;border-bottom:2px solid var(--k)">Paris</span> called <span style="padding:0 6px;border-bottom:2px solid var(--k)">Le Marais at dusk</span>, meeting at <span style="padding:0 6px;border-bottom:2px dashed var(--pc);color:var(--pc)">pick a place ▾</span>, for <span style="padding:0 6px;border-bottom:2px solid var(--k)">€35</span> a person, in <span style="padding:0 6px;border-bottom:2px solid var(--k)">English · Français</span>.</p>
+        <div style="display:grid;gap:6px"><span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">In one line</span><div style="padding:8px 0;border-bottom:1px solid var(--ln);font-size:.92rem;color:var(--mu)">Two and a half hours through the old quarter as the lamps come on.</div></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a><span><b>Write the page.</b> Fields styled as the tour page they produce: title in display type, summary as the lede, practicals as chips. No boxes until focus.</span></div>
+      <div class="dv-card" style="width:420px">
+        <div style="aspect-ratio:16/6;background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#2b2f35;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">click to choose a cover</div>
+        <div style="padding:16px 20px 20px;display:grid;gap:8px">
+          <span style="font-family:'Venture',Georgia,serif;font-size:.72rem;letter-spacing:.16em;color:var(--mu)">PARIS · WALKING TOUR</span>
+          <div style="font-family:var(--t);font-size:1.9rem;line-height:1.1">Le Marais at dusk<span style="color:var(--k)">|</span></div>
+          <div style="font-size:1rem;line-height:1.5;color:var(--fa)">Add a one-line summary…</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+            <span style="padding:4px 11px;border:1px solid var(--ln);font-size:.8rem">€35</span><span style="padding:4px 11px;border:1px solid var(--ln);font-size:.8rem">2 h 30</span><span style="padding:4px 11px;border:1px solid var(--ln);font-size:.8rem">English · Français</span><span style="padding:4px 11px;border:1px dashed var(--ln);font-size:.8rem;color:var(--mu)">+ max group</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a><span><b>Row card in an expandable list.</b> The mini card form: a collapsed summary row per item; one opens to show the place card, then notes, time and media. Add and Confirm are rows in the same list.</span></div>
+      <div class="dv-card" style="width:420px;background:var(--soft)">
+        <div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--ln);background:var(--bg)"><span style="width:26px;height:26px;display:grid;place-items:center;background:var(--k);color:var(--ok);font:600 11px var(--r);outline:1px solid var(--k);outline-offset:2px">1</span><span style="display:grid"><b style="font-size:.92rem">Place des Vosges</b><small style="font-family:var(--r);font-size:.64rem;color:var(--mu)">Start · meeting point · 10 min here</small></span><span style="color:var(--fa);font-size:.8rem">▾</span></div>
+        <div style="background:var(--bg);border-bottom:1px solid var(--ln);box-shadow:inset 2px 0 0 var(--k)">
+          <div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px"><span style="width:26px;height:26px;display:grid;place-items:center;background:var(--k);color:var(--ok);font:600 11px var(--r)">2</span><span style="display:grid"><b style="font-size:.92rem">Hôtel de Sully</b><small style="font-family:var(--r);font-size:.64rem;color:var(--mu)">140 m from 1 · 15 min here</small></span><span style="color:var(--fa);font-size:.8rem;transform:rotate(180deg)">▾</span></div>
+          <div style="display:grid;gap:12px;padding:0 14px 14px 52px">
+            <div style="display:grid;gap:6px;padding:10px;border:1px solid var(--ln);border-top:2px solid var(--pc);background:#30343b"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Place · catalogue</span><span style="font-size:.82rem">62 Rue Saint-Antoine, 75004 · mansion, garden · added by Jaswant</span></div>
+            <div style="display:grid;gap:6px;padding:8px 10px;border:1px solid rgba(220,192,138,.35);background:rgba(201,162,92,.06);font-size:.82rem"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Private notes · guides only</span><span>The garden passage closes early in winter. <span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">— Amrit</span></span></div>
+            <div style="display:grid;gap:5px"><span style="font-size:.8rem;font-weight:700">Notes for this stop</span><div style="padding:8px 10px;border:1px solid var(--ln);background:var(--sunk);font-size:.85rem;color:var(--fa);min-height:44px">What happens here, what to point out.</div></div>
+            <div style="display:grid;gap:5px"><span style="display:flex;justify-content:space-between;font-family:var(--r);font-size:.68rem;color:var(--mu)">Time here<b style="font-weight:500;color:var(--fg)">15 min</b></span><div style="position:relative;height:4px;background:var(--ln);border-radius:999px"><div style="width:25%;height:100%;background:var(--k);border-radius:999px"></div><div style="position:absolute;left:25%;top:-6px;width:16px;height:16px;margin-left:-8px;border-radius:999px;background:var(--k)"></div></div></div>
+            <div style="display:flex;gap:6px"><span style="width:56px;height:42px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 5px,transparent 5px 10px),var(--sunk)"></span><span style="width:56px;height:42px;display:grid;place-items:center;border:1px dashed var(--ln);font-size:.7rem;color:var(--mu)">+ Add</span><span style="margin-left:auto;align-self:center;font-size:.78rem;color:#e8805c">Remove</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--ln);background:var(--bg)"><span style="width:26px;height:26px;display:grid;place-items:center;border:1px dashed var(--k);color:var(--k);font:600 11px var(--r)">+</span><span style="display:grid"><b style="font-size:.92rem">Add a stop</b><small style="font-family:var(--r);font-size:.64rem;color:var(--mu)">Shows the closest places to stop 2</small></span><span style="color:var(--fa);font-size:.8rem">▾</span></div>
+        <div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;background:var(--bg)"><span style="width:26px;height:26px;display:grid;place-items:center;border:1px solid #e8805c;color:#e8805c;font:600 11px var(--r)">⤳</span><span style="display:grid"><b style="font-size:.92rem">Confirm route</b><small style="font-family:var(--r);font-size:.64rem;color:var(--mu)">Straight lines between stops</small></span><span style="color:var(--fa);font-size:.8rem">▾</span></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a><span><b>One question per sheet.</b> On a phone the Description step can ask one thing at a time in the bottom sheet, with large type and a keyboard-sized action. The data is the same as <a class="dv-oid" href="#1a">1a</a>.</span></div>
+      <div class="dv-card" style="width:300px;height:560px;display:flex;flex-direction:column;justify-content:flex-end;background:#1f2227;border-color:#444a53">
+        <div style="flex:1;background:rgba(20,18,16,.5)"></div>
+        <div style="display:grid;gap:16px;padding:16px 16px 14px;background:var(--bg);border-top:2px solid var(--k)">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase">New tour · 2 of 6</span><span style="font-size:.85rem;color:var(--mu)">✕</span></div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px"><span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span></div>
+          <div style="font-family:var(--t);font-size:1.5rem;line-height:1.2">Sum it up in one line.</div>
+          <div style="padding:12px;border:1px solid var(--k);background:var(--sunk);font-size:1rem;line-height:1.45;min-height:90px">Two and a half hours through the old quarter as the lamps come on.|</div>
+          <span style="font-family:var(--r);font-size:.64rem;color:var(--fa);text-align:right">72 / 140</span>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:8px"><span style="padding:12px 14px;border:1px solid var(--ln);font-size:.9rem">Back</span><span style="display:grid;place-items:center;padding:12px 14px;background:var(--k);color:var(--ok);font-size:.95rem">Next: meeting point</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "make the Description step <a class="dv-oid" href="#1b">1b</a> instead of <a class="dv-oid" href="#1a">1a</a>" · "use <a class="dv-oid" href="#1d">1d</a> for Offer a tour" · "build <a class="dv-oid" href="#1c">1c</a> for place popups"</p>
+</section>
+</x-dc>
+</body>
+</html>

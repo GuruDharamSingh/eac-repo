@@ -39,6 +39,22 @@ type Row = Record<string, unknown>;
 type Tx = typeof db;
 
 export const MAX_PROPOSED_TIMES = 3;
+
+/**
+ * What to call the booker where a name is shown to the host: the name given, else the part of the email before
+ * the @ (a guest at checkout gives none), else "Guest". Never the full address.
+ */
+export function bookerLabel(b: { bookerName: string | null; bookerEmail: string }): string {
+  const name = (b.bookerName ?? "").trim();
+  if (name) return name;
+  const local = (b.bookerEmail ?? "").split("@")[0]?.trim();
+  return local || "Guest";
+}
+
+/** Host-facing text: the label and the full address ("Guest · ana@example.com"), so a host can reply. */
+export function bookerWho(b: { bookerName: string | null; bookerEmail: string }): string {
+  return `${bookerLabel(b)} · ${b.bookerEmail}`;
+}
 const PAID_ORDER = ["paid", "fulfilled", "completed"];
 
 const iso = (v: unknown): string | null => (v == null ? null : new Date(v as string).toISOString());
@@ -364,9 +380,9 @@ export async function getHostBooking(orgId: string, hostUserId: string, bookingI
 }
 
 /** The booker's view by private token. */
-export async function getBookingByToken(token: string): Promise<BookerBooking | null> {
+export async function getBookingByToken(token: string, tx: Tx = db): Promise<BookerBooking | null> {
   if (!token || token.length < 16) return null;
-  const rows = (await db`${SELECT} WHERE b.buyer_token = ${token} LIMIT 1`) as unknown as Row[];
+  const rows = (await tx`${SELECT} WHERE b.buyer_token = ${token} LIMIT 1`) as unknown as Row[];
   if (!rows[0]) return null;
   const { bookerUserId: _u, ...rest } = publicView(mapBooking(rows[0]));
   return rest;
@@ -376,6 +392,41 @@ export async function getBookingByToken(token: string): Promise<BookerBooking | 
 export async function getBookingForOrder(orderId: string): Promise<{ id: string; token: string; status: BookingStatus } | null> {
   const rows = (await db`SELECT id, buyer_token, status FROM bookings WHERE order_id = ${orderId} LIMIT 1`) as unknown as Row[];
   return rows[0] ? { id: rows[0].id as string, token: rows[0].buyer_token as string, status: rows[0].status as BookingStatus } : null;
+}
+
+/**
+ * The host's bookings of services sold through the content library's
+ * checkout (order metadata.networkSale) in orgs other than `sellerOrgId`:
+ * those bookings live in the thread's own org, so `listHostBookings(oad, …)`
+ * does not reach them. Same shape and order as `listHostBookings`; lapsed
+ * holds are not swept here (call `listHostBookings` first, as the page does).
+ */
+export async function listHostNetworkBookings(
+  sellerOrgId: string,
+  hostUserId: string,
+  opts: { includePast?: boolean; limit?: number } = {},
+  tx: Tx = db
+): Promise<Booking[]> {
+  const limit = Math.min(opts.limit ?? 100, 500);
+  const rows = (await tx`
+    ${SELECT}
+    WHERE b.org_id <> ${sellerOrgId} AND o.host_user_id = ${hostUserId}
+      AND co.metadata->>'networkSale' = 'true'
+      AND b.status <> 'expired'
+      AND (${opts.includePast ?? false} OR b.scheduled_at IS NULL OR b.scheduled_at > now() - interval '1 day')
+    ORDER BY COALESCE(b.scheduled_at, b.created_at) ASC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+  return rows.map((r) => publicView(mapBooking(r)));
+}
+
+/** The org a booking of this host lives in, or null when the host has no such booking. */
+export async function getHostBookingOrg(hostUserId: string, bookingId: string, tx: Tx = db): Promise<string | null> {
+  const rows = (await tx`
+    SELECT b.org_id FROM bookings b JOIN booking_offers o ON o.id = b.offer_id
+    WHERE b.id = ${bookingId} AND o.host_user_id = ${hostUserId} LIMIT 1
+  `) as unknown as Row[];
+  return (rows[0]?.org_id as string | undefined) ?? null;
 }
 
 // ── create ────────────────────────────────────────────────────────────────
@@ -572,8 +623,8 @@ export async function releaseBooking(bookingId: string, reason: string): Promise
  * confirms (the money is in), and is logged so the host can check for an
  * overlap.
  */
-export async function markBookingPaid(orderId: string): Promise<void> {
-  const rows = (await db`
+export async function markBookingPaid(orderId: string, tx: Tx = db): Promise<void> {
+  const rows = (await tx`
     UPDATE bookings b
     SET status = CASE
           WHEN o.mode IN ('open_hours', 'set_dates') AND o.approval = 'instant' THEN 'confirmed'
@@ -590,7 +641,8 @@ export async function markBookingPaid(orderId: string): Promise<void> {
   `) as unknown as Row[];
   for (const r of rows) {
     if (r.before === "expired") console.warn(`[booking] ${r.id}: paid after its hold expired; check for an overlap`);
-    void announceNew(r.id as string);
+    // A caller that passes its own transaction owns the commit (tests roll it back): no mail from inside it.
+    if (tx === db) void announceNew(r.id as string);
   }
 }
 
@@ -605,8 +657,8 @@ export async function expireBookingForOrder(orderId: string): Promise<void> {
 }
 
 /** Mark holds past their time as expired. Seat counts ignore them already; this tidies lists. */
-export async function expireLapsedHolds(): Promise<number> {
-  const rows = await db`
+export async function expireLapsedHolds(tx: Tx = db): Promise<number> {
+  const rows = await tx`
     UPDATE bookings
     SET status = 'expired', cancelled_at = now(), cancelled_by = 'system',
         cancel_reason = 'hold expired', updated_at = now()
@@ -843,8 +895,8 @@ export async function sendDueBookingReminders(opts: { now?: Date; limit?: number
       b.cancelPolicyText ? `Cancellation: ${esc(b.cancelPolicyText)}` : "",
       button(bookerUrl(b.siteUrl, b.token), "See or cancel your booking"),
     ], b.orgId, b.hostEmail, "reminder");
-    await notify(b.hostEmail, `Reminder: ${b.bookerName ?? b.bookerEmail}, ${when(b.scheduledAt, b.timeZone)}`, [
-      `${esc(b.bookerName ?? b.bookerEmail)} (${esc(b.bookerEmail)}) is booked for <strong>${esc(b.threadTitle)}</strong> on <strong>${esc(when(b.scheduledAt, b.timeZone))}</strong>.`,
+    await notify(b.hostEmail, `Reminder: ${bookerWho(b)}, ${when(b.scheduledAt, b.timeZone)}`, [
+      `${esc(bookerLabel(b))} (${esc(b.bookerEmail)}) is booked for <strong>${esc(b.threadTitle)}</strong> on <strong>${esc(when(b.scheduledAt, b.timeZone))}</strong>.`,
       b.notes ? `Their note: “${esc(b.notes)}”` : "",
       button(hostUrl(b.siteUrl), "Your bookings"),
     ], b.orgId, b.bookerEmail, "reminder");
@@ -863,14 +915,18 @@ async function announceNew(bookingId: string): Promise<void> {
   const bookerZone = b.bookerTimeZone ?? b.timeZone;
   const paid = b.orderId ? ` (paid, order ${esc(b.orderNumber)})` : "";
   await notify(b.hostEmail, `Booking request: ${b.threadTitle}`, [
-    `${esc(b.bookerName ?? b.bookerEmail)} would like to book <strong>${esc(b.threadTitle)}</strong>${paid}. Their times (${esc(b.timeZone)}):`,
-    timesList(b.proposedTimes, b.timeZone),
+    b.proposedTimes.length
+      ? `${esc(bookerWho(b))} would like to book <strong>${esc(b.threadTitle)}</strong>${paid}. Their times (${esc(b.timeZone)}):`
+      : `${esc(bookerWho(b))} booked <strong>${esc(b.threadTitle)}</strong>${paid} and has not suggested a time. Suggest times from your bookings page.`,
+    b.proposedTimes.length ? timesList(b.proposedTimes, b.timeZone) : "",
     b.notes ? `Their note: “${esc(b.notes)}”` : "",
     button(hostUrl(b.siteUrl), "Confirm a time"),
   ], b.orgId, b.bookerEmail);
   await notify(b.bookerEmail, `Your booking request: ${b.threadTitle}`, [
-    `Thank you. ${esc(b.hostName ?? "They")} will confirm one of your times for <strong>${esc(b.threadTitle)}</strong> or suggest others:`,
-    timesList(b.proposedTimes, bookerZone),
+    b.proposedTimes.length
+      ? `Thank you. ${esc(b.hostName ?? "They")} will confirm one of your times for <strong>${esc(b.threadTitle)}</strong> or suggest others:`
+      : `Thank you. ${esc(b.hostName ?? "They")} will suggest times for <strong>${esc(b.threadTitle)}</strong>; you will get an email.`,
+    b.proposedTimes.length ? timesList(b.proposedTimes, bookerZone) : "",
     button(bookerUrl(b.siteUrl, b.token), "See your booking"),
   ], b.orgId, b.hostEmail);
 }
@@ -886,7 +942,7 @@ async function announceConfirmed(bookingId: string): Promise<void> {
     "The page also has a calendar file for this booking.",
   ], b.orgId, b.hostEmail);
   await notify(b.hostEmail, `New booking: ${b.threadTitle}, ${when(b.scheduledAt, b.timeZone)}`, [
-    `${esc(b.bookerName ?? b.bookerEmail)} (${esc(b.bookerEmail)}) booked <strong>${esc(b.threadTitle)}</strong> for <strong>${esc(when(b.scheduledAt, b.timeZone))}</strong>.`,
+    `${esc(bookerLabel(b))} (${esc(b.bookerEmail)}) booked <strong>${esc(b.threadTitle)}</strong> for <strong>${esc(when(b.scheduledAt, b.timeZone))}</strong>.`,
     b.notes ? `Their note: “${esc(b.notes)}”` : "",
     Object.keys(b.answers).length ? `<ul>${Object.entries(b.answers).map(([k, v]) => `<li>${esc(k)}: ${esc(String(v))}</li>`).join("")}</ul>` : "",
     button(hostUrl(b.siteUrl), "Your bookings"),
@@ -906,7 +962,7 @@ async function announceProposal(bookingId: string, by: Party): Promise<void> {
     ], b.orgId, b.hostEmail);
   } else {
     await notify(b.hostEmail, `New times suggested: ${b.threadTitle}`, [
-      `${esc(b.bookerName ?? b.bookerEmail)} suggested these times for <strong>${esc(b.threadTitle)}</strong> (${esc(b.timeZone)}):`,
+      `${esc(bookerWho(b))} suggested these times for <strong>${esc(b.threadTitle)}</strong> (${esc(b.timeZone)}):`,
       timesList(b.proposedTimes, b.timeZone),
       b.lastMessage ? `Their note: “${esc(b.lastMessage)}”` : "",
       button(hostUrl(b.siteUrl), "Choose a time"),
@@ -930,8 +986,8 @@ async function announceCancelled(bookingId: string, by: Party): Promise<void> {
       refund,
     ], b.orgId, b.hostEmail);
   } else {
-    await notify(b.hostEmail, `Cancelled by ${b.bookerName ?? b.bookerEmail}: ${b.threadTitle}`, [
-      `${esc(b.bookerName ?? b.bookerEmail)} cancelled their booking of <strong>${esc(b.threadTitle)}</strong>${at}.`,
+    await notify(b.hostEmail, `Cancelled by ${bookerWho(b)}: ${b.threadTitle}`, [
+      `${esc(bookerWho(b))} cancelled their booking of <strong>${esc(b.threadTitle)}</strong>${at}.`,
       b.cancelReason ? `Their note: “${esc(b.cancelReason)}”` : "",
       refund ? `${refund} Order ${esc(b.orderNumber)}.` : "",
       button(hostUrl(b.siteUrl), "Your bookings"),

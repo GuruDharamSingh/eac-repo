@@ -39,6 +39,9 @@ export function resolvePreset(p?: ContentCardPreset): ResolvedContentPreset {
     ...(p?.types?.length ? { types: p.types } : {}),
     ...(p?.view ? { view: p.view } : {}),
     ...(p?.groupBy ? { groupBy: p.groupBy } : {}),
+    ...(p?.includeHidden ? { includeHidden: true } : {}),
+    ...(p?.scopes ? { scopes: p.scopes } : {}),
+    ...(p?.kinds?.length ? { kinds: p.kinds } : {}),
   };
 }
 
@@ -83,7 +86,7 @@ export function contentServer(opts: ContentServerOptions): HubCardServerDef<Cont
 
     const contentViewer = { userId: viewer.userId };
     const [result, sources] = await Promise.all([
-      searchContent(contentViewer, { scope: preset.scope, types: preset.types, view: preset.view, limit: 4 }, host),
+      searchContent(contentViewer, { scope: preset.scope, types: preset.types, view: preset.view, limit: preset.scopes ? 8 : 4 }, host),
       endpoints.folders && host.fileSources ? host.fileSources(contentViewer).catch(() => []) : Promise.resolve([]),
     ]);
     const byType = result.facets.types;

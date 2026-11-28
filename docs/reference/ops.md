@@ -63,7 +63,7 @@ in the container; source changed after that date is not live.
 | admin | eac-admin | 3000 | dev (override) | none, LAN only | yes | – |
 | sunjay | eac-sunjay | 3001 | prod | paratheater.arts-collective.com | yes | 11-06 |
 | blog-guru-dharam | eac-blog-guru-dharam | 3002 | dev | – | no | – |
-| forum | eac-forum | 3003 | dev | forum.arts-collective.com | no (2026-09-26: stopped at developer request) | – |
+| forum | eac-forum | 3003 | dev | forum.arts-collective.com | no (2026-11-27: started and stopped again the same day at developer request; edge 502) | – |
 | inner-gathering | eac-inner-gathering | 3004 | prod | meetings.elkdonis-arts.org | yes | 09-06 |
 | elkdonis-arts-collective | eac-arts-collective | 3005 | dev | eac.elkdonis-arts.org (502) | no | – |
 | amrit-canada | eac-amrit-canada | 3006 | prod | amritcanada.ca | yes | 09-16 |
@@ -296,6 +296,7 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
    `reading 'useContext'` and left the live container untouched
    (verified 2026-09-26 by the preview volume holding the failed build's
    BUILD_ID). (claude, 2026-09-26)
+   **Restoring after a failed build (claude, 2026-11-27):** `.next` is a mount point inside the app container, so `rm -rf .next` fails with "Resource busy" and leaves the site down (art-auction answered 502 for about 2 minutes). Empty it in place, then untar the backup: `docker exec -i eac-<app> sh -c 'cd /app/apps/<app> && find .next -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} + ; tar -xzf -' < backup.tgz`, then restart. A rerun straight after a failed build can also fail with "Unable to acquire lock at .next/lock"; the restore clears the lock.
 4. `docker compose restart <svc>`. The sentinel is present, so it goes straight
    to `next start`.
 5. Verify through the edge (`docs/reference/testing.md`) and check

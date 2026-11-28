@@ -94,8 +94,10 @@ export function orgComposeConnectors({ orgSlug, orgHomeUrl, compose }: { orgSlug
         <MediaPicker
           value={typeof value === "string" ? value : undefined}
           onChange={onChange}
-          uploadEndpoint="/api/upload/image"
-          libraryEndpoint="/api/media/library"
+          // Both routes need the org: this console serves many (seen live 2026-11-27: upload failed with
+          // "orgSlug required" and the library tab said "Missing org").
+          uploadEndpoint={`/api/upload/image?orgSlug=${encodeURIComponent(orgSlug)}`}
+          libraryEndpoint={`/api/media/library?org=${encodeURIComponent(orgSlug)}`}
           label={label ?? "Image"}
           hint={hint}
           accept={accept}

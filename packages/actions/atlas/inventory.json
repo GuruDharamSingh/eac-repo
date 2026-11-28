@@ -1,10 +1,10 @@
 {
- "generatedAt": "2026-11-26",
+ "generatedAt": "2026-11-27",
  "counts": {
   "byKind": {
-   "api": 531,
-   "sa": 953,
-   "sql": 565
+   "api": 538,
+   "sa": 984,
+   "sql": 568
   },
   "byApp": {
    "actions": {
@@ -28,19 +28,19 @@
     "sql": 1
    },
    "art-auction": {
-    "sa": 124,
-    "api": 8,
+    "sa": 149,
+    "api": 9,
     "sql": 12
    },
    "artdirect": {
     "sa": 41,
-    "api": 3,
+    "api": 4,
     "sql": 6
    },
    "arts-collective": {
-    "sa": 190,
-    "api": 68,
-    "sql": 25
+    "sa": 192,
+    "api": 72,
+    "sql": 26
    },
    "astro-corpus": {
     "sa": 0,
@@ -70,12 +70,12 @@
    "booking": {
     "sa": 0,
     "api": 0,
-    "sql": 19
+    "sql": 20
    },
    "commerce": {
     "sa": 0,
     "api": 0,
-    "sql": 109
+    "sql": 110
    },
    "danamccool": {
     "sa": 31,
@@ -98,7 +98,7 @@
     "sql": 3
    },
    "elktours": {
-    "sa": 208,
+    "sa": 212,
     "api": 53,
     "sql": 101
    },
@@ -194,14 +194,14 @@
    },
    "sunjay": {
     "sa": 65,
-    "api": 60,
+    "api": 61,
     "sql": 16
    }
   }
  },
  "sharedSqlCount": {
   "db": 10,
-  "services": 326
+  "services": 344
  },
  "reexports": [],
  "hosts": [
@@ -1384,6 +1384,23 @@
    "hash": "598d69646ccb"
   },
   {
+   "key": "api:apps/art-auction/src/app/api/content/upload/route.ts#POST",
+   "kind": "api",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/api/content/upload/route.ts",
+   "symbol": "POST",
+   "line": 6,
+   "imports": [
+    "@elkdonis/content/routes"
+   ],
+   "calls": [
+    "@elkdonis/content/routes#contentRoutes"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "81b0a6608e84"
+  },
+  {
    "key": "api:apps/art-auction/src/app/api/galleries/[id]/items/route.ts#PATCH",
    "kind": "api",
    "app": "art-auction",
@@ -1523,6 +1540,19 @@
    "registry": false,
    "rawSql": false,
    "hash": "cd2da53708f6"
+  },
+  {
+   "key": "api:apps/artdirect/src/app/api/content/checkout/route.ts#POST",
+   "kind": "api",
+   "app": "artdirect",
+   "file": "apps/artdirect/src/app/api/content/checkout/route.ts",
+   "symbol": "POST",
+   "line": 6,
+   "imports": [],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "d22c96c3fdf6"
   },
   {
    "key": "api:apps/artdirect/src/app/api/pulse/route.ts#POST",
@@ -1887,6 +1917,19 @@
    "hash": "5d36597ca6dd"
   },
   {
+   "key": "api:apps/arts-collective/src/app/api/content/checkout/route.ts#POST",
+   "kind": "api",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/app/api/content/checkout/route.ts",
+   "symbol": "POST",
+   "line": 6,
+   "imports": [],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "d22c96c3fdf6"
+  },
+  {
    "key": "api:apps/arts-collective/src/app/api/data/delete/route.ts#POST",
    "kind": "api",
    "app": "arts-collective",
@@ -2081,8 +2124,10 @@
    "app": "arts-collective",
    "file": "apps/arts-collective/src/app/api/mcp/route.ts",
    "symbol": "DELETE",
-   "line": 55,
+   "line": 75,
    "imports": [
+    "@elkdonis/content/host",
+    "@elkdonis/content/server",
     "@elkdonis/lms",
     "@elkdonis/page-builder/server"
    ],
@@ -2097,8 +2142,10 @@
    "app": "arts-collective",
    "file": "apps/arts-collective/src/app/api/mcp/route.ts",
    "symbol": "POST",
-   "line": 52,
+   "line": 72,
    "imports": [
+    "@elkdonis/content/host",
+    "@elkdonis/content/server",
     "@elkdonis/lms",
     "@elkdonis/page-builder/server"
    ],
@@ -2626,6 +2673,40 @@
    "hash": "6f5b570de028"
   },
   {
+   "key": "api:apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts#DELETE",
+   "kind": "api",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts",
+   "symbol": "DELETE",
+   "line": 5,
+   "imports": [
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/services#rsvpRoutes"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "0c28d47cb039"
+  },
+  {
+   "key": "api:apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts#POST",
+   "kind": "api",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts",
+   "symbol": "POST",
+   "line": 5,
+   "imports": [
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/services#rsvpRoutes"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "0c28d47cb039"
+  },
+  {
    "key": "api:apps/arts-collective/src/app/api/threads/[id]/rsvp/route.ts#DELETE",
    "kind": "api",
    "app": "arts-collective",
@@ -2798,6 +2879,21 @@
    "registry": false,
    "rawSql": true,
    "hash": "03f44b8d9e43"
+  },
+  {
+   "key": "api:apps/arts-collective/src/app/api/wordart/generate/route.ts#POST",
+   "kind": "api",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/app/api/wordart/generate/route.ts",
+   "symbol": "POST",
+   "line": 12,
+   "imports": [
+    "@elkdonis/services/wordart-routes"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "99ea14263dee"
   },
   {
    "key": "api:apps/blog-guru-dharam/src/app/api/auth/signup/route.ts#POST",
@@ -8502,6 +8598,19 @@
    "hash": "c645f2f5bd07"
   },
   {
+   "key": "api:apps/sunjay/src/app/api/content/checkout/route.ts#POST",
+   "kind": "api",
+   "app": "sunjay",
+   "file": "apps/sunjay/src/app/api/content/checkout/route.ts",
+   "symbol": "POST",
+   "line": 6,
+   "imports": [],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "d22c96c3fdf6"
+  },
+  {
    "key": "api:apps/sunjay/src/app/api/forum/[action]/route.ts#POST",
    "kind": "api",
    "app": "sunjay",
@@ -10355,6 +10464,347 @@
    "hash": "749880613514"
   },
   {
+   "key": "sa:apps/art-auction/src/app/center/actions.ts#chooseCenterStore",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/actions.ts",
+   "symbol": "chooseCenterStore",
+   "line": 12,
+   "imports": [
+    "@elkdonis/commerce/queries"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listStoresForUser"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "17922f22e89d"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#createInstallationFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "createInstallationFrame",
+   "line": 371,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "dd299dc00f4b"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#enterSeriesAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "enterSeriesAction",
+   "line": 190,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/server#enterSeries",
+    "@elkdonis/commerce/server#listEnterableSeries"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "e0a2293f0b12"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadArtistFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadArtistFrame",
+   "line": 438,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#getStoreByHandle",
+    "@elkdonis/commerce/queries#listStoreFrontArtworks",
+    "@elkdonis/content/server#searchContent",
+    "@elkdonis/utils#sanitizeRichText"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "3d859560df85"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadArtworkFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadArtworkFrame",
+   "line": 106,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#getArtworkForEdit",
+    "@elkdonis/commerce/shipping#getArtworkParcel"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "1c68b785f216"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadAuctionsFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadAuctionsFrame",
+   "line": 287,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/queries#listLotsForStore"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "ccb0d60fc7fd"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadEntryFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadEntryFrame",
+   "line": 166,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listLotsForStore",
+    "@elkdonis/commerce/queries#listStoreArtworks",
+    "@elkdonis/commerce/server#listEnterableSeries"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "84ee4427c266"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadInstallationFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadInstallationFrame",
+   "line": 353,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "c7073da15858"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadInstallationsFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadInstallationsFrame",
+   "line": 341,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "bea8be7303f4"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadMoneyFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadMoneyFrame",
+   "line": 222,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/server#getBalance",
+    "@elkdonis/commerce/server#getEarningsStatement",
+    "@elkdonis/commerce/server#getPayoutIdentity"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "8b3beb0c050a"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadPieceFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadPieceFrame",
+   "line": 133,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/queries#getArtworkForEdit",
+    "@elkdonis/commerce/queries#listLotsForStore"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "0054db301e02"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadPresenceFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadPresenceFrame",
+   "line": 309,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listArtworksForPerson",
+    "@elkdonis/commerce/queries#listSeriesForUser",
+    "@elkdonis/commerce/queries#listStoresForUser"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "6eb874931e70"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadSalesFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadSalesFrame",
+   "line": 257,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/queries#listOrdersForStore",
+    "@elkdonis/commerce/shipping#getStoreShippingMode",
+    "@elkdonis/commerce/shipping#listOrderShipments",
+    "@elkdonis/commerce/shipping#orderShippingOf"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "65434e743cb2"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#loadStoreFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "loadStoreFrame",
+   "line": 73,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#getSellerProfile",
+    "@elkdonis/commerce/shipping#getShipFrom",
+    "@elkdonis/commerce/shipping#getShipFromDefaults",
+    "@elkdonis/commerce/shipping#getStoreShippingMode"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "d72ac7ad8bfb"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/center/frames.ts#saveStoreProfileAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/center/frames.ts",
+   "symbol": "saveStoreProfileAction",
+   "line": 392,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/commerce/shipping",
+    "@elkdonis/content/server",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/server#updateStoreProfile"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "fa3368ad127d"
+  },
+  {
    "key": "sa:apps/art-auction/src/app/home-actions.ts#saveWelcomeAction",
    "kind": "sa",
    "app": "art-auction",
@@ -10366,6 +10816,194 @@
    "registry": false,
    "rawSql": false,
    "hash": "89f56e7605ec"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/actions.ts#runHubAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/actions.ts",
+   "symbol": "runHubAction",
+   "line": 15,
+   "imports": [
+    "@elkdonis/actions/server"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#performAction"
+   ],
+   "registry": true,
+   "rawSql": false,
+   "hash": "b06776850cde"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/edit-artwork-action.ts#loadEditArtworkData",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/edit-artwork-action.ts",
+   "symbol": "loadEditArtworkData",
+   "line": 26,
+   "imports": [
+    "@elkdonis/commerce/queries"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#getArtworkForEdit",
+    "@elkdonis/commerce/queries#getStore"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "8fbd5547d097"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadApplicationsFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadApplicationsFrame",
+   "line": 91,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listPendingStoreApplications",
+    "@elkdonis/utils#sanitizeRichText"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "36ad5417879b"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadMembersFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadMembersFrame",
+   "line": 154,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#adminListUsers",
+    "@elkdonis/services#listOrgArrivals"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "40d28d8ee327"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadMoneyHubFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadMoneyHubFrame",
+   "line": 128,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "82ef3cea24fe"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadOrderFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadOrderFrame",
+   "line": 50,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/queries#getOrderById",
+    "@elkdonis/commerce/queries#getOrderLines"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "95c0978495fb"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadOrdersFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadOrdersFrame",
+   "line": 32,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/money#formatMoney",
+    "@elkdonis/commerce/queries#listOrders"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "370435d5d02d"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadSeriesFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadSeriesFrame",
+   "line": 110,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listSeries",
+    "@elkdonis/commerce/server#canCreateSeries"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "377188f4ba36"
+  },
+  {
+   "key": "sa:apps/art-auction/src/app/hub/frames.ts#loadStoresFrame",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/app/hub/frames.ts",
+   "symbol": "loadStoresFrame",
+   "line": 72,
+   "imports": [
+    "@elkdonis/commerce/money",
+    "@elkdonis/commerce/queries",
+    "@elkdonis/commerce/server",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/commerce/queries#listStores"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "3571dda5e5e8"
   },
   {
    "key": "sa:apps/art-auction/src/app/messages/actions.ts#markReadAction",
@@ -11743,6 +12381,24 @@
    "hash": "d40b38e69601"
   },
   {
+   "key": "sa:apps/art-auction/src/lib/channel-door.ts#runChannelAction",
+   "kind": "sa",
+   "app": "art-auction",
+   "file": "apps/art-auction/src/lib/channel-door.ts",
+   "symbol": "runChannelAction",
+   "line": 17,
+   "imports": [
+    "@elkdonis/actions/server",
+    "@elkdonis/channel/site/view"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#performSiteChannelAction"
+   ],
+   "registry": true,
+   "rawSql": false,
+   "hash": "1e64bee1ec07"
+  },
+  {
    "key": "sa:apps/art-auction/src/lib/dock-actions.ts#dockAckDone",
    "kind": "sa",
    "app": "art-auction",
@@ -11937,7 +12593,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "bookOfferAction",
-   "line": 112,
+   "line": 113,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -11961,7 +12617,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "bookServiceAction",
-   "line": 42,
+   "line": 43,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -11983,7 +12639,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "bookerCancelAction",
-   "line": 204,
+   "line": 205,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12002,7 +12658,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "bookerConfirmAction",
-   "line": 207,
+   "line": 208,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12021,7 +12677,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "bookerProposeAction",
-   "line": 210,
+   "line": 211,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12040,7 +12696,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "hostCancelAction",
-   "line": 220,
+   "line": 226,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12051,7 +12707,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "53e01659a31b"
+   "hash": "2e80c6bf12b8"
   },
   {
    "key": "sa:apps/artdirect/src/lib/booking-actions.ts#hostConfirmAction",
@@ -12059,7 +12715,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "hostConfirmAction",
-   "line": 225,
+   "line": 231,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12070,7 +12726,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "da33021864c6"
+   "hash": "7ca92532289b"
   },
   {
    "key": "sa:apps/artdirect/src/lib/booking-actions.ts#hostProposeAction",
@@ -12078,7 +12734,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "hostProposeAction",
-   "line": 230,
+   "line": 236,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12089,7 +12745,7 @@
    ],
    "registry": false,
    "rawSql": false,
-   "hash": "bf801a702f13"
+   "hash": "a5073769473e"
   },
   {
    "key": "sa:apps/artdirect/src/lib/booking-actions.ts#saveBookingSettingsAction",
@@ -12097,7 +12753,7 @@
    "app": "artdirect",
    "file": "apps/artdirect/src/lib/booking-actions.ts",
    "symbol": "saveBookingSettingsAction",
-   "line": 188,
+   "line": 189,
    "imports": [
     "@elkdonis/booking",
     "@elkdonis/checkout/booking",
@@ -12773,6 +13429,23 @@
    "registry": false,
    "rawSql": false,
    "hash": "dceeb043215a"
+  },
+  {
+   "key": "sa:apps/arts-collective/src/app/hub/admin/sales/actions.ts#refundSaleAction",
+   "kind": "sa",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/app/hub/admin/sales/actions.ts",
+   "symbol": "refundSaleAction",
+   "line": 23,
+   "imports": [
+    "@elkdonis/actions/server"
+   ],
+   "calls": [
+    "@elkdonis/actions/server#performAction"
+   ],
+   "registry": true,
+   "rawSql": false,
+   "hash": "12fd7aa77bd6"
   },
   {
    "key": "sa:apps/arts-collective/src/app/hub/bookings/actions.ts#cancelBooking",
@@ -14829,6 +15502,25 @@
    "registry": false,
    "rawSql": false,
    "hash": "cdb4a6e1cc37"
+  },
+  {
+   "key": "sa:apps/arts-collective/src/lib/offer-look-actions.ts#saveOfferLookAction",
+   "kind": "sa",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/lib/offer-look-actions.ts",
+   "symbol": "saveOfferLookAction",
+   "line": 17,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/db#withOrg",
+    "@elkdonis/services#canEditOrgIdentity"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "ffbba213161a"
   },
   {
    "key": "sa:apps/arts-collective/src/lib/org-identity-actions.ts#saveOrgIdentityAction",
@@ -18723,6 +19415,72 @@
    "registry": false,
    "rawSql": false,
    "hash": "8abe8fadc625"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/google-calendar-actions.ts#chooseGoogleCalendarRuns",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/google-calendar-actions.ts",
+   "symbol": "chooseGoogleCalendarRuns",
+   "line": 46,
+   "imports": [
+    "@elkdonis/services/google-calendar"
+   ],
+   "calls": [
+    "@elkdonis/services/google-calendar#setCalendarWhich"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "72af2c202c53"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/google-calendar-actions.ts#connectGoogleCalendar",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/google-calendar-actions.ts",
+   "symbol": "connectGoogleCalendar",
+   "line": 24,
+   "imports": [
+    "@elkdonis/services/google-calendar"
+   ],
+   "calls": [
+    "@elkdonis/services/google-calendar#beginCalendarAuth"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "dfbe76a50a93"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/google-calendar-actions.ts#disconnectGoogleCalendar",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/google-calendar-actions.ts",
+   "symbol": "disconnectGoogleCalendar",
+   "line": 52,
+   "imports": [
+    "@elkdonis/services/google-calendar"
+   ],
+   "calls": [
+    "@elkdonis/services/google-calendar#disconnectCalendar"
+   ],
+   "registry": false,
+   "rawSql": false,
+   "hash": "5a7efa4e8b06"
+  },
+  {
+   "key": "sa:apps/elktours/src/lib/google-calendar-actions.ts#syncGoogleCalendarNow",
+   "kind": "sa",
+   "app": "elktours",
+   "file": "apps/elktours/src/lib/google-calendar-actions.ts",
+   "symbol": "syncGoogleCalendarNow",
+   "line": 42,
+   "imports": [
+    "@elkdonis/services/google-calendar"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": false,
+   "hash": "1234ff1735fb"
   },
   {
    "key": "sa:apps/elktours/src/lib/guide-take-actions.ts#getTakesSheetAction",
@@ -27672,6 +28430,25 @@
    "hash": "50145be422e9"
   },
   {
+   "key": "sql:apps/arts-collective/src/lib/offer-look-actions.ts#saveOfferLookAction",
+   "kind": "sql",
+   "app": "arts-collective",
+   "file": "apps/arts-collective/src/lib/offer-look-actions.ts",
+   "symbol": "saveOfferLookAction",
+   "line": 17,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/services"
+   ],
+   "calls": [
+    "@elkdonis/db#withOrg",
+    "@elkdonis/services#canEditOrgIdentity"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "ffbba213161a"
+  },
+  {
    "key": "sql:apps/arts-collective/src/lib/org-identity-actions.ts#saveOrgIdentityAction",
    "kind": "sql",
    "app": "arts-collective",
@@ -32297,7 +33074,7 @@
    "app": "actions",
    "file": "packages/actions/src/server/run.ts",
    "symbol": "<class>.run",
-   "line": 328,
+   "line": 420,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32312,7 +33089,7 @@
    "app": "actions",
    "file": "packages/actions/src/server/run.ts",
    "symbol": "record",
-   "line": 607,
+   "line": 699,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32928,7 +33705,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "attachOrder",
-   "line": 548,
+   "line": 599,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32945,7 +33722,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "cancelAs",
-   "line": 724,
+   "line": 776,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32960,7 +33737,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "confirmAs",
-   "line": 669,
+   "line": 721,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32975,7 +33752,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "createBooking",
-   "line": 414,
+   "line": 465,
    "imports": [
     "@elkdonis/db"
    ],
@@ -32990,7 +33767,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "expireBookingForOrder",
-   "line": 598,
+   "line": 650,
    "imports": [
     "@elkdonis/db"
    ],
@@ -33007,16 +33784,14 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "expireLapsedHolds",
-   "line": 608,
+   "line": 660,
    "imports": [
     "@elkdonis/db"
    ],
-   "calls": [
-    "@elkdonis/db#db"
-   ],
+   "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "fb85a858e5b2"
+   "hash": "c1d2b8827387"
   },
   {
    "key": "sql:packages/booking/src/server/bookings.ts#proposeAs",
@@ -33024,7 +33799,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "proposeAs",
-   "line": 697,
+   "line": 749,
    "imports": [
     "@elkdonis/db"
    ],
@@ -33039,7 +33814,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "releaseBooking",
-   "line": 558,
+   "line": 609,
    "imports": [
     "@elkdonis/db"
    ],
@@ -33056,7 +33831,7 @@
    "app": "booking",
    "file": "packages/booking/src/server/bookings.ts",
    "symbol": "sendDueBookingReminders",
-   "line": 816,
+   "line": 868,
    "imports": [
     "@elkdonis/db"
    ],
@@ -33065,7 +33840,22 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "63befce00413"
+   "hash": "cc785670df6c"
+  },
+  {
+   "key": "sql:packages/booking/src/server/network.ts#run",
+   "kind": "sql",
+   "app": "booking",
+   "file": "packages/booking/src/server/network.ts",
+   "symbol": "run",
+   "line": 80,
+   "imports": [
+    "@elkdonis/db"
+   ],
+   "calls": [],
+   "registry": false,
+   "rawSql": true,
+   "hash": "140cb4b7b1ee"
   },
   {
    "key": "sql:packages/booking/src/server/offers.ts#saveOffer",
@@ -33378,9 +34168,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "addStoreMember",
-   "line": 783,
+   "line": 784,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33396,9 +34187,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "addToCart",
-   "line": 240,
+   "line": 241,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33409,14 +34201,15 @@
    "hash": "8362754eabd5"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#adminHideArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#adminHideArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "adminHideArtwork",
-   "line": 1396,
+   "symbol": "adminHideArtworkRaw",
+   "line": 1462,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33424,17 +34217,18 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "dbba90e06963"
+   "hash": "a7ca05319e51"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#adminShowArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#adminShowArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "adminShowArtwork",
-   "line": 1415,
+   "symbol": "adminShowArtworkRaw",
+   "line": 1481,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33442,7 +34236,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "f209b8c19b50"
+   "hash": "45eba09880fb"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#applyForStore",
@@ -33450,9 +34244,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "applyForStore",
-   "line": 615,
+   "line": 616,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33469,9 +34264,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "approveStore",
-   "line": 967,
+   "line": 1033,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33482,14 +34278,15 @@
    "hash": "fc1b039dd190"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#archiveArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#archiveArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "archiveArtwork",
-   "line": 1429,
+   "symbol": "archiveArtworkRaw",
+   "line": 1495,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33497,17 +34294,18 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "587fc1e74d66"
+   "hash": "7fc497192b00"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#createArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#createArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "createArtwork",
-   "line": 1081,
+   "symbol": "createArtworkRaw",
+   "line": 1147,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33515,7 +34313,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "ac3c2a36f8fe"
+   "hash": "d4da7540135f"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#createReservation",
@@ -33523,9 +34321,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "createReservation",
-   "line": 407,
+   "line": 408,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33541,9 +34340,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "getOrCreateCart",
-   "line": 217,
+   "line": 218,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33559,9 +34359,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "openOrgStore",
-   "line": 702,
+   "line": 703,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33578,9 +34379,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "pauseStore",
-   "line": 988,
+   "line": 1054,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33591,20 +34393,21 @@
    "hash": "25c7d63b2c9a"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#publishArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#publishArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "publishArtwork",
-   "line": 1361,
+   "symbol": "publishArtworkRaw",
+   "line": 1427,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "950ea7585e14"
+   "hash": "bace0906a8c7"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#rejectArtworkCredit",
@@ -33612,9 +34415,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "rejectArtworkCredit",
-   "line": 1288,
+   "line": 1354,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33630,9 +34434,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "rejectStore",
-   "line": 998,
+   "line": 1064,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33648,9 +34453,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "removeCartLine",
-   "line": 365,
+   "line": 366,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33666,9 +34472,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "removeStoreMember",
-   "line": 800,
+   "line": 801,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33679,20 +34486,21 @@
    "hash": "8681add6f906"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#setArtworkAvailability",
+   "key": "sql:packages/commerce/src/server/index.ts#setArtworkAvailabilityRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "setArtworkAvailability",
-   "line": 1455,
+   "symbol": "setArtworkAvailabilityRaw",
+   "line": 1521,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
    "registry": false,
    "rawSql": true,
-   "hash": "99aa8edfffbf"
+   "hash": "3898bdeef851"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#setArtworkFavorite",
@@ -33700,9 +34508,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "setArtworkFavorite",
-   "line": 384,
+   "line": 385,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33718,9 +34527,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "setPayoutIdentity",
-   "line": 835,
+   "line": 836,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33731,14 +34541,15 @@
    "hash": "3c4e1930bf76"
   },
   {
-   "key": "sql:packages/commerce/src/server/index.ts#updateArtwork",
+   "key": "sql:packages/commerce/src/server/index.ts#updateArtworkRaw",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
-   "symbol": "updateArtwork",
-   "line": 1158,
+   "symbol": "updateArtworkRaw",
+   "line": 1224,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33747,7 +34558,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "dafc5afab169"
+   "hash": "f83da42bcc6a"
   },
   {
    "key": "sql:packages/commerce/src/server/index.ts#updateStore",
@@ -33755,9 +34566,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "updateStore",
-   "line": 928,
+   "line": 929,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -33769,14 +34581,35 @@
    "hash": "e8b1ea6f4b22"
   },
   {
+   "key": "sql:packages/commerce/src/server/index.ts#updateStoreProfile",
+   "kind": "sql",
+   "app": "commerce",
+   "file": "packages/commerce/src/server/index.ts",
+   "symbol": "updateStoreProfile",
+   "line": 972,
+   "imports": [
+    "@elkdonis/db",
+    "@elkdonis/services",
+    "@elkdonis/utils"
+   ],
+   "calls": [
+    "@elkdonis/db#db",
+    "@elkdonis/utils#sanitizeRichText"
+   ],
+   "registry": false,
+   "rawSql": true,
+   "hash": "e0a958007a39"
+  },
+  {
    "key": "sql:packages/commerce/src/server/index.ts#writeArtworkMedia",
    "kind": "sql",
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "writeArtworkMedia",
-   "line": 1325,
+   "line": 1391,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -33790,9 +34623,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/index.ts",
    "symbol": "writeProvenance",
-   "line": 1262,
+   "line": 1328,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -34155,11 +34989,12 @@
     "@elkdonis/utils"
    ],
    "calls": [
-    "@elkdonis/db#db"
+    "@elkdonis/db#db",
+    "@elkdonis/services#indexArtwork"
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "3017ef947d44"
+   "hash": "dfa4a0dba520"
   },
   {
    "key": "sql:packages/commerce/src/server/series-social.ts#addSeriesOrg",
@@ -34308,17 +35143,19 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "addSeriesLot",
-   "line": 533,
+   "line": 534,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
-    "@elkdonis/db#db"
+    "@elkdonis/db#db",
+    "@elkdonis/services#indexArtwork"
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "8b689a03ef75"
+   "hash": "c21d8742d71a"
   },
   {
    "key": "sql:packages/commerce/src/server/series.ts#addWeekItem",
@@ -34326,9 +35163,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "addWeekItem",
-   "line": 846,
+   "line": 848,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34344,9 +35182,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "approveWeekItem",
-   "line": 885,
+   "line": 887,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34362,9 +35201,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "attachLot",
-   "line": 160,
+   "line": 161,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -34378,9 +35218,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "attachPublication",
-   "line": 386,
+   "line": 387,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34396,9 +35237,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "createSeries",
-   "line": 68,
+   "line": 69,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34414,9 +35256,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "detachPublication",
-   "line": 404,
+   "line": 405,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34432,9 +35275,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "enterSeries",
-   "line": 306,
+   "line": 307,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34450,9 +35294,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "featureInWeek",
-   "line": 179,
+   "line": 180,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34468,9 +35313,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "removeLotFromSeries",
-   "line": 204,
+   "line": 205,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -34484,9 +35330,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "removeSeriesMember",
-   "line": 364,
+   "line": 365,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34502,9 +35349,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "removeWeekItem",
-   "line": 879,
+   "line": 881,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34520,9 +35368,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "renumberSeriesLots",
-   "line": 341,
+   "line": 342,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -34536,9 +35385,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "saveWeek",
-   "line": 807,
+   "line": 809,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34554,9 +35404,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "setSeriesMember",
-   "line": 351,
+   "line": 352,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34572,9 +35423,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "setSeriesMemberById",
-   "line": 473,
+   "line": 474,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34590,9 +35442,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "setSeriesStatus",
-   "line": 137,
+   "line": 138,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34608,9 +35461,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "setWeekFeatured",
-   "line": 891,
+   "line": 893,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [],
@@ -34624,9 +35478,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "setWeekFocus",
-   "line": 143,
+   "line": 144,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34642,9 +35497,10 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/series.ts",
    "symbol": "updateSeries",
-   "line": 95,
+   "line": 96,
    "imports": [
     "@elkdonis/db",
+    "@elkdonis/services",
     "@elkdonis/utils"
    ],
    "calls": [
@@ -34746,7 +35602,7 @@
    "app": "commerce",
    "file": "packages/commerce/src/server/service-orders.ts",
    "symbol": "createThreadOrder",
-   "line": 83,
+   "line": 96,
    "imports": [
     "@elkdonis/db"
    ],
@@ -34755,7 +35611,7 @@
    ],
    "registry": false,
    "rawSql": true,
-   "hash": "01eb971936c0"
+   "hash": "7256d7b3f34f"
   },
   {
    "key": "sql:packages/commerce/src/server/settings.ts#updateMarketplaceSettings",

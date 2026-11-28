@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.site-style ----------------
   {
     id: 'site-style-save',
+    where: {"mode": "dock", "why": "Colours and fonts."},
     area: 'orgapps.site-style',
     label: "Change the site's look (colours, fonts, header and footer)",
     does: "Saves the org site's theme values (site_themes) and the header/footer look (site_config 'site-style:chrome'), each cleaned against the app's SITE_STYLE schema.",
@@ -105,6 +106,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'site-theme-save',
+    where: {"mode": "dock", "why": "Colours and fonts."},
     area: 'orgapps.site-style',
     label: "Change the site's theme (palette and fonts)",
     does: "Saves an org site's palette and fonts: ifac as per-page theme vars in site_themes, danamccool as palette/fonts through its own store.",
@@ -171,6 +173,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'user-theme-save',
+    where: {"mode": "dock", "why": "A few colour and font choices."},
     area: 'orgapps.site-style',
     label: 'Change my own profile look',
     does: "Saves the signed-in person's own theme for their profile pages; identity is theirs, no org role consulted.",
@@ -207,6 +210,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'site-banner-save',
+    where: {"mode": "dock", "why": "One picture, alt text and a Save button."},
     area: 'orgapps.site-style',
     label: 'Change the landing banner',
     does: 'Sets or removes the landing banner picture (site_config image_spaces.hero) with alt text and framing.',

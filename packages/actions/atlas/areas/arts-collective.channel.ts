@@ -172,6 +172,7 @@ const capabilities: Capability[] = [
   // ---------------- channel.plan ----------------
   {
     id: 'start-piece-plan',
+    where: {"mode": "dock", "why": "One button on a piece."},
     area: 'channel.plan',
     label: 'Start a plan for a piece',
     does: "Creates the piece's plan (a checklist of steps) if it has none.",

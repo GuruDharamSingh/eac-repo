@@ -97,7 +97,8 @@ const capabilities: Capability[] = [
   },
   // ---------------- site content ----------------
   {
-    id: 'home-welcome-save', area: 'art-auction.site', label: 'Save the welcome letter',
+    id: 'home-welcome-save',
+    where: {"mode": "dock", "why": "A letter of text."}, area: 'art-auction.site', label: 'Save the welcome letter',
     does: 'Saves the welcome letter shown above the landing hero.',
     class: 'person', actors: ['owner', 'admin'], scope: 'org',
     hosts: [
@@ -122,7 +123,8 @@ const capabilities: Capability[] = [
     drift: 'Bespoke; see home-welcome-save.', verified: V,
   },
   {
-    id: 'home-hero-save', area: 'art-auction.site', label: 'Choose the artists featured on the landing hero',
+    id: 'home-hero-save',
+    where: {"mode": "dock", "why": "Pick the featured artists."}, area: 'art-auction.site', label: 'Choose the artists featured on the landing hero',
     does: 'Saves which stores the landing hero features. Site owners and admins can, and so can an editor of a series from its Features page.',
     class: 'person', actors: ['owner', 'admin', 'guide'], scope: 'org',
     hosts: [
@@ -173,4 +175,16 @@ const capabilities: Capability[] = [
   },
 ];
 
-export default { capabilities, ignored: [] } satisfies Area;
+export default {
+  capabilities,
+  ignored: [
+    // /hub popups (2026-11-26): reads only; their writes are this area's admin actions, called from the popups.
+    { key: sa('app/hub/frames.ts', 'loadOrdersFrame'), why: 'Read: the latest orders for the /hub Orders popup (requireAdmin).' },
+    { key: sa('app/hub/frames.ts', 'loadOrderFrame'), why: 'Read: one order and its lines for the /hub order popup (requireAdmin).' },
+    { key: sa('app/hub/frames.ts', 'loadApplicationsFrame'), why: 'Read: pending store applications for the /hub Applications popup (requireAdmin).' },
+    { key: sa('app/hub/frames.ts', 'loadSeriesFrame'), why: 'Read: the market auction series for the /hub Series popup (requireAdmin).' },
+    { key: sa('app/hub/frames.ts', 'loadMoneyHubFrame'), why: 'Read: held, owed, suggested beneficiaries and settings for the /hub Money popup (requireAdmin; app/admin/money/data.ts).' },
+    { key: sa('app/hub/frames.ts', 'loadMembersFrame'), why: 'Read: members and network arrivals for the /hub Members popup (requireAdmin).' },
+    { key: sa('app/hub/frames.ts', 'loadStoresFrame'), why: 'Read: the stores list for the /hub Stores popup (requireKeeper).' },
+  ],
+} satisfies Area;

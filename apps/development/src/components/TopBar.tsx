@@ -5,11 +5,15 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/", label: "Blocks" },
+  { href: "/designs", label: "Designs" },
   { href: "/design-systems", label: "Design systems" },
   { href: "/themes", label: "Themes" },
   { href: "/sites", label: "Sites" },
   { href: "/ideas", label: "Ideas" },
   { href: "/workspace", label: "Workspace" },
+  { href: "/rails", label: "Rails" },
+  { href: "/map", label: "Map" },
+  { href: "/desk", label: "Desk" },
 ];
 
 /** The only chrome: a name, three views, who is signed in. Paths are basePath-relative (Next adds /development). */

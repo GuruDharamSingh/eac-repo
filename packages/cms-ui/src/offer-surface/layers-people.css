@@ -1,0 +1,53 @@
+/*
+ * People: the pf-member layer and the hover profile card (README section D, frame 5d).
+ * Prefix osf-pc- (card), osf-pn (name wrapper), osf-pm- (member layer). Tokens only.
+ */
+.osf-pn { position: relative; display: inline-block; }
+
+/* The card: 270px, #24282a, 1px #5a6064 with a 2px bronze top border, caret 38px from the left. */
+.osf-pc {
+  position: absolute; z-index: 40; top: calc(100% + 9px); left: 0; width: 270px;
+  display: grid; gap: 10px; padding: 13px 13px 12px; text-align: left;
+  background: var(--os-surface); color: var(--os-ink-bone);
+  border: 1px solid var(--os-line-strong); border-top: 2px solid var(--os-bronze);
+  box-shadow: 0 22px 40px -16px rgba(0, 0, 0, 0.85);
+  font-family: var(--fb); font-weight: 400; font-style: normal; text-transform: none; letter-spacing: normal;
+  animation: osf-pc-in 0.16s ease-out both;
+}
+.osf-pc::before { content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 12px; } /* hover bridge between name and card */
+.osf-pc-caret { position: absolute; top: -8px; left: var(--osf-caret, 38px); width: 0; height: 0; border: 6px solid transparent; border-top: 0; border-bottom: 6px solid var(--os-bronze); margin-left: -6px; }
+.osf-pc-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.osf-pc-av { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1.5px solid var(--os-bronze); object-fit: cover; display: block; }
+.osf-pc-names { display: grid; gap: 2px; min-width: 0; }
+.osf-pc-name { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); font-size: calc(18px * var(--fhx)); line-height: 1.1; }
+.osf-pc-role { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-terracotta); }
+.osf-pc-bio { display: block; margin: 0; font-size: 13px; line-height: 1.4; color: var(--os-ink-2); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.osf-pc-ctx { display: flex; align-items: center; gap: 6px; font: 500 8.5px/1.4 var(--os-mono); letter-spacing: 0.08em; color: var(--os-ink-muted); border-top: 1px solid var(--os-line-soft); padding-top: 9px; }
+.osf-pc-acts { display: flex; gap: 8px; }
+.osf-pc-acts > .osf-pc-follow { flex: 1; }
+.osf-pc-follow, .osf-pc-open {
+  font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 10px; line-height: normal;
+  padding: 7px 11px; cursor: pointer; background: transparent; color: var(--os-ink-bone); border: 1px solid var(--os-line-strong);
+  transition: background-color 0.25s, color 0.25s, border-color 0.2s;
+}
+.osf-pc-follow { border-color: var(--os-bronze); color: var(--os-bronze); }
+.osf-pc-follow:hover { background: color-mix(in srgb, var(--os-bronze) 14%, transparent); }
+.osf-pc-follow.is-on { background: var(--os-bronze); color: var(--os-on-bronze); }
+.osf-pc-open:hover { border-color: var(--os-bronze); }
+@keyframes osf-pc-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .osf-pc { animation: none; } }
+/* No card on a phone: a tap opens the profile sheet directly. */
+@media (hover: none) { .osf-pc { display: none; } }
+
+/* pf-member (5c): replies are ruled rows, no left bar. */
+.osf-pm-replies { display: grid; border-top: 1px solid var(--os-line-soft); }
+.osf-pm-reply { display: grid; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--os-line-soft); }
+.osf-pm-quote { font-family: var(--fb); font-size: 13px; line-height: 1.45; color: var(--os-ink-body); }
+.osf-pm-meta { font: 500 8.5px var(--os-mono); letter-spacing: .04em; color: var(--os-ink-faint); }
+.osf-pm-note { font-size: 12px; line-height: 1.45; }
+
+/* Portalled card: a fixed anchor under the name; the card hangs from it. */
+.osf-pc-fix { position: fixed; z-index: 2147483000; width: 0; height: 0; }
+.osf-pc-fix > .osf-pc { top: 9px; left: 0; }
+.osf-pc-fix.is-up > .osf-pc { top: auto; bottom: 9px; }
+.osf-pc-fix.is-up .osf-pc-caret { top: auto; bottom: -8px; transform: rotate(180deg); }

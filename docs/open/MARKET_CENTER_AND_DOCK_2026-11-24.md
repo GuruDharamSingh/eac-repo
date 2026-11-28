@@ -151,6 +151,82 @@ Shared changes this needs:
 
 ### Slice 4: `/center` on the market
 
+**2026-11-26: phase 2 (popups) live, and `/hub` phase 1** (art-auction `IQlFvc03NaqDZVsg73hBb`, restarted about
+20:38 EST; backup `~/eac-backups/next/art-auction-20261126-2031-hub.tgz`, which holds `Rq-HLEaBo7nvgpDg3mCEn`;
+uncommitted).
+
+- `/center` popups use cms-ui surfaces (one `<dialog>` with stacked layers):
+  - `center/layout.tsx` mounts `CenterSurfaces`.
+  - Custom keys `market-store`, `market-artwork`, `market-piece`, `market-entry`, `market-money` are drawn in
+    `center/_components/frames.tsx`.
+  - They load through `center/frames.ts` and save through /studio's own forms and actions:
+    - Store: Store front and Shipping tabs.
+    - Add or edit a work: `ArtworkForm` gained an `onCreated` prop, and the edit mapping moved to
+      `studio/artwork-initial.ts`.
+    - A piece: Publish, Re-list and Unlist; Edit stacks a layer; Write and Post link to arts-collective.
+    - Series entry: `enterSeriesAction`, the first caller of commerce `enterSeries`, claimed in the atlas as
+      `center-series-entry`.
+    - Money.
+  - The surface is a modal `<dialog>`, so each popup carries its own sonner toaster.
+  - Studio's radix confirm dialogs (orders, lots) would sit behind the dialog, so Sales and Auctions stay links.
+  - `surface.css` and the token and kind colours are in `globals.css`. They add only `.eac-*` rules and
+    variables.
+- `/hub` (keepers only, `requireKeeper`, replacing `/admin`):
+  - Bands are drawn as in round 6.
+  - Orders (admins): `hub-orders` → `hub-order` → `hub-order-confirm`. Refund and cancel are a stacked compact
+    layer, calling /admin's actions.
+  - Stores (keepers): `hub-stores`, with Pause and Make active.
+  - The content lane's Artworks, Content library and Channel cards, with "Open page" to `/hub/content` and
+    `/hub/channel`.
+  - Series, Applications, Money, Members, Visitors, Pages and Loft still link to `/admin/*`.
+  - The header's admin link reads "Hub". `/admin` is unchanged.
+- Verified 2026-11-26 in headless Chrome at 1440, signed in, with test accounts created for the check and then
+  deleted, with no exceptions, no 5xx and no horizontal overflow:
+  - Seller:
+    - Store opened with both tabs.
+    - Add a work drew the artwork form.
+    - The piece opened; Edit stacked a layer with its crumb, and Back returned.
+    - Unlist ran (the test piece showed Taken down, then Re-list).
+    - Series entry showed its empty state (the account is in no series).
+    - Money opened.
+  - Keeper (owner of org `market`, not an admin): `/hub` showed Stores and the three content cards; the Stores
+    popup opened (Pause not pressed).
+- Not verified:
+  - the Orders popups and their actions (they need a network admin);
+  - a real series entry;
+  - the content lane's card popups under `/hub`;
+  - phone widths for the popups.
+- Known: signed out, `/hub` sends you to `/login?next=/admin/stores`, because `requireKeeper` uses
+  `signInPath("/admin/stores")`.
+
+
+**2026-11-26: phase 1 built and live** (art-auction `Rq-HLEaBo7nvgpDg3mCEn`, built 19:38 and restarted about 19:43 EST; backup
+`~/eac-backups/next/art-auction-20261126-1937-center.tgz`, which holds `PKZjPuX_-0bGWkONrnB79`; uncommitted).
+
+- Files:
+  - `apps/art-auction/src/app/center/page.tsx`: the cards, laid out as round 5.
+  - `center/_components/center-client.tsx`: the profile flip card, the two-tab lists and the rows.
+  - `center/actions.ts`: `chooseCenterStore`, the "Acting for" switch. It uses the same cookie as /studio and is
+    recorded as ignored in the atlas.
+  - `center/work/page.tsx`: the content lane's "My work" library, moved from `/center`.
+  - `components/site-header.tsx`: signed in, the header button reads "Center" and goes to `/center`; signed out
+    it still reads "Sell your work".
+- Cards read the queries /studio uses and link to the /studio, /orders, /lots and /messages pages. The popups
+  (store tabs; listing → write / post / series entry) are phase 2.
+- A card with nothing to show is left out, and its row's widths are respread so no gap is left.
+- Next shows LMS trails only. Ongoing series shows auction series only; showcases and events wait on their models.
+- Verified 2026-11-26:
+  - Signed out, through the edge: `/center` and `/center/work` answer 307 to `/login?next=…`.
+  - Signed in, in headless Chrome at 1440 and 390, with no exceptions, no 5xx and no horizontal overflow:
+    - a no-store test account (`claude-studio-1009@test.invalid`): profile, Open a store, Ongoing series;
+    - a test seller created for the check, then deleted: profile, store, publish, listings, ongoing series,
+      money and the Drafts chip; the flip card and the Past tab respond;
+    - `/center/work` for the same test seller.
+- Not checked:
+  - a seller with bids, orders, messages, trails or desk series (those cards have not rendered with data);
+  - the "Acting for" switch with two stores.
+
+
 - Replaces `/studio`, which redirects. It is built from faces (cards) that open frames (dialogs
   with tabs), and a frame opens as a page ("Open as page", `/center/store` and so on).
 - Faces:

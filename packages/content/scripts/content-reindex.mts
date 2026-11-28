@@ -1,10 +1,10 @@
 // Backfill (and optionally reconcile) content_index. Writes only content_index.
-//   npx tsx scripts/content-reindex.mts [--stores=thread,artwork] [--reconcile] [--fix]
+//   npx tsx scripts/content-reindex.mts [--stores=thread,artwork,person] [--reconcile] [--fix]
 // Run in the admin container, cwd packages/content.
 import { reindexAll, reconcileContentIndex, drainContentQueue } from "@elkdonis/services";
 
 const arg = (n: string) => process.argv.find((a) => a.startsWith(`--${n}`));
-const stores = (arg("stores")?.split("=")[1]?.split(",").filter(Boolean) ?? []) as Array<"thread" | "artwork">;
+const stores = (arg("stores")?.split("=")[1]?.split(",").filter(Boolean) ?? []) as Array<"thread" | "artwork" | "person">;
 
 if (arg("reconcile") || arg("fix")) {
   const r = await reconcileContentIndex({ fix: Boolean(arg("fix")) });

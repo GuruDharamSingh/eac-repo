@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Brothers";src:url("apps/elktours/public/fonts/BrothersTypeface-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Venture";src:url("apps/elktours/public/fonts/Venture-nRqOR.otf") format("opentype");font-weight:400;font-display:swap}
+html{background:#1b1e22}
+body{margin:0;background:#1b1e22;color:#f1ece2;font-family:"Basteleur",Georgia,serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+a{color:#dcc08a;text-underline-offset:3px}a:hover{color:#f1ece2}
+</style>
+</helmet>
+<div style="--bg:#343941;--soft:#393e46;--sunk:#2e3239;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;--k:#c9a25c;--ok:#1b1e23;--pc:#8fb3c4;--route:#e8805c;--t:'Brothers','Venture',Georgia,serif;--b:'Basteleur',Georgia,serif;--r:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--v:'Venture',Georgia,serif;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;padding:56px;min-height:100vh;background:#1b1e22">
+
+  <header style="flex:1 1 100%;display:grid;gap:8px;max-width:820px">
+    <span style="font-family:var(--v);font-size:.8rem;letter-spacing:.16em;color:var(--k)">TOUR DETAIL PAGE · PHONE · BELOW THE STAGE</span>
+    <h1 style="margin:0;font-family:var(--t);font-weight:400;font-size:2.2rem;line-height:1.1">Swiping down from the stage</h1>
+    <p style="margin:0;color:var(--mu);line-height:1.6;max-width:70ch;text-wrap:pretty">The stage is the walk; below it is the practical page. As you scroll past the stage, the strip of stops folds away into a slim bar at the top that takes you back, and the foot shrinks to a Book bar that stays put. Each section below is a SurfaceSection, so "Dates", "Meeting point" and "Your guide" can each open their own surface on tap. <span style="color:var(--fg)">3a</span> is the whole page laid out; <span style="color:var(--fg)">3b</span> is the phone mid-scroll.</p>
+  </header>
+
+  <div style="display:flex;flex-wrap:nowrap;gap:48px;align-items:flex-start">
+  <figure style="margin:0;display:grid;gap:10px;width:390px">
+    <figcaption style="display:flex;gap:10px;align-items:baseline;font-family:var(--r);font-size:12px;color:var(--mu)"><span style="padding:3px 7px;background:var(--fg);color:var(--ok);font-weight:600">3a</span><span><b style="color:var(--fg)">The whole page</b> · stage, then the sections</span></figcaption>
+    <div style="width:390px;background:#2a2e35;border:1px solid #444a53;overflow:hidden">
+
+      <div style="position:relative;height:250px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),linear-gradient(160deg,#5f5a6e,#1f2228)">
+        <div style="position:absolute;left:12px;top:14px;display:flex;gap:6px"><span style="height:32px;padding:0 13px;display:grid;place-items:center;border-radius:999px;background:var(--fg);color:var(--bg);font-size:.8rem">Photos</span><span style="height:32px;padding:0 13px;display:grid;place-items:center;border-radius:999px;border:1px solid rgba(241,236,226,.45);background:rgba(27,30,35,.6);font-size:.8rem">Street View</span></div>
+        <span style="position:absolute;inset:0;display:grid;place-items:center;font-family:var(--r);font-size:10.5px;color:rgba(241,236,226,.7)">[photo · Upper chapel glass]</span>
+      </div>
+      <article data-kind="tour" style="background:var(--bg)">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 10px 12px 16px;border-bottom:2px solid var(--k)">
+          <span style="display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-family:var(--v);font-size:.95rem">III</span>
+          <div style="min-width:0"><div style="font-family:var(--r);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase">‹ The walk · Stop III of IX</div><div style="font-family:var(--t);font-size:1.25rem;line-height:1.2">Sainte-Chapelle</div></div>
+          <div style="display:flex;gap:4px"><span style="width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--ln)">‹</span><span style="width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--ln)">›</span></div>
+        </header>
+        <div style="padding:16px 18px 20px;display:grid;gap:12px">
+          <p style="margin:0;font-family:var(--t);font-size:1.15rem;line-height:1.5;color:#ece6da">Inside the palace walls the mood changes: a royal chapel made as a reliquary, all light and coloured glass.</p>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;min-height:60px;padding:0 12px;border:1px solid rgba(241,236,226,.22);border-top:2px solid var(--pc)"><span style="display:grid;place-items:center;width:32px;height:32px;background:color-mix(in srgb,var(--pc) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--pc) 26%,transparent);color:var(--pc)">⊙</span><span style="display:grid;min-width:0"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Place · Sainte-Chapelle</span><span style="font-size:.82rem;color:var(--mu)">Royal chapel · Ticket · not included</span></span><span style="width:26px;height:26px;display:grid;place-items:center;border-radius:999px;border:1px solid color-mix(in srgb,var(--pc) 32%,transparent);color:var(--pc);font-family:var(--r);font-size:.8rem">+</span></div>
+        </div>
+      </article>
+
+      <div style="position:relative;padding:14px 14px 12px;background:rgba(43,47,54,.96);border-top:1px solid var(--rl);border-bottom:1px solid var(--rl)">
+        <div style="display:flex;justify-content:flex-end;gap:6px;overflow:hidden">
+          <span style="flex:none;width:86px;height:70px;border:1px solid rgba(241,236,226,.22);background:var(--bg)"><span style="display:block;height:32px;background:#6d6559"></span><span style="display:block;padding:5px 7px;font-family:var(--t);font-size:.74rem">Notre-Dame</span></span>
+          <span style="flex:none;width:86px;height:70px;border:1px solid rgba(241,236,226,.22);background:var(--bg)"><span style="display:block;height:32px;background:#5f6a6e"></span><span style="display:block;padding:5px 7px;font-family:var(--t);font-size:.74rem">Hôtel-Dieu</span></span>
+          <span style="flex:none;width:132px;height:70px;border:1px solid var(--k);background:var(--bg)"><span style="display:block;height:32px;background:#5f5a6e"></span><span style="display:block;padding:5px 7px;font-family:var(--t);font-size:.74rem">Sainte-Chapelle</span></span>
+          <span style="flex:none;width:86px;height:70px;border:1px solid rgba(241,236,226,.22);background:var(--bg);opacity:.6"><span style="display:block;height:32px;background:#5b5f66"></span><span style="display:block;padding:5px 7px;font-family:var(--t);font-size:.74rem">Concierg…</span></span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mu)"><span style="padding:2px 6px;background:var(--route);color:var(--ok);font-weight:600;letter-spacing:.06em">fold</span>Scroll for dates, meeting point, what to expect</div>
+      </div>
+
+      <section style="padding:26px 18px 8px;display:grid;gap:14px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">What to expect</h3>
+        <p style="margin:0;font-family:var(--t);font-size:1.15rem;line-height:1.45">A slow walk across the island and over the river, about two and a half hours, with time inside two of the stops.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ln);border:1px solid var(--ln)">
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Length</span><span>[2 h 30]</span></div>
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Walking</span><span>[2.4 km] · flat</span></div>
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Group</span><span>Up to [10]</span></div>
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Language</span><span>English, Français</span></div>
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Access</span><span>[Steps at stop III]</span></div>
+          <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Weather</span><span>Runs in rain</span></div>
+        </div>
+        <ul style="margin:0;padding-left:1.1rem;display:grid;gap:6px;font-size:.92rem;line-height:1.5;color:#e6e0d5">
+          <li>The upper chapel at Sainte-Chapelle, at the brightest hour</li>
+          <li>The Conciergerie's medieval hall</li>
+          <li>Henri IV's square and the island's tip</li>
+        </ul>
+      </section>
+      <section style="padding:26px 18px 8px;display:grid;gap:12px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);display:flex;justify-content:space-between;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600"><span>The route</span><span style="font-weight:400;color:var(--mu);letter-spacing:.04em;text-transform:none">9 stops · [2.4 km]</span></h3>
+        <div style="height:170px;border:1px solid var(--ln);background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#262a30;display:grid;place-items:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">route map · tap for the 3D route</div>
+        <ol style="margin:0;padding:0;list-style:none;border:1px solid var(--ln)">
+          <sc-for list="{{stops}}" as="s" hint-placeholder-count="9">
+            <li style="display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:48px;padding:6px 12px;border-bottom:1px solid var(--ln);background:var(--bg)">
+              <sc-if value="{{s.cur}}" hint-placeholder-val="{{false}}"><span style="width:26px;height:26px;display:grid;place-items:center;background:var(--k);color:var(--ok);font-family:var(--v);font-size:.6rem">{{s.n}}</span></sc-if>
+              <sc-if value="{{s.notcur}}" hint-placeholder-val="{{true}}"><span style="width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--k);color:var(--k);font-family:var(--v);font-size:.6rem">{{s.n}}</span></sc-if>
+              <span style="display:grid;min-width:0"><span style="font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{s.title}}</span><span style="font-family:var(--r);font-size:.6rem;color:var(--mu)">{{s.kind}}</span></span>
+              <span style="font-family:var(--r);font-size:.66rem;color:var(--mu)">{{s.min}} ↑</span>
+            </li>
+          </sc-for>
+        </ol>
+        <p style="margin:0;font-family:var(--r);font-size:.64rem;color:var(--mu)">Each row jumps back up to that stop on the stage.</p>
+      </section>
+      <section data-kind="event" style="padding:26px 18px 8px;display:grid;gap:12px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);display:flex;justify-content:space-between;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600"><span>Dates &amp; times</span><span style="font-weight:400;color:var(--mu);letter-spacing:.04em;text-transform:none">[€ price] per person</span></h3>
+        <div style="display:grid;border:1px solid var(--ln)">
+          <sc-for list="{{deps}}" as="d" hint-placeholder-count="4">
+            <button type="button" onClick="{{d.pick}}" style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:58px;padding:8px 12px;border:0;border-bottom:1px solid var(--ln);background:var(--bg);text-align:left;cursor:pointer">
+              <span style="display:grid;justify-items:center;padding:4px 0;border:1px solid var(--ln)"><span style="font-family:var(--r);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">{{d.day}}</span><span style="font-family:var(--t);font-size:1rem;line-height:1.1">{{d.date}}</span></span>
+              <span style="display:grid;min-width:0"><span style="font-size:.95rem">{{d.time}} · {{d.lang}}</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">{{d.left}}</span></span>
+              <sc-if value="{{d.on}}" hint-placeholder-val="{{false}}"><span style="padding:6px 12px;background:var(--k);color:var(--ok);font-size:.8rem">Chosen</span></sc-if>
+              <sc-if value="{{d.full}}" hint-placeholder-val="{{false}}"><span style="padding:6px 12px;border:1px dashed var(--ln);color:var(--fa);font-size:.8rem">Full</span></sc-if>
+              <sc-if value="{{d.off}}" hint-placeholder-val="{{true}}"><sc-if value="{{d.avail}}" hint-placeholder-val="{{true}}"><span style="padding:6px 12px;border:1px solid var(--ln);font-size:.8rem">Choose</span></sc-if></sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <p style="margin:0;font-size:.8rem;color:var(--mu);line-height:1.5">Only departures a guide has offered appear here. Choosing one fills the Book bar below.</p>
+      </section>
+      <section style="padding:26px 18px 8px;display:grid;gap:12px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Meeting point</h3>
+        <div style="display:grid;border:1px solid rgba(241,236,226,.22);border-top:2px solid var(--pc);background:var(--bg)">
+          <div style="height:130px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.05) 0 6px,transparent 6px 12px),#262a30;display:grid;place-items:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">map · pin at the meeting point</div>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px">
+            <span style="width:26px;height:26px;display:grid;place-items:center;background:var(--k);color:var(--ok);font-family:var(--v);font-size:.6rem;outline:1px solid var(--k);outline-offset:2px">I</span>
+            <span style="display:grid;min-width:0"><span style="font-size:.95rem">[Meeting place]</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">[Address] · 10 min before the start</span></span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 12px;border:1px solid var(--ln);font-size:.8rem">Directions ↗</span>
+          </div>
+        </div>
+      </section>
+      <section style="padding:26px 18px 8px;display:grid;gap:12px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Included</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.88rem;line-height:1.5">
+          <ul style="margin:0;padding:0;list-style:none;display:grid;gap:6px"><li style="display:flex;gap:8px"><span style="color:var(--k)">✓</span>Licensed guide</li><li style="display:flex;gap:8px"><span style="color:var(--k)">✓</span>[Headsets for groups of 6+]</li><li style="display:flex;gap:8px"><span style="color:var(--k)">✓</span>[Map to keep]</li></ul>
+          <ul style="margin:0;padding:0;list-style:none;display:grid;gap:6px;color:var(--mu)"><li style="display:flex;gap:8px"><span>–</span>Entry tickets (Sainte-Chapelle, Conciergerie)</li><li style="display:flex;gap:8px"><span>–</span>[Food and drinks]</li></ul>
+        </div>
+      </section>
+
+      <section style="padding:26px 18px 8px;display:grid;gap:12px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Your guide</h3>
+        <div style="position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:center;padding:14px;border:1px solid rgba(241,236,226,.22);background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--route) 7%,transparent),transparent 64%),var(--bg)">
+          <span style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--route),transparent 66%)"></span>
+          <span style="width:64px;height:64px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 5px,transparent 5px 10px),var(--sunk);display:grid;place-items:center;font-family:var(--r);font-size:9px;color:var(--mu)">photo</span>
+          <span style="display:grid;gap:3px;min-width:0"><span style="font-family:var(--t);font-size:1.1rem">[Guide name]</span><span style="font-family:var(--r);font-size:.6rem;color:var(--mu)">Runs Sat 22 · English, Français</span><span style="font-size:.82rem;color:var(--mu)">[One line about the guide.]</span></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:baseline;padding:9px 12px;border:1px dashed rgba(232,128,92,.55);font-size:.85rem;color:var(--mu)"><span style="flex:none;font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--route)">Their take</span><span>[The guide's personal note on this tour, shown for their departures.]</span></div>
+      </section>
+      <section style="padding:26px 18px 24px;display:grid;gap:10px">
+        <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Good to know</h3>
+        <dl style="margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:10px;font-size:.88rem;line-height:1.5">
+          <dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:4px">Cancel</dt><dd style="margin:0">[Cancellation policy]</dd>
+          <dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:4px">Bring</dt><dd style="margin:0">Comfortable shoes; ID for the palace security check</dd>
+          <dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:4px">Tickets</dt><dd style="margin:0">Buy Sainte-Chapelle timed entry ahead; the guide will tell you which slot</dd>
+          <dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:4px">Contact</dt><dd style="margin:0">[Office email]</dd>
+        </dl>
+      </section>
+
+      <div style="padding:22px 18px 26px;display:grid;gap:12px;background:var(--soft);border-top:1px solid var(--rl)">
+        <span style="font-family:var(--t);font-size:1.3rem">Ready for the island?</span>
+        <div style="display:flex;gap:8px"><span style="flex:1;display:grid;place-items:center;height:48px;background:var(--k);color:var(--ok);font-size:.95rem">Book {{selLabel}}</span></div>
+        <span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">Or scroll up to walk the route first</span>
+      </div>
+    </div>
+  </figure>
+
+  <figure style="margin:0;display:grid;gap:10px;position:sticky;top:24px">
+    <figcaption style="display:flex;gap:10px;align-items:baseline;font-family:var(--r);font-size:12px;color:var(--mu)"><span style="padding:3px 7px;background:var(--fg);color:var(--ok);font-weight:600">3b</span><span><b style="color:var(--fg)">Mid-scroll</b> · the stage folded to a bar, Book bar docked</span></figcaption>
+    <div style="position:relative;width:390px;height:844px;border:10px solid #0d0e10;border-radius:46px;overflow:hidden;background:#2a2e35;box-shadow:0 30px 80px -30px rgba(0,0,0,.85)">
+      <div style="position:absolute;top:0;left:0;right:0;height:44px;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-family:var(--r);font-size:.72rem;background:#2b2f36"><span>9:41</span><span style="width:100px;height:28px;border-radius:999px;background:#0d0e10"></span><span>●●● ▮</span></div>
+
+      <div data-kind="tour" style="position:absolute;top:44px;left:0;right:0;z-index:30;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 12px;background:rgba(52,57,65,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:2px solid var(--k)">
+        <span style="width:30px;height:30px;display:grid;place-items:center;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-family:var(--v);font-size:.72rem">III</span>
+        <span style="display:grid;min-width:0"><span style="font-family:var(--r);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mu)">Back to the walk · stop III</span><span style="font-family:var(--t);font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sainte-Chapelle</span></span>
+        <span style="width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--ln);font-size:.9rem">↑</span>
+      </div>
+      <div style="position:absolute;top:104px;left:0;right:0;z-index:29;display:grid;grid-template-columns:repeat(11,1fr);gap:2px;padding:0 12px 6px;background:rgba(52,57,65,.97)">
+        <span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--k)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span><span style="height:3px;background:var(--ln)"></span>
+      </div>
+
+      <div style="position:absolute;top:113px;left:0;right:0;bottom:92px;overflow:hidden;background:#2a2e35">
+        <section style="padding:18px 18px 8px;display:grid;gap:12px">
+          <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">What to expect</h3>
+          <p style="margin:0;font-family:var(--t);font-size:1.12rem;line-height:1.45">A slow walk across the island and over the river, about two and a half hours, with time inside two of the stops.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ln);border:1px solid var(--ln)">
+            <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Length</span><span>[2 h 30]</span></div>
+            <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Walking</span><span>[2.4 km] · flat</span></div>
+            <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Group</span><span>Up to [10]</span></div>
+            <div style="display:grid;gap:2px;padding:10px 12px;background:var(--bg)"><span style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Language</span><span>English, Français</span></div>
+          </div>
+        </section>
+        <section data-kind="event" style="padding:18px 18px 8px;display:grid;gap:12px">
+          <h3 style="margin:0;padding-bottom:6px;border-bottom:1px solid var(--rl);display:flex;justify-content:space-between;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600"><span>Dates &amp; times</span><span style="font-weight:400;color:var(--mu);letter-spacing:.04em;text-transform:none">[€ price] pp</span></h3>
+          <div style="display:grid;border:1px solid var(--ln)">
+            <sc-for list="{{deps}}" as="d" hint-placeholder-count="4">
+              <button type="button" onClick="{{d.pick}}" style="display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:58px;padding:8px 12px;border:0;border-bottom:1px solid var(--ln);background:var(--bg);text-align:left;cursor:pointer">
+                <span style="display:grid;justify-items:center;padding:4px 0;border:1px solid var(--ln)"><span style="font-family:var(--r);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">{{d.day}}</span><span style="font-family:var(--t);font-size:1rem;line-height:1.1">{{d.date}}</span></span>
+                <span style="display:grid;min-width:0"><span style="font-size:.95rem">{{d.time}} · {{d.lang}}</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">{{d.left}}</span></span>
+                <sc-if value="{{d.on}}" hint-placeholder-val="{{false}}"><span style="padding:6px 12px;background:var(--k);color:var(--ok);font-size:.8rem">Chosen</span></sc-if>
+                <sc-if value="{{d.full}}" hint-placeholder-val="{{false}}"><span style="padding:6px 12px;border:1px dashed var(--ln);color:var(--fa);font-size:.8rem">Full</span></sc-if>
+                <sc-if value="{{d.off}}" hint-placeholder-val="{{true}}"><sc-if value="{{d.avail}}" hint-placeholder-val="{{true}}"><span style="padding:6px 12px;border:1px solid var(--ln);font-size:.8rem">Choose</span></sc-if></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+
+      <div data-kind="event" style="position:absolute;left:0;right:0;bottom:0;height:92px;z-index:30;display:flex;align-items:flex-start;gap:12px;padding:10px 14px 0;background:rgba(43,47,54,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--rl)">
+        <div style="display:grid;min-width:0;flex:1"><span style="font-family:var(--t);font-size:.9rem">{{selLabel}}</span><span style="font-family:var(--r);font-size:.62rem;color:var(--mu)">[€ price] per person · [Meeting place]</span></div>
+        <span style="height:46px;padding:0 22px;display:grid;place-items:center;background:var(--k);color:var(--ok);font-size:.95rem">Book</span>
+        <span style="position:absolute;left:50%;bottom:8px;width:120px;height:4px;margin-left:-60px;border-radius:999px;background:rgba(241,236,226,.55)"></span>
+      </div>
+    </div>
+    <ol style="margin:4px 0 0;padding:0;list-style:none;display:grid;gap:8px;max-width:390px;font-size:.85rem;line-height:1.5;color:var(--mu)">
+      <li><span style="color:var(--fg)">Folded stage.</span> The masthead shrinks to one line with the open stop; a progress line shows how far through the walk you looked. ↑ scrolls back to the stage.</li>
+      <li><span style="color:var(--fg)">Book bar.</span> The stage's foot slims down and carries the chosen date, so picking a row in Dates updates it.</li>
+    </ol>
+  </figure>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { date: 0, open: null };
+  renderVals() {
+    const st = this.state, set = o => this.setState(o);
+    const DEPS = [
+      { day: 'Sat', date: '22 Nov', time: '10:00', left: '6 of 10 left', lang: 'English' },
+      { day: 'Sun', date: '23 Nov', time: '10:00', left: '2 of 10 left', lang: 'English' },
+      { day: 'Wed', date: '26 Nov', time: '14:30', left: '10 of 10 left', lang: 'Français' },
+      { day: 'Sat', date: '29 Nov', time: '10:00', left: 'Full', lang: 'English', full: true }
+    ];
+    const deps = DEPS.map((d, i) => ({ ...d, on: i === st.date && !d.full, off: !(i === st.date && !d.full), full: !!d.full, avail: !d.full, pick: () => !d.full && set({ date: i }) }));
+    const sel = DEPS[st.date];
+    const NUM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+    const STOPS = [['Notre-Dame', 'Cathedral', '20'], ['Hôtel-Dieu', 'Hospital', '10'], ['Sainte-Chapelle', 'Royal chapel', '25'], ['Conciergerie', 'Palace & prison', '15'], ['Place Dauphine', 'Square', '10'], ['Square du Vert-Galant', 'Garden', '10'], ['The bouquinistes', 'Booksellers', '10'], ['Pont des Arts', 'Footbridge', '5'], ['Louvre Pyramid', 'Museum', '10']];
+    const stops = STOPS.map((s, i) => ({ n: NUM[i], title: s[0], kind: s[1], min: s[2] + ' min', cur: i === 2, notcur: i !== 2, last: i === STOPS.length - 1, notlast: i !== STOPS.length - 1 }));
+    return { deps, stops, selLabel: sel.day + ' ' + sel.date + ' · ' + sel.time };
+  }
+}
+</script>
+</body>
+</html>

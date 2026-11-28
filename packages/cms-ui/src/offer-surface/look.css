@@ -1,0 +1,224 @@
+/*
+ * Offer surface look: design tokens, font templates and kind-tint switch.
+ *
+ * Source: the design handoff of 2026-11-27, in the team scratchpad design folder:
+ *   - README.md, "Design tokens" (colours, kind colours, image placeholder, radii, shadows)
+ *     and "Type" (the six font templates and the --f* variables);
+ *   - Flyer Pages Wireframes.dc.html, <helmet>, the [data-ft="..."] rules and the
+ *     Google Fonts links (values copied as written there).
+ *
+ * Usage: put class "eac-offer" on the surface root, then choose a template with
+ * data-ft ("para" | "gazette" | "quiet" | "marquee" | "ledger" | "rite") and,
+ * optionally, data-tint="off" to draw every kind in bronze.
+ * Plain CSS only. Every token has the --os- prefix.
+ *
+ * Contrast (WCAG 2.x, computed 2026-11-27; ratio on the ground named):
+ *   ground #24282a (surface) / #1b1e20 (page)
+ *   ink-bone     #e9e5dd  11.84 / 13.34   pass AAA
+ *   ink-body     #d6d1c7   9.78 / 11.02   pass AAA
+ *   ink-2        #c9c4ba   8.56 /  9.65   pass AAA
+ *   ink-muted    #a3a09a   5.70 /  6.43   pass AA
+ *   ink-faint    #8f8c86   4.44 /  5.00   FAILS AA body text (4.5) on surface; passes on page.
+ *                                          Use for secondary metadata at 13px+ on the page ground
+ *                                          only, or raise it on surface.
+ *   ink-placeholder #6f6c67 2.84 / 3.21   below 4.5; placeholder and disabled text only, never body.
+ *   bronze #c8a45b on page #1b1e20: 7.12 (pass AA); on surface: 6.32 (pass AA).
+ *   on-bronze #1b1e20 on bronze #c8a45b: 7.12 (pass AA; the primary button text pair).
+ */
+
+/* Fonts: loaded by a <link> from OfferSurfaceRoot (see fonts.ts). A remote @import here is dropped by the bundler. */
+
+/* Tokens and default template (para). */
+.eac-offer {
+  /* Grounds */
+  --os-page: #1b1e20;
+  --os-canvas: #121416;
+  --os-surface: #24282a;
+  --os-foot: #1f2225;
+  --os-card: #202326;
+  --os-input: #1b1e20;
+
+  /* Lines */
+  --os-line-strong: #5a6064;
+  --os-line-mid: #4a5054;
+  --os-line-soft: #373c3f;
+  --os-line-dotted: #3d4246;
+  --os-line-faint: #2c3033;
+
+  /* Ink */
+  --os-ink-bone: #e9e5dd;
+  --os-ink-body: #d6d1c7;
+  --os-ink-2: #c9c4ba;
+  --os-ink-muted: #a3a09a;
+  --os-ink-faint: #8f8c86;
+  --os-ink-placeholder: #6f6c67;
+
+  /* Accents */
+  --os-bronze: #c8a45b;
+  --os-on-bronze: #1b1e20;
+  --os-terracotta: #ce8b62;
+  --os-sage: #8da882;
+
+  /* Kind colours (shown when the tint is on). The primary button stays bronze. */
+  --os-kind-event: #ce8b62;
+  --os-kind-service: #8da882;
+  --os-kind-series: #8ea7c2;
+  --os-kind-artwork: #c48fa6;
+  --os-kind-writing: #c8a45b;
+  --os-kind-talk: #7fafa8;
+  --os-kind-profile: #d9cfbf;
+  --os-kind-share: #c8a45b;
+  --os-kind-follow: #c8a45b;
+  --os-kind-done: #8da882;
+
+  /* Image placeholder */
+  --os-placeholder: repeating-linear-gradient(135deg, #202427 0 7px, #262b2e 7px 8px);
+
+  /* Shadows */
+  --os-shadow-popup: 0 30px 60px -24px rgba(0, 0, 0, 0.85);
+  --os-shadow-sheet: 0 -18px 40px -10px rgba(0, 0, 0, 0.7);
+  --os-shadow-hover: 0 14px 24px -14px rgba(0, 0, 0, 0.8);
+
+  /* Mono is always JetBrains Mono (8.5 to 9.5px, letter-spacing .04 to .14em in use). */
+  --os-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Font template variables: default is para. */
+  --fh: "Fraunces", Georgia, serif;
+  --fhw: 600;
+  --fhi: normal;
+  --fht: none;
+  --fhl: -.01em;
+  --fhx: 1;
+  --fb: "Spectral", Georgia, serif;
+  --fq: "Fraunces", Georgia, serif;
+  --fqi: italic;
+  --fu: "Spectral", Georgia, serif;
+  --fuw: 600;
+  --fut: uppercase;
+  --ful: .14em;
+  --fk: "Spectral", Georgia, serif;
+  --fkl: .18em;
+}
+
+/* Font templates. */
+.eac-offer[data-ft="para"] {
+  --fh: "Fraunces", Georgia, serif;
+  --fhw: 600;
+  --fhi: normal;
+  --fht: none;
+  --fhl: -.01em;
+  --fhx: 1;
+  --fb: "Spectral", Georgia, serif;
+  --fq: "Fraunces", Georgia, serif;
+  --fqi: italic;
+  --fu: "Spectral", Georgia, serif;
+  --fuw: 600;
+  --fut: uppercase;
+  --ful: .14em;
+  --fk: "Spectral", Georgia, serif;
+  --fkl: .18em;
+}
+
+.eac-offer[data-ft="gazette"] {
+  --fh: "Libre Caslon Display", Georgia, serif;
+  --fhw: 400;
+  --fhi: normal;
+  --fht: none;
+  --fhl: 0;
+  --fhx: 1.1;
+  --fb: "Libre Caslon Text", Georgia, serif;
+  --fq: "Libre Caslon Text", Georgia, serif;
+  --fqi: italic;
+  --fu: "IBM Plex Sans Condensed", sans-serif;
+  --fuw: 600;
+  --fut: uppercase;
+  --ful: .1em;
+  --fk: "IBM Plex Sans Condensed", sans-serif;
+  --fkl: .14em;
+}
+
+.eac-offer[data-ft="quiet"] {
+  --fh: "Instrument Sans", sans-serif;
+  --fhw: 500;
+  --fhi: normal;
+  --fht: none;
+  --fhl: -.025em;
+  --fhx: .95;
+  --fb: "Instrument Sans", sans-serif;
+  --fq: "Instrument Serif", Georgia, serif;
+  --fqi: italic;
+  --fu: "Instrument Sans", sans-serif;
+  --fuw: 600;
+  --fut: none;
+  --ful: 0;
+  --fk: "Instrument Sans", sans-serif;
+  --fkl: .08em;
+}
+
+.eac-offer[data-ft="marquee"] {
+  --fh: "Big Shoulders Display", sans-serif;
+  --fhw: 800;
+  --fhi: normal;
+  --fht: uppercase;
+  --fhl: .005em;
+  --fhx: 1.3;
+  --fb: "Archivo", sans-serif;
+  --fq: "Archivo", sans-serif;
+  --fqi: italic;
+  --fu: "Archivo", sans-serif;
+  --fuw: 700;
+  --fut: uppercase;
+  --ful: .08em;
+  --fk: "Archivo", sans-serif;
+  --fkl: .14em;
+}
+
+.eac-offer[data-ft="ledger"] {
+  --fh: "Newsreader", Georgia, serif;
+  --fhw: 500;
+  --fhi: normal;
+  --fht: none;
+  --fhl: -.01em;
+  --fhx: 1.02;
+  --fb: "IBM Plex Sans", sans-serif;
+  --fq: "Newsreader", Georgia, serif;
+  --fqi: italic;
+  --fu: "IBM Plex Mono", monospace;
+  --fuw: 500;
+  --fut: uppercase;
+  --ful: .06em;
+  --fk: "IBM Plex Mono", monospace;
+  --fkl: .1em;
+}
+
+.eac-offer[data-ft="rite"] {
+  --fh: "Cormorant Garamond", Georgia, serif;
+  --fhw: 500;
+  --fhi: italic;
+  --fht: none;
+  --fhl: 0;
+  --fhx: 1.22;
+  --fb: "EB Garamond", Georgia, serif;
+  --fq: "Cormorant Garamond", Georgia, serif;
+  --fqi: italic;
+  --fu: "Marcellus", Georgia, serif;
+  --fuw: 400;
+  --fut: uppercase;
+  --ful: .16em;
+  --fk: "Marcellus", Georgia, serif;
+  --fkl: .2em;
+}
+
+/* Kind-tint switch: every kind takes the bronze accent. */
+.eac-offer[data-tint="off"] {
+  --os-kind-event: #c8a45b;
+  --os-kind-service: #c8a45b;
+  --os-kind-series: #c8a45b;
+  --os-kind-artwork: #c8a45b;
+  --os-kind-writing: #c8a45b;
+  --os-kind-talk: #c8a45b;
+  --os-kind-profile: #c8a45b;
+  --os-kind-share: #c8a45b;
+  --os-kind-follow: #c8a45b;
+  --os-kind-done: #c8a45b;
+}

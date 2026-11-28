@@ -28,6 +28,8 @@ export interface ContentHost {
     studio(ref: ContentRef | null, ctx?: { kind?: string; org?: string }): string | null; // StudioHandoff.href
     manage?(ref: ContentRef): string | null;
     siteHome(orgId: string): string | null;                                   // org_domains, replacing OWN_APP_SITES and the hard-coded constants
+    /** v1.3 (CONTRACT §15): a directory identity's public page. A host without it gets null links for people. */
+    person?(p: { id: string; slug: string; entityType: "person" | "organization" }): string | null;
   };
   /** Registry action ids the lightbox may offer on this host (e.g. ["artwork-hide","artwork-show"]). */
   actions: string[];

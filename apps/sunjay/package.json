@@ -35,6 +35,7 @@
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/page-builder": "workspace:*",
     "@elkdonis/pipeline": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
     "@elkdonis/primitives": "workspace:*",
     "@elkdonis/series-site": "workspace:*",
     "@elkdonis/services": "workspace:*",

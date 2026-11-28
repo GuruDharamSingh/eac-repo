@@ -13,8 +13,12 @@ export function DialogContent({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
+  // Inside a /center or /hub popup (a modal <dialog> in the top layer) a portal to <body> would sit behind it and
+  // take no clicks, so render into the open dialog instead (2026-11-26).
+  const container =
+    typeof document !== "undefined" ? ((document.querySelector("dialog[open]") as HTMLElement | null) ?? undefined) : undefined;
   return (
-    <DialogPrimitive.Portal>
+    <DialogPrimitive.Portal container={container}>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
       <DialogPrimitive.Content
         className={cn(

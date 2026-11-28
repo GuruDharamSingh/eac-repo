@@ -24,10 +24,11 @@ import { createReadStream, existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { wordArtWorker } from './wordart.mjs';
 
 const requireRenderer = createRequire('/opt/reel/package.json');
 const { bundle } = requireRenderer('@remotion/bundler');
-const { ensureBrowser, getVideoMetadata, renderMedia, renderStill, selectComposition } =
+const { ensureBrowser, getVideoMetadata, openBrowser, renderMedia, renderStill, selectComposition } =
   requireRenderer('@remotion/renderer');
 
 const ENTRY = resolve(import.meta.dirname, '../src/root.tsx');
@@ -106,6 +107,11 @@ async function davUpload(path, src, type) {
   });
   if (!res.ok) throw new Error(`PUT ${path}: ${res.status}`);
 }
+
+// Generated word art (wordart.mjs): its own bundle and queue, using the same storage helpers.
+const wordArt = wordArtWorker({
+  bundle, ensureBrowser, openBrowser, renderStill, selectComposition, davMkcol, davUpload, workDir: WORK_DIR,
+});
 
 // ---------------------------------------------------------------------------
 // Local file server: Chrome and the compositor read slot files over HTTP.
@@ -936,9 +942,12 @@ async function runWorker() {
     UPDATE reel_transcripts SET status = 'failed', error = 'The renderer restarted during this transcript', finished_at = now()
     WHERE status = 'running'
   `.catch(() => {});
+  await wordArt.failInterrupted(sql);
   console.log(`reel worker polling every ${POLL_MS / 1000}s`);
 
   for (;;) {
+    // Word art first: a picture takes seconds, a reel minutes.
+    if (await wordArt.take(sql).catch((err) => { console.log(`word art poll failed (${err.code || err.message})`); return false; })) continue;
     let job;
     try {
       [job] = await sql`
@@ -1038,11 +1047,19 @@ const { values: args } = parseArgs({
     out: { type: 'string' },
     init: { type: 'boolean', default: false },
     transcribe: { type: 'string' },
+    wordart: { type: 'string' },
   },
 });
 
 if (args.worker) await runWorker();
-else if (args.transcribe) {
+else if (args.wordart) {
+  // A design file (WordArtDesign JSON) drawn into --out, with no database or Nextcloud (testing the renderer).
+  const design = JSON.parse(await readFile(resolve(args.wordart), 'utf8'));
+  const dir = resolve(args.out ?? '.');
+  await mkdir(dir, { recursive: true });
+  const out = await wordArt.draw(design, dir, basename(args.wordart, extname(args.wordart)));
+  console.log(`written to ${out.png}`);
+} else if (args.transcribe) {
   // A local file's words as JSON on stdout (testing the speech-to-text install).
   const t0 = Date.now();
   let peaks = null;
@@ -1053,6 +1070,6 @@ else if (args.transcribe) {
   console.error(`\n${words.length} words, ${pauses.length} silences in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   console.log(JSON.stringify({ words, pauses, peaks }));
 } else if (!args.project && !args.local) {
-  console.error('Usage: --worker | --project <nextcloud path> | --local <dir> [--out <dir>] [--init] | --transcribe <file>');
+  console.error('Usage: --worker | --project <nextcloud path> | --local <dir> [--out <dir>] [--init] | --transcribe <file> | --wordart <design.json> [--out <dir>]');
   process.exit(2);
 } else await (args.init ? initFolder(args) : runFolder(args));

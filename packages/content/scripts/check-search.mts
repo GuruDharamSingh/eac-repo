@@ -13,7 +13,6 @@ import { db } from "@elkdonis/db";
 import { defaultHost, type ContentHost } from "../src/host";
 import type { ContentQuery, ContentScope } from "../src/search-types";
 import { contentReadSql, resolveRights, threadReadSql, type ContentRights } from "../src/server/access";
-import { listContentLegacy as listContent } from "../src/server/list-legacy";
 import { resolveContentRefs, searchContent } from "../src/server/search";
 
 let pass = 0;
@@ -69,7 +68,7 @@ const FX: Fx[] = [
   { id: "zz-a16", store: "artwork", org: null, site: "zz-site", owner: uid.C, ident: uid.A, store_id: S1 },
 ];
 
-const idsOf = (rows: Array<{ key: string }>) => rows.map((r) => r.key.replace(/^(thread|artwork):zz-/, "")).sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
+const idsOf = (rows: Array<{ key: string }>) => rows.map((r) => r.key.replace(/^(thread|artwork|person):zz-/, "")).sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
 const sorted = (s: string) => s.split(" ").filter(Boolean).sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
 
 try {
@@ -112,9 +111,16 @@ try {
       if (!threw) throw new Error("did not throw");
     });
 
+    await t("mine+orgs: a guide sees another member's org draft (t3); plain mine does not", async () => {
+      const withOrgs: ContentScope = { kind: "mine", includeManagedOrgs: true };
+      if ((await see(V.guide, mine)).includes("t3")) throw new Error("plain mine showed another member's draft");
+      eq(await see(V.guide, withOrgs), sorted("t1 t2 t3 t4 t5 a14 a15"), "guide mine+orgs");
+      eq(await see(V.member, withOrgs), [], "a plain member gains nothing");
+      eq(await see(V.stranger, withOrgs), [], "stranger gains nothing");
+    });
     await t("mine: stranger has none", async () => eq(await see(V.stranger, mine), [], "stranger"));
-    await t("mine: A (own rows, credited piece; no pseudonym row; hidden excluded)", async () => eq(await see(V.A, mine), sorted("t1 t2 t7 a9 a10 a16"), "A"));
-    await t("mine: A with a live pseudonym adds the pseudonym's row", async () => eq(await see(V.Awith, mine), sorted("t1 t2 t7 t11 a9 a10 a16"), "A+P"));
+    await t("mine: A (own rows, credited piece, own hidden piece a11; no pseudonym row)", async () => eq(await see(V.A, mine), sorted("t1 t2 t7 a9 a10 a11 a16"), "A"));
+    await t("mine: A with a live pseudonym adds the pseudonym's row", async () => eq(await see(V.Awith, mine), sorted("t1 t2 t7 t11 a9 a10 a11 a16"), "A+P"));
     await t("mine: C", async () => eq(await see(V.C, mine), sorted("a12 a13 a14 a15 a16"), "C"));
 
     const publicAll = sorted("t1 t8 t9 t11 a9 a12 a14 a16");
@@ -127,7 +133,15 @@ try {
     const personA: ContentScope = { kind: "person", userId: uid.A };
     await t("person scope: stranger sees only A's published public items", async () => eq(await see(V.stranger, personA), sorted("t1 a9 a16"), "stranger"));
     await t("person scope: signed-out sees the same", async () => eq(await see(null, personA), sorted("t1 a9 a16"), "signed-out"));
-    await t("person scope: A themself sees everything of theirs (= mine)", async () => eq(await see(V.A, personA), sorted("t1 t2 t7 a9 a10 a16"), "A"));
+    await t("person scope: A themself sees everything of theirs incl. hidden (= mine)", async () => eq(await see(V.A, personA), sorted("t1 t2 t7 a9 a10 a11 a16"), "A"));
+    await t("hidden rows never reach others: stranger, signed-out, guide and the other owner C see no a11 in mine/person/site/org/network", async () => {
+      for (const [n, r] of [["stranger", V.stranger], ["signed-out", null], ["guide", V.guide], ["C", V.C]] as const) {
+        for (const sc of [personA, site, net, mine, org] as ContentScope[]) {
+          if ((r === null && (sc.kind === "mine" || sc.kind === "org" || sc.kind === "site"))) continue;
+          if ((await see(r, sc)).includes("a11")) throw new Error(`${n} saw hidden a11 in ${sc.kind}`);
+        }
+      }
+    });
     await t("person scope: a keeper sees A's site drafts but not hidden or off-site drafts", async () => eq(await see(V.keeper, personA), sorted("t1 a9 a10 a16"), "keeper"));
     await t("person scope: org guide gains only unpublished rows of their own org (A's draft t2)", async () => eq(await see(V.guide, personA), sorted("t1 t2 a9 a16"), "guide"));
 
@@ -210,7 +224,9 @@ await t("facets: a stranger's counts never include drafts or hidden rows", async
   if (res.facets.statuses.draft) throw new Error("draft counted for a stranger");
   if (res.facets.statuses.archived) throw new Error("archived counted for a stranger");
   const net = await searchContent(null, { scope: { kind: "network" } }, defaultHost());
-  const [r] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM content_index WHERE status = 'published' AND visibility = 'PUBLIC' AND NOT hidden`;
+  // The published view's stores only (thread, artwork): people rows (v1.3) are their own view, and service rows
+  // (v1.4, indexed since 2026-11-27) are read only through the offers view.
+  const [r] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM content_index WHERE store IN ('thread', 'artwork') AND type <> 'service' AND status = 'published' AND visibility = 'PUBLIC' AND NOT hidden`;
   eq(sum(net.facets.types), r!.n, "network facets vs public rows");
   if (net.items.some((i) => i.can?.edit)) throw new Error("signed-out item has can.edit");
 });
@@ -234,7 +250,7 @@ await t("text search finds by title and ranks; cursor pages without repeats", as
   eq(titles, [...titles].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)), "title order");
 });
 
-// ── D: parity with listContent ───────────────────────────────────────────────
+// ── D: (parity with the legacy loader was retired in Step 7) ───────────────────────────────────────────────
 const strip = (i: object) => {
   const { store, can, sale, hidden, storefront, images, ownerName, ...rest } = i as Record<string, unknown>;
   void store; void can; void sale; void hidden; void storefront; void images; void ownerName;
@@ -244,51 +260,11 @@ const canon = (v: unknown): unknown => Array.isArray(v) ? v.map(canon) : v && ty
 const HET = "bb77984c-0bdc-4e47-bb39-33dae6723794"; // house-editor-test (test account)
 const STR = "8f2281ae-3efe-49fa-9b1b-9780b95593f1"; // claude-center-1018c@test.invalid (test account)
 const ADM = rights(randomUUID(), { isAdmin: true });
+const marketHost: ContentHost = { ...defaultHost(), site: { ...defaultHost().site, orgId: "market", name: "Market" } };
 const now = new Date();
 
-async function parity(label: string, r: ContentRights, listQ: { orgId?: string; ownerUserId?: string; types?: ContentQuery["types"] }, scope: ContentScope, pageSize: number, paged: boolean) {
-  const viewer = { userId: r.userId };
-  const gather = async (kind: "old" | "new") => {
-    const out: Array<Record<string, unknown>> = [];
-    let cursor: string | null = null;
-    for (let i = 0; i < 12; i++) {
-      if (kind === "old") {
-        const res: Awaited<ReturnType<typeof listContent>> = await listContent(viewer, { ...listQ, limit: pageSize, cursor }, r);
-        out.push(...res.items.map((x) => canon(strip(x)) as Record<string, unknown>));
-        cursor = res.nextCursor;
-      } else {
-        const res: Awaited<ReturnType<typeof searchContent>> = await searchContent(viewer, { scope, types: listQ.types, limit: pageSize, cursor }, defaultHost(), { rights: r, maxLimit: 200, now });
-        out.push(...res.items.map((x) => canon(strip(x)) as Record<string, unknown>));
-        cursor = res.nextCursor;
-      }
-      if (!paged || !cursor) break;
-    }
-    return out;
-  };
-  const [o, n] = await Promise.all([gather("old"), gather("new")]);
-  const ok = o.map((x) => x.key as string), nk = n.map((x) => x.key as string);
-  console.log(`      ${label}: old ${o.length} item(s), new ${n.length}`);
-  eq(nk, ok, `${label}: key sequence`);
-  for (let i = 0; i < o.length; i++) {
-    if (JSON.stringify(o[i]) !== JSON.stringify(n[i])) {
-      const a = o[i]!, b = n[i]!;
-      const diff = Object.keys({ ...a, ...b }).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
-      throw new Error(`${label}: ${ok[i]} differs in ${diff.join(", ")}\n         old ${JSON.stringify(diff.map((k) => a[k])).slice(0, 400)}\n         new ${JSON.stringify(diff.map((k) => b[k])).slice(0, 400)}`);
-    }
-  }
-}
 const het = await resolveRights({ userId: HET });
 const strg = await resolveRights({ userId: STR });
-await t("parity {ownerUserId, limit:200}: test account house-editor-test", () => parity("mine/HET", het, { ownerUserId: HET }, { kind: "mine" }, 200, false));
-await t("parity {ownerUserId, limit:200}: test account claude-center-1018c", () => parity("mine/STR", strg, { ownerUserId: STR }, { kind: "mine" }, 200, false));
-for (const o of ["inner_group", "oad", "ifac", "sunjay", "market", "amrit_canada"]) {
-  await t(`parity {orgId:${o}, limit:200}: guide test account (no standing in most orgs = public view)`, () => parity(`org ${o}/HET`, het, { orgId: o }, { kind: "org", orgId: o }, 200, false));
-  await t(`parity {orgId:${o}, limit:200}: synthetic admin`, () => parity(`org ${o}/admin`, ADM, { orgId: o }, { kind: "org", orgId: o }, 200, false));
-}
-await t("parity {orgId, limit:40, types, cursor}: paged, inner_group writing, guide + stranger", async () => {
-  await parity("paged inner_group writing/HET", het, { orgId: "inner_group", types: ["writing"] }, { kind: "org", orgId: "inner_group" }, 7, true);
-  await parity("paged inner_group writing/STR", strg, { orgId: "inner_group", types: ["writing"] }, { kind: "org", orgId: "inner_group" }, 7, true);
-});
 
 await t("storefront: market artwork carries {id, name}; threads carry none", async () => {
   const res = await searchContent(null, { scope: { kind: "network" }, limit: 100 }, defaultHost());
@@ -299,9 +275,14 @@ await t("storefront: market artwork carries {id, name}; threads carry none", asy
 });
 
 // ── F: queue freshness, person scope on real data, can.pick, images ─────────
-await t("triggers exist on threads, artwork and auction_lot (insert/delete and update)", async () => {
+await t("triggers exist on threads, artwork and auction_lot (insert/delete and update), and on users and vouches after 298", async () => {
   const r = await db<Array<{ tgname: string }>>`SELECT tgname FROM pg_trigger WHERE tgname LIKE 'trg_content_index_%' AND NOT tgisinternal`;
-  eq(r.map((x) => x.tgname).sort(), ["trg_content_index_artwork_iud", "trg_content_index_artwork_u", "trg_content_index_lot_iud", "trg_content_index_lot_u", "trg_content_index_threads_iud", "trg_content_index_threads_u"], "triggers");
+  const want = ["trg_content_index_artwork_iud", "trg_content_index_artwork_u", "trg_content_index_lot_iud", "trg_content_index_lot_u", "trg_content_index_threads_iud", "trg_content_index_threads_u"];
+  if (await has298()) want.push("trg_content_index_users_iud", "trg_content_index_users_u", "trg_content_index_vouches_iud");
+  // Migration 300 (v1.4): a workshop's member price re-indexes its thread.
+  const [m300] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM app_schema_migrations WHERE filename = '300_content_index_offers.sql'`;
+  if ((m300?.n ?? 0) > 0) want.push("trg_content_index_workshop_pages_iud", "trg_content_index_workshop_pages_u");
+  eq(r.map((x) => x.tgname).sort(), want.sort(), "triggers");
 });
 await t("queue: a raw UPDATE / DELETE on a thread row is reflected by the next search, with no hook", async () => {
   const { drainContentQueue } = await import("@elkdonis/services");
@@ -427,6 +408,61 @@ await t("ownerName: a pseudonymous item carries the pseudonym's name, never the 
   eq(left!.n, 0, "fixtures removed");
 });
 
+await t("facets sit inside the selection: types [artwork] shows only artwork (no writing/product), statuses and sale agree", async () => {
+  const res = await searchContent(null, { scope: { kind: "site" }, types: ["artwork"], limit: 100 }, marketHost, { rights: ADM });
+  eq(Object.keys(res.facets.types).sort(), ["artwork"], "facets.types keys");
+  eq(sum(res.facets.statuses), res.facets.types.artwork ?? 0, "statuses total = artwork total");
+  if (res.facets.sale && sum(res.facets.sale) > (res.facets.types.artwork ?? 0)) throw new Error("sale facet outside the selection");
+  eq(sum(res.facets.types), res.items.length, "facet total = items (one page holds them all)");
+  const one = res.facets.stores[0];
+  if (one) {
+    const narrowed = await searchContent(null, { scope: { kind: "site" }, storeIds: [one.id], limit: 100 }, marketHost, { rights: ADM });
+    eq(sum(narrowed.facets.types), narrowed.items.length, "storeIds narrows the facets");
+    eq(narrowed.facets.stores.map((x) => x.id), [one.id], "stores facet narrowed to the chosen store");
+  }
+});
+await t("store names are readable, never a raw uuid (facets.stores and item.storefront.name)", async () => {
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const res = await searchContent(null, { scope: { kind: "site" }, limit: 100 }, marketHost, { rights: ADM });
+  if (!res.facets.stores.length) throw new Error("no stores to check");
+  for (const s2 of res.facets.stores) if (!s2.name || uuidRe.test(s2.name)) throw new Error(`facet store name "${s2.name}"`);
+  for (const i of res.items) if (i.storefront && (!i.storefront.name || uuidRe.test(i.storefront.name))) throw new Error(`${i.key} storefront "${i.storefront.name}"`);
+  console.log(`      ${res.facets.stores.length} store(s): ${res.facets.stores.map((x) => x.name).join(" | ").slice(0, 120)}`);
+});
+await t("owner keeps a keeper-hidden piece in mine (facets); notes carry the by-design lines, missing stays clean", async () => {
+  const mineBefore = await searchContent({ userId: STR }, { scope: { kind: "mine" } }, defaultHost());
+  const hid = `zz-hid-${randomUUID().slice(0, 8)}`;
+  try {
+    await db`INSERT INTO content_index (store, id, type, org_id, site_org_id, owner_user_id, visibility, status, hidden, title, sort_at)
+             VALUES ('artwork', ${hid}, 'artwork', NULL, 'market', ${STR}, 'PUBLIC', 'archived', true, 'zz hidden fixture', now())`;
+    const mine2 = await searchContent({ userId: STR }, { scope: { kind: "mine" } }, defaultHost());
+    eq(mine2.facets.statuses.archived ?? 0, (mineBefore.facets.statuses.archived ?? 0) + 1, "owner's hidden piece counted in mine");
+    const other = await searchContent({ userId: HET }, { scope: { kind: "person", userId: STR } }, defaultHost());
+    if ((other.facets.statuses.archived ?? 0) !== 0) throw new Error("a stranger's person-scope facets counted the hidden piece");
+  } finally {
+    await db`DELETE FROM content_index WHERE id = ${hid}`;
+  }
+  const res = await searchContent(null, { scope: { kind: "network" } }, defaultHost());
+  if (res.missing.some((m) => m === "publish_jobs" || m === "plan" || m.startsWith("owner-only"))) throw new Error(`by-design notes leaked into missing: ${res.missing}`);
+  if (!res.notes?.length) throw new Error("no notes");
+  console.log(`      missing=${JSON.stringify(res.missing)} notes=${res.notes.length}`);
+});
+
+await t("text match agrees with suggest: a title prefix and a mid-word substring both find their title", async () => {
+  const all = await searchContent(null, { scope: { kind: "network" }, limit: 100 }, defaultHost());
+  const it = all.items.find((i) => /^[A-Za-z]{6,}/.test(i.title));
+  if (!it) throw new Error("no public title to test with");
+  const word = /^[A-Za-z]+/.exec(it.title)![0];
+  const prefix = word.slice(0, 3), mid = word.slice(2, 5);
+  const byPrefix = await searchContent(null, { scope: { kind: "network" }, q: prefix, limit: 100 }, defaultHost());
+  if (!byPrefix.items.some((i) => i.key === it.key)) throw new Error(`prefix "${prefix}" did not find "${it.title}"`);
+  if (byPrefix.items[0] && !byPrefix.items.slice(0, 3).some((i) => i.title.toLowerCase().startsWith(prefix.toLowerCase()))) throw new Error("prefix matches not boosted to the top");
+  const byMid = await searchContent(null, { scope: { kind: "network" }, q: mid, limit: 100 }, defaultHost());
+  if (!byMid.items.some((i) => i.key === it.key)) throw new Error(`substring "${mid}" did not find "${it.title}"`);
+  eq(sum(byPrefix.facets.types), byPrefix.items.length, "facets on the same match");
+  console.log(`      "${prefix}" and "${mid}" find "${it.title}"`);
+});
+
 // ── E: timing and plans ──────────────────────────────────────────────────────
 const shapes: Array<[string, ContentRights | null, ContentQuery]> = [
   ["network, browse", null, { scope: { kind: "network" } }],
@@ -472,6 +508,273 @@ await t("EXPLAIN ANALYZE of the core queries (planner forced off seq scan to pro
     }
   });
 });
+
+// ── G: people (v1.3, CONTRACT s15; migration 298) ─────────────────────────────
+// Skipped, not passed, on a database without migration 298. Part G1 uses fixture rows in a rolled-back
+// transaction; G2 reads the real index (people are public rows) and never prints an email.
+async function has298(): Promise<boolean> {
+  const [r] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM information_schema.columns WHERE table_name = 'content_index' AND column_name = 'rank_key'`;
+  return (r?.n ?? 0) > 0;
+}
+if (!(await has298())) {
+  console.log("skip  G: people checks (migration 298 not applied)");
+} else {
+  try {
+    await db.begin(async (tx) => {
+      for (const [id, status, hidden] of [["zz-p1", "published", false], ["zz-p2", "draft", false], ["zz-p3", "published", true]] as const) {
+        await tx`INSERT INTO content_index (store, id, type, visibility, status, hidden, title, sort_at, entity_type, rank_key)
+                 VALUES ('person', ${id}, 'person', 'PUBLIC', ${status}, ${hidden}, ${id}, now(), 'person', ${id})`;
+      }
+      await tx`INSERT INTO content_index (store, id, type, org_id, site_org_id, owner_user_id, owner_identity_id, visibility, status, hidden, title, sort_at)
+               VALUES ('thread', 'zz-t1', 'writing', 'zz-site', 'zz-site', ${uid.A}, ${uid.A}, 'PUBLIC', 'published', false, 'zz-t1', now())`;
+      const see = async (r: ContentRights | null, scope: ContentScope | null, opts?: { includeHidden?: boolean; people?: boolean }) =>
+        idsOf(await tx<Array<{ key: string }>>`SELECT ci.key FROM content_index ci WHERE ci.id LIKE 'zz-%' AND ${contentReadSql(r, scope, host, opts)}`);
+      await t("people: without the people option no viewer or scope ever reads a person row", async () => {
+        const cases: Array<[string, ContentRights | null, ContentScope | null]> = [
+          ["signed-out network", null, { kind: "network" }], ["signed-out refs", null, null], ["admin refs", V.admin, null],
+          ["admin site", V.admin, { kind: "site" }], ["keeper site+hidden", V.keeper, { kind: "site" }], ["A mine", V.A, { kind: "mine" }],
+        ];
+        for (const [n, r, sc] of cases) {
+          const got = await see(r, sc, { includeHidden: true });
+          if (got.some((k) => k.startsWith("p"))) throw new Error(`${n} read a person row: ${got.join(" ")}`);
+        }
+      });
+      await t("people: with the option, only published, public, unhidden people, the same for signed-out, stranger and admin", async () => {
+        for (const [n, r] of [["signed-out", null], ["stranger", V.stranger], ["admin", V.admin]] as const) {
+          eq((await see(r, { kind: "network" }, { people: true, includeHidden: true })).filter((k) => k.startsWith("p")), ["p1"], n);
+        }
+      });
+      throw new Rollback();
+    });
+  } catch (e) {
+    if (!(e instanceof Rollback)) { failures.push("part G1 crashed"); console.log("FAIL part G1", (e as Error).message); }
+  }
+
+  const { drainContentQueue } = await import("@elkdonis/services");
+  await drainContentQueue({ all: true });
+  const allPeople = async (q: Partial<ContentQuery> = {}) => {
+    const out: Array<import("../src/model").ContentListItem> = [];
+    let cursor: string | null = null;
+    for (let i = 0; i < 50; i++) {
+      const res = await searchContent(null, { scope: { kind: "network" }, view: "people", limit: 25, cursor, ...q }, defaultHost());
+      out.push(...res.items);
+      cursor = res.nextCursor;
+      if (!cursor) break;
+    }
+    return out;
+  };
+  const listed = (await db<Array<{ id: string }>>`SELECT id::text AS id FROM users WHERE slug IS NOT NULL AND directory_listed`).map((r) => r.id).sort();
+  await t(`people: paging the people view returns exactly the ${listed.length} listed identities, each once`, async () => {
+    const got = (await allPeople()).map((i) => i.key.replace(/^person:/, ""));
+    eq(got.length, new Set(got).size, "duplicates across pages");
+    eq([...got].sort(), listed, "listed identities");
+  });
+  await t("people: an unlisted identity never appears (index rows and search)", async () => {
+    const [r] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM content_index ci JOIN users u ON u.id::text = ci.id
+      WHERE ci.store = 'person' AND NOT (u.slug IS NOT NULL AND u.directory_listed)`;
+    eq(r!.n, 0, "unlisted rows in the index");
+  });
+  await t("people: no person row or item carries an account, owner, org or email", async () => {
+    const [r] = await db<Array<{ n: number }>>`SELECT count(*)::int AS n FROM content_index WHERE store = 'person'
+      AND (owner_user_id IS NOT NULL OR owner_identity_id IS NOT NULL OR org_id IS NOT NULL OR site_org_id IS NOT NULL)`;
+    eq(r!.n, 0, "person rows with owner/org columns");
+    const items = await allPeople();
+    if (items.some((i) => i.ownerIdentityId)) throw new Error("an item has ownerIdentityId");
+    const emails = new Set((await db<Array<{ e: string }>>`SELECT lower(email) AS e FROM users WHERE email IS NOT NULL`).map((x) => x.e));
+    const text = JSON.stringify(items).toLowerCase();
+    let leaked = 0;
+    for (const e of emails) if (e && text.includes(e)) leaked++;
+    eq(leaked, 0, "emails in people items (count only)");
+  });
+  await t("people: facets.people appears in the people view only; other views carry no person item", async () => {
+    const p = await searchContent(null, { scope: { kind: "network" }, view: "people", limit: 5 }, defaultHost());
+    if (!p.facets.people) throw new Error("people view without people facets");
+    for (const view of ["published", "all"] as const) {
+      const r = await searchContent(null, { scope: { kind: "network" }, view, limit: 100 }, defaultHost());
+      if (r.facets.people) throw new Error(`${view} has people facets`);
+      if (r.items.some((i) => i.store === "person" || i.key.startsWith("person:"))) throw new Error(`${view} returned a person`);
+    }
+  });
+  await t("people: entity facet counts add up to the listed total; a region filter narrows to that region", async () => {
+    const p = await searchContent(null, { scope: { kind: "network" }, view: "people", limit: 1 }, defaultHost());
+    const sum = (p.facets.people?.entityTypes ?? []).reduce((a, x) => a + x.count, 0);
+    eq(sum, listed.length, "entity facet sum");
+    const top = p.facets.people?.regions[0];
+    if (top) {
+      const inRegion = await allPeople({ region: top.value });
+      eq(inRegion.length, top.count, `region ${top.value}`);
+      if (inRegion.some((i) => i.person?.region !== top.value)) throw new Error("region filter let another region through");
+    }
+  });
+  await t("people: listing kinds (s16) match the live tables, add up, and filter", async () => {
+    const [w] = await db<Array<{ org: number; assoc: number; artist: number }>>`
+      SELECT count(*) FILTER (WHERE EXISTS (SELECT 1 FROM organizations o WHERE o.profile_user_id = u.id))::int AS org,
+             count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM organizations o WHERE o.profile_user_id = u.id) AND u.entity_type = 'organization')::int AS assoc,
+             count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM organizations o WHERE o.profile_user_id = u.id) AND COALESCE(u.entity_type, 'person') <> 'organization')::int AS artist
+      FROM users u WHERE u.slug IS NOT NULL AND u.directory_listed`;
+    const p = await searchContent(null, { scope: { kind: "network" }, view: "people", limit: 1 }, defaultHost());
+    const by = Object.fromEntries((p.facets.people?.listingKinds ?? []).map((x) => [x.value, x.count]));
+    eq({ artist: by.artist ?? 0, organization: by.organization ?? 0, associated: by.associated ?? 0 }, { artist: w!.artist, organization: w!.org, associated: w!.assoc }, "listing kind facet");
+    const orgs = await allPeople({ listingKinds: ["organization"] });
+    eq(orgs.length, w!.org, "organization filter size");
+    if (orgs.some((i) => i.person?.listingKind !== "organization")) throw new Error("organization filter let another kind through");
+  });
+  await t("people: text search finds a listed identity by its name", async () => {
+    const [one] = await db<Array<{ id: string; name: string }>>`SELECT id::text AS id, display_name AS name FROM users
+      WHERE slug IS NOT NULL AND directory_listed AND length(display_name) > 3 ORDER BY display_name LIMIT 1`;
+    if (!one) return;
+    const res = await searchContent(null, { scope: { kind: "network" }, view: "people", q: one.name, limit: 10 }, defaultHost());
+    if (!res.items.some((i) => i.key === `person:${one.id}`)) throw new Error("name search missed the identity");
+  });
+}
+
+// ── H: offers (v1.4, CONTRACT s16 revised; paid work) ────────────────────────
+// Fixture rows live in a rolled-back transaction (predicate checks); the end-to-end checks read the real index.
+// hydrateRows is fed index rows built from live thread rows, so no content_index row is written.
+{
+  const { offerRowSql, offerKindSql, takeUpOf } = await import("../src/server/offers");
+  const { hydrateRows } = await import("../src/server/hydrate");
+  const { drainContentQueue } = await import("@elkdonis/services");
+  await drainContentQueue({ all: true });
+  const net = { kind: "network" } as const;
+  const keysOf = async (view: "published" | "all" | "offers", extra: Partial<ContentQuery> = {}) => {
+    const out: string[] = [];
+    let cursor: string | null = null;
+    for (let i = 0; i < 40; i++) {
+      const r = await searchContent(null, { scope: net, view, limit: 100, cursor, ...extra }, defaultHost(), { noDrain: true });
+      out.push(...r.items.map((x) => x.key));
+      cursor = r.nextCursor;
+      if (!cursor) break;
+    }
+    return out;
+  };
+
+  try {
+    await db.begin(async (tx) => {
+      const ins = (id: string, type: string, extra: { price?: number | null; status?: string; hidden?: boolean; store?: string; sale?: string | null } = {}) =>
+        tx`INSERT INTO content_index (store, id, type, org_id, site_org_id, owner_user_id, owner_identity_id, visibility, status, hidden, sale_state, price_minor, currency, title, sort_at)
+           VALUES (${extra.store ?? "thread"}, ${id}, ${type}, 'zz-org', 'zz-org', ${uid.A}, ${uid.A}, 'PUBLIC', ${extra.status ?? "published"}, ${extra.hidden ?? false}, ${extra.sale ?? null}, ${extra.price ?? null}, ${extra.price ? "CAD" : null}, ${id}, now())`;
+      await ins("zz-o1", "service", { price: 5000 });                   // offer: priced service
+      await ins("zz-o2", "service");                                    // not an offer: free, no RSVP (no threads row)
+      await ins("zz-o3", "event", { price: 2000 });                     // offer
+      await ins("zz-o4", "event", { price: 2000, status: "draft" });    // not: draft
+      await ins("zz-o5", "series");                                     // offer (subscribe)
+      await ins("zz-o6", "writing", { price: 900 });                    // not: wrong type
+      await ins("zz-o7", "workshop", { price: 100, hidden: true });     // not: hidden
+      await ins("zz-o8", "artwork", { store: "artwork", sale: "for_sale", price: 30000 });  // offer
+      await ins("zz-o9", "artwork", { store: "artwork", sale: "sold", price: 30000 });      // not: sold
+      const rows = await tx<Array<{ id: string; kind: string }>>`SELECT ci.id, ${offerKindSql()} AS kind FROM content_index ci WHERE ci.id LIKE 'zz-o%' AND ${offerRowSql()}`;
+      await t("offers: the row predicate admits exactly the priced/RSVP threads, series and for-sale artwork", () => {
+        eq(rows.map((r) => r.id).sort(), ["zz-o1", "zz-o3", "zz-o5", "zz-o8"], "offer rows");
+        eq(Object.fromEntries(rows.map((r) => [r.id, r.kind])), { "zz-o1": "service", "zz-o3": "event", "zz-o5": "series", "zz-o8": "artwork" }, "kinds");
+      });
+      await t("offers: a service row is invisible to published/all/people reads and to refs, visible with the offers option", async () => {
+        const read = async (opts: Parameters<typeof contentReadSql>[3]) =>
+          idsOf(await tx<Array<{ key: string }>>`SELECT ci.key FROM content_index ci WHERE ci.id LIKE 'zz-o%' AND ${contentReadSql(null, net, host, opts)}`);
+        if ((await read({})).includes("o1")) throw new Error("service visible by default");
+        if ((await read({ people: true })).includes("o1")) throw new Error("service visible with people");
+        if (!(await read({ offers: true })).includes("o1")) throw new Error("service hidden with offers");
+        if ((await tx<Array<{ key: string }>>`SELECT ci.key FROM content_index ci WHERE ci.key = 'thread:zz-o1' AND ${contentReadSql(null, null, host)}`).length) throw new Error("service visible to refs");
+      });
+      throw new Rollback();
+    });
+  } catch (e) {
+    if (!(e instanceof Rollback)) { failures.push("part H1 crashed"); console.log("FAIL part H1", (e as Error).message); }
+  }
+
+  await t("offers: takeUp derivation", () => {
+    eq(takeUpOf({ artwork: true, type: "artwork", priced: true, rsvp: false }), "order", "artwork");
+    eq(takeUpOf({ type: "service", kind: "service", priced: true, rsvp: false }), "pay", "priced service");
+    eq(takeUpOf({ type: "event", kind: "event", priced: false, rsvp: true }), "rsvp", "free rsvp event");
+    eq(takeUpOf({ type: "meeting", kind: "meeting", priced: true, rsvp: false }), "enquire", "priced meeting is not payable here");
+    eq(takeUpOf({ type: "series", kind: "series", priced: true, rsvp: false }), "subscribe", "series");
+    eq(takeUpOf({ type: "workshop", kind: "workshop", priced: true, rsvp: true, registrationOpen: false }), "none", "closed workshop");
+  });
+
+  await t("offers: published and all return no service rows and no offer field; offers returns only offers", async () => {
+    const pub = await searchContent(null, { scope: net, view: "published", limit: 100 }, defaultHost(), { noDrain: true });
+    const all = await searchContent(null, { scope: net, view: "all", limit: 100 }, defaultHost(), { noDrain: true });
+    for (const [n, r] of [["published", pub], ["all", all]] as const) {
+      if (r.items.some((i) => i.type === "service" || i.offer)) throw new Error(`${n} carries a service or offer`);
+      if (r.facets.offers) throw new Error(`${n} has offers facets`);
+      if (r.facets.types.service) throw new Error(`${n} counts services`);
+    }
+    const off = await searchContent(null, { scope: net, view: "offers", limit: 100 }, defaultHost(), { noDrain: true });
+    if (!off.facets.offers) throw new Error("offers view without offers facets");
+    for (const i of off.items) {
+      if (!i.offer) throw new Error(`${i.key} has no offer`);
+      if (i.store === "artwork" && i.offer.takeUp !== "order") throw new Error(`${i.key} artwork takeUp ${i.offer.takeUp}`);
+      if (i.store === "thread" && !["event", "service", "series", "workshop"].includes(i.offer.kind)) throw new Error(`${i.key} kind ${i.offer.kind}`);
+    }
+    // priced filter and kinds filter narrow, never widen
+    const paid = await keysOf("offers", { priced: true });
+    const free = await keysOf("offers", { priced: false });
+    const every = await keysOf("offers");
+    eq([...paid, ...free].sort(), [...every].sort(), "priced + free partition the offers");
+  });
+
+  await t("offers: hydration gives pay for a real priced thread and rsvp for a real free RSVP thread", async () => {
+    const real = await db<Array<{ id: string; org_id: string; author_id: string; kind: string; price: string | null; rsvp: boolean }>>`
+      SELECT t.id, t.org_id, t.author_id::text AS author_id, t.kind, COALESCE(wp.price_member, t.price)::text AS price, t.is_rsvp_enabled AS rsvp
+      FROM threads t LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
+      WHERE t.status = 'published' AND t.visibility = 'PUBLIC' AND t.kind IN ('event', 'workshop', 'service', 'meeting')
+      ORDER BY t.updated_at DESC LIMIT 300`;
+    const priced = real.find((r) => r.price != null && Number(r.price) > 0 && ["event", "workshop", "service"].includes(r.kind));
+    const free = real.find((r) => !(r.price != null && Number(r.price) > 0) && r.rsvp);
+    const mk = (r: { id: string; org_id: string; author_id: string; kind: string }) => ({
+      key: `thread:${r.id}`, store: "thread", id: r.id, type: r.kind === "meeting" ? "meeting" : r.kind, org_id: r.org_id, site_org_id: r.org_id, store_id: null,
+      owner_user_id: r.author_id, owner_identity_id: r.author_id, status: "published", visibility: "PUBLIC", sale_state: null, hidden: false, series_id: null, sort_iso: new Date().toISOString(),
+    });
+    const hyd = async (r: { id: string; org_id: string; author_id: string; kind: string }) =>
+      (await hydrateRows([mk(r)], { rights: null, scope: net, host: defaultHost(), now: new Date(), offers: true })).items.get(`thread:${r.id}`);
+    if (!priced) console.log("      (no real priced event/workshop/service thread on this database: pay case skipped)");
+    else {
+      const it = await hyd(priced);
+      eq(it?.offer?.takeUp, "pay", `takeUp of priced ${priced.kind} ${priced.id}`);
+      eq(it?.offer?.price?.amountMinor, Math.round(Number(priced.price) * 100), "price in minor units");
+    }
+    if (!free) console.log("      (no real free RSVP thread on this database: rsvp case skipped)");
+    else {
+      const it = await hyd(free);
+      eq(it?.offer?.takeUp, "rsvp", `takeUp of free RSVP ${free.id}`);
+      eq(it?.offer?.price, null, "free price");
+    }
+  });
+
+  // 2026-11-27: the route parsed view=offers as junk, so the HTTP search fell back to published (PM report).
+  await t("offers: the query string carries view=offers, types=service and the offers filters both ways", async () => {
+    const { parseContentQuery, contentQueryParams } = await import("../src/query-string");
+    const sp = new URLSearchParams("scope=network&view=offers&types=service&limit=20&kinds=service,bogus&priced=1&upcoming=1");
+    const q = parseContentQuery(sp);
+    eq(q?.view, "offers", "view");
+    eq(q?.types, ["service"], "types");
+    eq(q?.offerKinds, ["service"], "kinds (junk dropped)");
+    eq(q?.priced, true, "priced");
+    eq(q?.upcoming, true, "upcoming");
+    const back = parseContentQuery(contentQueryParams(q!));
+    eq(back, q, "round trip");
+    // Offers filters belong to the offers view only.
+    const pub = parseContentQuery(new URLSearchParams("scope=network&view=published&kinds=service&priced=1"));
+    eq([pub?.offerKinds, pub?.priced], [undefined, undefined], "filters ignored outside offers");
+  });
+
+  await t("offers: GET /api/content/search?view=offers signed out answers offers, not published", async () => {
+    const { contentRoutes } = await import("../src/routes");
+    const res = await contentRoutes(defaultHost()).search(new Request("http://localhost/api/content/search?scope=network&view=offers&limit=100"));
+    eq(res.status, 200, "status");
+    const body = (await res.json()) as Awaited<ReturnType<typeof searchContent>>;
+    if (!body.facets.offers) throw new Error("no offers facets: the route did not run the offers view");
+    for (const i of body.items) if (!i.offer) throw new Error(`${i.key} has no offer`);
+    const svc = await contentRoutes(defaultHost()).search(new Request("http://localhost/api/content/search?scope=network&view=offers&types=service&limit=100"));
+    const sb = (await svc.json()) as Awaited<ReturnType<typeof searchContent>>;
+    for (const i of sb.items) if (i.type !== "service" || !i.offer) throw new Error(`${i.key} is ${i.type} in a services-only offers search`);
+    console.log(`      (offers view over HTTP: ${body.items.length} items, ${sb.items.length} services)`);
+    // A signed-out published search still never shows a service.
+    const pub = await contentRoutes(defaultHost()).search(new Request("http://localhost/api/content/search?scope=network&view=published&types=service&limit=100"));
+    const pb = (await pub.json()) as Awaited<ReturnType<typeof searchContent>>;
+    eq(pb.items.length, 0, "published types=service is empty");
+  });
+}
 
 console.log(`\n${pass} passed, ${failures.length} failed`);
 await db.end({ timeout: 2 }).catch(() => {});

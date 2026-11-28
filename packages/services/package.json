@@ -21,11 +21,16 @@
     "./channel": "./src/channel.ts",
     "./channel-plan-md": "./src/channel-plan-md.ts",
     "./paath-day": "./src/paath-day.ts",
+    "./google-calendar": "./src/google-calendar.ts",
     "./video-render": "./src/video-render.ts",
     "./businesses": "./src/businesses.ts",
     "./featured-people": "./src/featured-people.ts",
     "./series-form": "./src/series-form.ts",
-    "./workshop-answers": "./src/workshop-answers.ts"
+    "./workshop-answers": "./src/workshop-answers.ts",
+    "./network-booking": "./src/network-booking.ts",
+    "./wordart-catalog": "./src/wordart-catalog.ts",
+    "./wordart-generate": "./src/wordart-generate.ts",
+    "./wordart-routes": "./src/wordart-routes.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

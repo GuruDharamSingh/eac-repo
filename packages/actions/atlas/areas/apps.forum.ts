@@ -135,6 +135,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'forum-topic-start',
+    where: {"mode": "dock", "why": "Category, title and text."},
     area: 'forum.board',
     label: 'Start a forum topic',
     does: 'A signed-in person starts a topic in a category of an organisation (kind post, idea or event; audience everyone, followers or just the author; optional link and attachments).',

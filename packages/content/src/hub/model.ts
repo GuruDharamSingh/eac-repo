@@ -17,10 +17,20 @@ export interface ContentCardPreset {
   types?: ContentType[];
   view?: ContentView;
   groupBy?: ContentGroupBy;
+  /** Keepers only: also list hidden pieces (the Hidden badge and a Show button). The server checks it against rights. */
+  includeHidden?: boolean;
+  /**
+   * Round 2 (2026-11-26): set it and the card draws the one-card design: a dark popup stack (list, piece, edit),
+   * with a fixed toggle between the site's own works (`scope`) and the network's. Labels for the two ends.
+   * Left out, the card is the one it always was.
+   */
+  scopes?: { site: string; network: string };
+  /** The Kind select of the round 2 popup. Default Artwork / Writing / Everything. `types` left out = everything. */
+  kinds?: Array<{ label: string; types?: ContentType[] }>;
 }
 
 export type ResolvedContentPreset = Required<Pick<ContentCardPreset, "title" | "scope" | "view" | "groupBy">> &
-  Pick<ContentCardPreset, "id" | "types">;
+  Pick<ContentCardPreset, "id" | "types" | "includeHidden" | "scopes" | "kinds">;
 
 export const DEFAULT_CONTENT_PRESET: ResolvedContentPreset = {
   title: "Content library",

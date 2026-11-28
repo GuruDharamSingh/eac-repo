@@ -138,6 +138,8 @@ export async function startStripeCheckout(input: {
    * session every caller always got.
    */
   collect?: StripeCollectOptions | null;
+  /** Optional (2026-11-27): Stripe Idempotency-Key for the session; omitted = none, as before. */
+  idempotencyKey?: string;
 }): Promise<{ url: string; sessionId: string }> {
   const stripe = requireStripe();
   const order = await getOrderById(input.orderId);
@@ -199,6 +201,7 @@ export async function startStripeCheckout(input: {
       applicationFeeMinor,
       expiresInMinutes: 60,
       ...(input.collect ? { collect: input.collect } : {}),
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
     });
   } catch (err) {
     // Stripe declining the SESSION (as opposed to the card, which happens on
@@ -636,6 +639,8 @@ export async function refundStripeOrder(input: {
   orderId: string;
   actorUserId: string | null;
   reason?: string;
+  /** Passed to Stripe's refund call (2026-11-27). Omitted = as before. */
+  idempotencyKey?: string;
 }): Promise<Order> {
   const stripe = requireStripe();
   const order = await getOrderById(input.orderId);
@@ -647,6 +652,7 @@ export async function refundStripeOrder(input: {
     order: { id: order.id, currency: order.currency, paymentReference: order.paymentReference ?? null },
     amountMinor: order.totalMinor,
     notes: input.reason,
+    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
   });
   return refundOrder({
     orderId: order.id,

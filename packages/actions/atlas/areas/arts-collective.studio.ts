@@ -3,6 +3,40 @@
 import type { Area, Capability } from '../types';
 
 const capabilities: Capability[] = [
+  // ---------------- studio.wordart ----------------
+  {
+    id: 'generate-word-art',
+    area: 'studio.wordart',
+    label: 'Generate random word art',
+    does: 'Queues a word-art picture of the typed words in a random type and colour pair; the render worker saves it to the person’s own files or an organisation’s private media folder.',
+    class: 'person',
+    actors: ['person', 'owner', 'guide'],
+    scope: 'person',
+    hosts: [
+      {
+        key: 'api:apps/arts-collective/src/app/api/wordart/generate/route.ts#POST',
+        service: ['wordArtRoutes', 'queueWordArt'],
+        address: {
+          app: 'arts-collective',
+          path: '/hub/organization',
+          anchor: 'generate-word-art',
+          how: 'The Word art card (components/hub/WordArtCard.tsx).',
+        },
+        note: 'Route factory in packages/services/src/wordart-routes.ts, same-origin JSON only. Inserts wordart_jobs (migration 301); the worker (packages/reels/render/wordart.mjs) writes the PNG and JSON to Private/Media/Images/WordArt; the first status read adds an org picture to media.',
+      },
+    ],
+    entry: null,
+    status: 'A wordart_jobs row for the person reaches status done with an output_path',
+    risk: ['none'],
+    confirm: {
+      text: 'Make a word art picture of “{text}” and save it to {where}?',
+      status: 'draft',
+      wave: 2,
+    },
+    inputs: 'orgId, text, pins (font, look, frame)',
+    verified: '2026-11-27 test against a temporary database and storage stand-in; not run live',
+    added: '2026-11-27',
+  },
   // ---------------- studio.writing ----------------
   {
     id: 'share-piece-to-social',
@@ -42,6 +76,7 @@ const capabilities: Capability[] = [
   // ---------------- studio.posts ----------------
   {
     id: 'create-social-post',
+    where: {"mode": "dock", "why": "Text, pictures and which piece it is about."},
     area: 'studio.posts',
     label: 'Save a social post draft',
     does: 'Creates a social post draft (pictures, text, per-platform wording, which piece) for a person or organisation, from the Studio Post kind or the Channel New post page. Nothing is sent.',
@@ -132,6 +167,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'publish-social-post',
+    where: {"mode": "place", "why": "Sends to the outside world, per-platform wording; looked at on its own page first.", "deep": "/studio"},
     area: 'studio.posts',
     label: 'Publish a social post to an account',
     does: 'Sends a social post to a connected Facebook Page, Instagram or Threads account, optionally also mirroring it as a post on the site. Also the Channel New post page, which sends one post to several chosen accounts.',
@@ -309,6 +345,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'save-booth-recording',
+    where: {"mode": "dock", "why": "Pick a recording, keep it."},
     area: 'studio.recordings',
     label: 'Copy a booth recording to my library',
     does: "Copies a recording made in the broadcast booth into the person's own recordings.",
@@ -370,6 +407,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'upload-recording',
+    where: {"mode": "place", "why": "Plumbing inside the recording tools."},
     area: 'studio.recordings',
     label: 'Upload a recording (chunked)',
     does: "Chunked upload of a recorded file into the person's library.",
@@ -387,6 +425,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'capture-from-phone',
+    where: {"mode": "place", "why": "Needs the phone and the capture page."},
     area: 'studio.recordings',
     label: 'Capture from a phone',
     does: 'Creates a capture code and receives chunks and marks from a phone.',
@@ -407,6 +446,7 @@ const capabilities: Capability[] = [
   // ---------------- studio.video ----------------
   {
     id: 'upload-reel-media',
+    where: {"mode": "place", "why": "Plumbing inside the video editor."},
     area: 'studio.video',
     label: 'Upload video media (stream)',
     does: "Streams a clip into the video project's storage.",
@@ -424,6 +464,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'create-video-project',
+    where: {"mode": "dock", "why": "A name for the new reel."},
     area: 'studio.video',
     label: 'Start a video project',
     does: 'Creates a new reel project in the video editor.',
@@ -450,6 +491,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'save-video-project',
+    where: {"mode": "place", "why": "The video editor saves itself as you work."},
     area: 'studio.video',
     label: 'Save a video project',
     does: 'Saves the edit of a reel project (autosave).',
@@ -493,6 +535,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'render-video',
+    where: {"mode": "dock", "why": "Pick a reel, queue it."},
     area: 'studio.video',
     label: 'Render a video',
     does: 'Queues the reel project for rendering on the render machine.',
@@ -524,6 +567,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'publish-video',
+    where: {"mode": "dock", "why": "Pick a render, add a description."},
     area: 'studio.video',
     label: 'Publish a video',
     does: 'Publishes a finished render with a description so it shows to the public.',

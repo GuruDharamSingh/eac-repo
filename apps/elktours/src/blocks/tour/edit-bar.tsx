@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDownIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { officeHref } from "@/lib/office-links";
@@ -17,6 +17,13 @@ import { useTourEdit, useTourPage } from "./context";
 export function TourEditBar() {
   const page = useTourPage();
   const e = useTourEdit();
+  // The stage's own edit mode (components/tours/stage/edit) has a bar of its own: this menu steps aside meanwhile.
+  const [stageEditing, setStageEditing] = useState(false);
+  useEffect(() => {
+    const on = (ev: Event) => setStageEditing(Boolean((ev as CustomEvent<boolean>).detail));
+    window.addEventListener("elk:stage-editing", on);
+    return () => window.removeEventListener("elk:stage-editing", on);
+  }, []);
 
   // Unsaved edits: ask before leaving.
   useEffect(() => {
@@ -26,7 +33,7 @@ export function TourEditBar() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [e.editing, e.dirty]);
 
-  if (!page || !e.canEdit) return null;
+  if (!page || !e.canEdit || stageEditing) return null;
   const id = page.tour.id;
 
   return (
@@ -39,6 +46,7 @@ export function TourEditBar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-48">
             <DropdownMenuItem onSelect={e.start}>Edit this page</DropdownMenuItem>
+            {page.stage ? <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event("elk:stage-edit"))}>Edit on the stage</DropdownMenuItem> : null}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href={officeHref("create-tour", { tourId: id, step: "route" })}>Stops &amp; route</Link>

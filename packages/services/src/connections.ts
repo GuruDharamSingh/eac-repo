@@ -192,6 +192,9 @@ function open(sealed: string): string {
   return Buffer.concat([d.update(Buffer.from(body, 'base64url')), d.final()]).toString('utf8');
 }
 
+/** The same seal for other stores of OAuth tokens (google-calendar.ts, migration 295). */
+export { seal as sealSecret, open as openSecret };
+
 /** Re-seal a row's v1 secrets with the v2 key the first time they are read. Best effort. */
 async function resealLegacy(id: string): Promise<void> {
   if (SEAL_VERSION !== 'v2') return;

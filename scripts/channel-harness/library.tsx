@@ -241,6 +241,24 @@ switch (page) {
       </Frame>
     );
     break;
+  case "popup-overflow":
+    body = (
+      <div id="pop" style={{ position: "fixed", top: 72, left: 28, width: 1038, maxHeight: 800, overflow: "auto", background: "var(--ch-bg,#f2f2f1)", padding: "16px" }}>
+        <div className="eac-c">
+          <ContentLibrary items={[]} identities={IDS} timeZone={TZ} source={{ endpoint: "/api/content/search" }} view="published" groupBy="store" pageSize={20} />
+        </div>
+      </div>
+    );
+    break;
+  case "remote-groupby-store":
+    body = <Remote title="Remote groupBy store (bricks)" groupBy="store" view="published" pageSize={20} />;
+    break;
+  case "remote-groupby-store-list":
+    body = <Remote title="Remote groupBy store (list)" groupBy="store" view="published" pageSize={20} initial={{ view: "list" }} />;
+    break;
+  case "hidden-owner":
+    body = <Remote title="Owner sees own hidden piece" includeHidden view="published" types={["artwork"]} pageSize={20} click={{ sel: ".chn-brick", text: "Ash Vase" }} />;
+    break;
   case "compact":
     body = <Remote title="Compact density (Puck side panel, 340 wide)" width={340} density="compact" view="all" lockView />;
     break;

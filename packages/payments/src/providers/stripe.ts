@@ -148,6 +148,12 @@ export interface CreateCheckoutSessionInput {
   metadata?: Record<string, string>;
   /** Optional: what else Stripe's page asks for. Omitted = as before. */
   collect?: StripeCollectOptions | null;
+  /**
+   * Optional (2026-11-27): sent to Stripe as the request's Idempotency-Key, so a
+   * repeated call for the same order returns the same session instead of a
+   * second one. Omitted = no key, as before.
+   */
+  idempotencyKey?: string;
 }
 
 export interface StripeCheckoutSession {
@@ -347,7 +353,10 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
   async function createCheckoutSession(
     input: CreateCheckoutSessionInput
   ): Promise<StripeCheckoutSession> {
-    const session = await client.checkout.sessions.create(buildCheckoutSessionParams(input));
+    const session = await client.checkout.sessions.create(
+      buildCheckoutSessionParams(input),
+      input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined
+    );
 
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
     return { id: session.id, url: session.url, expiresAt: toIso(session.expires_at) };
@@ -534,15 +543,18 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
       if (!paymentIntent || !paymentIntent.startsWith("pi_")) {
         throw new Error("This order has no Stripe payment to refund.");
       }
-      const r = await client.refunds.create({
-        payment_intent: paymentIntent,
-        amount: Math.max(1, Math.round(input.amountMinor)),
-        // A destination charge is refunded from the platform balance unless
-        // told to claw it back from the connected account, which is the
-        // honest default: the maker was paid for a sale that did not stand.
-        reverse_transfer: true,
-        refund_application_fee: true,
-      });
+      const r = await client.refunds.create(
+        {
+          payment_intent: paymentIntent,
+          amount: Math.max(1, Math.round(input.amountMinor)),
+          // A destination charge is refunded from the platform balance unless
+          // told to claw it back from the connected account, which is the
+          // honest default: the maker was paid for a sale that did not stand.
+          reverse_transfer: true,
+          refund_application_fee: true,
+        },
+        input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined
+      );
       return { ok: true, refundReference: r.id };
     },
 

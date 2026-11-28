@@ -172,6 +172,7 @@ export default {
     },
     {
       id: 'site-feed-save',
+      where: {"mode": "dock", "why": "A name, tagline and description."},
       area: 'orgapps.cms',
       label: 'Add or edit a site page (name, tagline, visibility)',
       does: "Creates or updates one of the site's pages (feeds): its name, tagline, description, presenter, accent, order and whether it is public.",
@@ -196,6 +197,7 @@ export default {
     },
     {
       id: 'site-section-copy-save',
+      where: {"mode": "dock", "why": "The words of one section."},
       area: 'orgapps.cms',
       label: "Edit a page's wording",
       does: "Saves the copy slots of one fixed-layout page (headline, intro and so on) into the site's page-copy table.",

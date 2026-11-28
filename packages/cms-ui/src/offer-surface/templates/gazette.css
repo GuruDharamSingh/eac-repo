@@ -1,0 +1,40 @@
+/* Gazette (packet 2l). Classes ost-gaz-* only. Natural height. */
+.ost-gaz-mast { width: min(100%, 980px); margin: 0 auto; box-sizing: border-box; padding: 14px 26px 0; display: grid; gap: 8px; }
+.ost-gaz-name { min-width: 0; }
+.ost-gaz-meta { gap: 8px; }
+.ost-gaz-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ost-gaz-date { font: 500 9.5px var(--os-mono); letter-spacing: 0.08em; color: var(--os-ink-faint); }
+.ost-gaz-mast .ost-toplink { padding: 5px 10px; }
+.ost-gaz-name { text-align: center; border-top: 3px double var(--os-ink-faint); border-bottom: 1px solid var(--os-ink-faint); padding: 8px 0 6px; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); font-size: calc(36px * var(--fhx)); line-height: 1; color: var(--os-ink-bone); }
+.ost-gaz-meta { display: flex; justify-content: space-between; border-bottom: 3px double var(--os-ink-faint); padding-bottom: 6px; font: 500 9px var(--os-mono); letter-spacing: 0.1em; color: var(--os-ink-muted); }
+
+.ost-gaz { width: min(100%, 980px); margin: 0 auto; box-sizing: border-box; padding: 18px 26px 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.ost-gaz > * { min-width: 0; }
+.ost-gaz-pic.is-real { height: auto; display: block; }
+.ost-gaz-pic.is-real img { height: auto; max-height: 340px; display: block; }
+.ost-gaz-title { margin: 0; text-align: center; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 1.02; font-size: calc(32px * var(--fhx)); text-wrap: balance; color: var(--os-ink-bone); }
+.ost-gaz-deck { margin: 0; text-align: center; font-family: var(--fq); font-style: var(--fqi); font-size: 15px; line-height: 1.4; color: var(--os-ink-muted); }
+.ost-page .ost-gaz-author { text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+.ost-page .ost-gaz-author:hover { text-decoration: underline; text-decoration-color: var(--os-bronze); }
+.ost-gaz-by { text-align: center; font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-bronze); }
+.ost-gaz-pic { height: 140px; border: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9.5px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-gaz-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ost-gaz-cols { column-count: 3; column-gap: 20px; column-rule: 1px solid var(--os-line-soft); text-align: justify; hyphens: auto; }
+.ost-gaz-cols > * { min-width: 0; margin: 0 0 8px; font-family: var(--fb); font-size: 12px; line-height: 1.55; color: var(--os-ink-body); }
+.ost-gaz-cols > :first-child::first-letter { float: left; font-family: var(--fh); font-weight: var(--fhw); font-size: calc(40px * var(--fhx)); line-height: 0.8; margin: 3px 6px 0 0; color: var(--os-bronze); }
+.ost-gaz-also { border-top: 3px double var(--os-ink-faint); padding-top: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ost-page .ost-gaz-also-i { background: none; border: 0; padding: 0; text-align: left; font: inherit; cursor: pointer; display: grid; gap: 3px; align-content: end; color: inherit; text-decoration: none; }
+.ost-gaz-also-h { font-family: var(--fk); font-size: 9px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-gaz-also-t { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); font-size: calc(14px * var(--fhx)); line-height: 1.2; }
+
+@media (max-width: 639px) {
+  .ost-gaz-mast { padding: 12px 16px 0; }
+  .ost-gaz { padding: 16px 16px 20px; }
+  .ost-gaz-name { font-size: calc(28px * var(--fhx)); }
+  .ost-gaz-title { font-size: calc(26px * var(--fhx)); }
+  .ost-gaz-cols { column-count: 1; column-rule: 0; }
+  .ost-gaz-also { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}
+
+/* Design width of the packet frame (px, unitless); the shell scales the page from it. */
+.ost-page[data-template="gazette"] { --ost-base: 620; }

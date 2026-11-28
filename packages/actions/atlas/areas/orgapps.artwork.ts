@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.artwork ----------------
   {
     id: 'artwork-draft-save',
+    where: {"mode": "place", "why": "Money (price) and picture editing: the dock only links.", "deep": "/studio/make?surface=artwork"},
     area: 'orgapps.artwork',
     label: 'Save an artwork',
     does: "Creates or updates an artwork (title, picture, size, price) in the person's marketplace store as a draft; katie's form can publish in the same save.",
@@ -131,6 +132,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'artwork-journey-publish',
+    where: {"mode": "place", "why": "Money: the dock only links.", "deep": "/learn?surface=artwork"},
     area: 'orgapps.artwork',
     label: 'Put artworks on sale',
     does: "Publishes up to 50 of the person's artworks on the marketplace and returns their links.",

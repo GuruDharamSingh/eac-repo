@@ -106,6 +106,8 @@ export interface Capability {
   drift?: string;
   canonical?: string; // the service function / host that should be the single path
   open?: string; // a question for Justin or the next session
+  /** Added 2026-11-27 (rails desk lane F): can it be done out of context in the dock (a form), or does it need its own page (layout, canvas, maps, video, wizards, money)? deep is the deepest link known. */
+  where?: { mode: "dock" | "place"; why: string; deep?: string };
   verified: string; // "2026-11-16 read" — date + how it was checked
   /**
    * ISO dates (YYYY-MM-DD). `added`: when the row entered the atlas. `updated`: when its row was last re-checked

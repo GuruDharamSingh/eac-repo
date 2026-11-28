@@ -9,7 +9,11 @@ import type { HubActionResult, HubCardHost, HubCardView, HubNav } from "@elkdoni
 import { HubRoot, lucideHubIcons } from "@elkdonis/hub/ui";
 import { siteBuilderCard, type SiteBuilderHost } from "@elkdonis/hub/site-builder";
 import type { SiteBuilderDetailData, SiteBuilderFaceData } from "@elkdonis/hub/site-builder/model";
+import { HubCardMount } from "@elkdonis/hub/mount";
+import { channelCard } from "@elkdonis/channel/hub/card";
+import type { ChannelHubData } from "@elkdonis/channel/hub";
 import { runHubAction } from "@/app/hub/actions";
+import { runChannelAction } from "@/lib/channel-door";
 import { SITE_STYLE_HREF } from "@/components/site-style/SiteStyleButton";
 import { TEMPLATE_SLUGS } from "@/lib/puck/reserved";
 
@@ -83,5 +87,23 @@ export function SiteBuilderDetailMount({ data, tab }: { data: SiteBuilderDetailD
     <HubRoot theme={THEME} icons={host.icons}>
       <Detail data={data} host={host} nav={nav} />
     </HubRoot>
+  );
+}
+
+/**
+ * The hub's Channel card (Content cornerstone Step 4, 2026-11-26): the lifted channelCard through the shared mount.
+ * Its writes go through Para Theater's own Channel door (lib/channel-door.ts); the data is lib/hub-channel.ts's.
+ */
+export function ChannelCardMount({ data }: { data: ChannelHubData }) {
+  const router = useRouter();
+  return (
+    <HubCardMount
+      card={channelCard}
+      data={data}
+      act={runChannelAction as never}
+      theme={THEME}
+      navigate={router.push}
+      refresh={router.refresh}
+    />
   );
 }

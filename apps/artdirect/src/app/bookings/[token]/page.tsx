@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getBookingByToken } from "@elkdonis/booking";
+import { bookerLabel, getBookingByToken } from "@elkdonis/booking";
 import { BookingCancel, BookingScheduler } from "@elkdonis/checkout/components";
 import { bookerCancelAction, bookerConfirmAction, bookerProposeAction } from "@/lib/booking-actions";
 import { ACTIVE, STATUS_WORD, money, negotiating, schedulerBooking, whenText } from "@/components/booking/view";
@@ -89,7 +89,7 @@ export default async function BookingPage({ params, searchParams }: Props) {
             ) : null}
             <dt>Booked by</dt>
             <dd>
-              {b.bookerName ?? ""} ({b.bookerEmail})
+              {bookerLabel(b)} ({b.bookerEmail})
             </dd>
             <dt>Status</dt>
             <dd>{b.status === "awaiting_booker" ? "Your turn: choose a time" : b.status === "awaiting_seller" ? `Waiting for ${b.hostName ?? "the host"}` : STATUS_WORD[b.status]}</dd>

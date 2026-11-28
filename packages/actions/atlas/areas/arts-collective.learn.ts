@@ -476,6 +476,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'set-workshop-listing',
+    where: {"mode": "dock", "why": "Pick a workshop, a few switches and a price field."},
     area: 'learn.lms',
     label: 'Change how a workshop is listed',
     does: 'Sets whether a workshop is listed, what access follows it, its follow-up price and link, and its side.',

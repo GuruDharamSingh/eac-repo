@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.journeys ----------------
   {
     id: 'auction-store-publish',
+    where: {"mode": "place", "why": "Money: the dock only links.", "deep": "/learn?surface=journey:auction"},
     area: 'orgapps.journeys',
     label: 'Open my store on the marketplace',
     does: "One-click step of the Center's auction journey: publishes the signed-in person's store on the art marketplace.",
@@ -51,6 +52,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'org-site-create',
+    where: {"mode": "dock", "why": "A name and an address."},
     area: 'orgapps.journeys',
     label: 'Start an organisation site',
     does: 'Creates a new organisation with a subdomain for the signed-in person (the Center "site" journey).',

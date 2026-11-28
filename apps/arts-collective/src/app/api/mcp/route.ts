@@ -1,4 +1,7 @@
 import { getActiveEnrolment, getCourseBySlug, getLearnerOutline, listMyEnrolments, stepTask } from "@elkdonis/lms";
+import { defaultHost } from "@elkdonis/content/host";
+import { resolveContentRefs, searchContent, suggestContent } from "@elkdonis/content/server";
+import type { McpContent } from "@elkdonis/mcp/server";
 import { loadPageWithVersion } from "@elkdonis/page-builder/server";
 import { ACTION_LINKS } from "@/lib/actions/links";
 import { channelNextSource } from "@/lib/channel/next-source";
@@ -27,6 +30,21 @@ const LINKS = {
 // The same readers the dock route passes (app/api/actions/dock/route.ts).
 const LMS = { getCourseBySlug, getActiveEnrolment, listMyEnrolments, getLearnerOutline, stepTask };
 
+// The content cornerstone's two readers (packages/mcp content.search / content.resolve). The viewer is the grant's
+// person, passed by the tools; it is never a request parameter. defaultHost() covers org and network scopes.
+const CONTENT_HOST = defaultHost();
+const CONTENT: McpContent = {
+  search: async (userId, q) => {
+    // The tool already validated `types` against the schema; the cornerstone narrows them to ContentType.
+    const query = { ...q, cursor: q.cursor ?? undefined } as Parameters<typeof searchContent>[1];
+    const r = await searchContent(userId ? { userId } : null, query, CONTENT_HOST);
+    return { items: r.items, nextCursor: r.nextCursor, missing: r.missing };
+  },
+  resolve: async (userId, keys) =>
+    resolveContentRefs(userId ? { userId } : null, keys, CONTENT_HOST),
+  suggest: (userId, q, limit) => suggestContent(userId ? { userId } : null, q, CONTENT_HOST, { limit }),
+};
+
 let handler: Promise<(req: Request) => Promise<Response>> | null = null;
 
 function mcp() {
@@ -42,6 +60,8 @@ function mcp() {
       pages: { loadPageWithVersion },
       // The draft writer for propose_page_patch and set_field: the step door and the draft store. It cannot publish.
       drafts: mcpDrafts,
+      // content.search and content.resolve (read-only).
+      content: CONTENT,
     }),
   );
   return handler;

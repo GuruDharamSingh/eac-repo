@@ -135,6 +135,7 @@ export default {
     },
     {
       id: 'order-payment-confirm',
+      where: {"mode": "place", "why": "Records a payment: money.", "deep": "/manage/orders"},
       area: 'orgapps.commerce.shop',
       label: 'Confirm an order is paid (eTransfer or manual)',
       does: "A seller manager or network admin records that an eTransfer or manual payment arrived. The order becomes paid and the sale is split in the ledger.",

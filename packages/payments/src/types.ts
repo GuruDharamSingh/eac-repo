@@ -94,6 +94,8 @@ export interface RefundInput {
   order: Pick<Order, "id" | "currency" | "paymentReference">;
   amountMinor: number;
   notes?: string;
+  /** Sent to Stripe as the request's idempotency key (2026-11-27): a repeat with the same key returns the first refund. Omitted = as before. */
+  idempotencyKey?: string;
 }
 
 export interface RefundResult {

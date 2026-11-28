@@ -1,0 +1,197 @@
+/*
+  Current Work Page card (hub console). Plain CSS, namespaced `cwp-`.
+
+  THE DARK LOOK. The card (face on the grid), the frame (popup head, foot, border) and the body all draw in
+  the offer kit's dark, square design: page #1b1e20, surface #24282a, card #202326, foot #1f2225, lines
+  #5a6064 / #373c3f, bone ink #e9e5dd, muted #a3a09a, bronze #c8a45b with #1b1e20 on it.
+
+  HOW IT IS SCOPED. The popup's <dialog> sits outside every page wrapper and SurfaceFrame takes no class, so the
+  frame cannot be styled from inside. Instead the surface OUTPUT tokens (--sf-*, see css-ui rules) are
+  redefined on the nearest ancestors that carry them:
+    - `.eac-surface-panel:has(.cwp-dark)`  the dialog's panel (head, foot, ✕, ←, status, buttons all read --sf-*),
+    - `.eac-face:has(.cwp-dark)`           the card on the grid,
+    - `.cwp-dark`                          the body itself (also the picker), so it is right without :has.
+  The body carries `.cwp-dark` (surface and picker) and the face's preview does (face), so this only ever matches
+  this card's own layers. When the Organization page gets its own dark scope on --sf-*, the values are the same
+  and nothing here fights it; this scope stays so the card is right either way.
+
+  CONTRAST (WCAG 2.x relative luminance, computed 2026-11-27; ratio of the text on the ground named).
+  Text (4.5 needed):
+    bone  #e9e5dd  on surface #24282a 11.84 | card #202326 12.57 | foot #1f2225 12.72 | input #1b1e20 13.34 | selected #2d3235 10.32
+    muted #a3a09a  on surface 5.70 | card 6.06 | foot 6.13 | input 6.43 | picker hover tint #2f2c25 5.34
+    ink-2 #c9c4ba  on surface 8.56 (setting names)
+    kind word #ce8b62 (terracotta) on card 5.64 | surface 5.31
+    error #f0a590  on surface 7.43 | foot 7.98
+    bronze #c8a45b on surface 6.32 | card 6.71 | picker hover tint 5.91 (marks and rules; not used for body text)
+    on-bronze #1b1e20 on bronze 7.12 (the primary buttons)
+    The kit's faint ink #8f8c86 is 4.44 on surface and is NOT used; --sf-faint is set to muted.
+  Non-text (3:1 needed):
+    control and field lines #767d82 on surface 3.56 | card 3.78 | input 4.01 | selected 3.10
+    active-tab rule and selected-setting rule, bronze on surface 6.32
+    Decorative only, carrying no information: the #373c3f and #4a5054 hairlines and the card edge.
+  Picker: the library's own pairs resolve to the values above (ink bone, muted, line #767d82, chip text bone on
+  #1b1e20 13.34, kind word and date muted).
+*/
+
+/* ── the dark scope: output tokens on the layer, the card and the body ──────────────────────────── */
+.cwp-dark,
+.eac-surface-panel:has(.cwp-dark),
+.eac-face:has(.cwp-dark) {
+  --sf-bg: #24282a;
+  --sf-bg-soft: #1f2225;
+  --sf-fg: #e9e5dd;
+  --sf-muted: #a3a09a;
+  --sf-faint: #a3a09a;
+  --sf-line: #767d82;
+  --sf-rule: #5a6064;
+  --sf-accent: #c8a45b;
+  --sf-on-accent: #1b1e20;
+  --sf-kind: #c8a45b;
+  --sf-on-kind: #1b1e20;
+  --sf-danger: #f0a590;
+  --sf-radius: 0;
+  --sf-radius-sm: 0;
+  --sf-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.85);
+  --sf-font-title: "Fraunces", Georgia, serif;
+  --sf-font-body: "Spectral", Georgia, serif;
+  --sf-font-record: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+/* The card on the grid: the kit's card ground, a quiet edge, no lift of its own colour. */
+.eac-face:has(.cwp-dark) {
+  --sf-bg: #202326;
+  --sf-line: #4a5054;
+  --eac-face-wash: 7%;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 14px 24px -18px rgba(0, 0, 0, 0.8);
+}
+.eac-face:has(.cwp-dark) { font-family: var(--sf-font-body); }
+.eac-surface-panel:has(.cwp-dark) { color: var(--sf-fg); }
+.eac-face:has(.cwp-dark) .eac-face-title { font-family: "Fraunces", Georgia, serif; font-weight: 600; }
+.eac-face:has(.cwp-dark) .eac-face-blurb { color: #a3a09a; }
+.eac-surface-panel:has(.cwp-dark) .eac-surface-title { font-family: "Fraunces", Georgia, serif; font-weight: 600; }
+.eac-surface-panel:has(.cwp-dark) .eac-surface-iconbtn:hover { border-color: #c8a45b; }
+.eac-surface-panel:has(.cwp-dark) .eac-surface-foot { background: #1f2225; border-top: 1px solid #373c3f; }
+.eac-surface-panel:has(.cwp-dark) .eac-btn { border-radius: 0; text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; }
+.eac-surface-panel:has(.cwp-dark) .eac-btn:focus-visible { outline: 2px solid #c8a45b; outline-offset: 2px; }
+
+/* ── the face ─────────────────────────────────────────────────────────── */
+.cwp-face { display: grid; gap: 10px; color: #e9e5dd; }
+.cwp-lead { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; }
+.cwp-pic {
+  width: 56px; height: 56px; object-fit: cover; display: block;
+  border: 1px solid #5a6064; border-radius: 0;
+  background: repeating-linear-gradient(135deg, #202427 0 7px, #262b2e 7px 8px);
+}
+.cwp-lead-text { display: grid; gap: 3px; min-width: 0; }
+.cwp-lead-kind { font: 500 10px "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: #a3a09a; }
+.cwp-lead-title {
+  font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.25; color: #e9e5dd;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.cwp-face-line { margin: 0; font-size: 13px; color: #a3a09a; }
+.cwp-face-link { justify-self: start; font-size: 13px; color: #e9e5dd; text-decoration: underline; text-decoration-color: #c8a45b; text-underline-offset: 4px; }
+.cwp-face-link:hover { color: #c8a45b; }
+
+/* ── the surface body, in the offer kit's look ───────────────────────── */
+.osf-root.cwp,
+.osf-root.cwp-pick { background: transparent; }
+.cwp { display: block; min-height: 100%; font-size: 14px; }
+.cwp .osf-label { font-size: 11px; letter-spacing: 0.14em; }
+.cwp .osf-note { font-size: 13.5px; }
+.cwp .osf-radio { font-size: 14px; padding: 10px 12px; }
+.cwp .osf-btn { font-size: 11.5px; padding: 9px 13px; }
+.cwp-panel { display: grid; gap: 22px; padding: 20px; align-content: start; }
+.cwp-panel[hidden] { display: none; }
+.cwp-sec { display: grid; gap: 10px; }
+.cwp-sec + .cwp-sec { border-top: 1px solid var(--os-line-soft); padding-top: 18px; }
+.cwp-error { color: var(--sf-danger); font-size: 13px; margin: 0 20px 20px; }
+
+/* tabs: square, a bronze rule under the active one (the kit's language; SurfaceFrame has no tabs) */
+.cwp-tabs { display: flex; gap: 2px; padding: 0 14px; border-bottom: 1px solid #373c3f; overflow-x: auto; scrollbar-width: none; }
+.cwp-tab {
+  flex: none; margin-bottom: -1px; padding: 14px 12px 12px; min-height: 44px;
+  font: 500 10.5px "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #a3a09a; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; cursor: pointer;
+}
+.cwp-tab:hover { color: #e9e5dd; }
+.cwp-tab[aria-selected="true"] { color: #e9e5dd; border-bottom-color: #c8a45b; }
+.cwp-tab:focus-visible { outline: 2px solid #c8a45b; outline-offset: -3px; }
+
+/* the switch */
+.cwp-switch { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 14px; }
+.cwp-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cwp-track { flex: none; width: 38px; height: 22px; border: 1.5px solid var(--osf-field-line); border-radius: 11px; background: var(--os-input); position: relative; transition: border-color 0.2s, background 0.2s; margin-top: 1px; }
+.cwp-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; border-radius: 50%; background: var(--os-ink-muted); transition: transform 0.2s, background 0.2s; }
+.cwp-switch input:checked + .cwp-track { border-color: var(--os-bronze); }
+.cwp-switch input:checked + .cwp-track::after { transform: translateX(16px); background: var(--os-bronze); }
+.cwp-switch input:focus-visible + .cwp-track { outline: 2px solid var(--os-bronze); outline-offset: 2px; }
+.cwp-switch-text { display: grid; gap: 3px; }
+.cwp-switch-text strong { font-weight: 600; color: var(--os-ink-bone); }
+
+/* what leads the page */
+.cwp-current { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--os-card); border: 1px solid var(--os-line-strong); border-top: 2px solid var(--os-bronze); padding: 12px; }
+.cwp-current .cwp-pic { width: 84px; height: 84px; border-color: var(--os-line-strong); background: var(--os-placeholder); }
+.cwp-current-text { display: grid; gap: 4px; min-width: 0; }
+.cwp-current-kind { font-family: var(--fk); font-size: 11px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-terracotta); }
+.cwp-current-title { font-family: var(--fh); font-weight: var(--fhw); font-size: calc(20px * var(--fhx)); line-height: 1.15; color: var(--os-ink-bone); overflow-wrap: anywhere; }
+.cwp-current-how { font-size: 12.5px; color: var(--os-ink-muted); }
+.cwp-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* template choice */
+.cwp-tpl { text-align: left; width: 100%; font-family: inherit; color: var(--os-ink-bone); }
+.cwp-tpl .osf-radio-text { display: grid; gap: 2px; }
+.cwp-tpl-name { font-weight: 600; }
+.cwp-tpl-blurb { font-size: 12.5px; color: var(--os-ink-muted); }
+.cwp-tpl[aria-disabled="true"] { cursor: default; }
+
+/* theme settings: quiet rows, a name, one plain line, a row of square choices */
+.cwp-theme { gap: 0; }
+.cwp-theme > .osf-note { margin-bottom: 14px; }
+.cwp-group { display: grid; gap: 4px; padding: 14px 0; border-top: 1px solid var(--os-line-soft); }
+.cwp-group-label { font-size: 13.5px; color: var(--os-ink-2); }
+.cwp-group-note { font-size: 12.5px; line-height: 1.45; color: var(--os-ink-muted); margin: 0; }
+.cwp-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cwp-opt {
+  font: 500 12.5px var(--fb); padding: 7px 12px; min-height: 34px; border-radius: 0; cursor: pointer;
+  color: var(--os-ink-muted); background: transparent; border: 1px solid var(--osf-field-line);
+}
+.cwp-opt:hover:not(:disabled) { color: var(--os-ink-bone); }
+.cwp-opt.is-on { color: var(--os-ink-bone); background: #2d3235; box-shadow: inset 0 -2px 0 var(--os-bronze); }
+.cwp-opt:disabled { cursor: default; opacity: 0.6; }
+@media (max-width: 640px) {
+  .cwp-panel { padding: 16px; }
+  .cwp-opt { min-height: 44px; }
+  .cwp-tabs { padding: 0 8px; }
+}
+
+/* ── the picker layer ─────────────────────────────────────────────────
+   The library reads --ch-* first, then --sf-*, then its own light values, and has a prefers-color-scheme block
+   of its own; --ch-* set here win over all of those, so the picker is the same dark on a light or dark device.
+   Hover tint #2f2c25 (bronze at about 12% over surface). */
+.cwp-pick {
+  --ch-bg: #24282a;
+  --ch-surface: #1b1e20;
+  --ch-raised: #202326;
+  --ch-ink: #e9e5dd;
+  --ch-muted: #a3a09a;
+  --ch-faint: #a3a09a;
+  --ch-empty: #6f6c67;
+  --ch-line: #767d82;
+  --ch-line-soft: #373c3f;
+  --ch-accent-fill: #c8a45b;
+  --ch-accent: #c8a45b;
+  --ch-on-accent: #1b1e20;
+  --ch-accent-100: #2f2c25;
+  --ch-accent-400: #8c7443;
+  --ch-live: #ee86b4;
+  --ch-alert: #f0a590;
+  --ch-radius: 0;
+  --ch-font: "Spectral", Georgia, serif;
+  --ch-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ch-shadow-sm: none;
+  --ch-shadow-md: 0 14px 24px -14px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+.cwp-pick-body { padding: 14px 16px 22px; display: grid; gap: 12px; }
+.cwp-pick-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--os-ink-muted); }
+.cwp-pick-error { margin: 0; font-size: 13px; color: var(--sf-danger); }

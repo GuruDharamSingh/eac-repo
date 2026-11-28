@@ -22,6 +22,7 @@ import {
   hostCancelBooking,
   hostConfirmTime,
   hostProposeTimes,
+  getHostBookingOrg,
   type BookingOfferInput,
 } from "@elkdonis/booking";
 import { startBookingCheckout } from "@elkdonis/checkout/booking";
@@ -217,18 +218,23 @@ async function host(): Promise<string | null> {
   return (await getCurrentUser())?.id ?? null;
 }
 
+/** The org the booking lives in: `oad` for ArtDirect's own services, the thread's org for network sales. */
+async function hostOrg(me: string, bookingId: string): Promise<string> {
+  return (await getHostBookingOrg(me, bookingId)) ?? ARTIST_SPACE_ORG_ID;
+}
+
 export async function hostCancelAction(bookingId: string, reason: string): Promise<Act> {
   const me = await host();
   if (!me) return { ok: false, error: "Sign in first." };
-  return hostCancelBooking(ARTIST_SPACE_ORG_ID, me, bookingId, reason);
+  return hostCancelBooking((await hostOrg(me, bookingId)), me, bookingId, reason);
 }
 export async function hostConfirmAction(bookingId: string, at: string): Promise<Act> {
   const me = await host();
   if (!me) return { ok: false, error: "Sign in first." };
-  return hostConfirmTime(ARTIST_SPACE_ORG_ID, me, bookingId, at);
+  return hostConfirmTime((await hostOrg(me, bookingId)), me, bookingId, at);
 }
 export async function hostProposeAction(bookingId: string, times: string[], message: string): Promise<Act> {
   const me = await host();
   if (!me) return { ok: false, error: "Sign in first." };
-  return hostProposeTimes(ARTIST_SPACE_ORG_ID, me, bookingId, times, message);
+  return hostProposeTimes((await hostOrg(me, bookingId)), me, bookingId, times, message);
 }

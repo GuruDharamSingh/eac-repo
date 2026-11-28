@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAfterSave } from "@/lib/popup-refresh";
 import { Button } from "@/components/ui/button";
 import {
   adminRecordPayout,
@@ -28,6 +29,7 @@ export type OwedRow = {
 /** The settle-up queue: who is owed, and a form to record that they were paid. */
 export function OwedTable({ rows }: { rows: OwedRow[] }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [open, setOpen] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -47,7 +49,7 @@ export function OwedTable({ rows }: { rows: OwedRow[] }) {
     if (!res.ok) setError(res.error ?? "Failed.");
     else {
       setOpen(null);
-      router.refresh();
+      afterSave();
     }
   }
 
@@ -155,6 +157,7 @@ export function OwedTable({ rows }: { rows: OwedRow[] }) {
 
 export function ReleaseButton({ entryId }: { entryId: string }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [busy, setBusy] = React.useState(false);
   return (
     <button
@@ -167,7 +170,7 @@ export function ReleaseButton({ entryId }: { entryId: string }) {
         const r = await adminReleaseHold(entryId);
         setBusy(false);
         if (!r.ok) window.alert(r.error ?? "Failed.");
-        else router.refresh();
+        else afterSave();
       }}
     >
       {busy ? "…" : "Release"}
@@ -185,6 +188,7 @@ export function SettingsForm({
   paymentWindowHours: number;
 }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState<string | null>(null);
   return (
@@ -203,7 +207,7 @@ export function SettingsForm({
         });
         setBusy(false);
         setMsg(r.ok ? "Saved." : r.error ?? "Failed.");
-        if (r.ok) router.refresh();
+        if (r.ok) afterSave();
       }}
     >
       <label className="flex flex-col text-xs">
@@ -231,6 +235,7 @@ export function SettingsForm({
 
 export function ApprovePayeeButton({ payeeId }: { payeeId: string }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [busy, setBusy] = React.useState(false);
   return (
     <button
@@ -242,7 +247,7 @@ export function ApprovePayeeButton({ payeeId }: { payeeId: string }) {
         const r = await adminApprovePayee(payeeId);
         setBusy(false);
         if (!r.ok) window.alert(r.error ?? "Failed.");
-        else router.refresh();
+        else afterSave();
       }}
     >
       {busy ? "…" : "Approve"}

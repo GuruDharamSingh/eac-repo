@@ -40,6 +40,8 @@ import { contentRoutes } from "@elkdonis/content/routes"; import { contentHost }
 export const GET = contentRoutes(contentHost).search;
 // app/api/content/folders/route.ts  -> .folders      app/api/content/upload/route.ts -> export const POST = ....upload (501 until Step 5)
 ```
+Optional `resolve` (keys to items, max 50): `app/api/content/resolve/route.ts` is `export const GET = contentRoutes(contentHost).resolve;` (`GET ?keys=thread:<id>,artwork:<id>`; signed-out sees public rows only; `no-store`).
+
 Behaviour: a signed-out request may only ask for `scope=network` (else 401); `folders` answers 404 for a missing or a
 not-allowed folder and hides `Private/` unless the source says `showPrivate`; every answer is `Cache-Control: no-store`.
 

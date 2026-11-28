@@ -15,6 +15,44 @@ export interface McpPages {
   loadPageWithVersion(orgId: string, slug: string): Promise<{ data: unknown; updatedAt: string } | null>;
 }
 
+/**
+ * One piece as the content tools read it: the structural part of `@elkdonis/content`'s `ContentListItem`
+ * (packages/mcp does not link that package; a `ContentListItem` is assignable to this).
+ */
+export interface McpContentItem {
+  key: string;
+  type: string;
+  title: string;
+  excerpt: string;
+  status: string;
+  siteName: string;
+  ownerName?: string | null;
+  date: string | null;
+  sale?: { state: string; price: string | null } | null;
+  links: { public: string | null };
+}
+
+/** What the content tools ask of the host (Content Cornerstone Step 6): the cornerstone's two readers, bound to the host's `ContentHost`. */
+export interface McpContent {
+  /** `searchContent` as `userId` (null: nobody, public published pieces only). The tools never name a viewer other than the grant's person. */
+  search(
+    userId: string | null,
+    query: { q?: string; scope: { kind: 'org'; orgId: string } | { kind: 'network' }; view?: 'published' | 'all'; types?: string[]; limit?: number; cursor?: string | null },
+  ): Promise<{ items: McpContentItem[]; nextCursor: string | null; missing?: string[] }>;
+  /** `resolveContentRefs` as `userId` (null: nobody). Gone keys come back as `{ key, gone: true }`. */
+  resolve(userId: string | null, keys: string[]): Promise<{ results: Array<McpContentItem | { key: string; gone: true }>; missing: string[] }>;
+  /** `suggestContent` as `userId` (null: nobody, public only). Optional: without it `content.suggest` is not offered. */
+  suggest?(
+    userId: string | null,
+    q: string,
+    limit: number,
+  ): Promise<{
+    pieces: Array<{ key: string; title: string; type: string; cover: string | null }>;
+    people: Array<{ id: string; name: string; avatar: string | null; href: string }>;
+    orgs: Array<{ id: string; name: string; logo: string | null; href: string | null }>;
+  }>;
+}
+
 /** What a host passes to `mcpHandler`. Everything the tools read beyond the database comes from here. */
 export interface McpHostOptions {
   /**
@@ -38,6 +76,8 @@ export interface McpHostOptions {
   pages?: McpPages;
   /** The draft writer (the step door and the draft store); without it the draft tools say so. Read-only keys never reach it. */
   drafts?: McpDrafts;
+  /** The content readers (`@elkdonis/content/server` `searchContent` and `resolveContentRefs`); without them `content.search` and `content.resolve` are not offered. */
+  content?: McpContent;
   /** Where MCP keys are looked up. Default: the `mcp_grants` table. */
   grants?: GrantStore;
   /** Where each tool call is recorded. Default: `action_events` (via 'mcp'). */

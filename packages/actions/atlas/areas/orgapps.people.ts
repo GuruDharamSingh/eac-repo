@@ -4,6 +4,7 @@ const capabilities: Capability[] = [
   // ---------------- orgapps.people ----------------
   {
     id: 'profile-section-toggle',
+    where: {"mode": "dock", "why": "Two switches."},
     area: 'orgapps.people',
     label: 'Switch a section of my page on or off',
     does: "Turns an optional section (store, blog, feed) of the signed-in person's own page on or off (users.profile_sections).",
@@ -159,11 +160,13 @@ const capabilities: Capability[] = [
         "note": "sql twin of sa:apps/artdirect/src/lib/dossier-editor-actions.ts#setProfileSectionAction"
       },
     ],
-    entry: null,
+    entry: 'profile-sections',
+    updated: '2026-11-27',
     status: 'users.profile_sections[key] equals the chosen value',
     risk: ['public'],
     confirm: {
-      text: 'Set the {name} section of your public page to {state}? Visitors see the change.',
+      text: 'Show or hide this part of your own page? Visitors to your page see the change at once.',
+      title: 'Change your page',
       status: 'draft',
       wave: 3,
     },
@@ -175,6 +178,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'org-person-role-set',
+    where: {"mode": "dock", "why": "Pick a person and a role."},
     area: 'orgapps.people',
     label: "Change someone's role in the organisation",
     does: 'Sets a person in the org to viewer, member or guide.',

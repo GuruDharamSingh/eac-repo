@@ -1,21 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SurfaceFrame, SurfaceSkeleton, useSurfaceOptional, type SurfaceAction, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
-import type { TourStop } from "@elkdonis/commerce/server";
-import { setStopExcerptAction } from "@/lib/stop-note-actions";
-import { saveRouteViaAction, saveStopsAction, saveTourAction, setTourStatusAction } from "@/lib/tour-actions";
-import { getTourSheet, listEditableTourSheet, type TourSheet } from "@/lib/office-actions";
 import { tourEditorHref } from "@/lib/office-links";
 import { TourBookingRules } from "@/components/manage/tour-booking-rules";
-import { blankDraft, fromStop, toInput, type StopDraft } from "@/components/manage/tour-builder/draft";
 import { DescriptionStep } from "./description-step";
 import { RouteStep } from "./route-step";
 import { DetailsStep } from "./details-step";
-import { blankTourDraft, draftFromTour, numOrNull, type Narratives, type TourDraft } from "./types";
-import type { Via } from "./route-edit-map";
+import { numOrNull } from "./types";
+import { useTourEditor } from "./use-tour-editor";
 
 /** The hub card's descriptor (registered as `office-create-tour` in HubSurfaces). `props.tourId` opens that tour, draft or published. */
 export function createTourDescriptor(tourId?: string, step?: 1 | 2 | 3): SurfaceDescriptor {
@@ -35,12 +29,7 @@ const STEPS: Array<[Step, string]> = [
   [2, "Route"],
   [3, "Details"],
 ];
-type LngLat = [number, number];
-
 const STEP_KEY: Record<Step, "description" | "route" | "details"> = { 1: "description", 2: "route", 3: "details" };
-
-/** What a stops save would write, for telling whether there is anything to save. */
-const stopsKey = (list: StopDraft[], lines: Narratives) => JSON.stringify(list.map((s) => [toInput(s), (lines[s.key] ?? "").trim()]));
 
 /**
  * Create or edit a tour (hub, 2026-11-19; published tours too since 2026-11-26): a wizard, Description → Route →
@@ -62,214 +51,19 @@ export function CreateTourPopup({
   /** Told which tour is open (a new one after its first save, or one picked), so a page can keep it in the address. */
   onTourId?: (id: string) => void;
 }) {
-  const router = useRouter();
   const surface = useSurfaceOptional();
   const initialId = typeof descriptor.props?.tourId === "string" ? descriptor.props.tourId : null;
-  const [tourId, setTourId] = React.useState<string | null>(initialId);
-  const [slug, setSlug] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("draft");
   // `props.step` (with a tourId) opens an existing tour on that step: the tour page's editor menu links here.
   const [step, setStep] = React.useState<Step>(() => {
     const s = descriptor.props?.step;
     return initialId && (s === 2 || s === 3) ? s : 1;
   });
-  const [draft, setDraft] = React.useState<TourDraft>(blankTourDraft);
-  const [stops, setStops] = React.useState<StopDraft[]>([]);
-  /** The stops' lines for the tour page, by StopDraft.key; `savedNarr` is what the database holds, by stop id. */
-  const [narratives, setNarratives] = React.useState<Narratives>({});
-  const [savedNarr, setSavedNarr] = React.useState<Narratives>({});
-  const [savedStops, setSavedStops] = React.useState<TourStop[]>([]);
-  const [legs, setLegs] = React.useState<LngLat[][] | null>(null);
-  const [routeSource, setRouteSource] = React.useState<"osrm" | "straight" | null>(null);
-  const [via, setVia] = React.useState<Via>({});
-  const [loading, setLoading] = React.useState(Boolean(initialId));
-  const [saving, setSaving] = React.useState(false);
-  const [savedAt, setSavedAt] = React.useState<Date | null>(null);
-  const [choices, setChoices] = React.useState<Array<{ id: string; title: string; published: boolean }>>([]);
-  /** The tour's fields and stops as last read or saved, to tell whether there is anything to save. */
-  const [savedDraft, setSavedDraft] = React.useState("");
-  const [savedStopsKey, setSavedStopsKey] = React.useState("");
-  const [rules, setRules] = React.useState<{ type: TourSheet["tour"]["tourType"]; defaults: TourSheet["bookingDefaults"] } | null>(null);
-
-  const set = React.useCallback(<K extends keyof TourDraft>(k: K, v: TourDraft[K]) => setDraft((d) => ({ ...d, [k]: v })), []);
-
-  const reload = React.useCallback(async (id: string, opts: { fields?: boolean; narratives?: boolean } = {}) => {
-    const sheet = await getTourSheet(id).catch(() => null);
-    if (!sheet) {
-      toast.error("That tour could not be opened.");
-      return null;
-    }
-    setSlug(sheet.tour.slug);
-    setStatus(sheet.tour.status);
-    if (opts.fields) {
-      const fields = draftFromTour(sheet.tour);
-      setDraft(fields);
-      setSavedDraft(JSON.stringify(fields));
-      setRules({ type: sheet.tour.tourType, defaults: sheet.bookingDefaults });
-    }
-    setSavedStops(sheet.stops);
-    setStops(sheet.stops.map((s) => fromStop(s)));
-    setSavedStopsKey(stopsKey(sheet.stops.map((s) => fromStop(s)), sheet.excerpts ?? {}));
-    setSavedNarr(sheet.excerpts ?? {});
-    if (opts.narratives !== false) setNarratives(sheet.excerpts ?? {});
-    setLegs((sheet.tour.details.route?.legs as LngLat[][] | undefined) ?? null);
-    setRouteSource(sheet.tour.details.route?.source ?? null);
-    setVia((sheet.tour.details.via as Via | null | undefined) ?? {});
-    return sheet;
-  }, []);
-
-  React.useEffect(() => {
-    if (initialId) {
-      void reload(initialId, { fields: true }).finally(() => setLoading(false));
-    } else {
-      listEditableTourSheet()
-        .then((d) => setChoices(d))
-        .catch(() => setChoices([]));
-    }
-  }, [initialId, reload]);
-
-  async function openTour(id: string) {
-    if (!id) return;
-    setLoading(true);
-    setTourId(id);
-    onTourId?.(id);
-    await reload(id, { fields: true });
-    setLoading(false);
-  }
-
-  const published = status === "published";
-  const archived = status === "archived";
-  const draftDirty = !tourId || JSON.stringify(draft) !== savedDraft;
-  const stopsDirty = stopsKey(stops, narratives) !== savedStopsKey;
-
-  /** Saves the tour's own fields; returns its id, or null when refused. */
-  async function saveTour(publish = false): Promise<string | null> {
-    // Saving would turn an archived tour back into a draft.
-    if (archived) return null;
-    if (draft.title.trim().length < 2) {
-      toast.error("Give the tour a title.");
-      return null;
-    }
-    setSaving(true);
-    const r = await saveTourAction(
-      {
-        title: draft.title,
-        excerpt: draft.excerpt,
-        body: draft.body,
-        coverImageUrl: draft.coverImageUrl,
-        price: draft.price,
-        durationMinutes: draft.durationMinutes,
-        location: draft.location,
-        meetingLat: draft.meetingLat,
-        meetingLng: draft.meetingLng,
-        highlights: draft.highlights,
-        includes: draft.includes,
-        languages: draft.languages,
-        maxParty: draft.maxParty,
-        effort: draft.effort,
-        city: draft.city,
-        status: publish || status === "published" ? "published" : "draft",
-      },
-      tourId ?? undefined
-    ).catch(() => ({ ok: false as const, error: "Could not save. Try again." }));
-    setSaving(false);
-    if (!r.ok) {
-      toast.error(r.error);
-      return null;
-    }
-    const created = !tourId;
-    setTourId(r.id);
-    setSlug(r.slug);
-    if (publish) setStatus("published");
-    setSavedAt(new Date());
-    setSavedDraft(JSON.stringify(draft));
-    if (created) {
-      onTourId?.(r.id);
-      const sheet = await getTourSheet(r.id).catch(() => null);
-      if (sheet) setRules({ type: sheet.tour.tourType, defaults: sheet.bookingDefaults });
-    }
-    return r.id;
-  }
-
-  async function saveStops(): Promise<boolean> {
-    if (!tourId) return false;
-    const bad = stops.findIndex((s) => !s.title.trim());
-    if (bad >= 0) {
-      toast.error(`Stop ${bad + 1} needs a name.`);
-      return false;
-    }
-    setSaving(true);
-    const r = await saveStopsAction(tourId, stops.map(toInput)).catch(() => ({ ok: false as const, error: "Could not save the stops." }));
-    if (!r.ok) {
-      setSaving(false);
-      toast.error(r.error);
-      return false;
-    }
-    // The list was saved in this order and existing stops keep their ids, so the reloaded rows line up by position.
-    // Lines are written by setStopExcerptAction (saveStopsAction leaves the column alone), only where they changed.
-    const order = stops.map((s) => ({ key: s.key, text: (narratives[s.key] ?? "").trim() }));
-    const before = savedNarr;
-    const sheet = await reload(tourId, { narratives: false });
-    if (sheet && sheet.stops.length === order.length) {
-      const next: Narratives = {};
-      /** What the database holds afterwards, by stop id: a line that failed to write keeps its old text. */
-      const stored: Narratives = {};
-      let failed = 0;
-      for (let i = 0; i < order.length; i++) {
-        const id = sheet.stops[i]!.id;
-        const { key, text } = order[i]!;
-        next[id] = text;
-        stored[id] = text;
-        if (text === (before[key] ?? "").trim()) continue;
-        const w = await setStopExcerptAction(id, text || null).catch(() => ({ ok: false as const, error: "" }));
-        if (!w.ok) {
-          failed++;
-          next[id] = text; // kept in the box; still differs from savedNarr, so the next save retries
-          stored[id] = before[key] ?? "";
-          setSavedNarr((m) => ({ ...m, [id]: before[key] ?? "" }));
-        } else {
-          // The server normalises the line (plain text, whitespace collapsed): keep its form so it is not re-sent.
-          next[id] = w.excerpt ?? "";
-          stored[id] = next[id]!;
-          setSavedNarr((m) => ({ ...m, [id]: w.excerpt ?? "" }));
-        }
-      }
-      setNarratives(next);
-      setSavedStopsKey(stopsKey(sheet.stops.map((s) => fromStop(s)), stored));
-      if (failed) toast.error(`${failed} stop line${failed === 1 ? "" : "s"} could not be saved. Save the stops again.`);
-    } else if (sheet) {
-      setNarratives(sheet.excerpts ?? {});
-      toast.error("The stops changed while saving; check their lines.");
-    } else {
-      // Stops saved but could not be read back: keep the typed lines (still keyed as before) for the next save.
-      toast.error("The stops were saved, but their lines were not. Save the stops again.");
-    }
-    setSaving(false);
-    setSavedAt(new Date());
-    router.refresh();
-    return true;
-  }
-
-  /** Save the dragged path's bends; the server reroutes through them. */
-  async function changeVia(next: Via) {
-    if (!tourId) return;
-    setVia(next);
-    setSaving(true);
-    const r = await saveRouteViaAction(tourId, next).catch(() => ({ ok: false as const, error: "Could not save the path." }));
-    setSaving(false);
-    if (!r.ok) return void toast.error(r.error);
-    setLegs((r.route?.legs as LngLat[][] | undefined) ?? null);
-    setRouteSource(r.route?.source ?? null);
-    setSavedAt(new Date());
-  }
-
-  /** Stop 1 is the meeting point: seeded from it when a draft's route is still empty (never added to a live tour). */
-  function seedFirstStop() {
-    const lat = numOrNull(draft.meetingLat);
-    const lng = numOrNull(draft.meetingLng);
-    if (published || stops.length > 0 || lat == null || lng == null) return;
-    setStops([{ ...blankDraft(), title: draft.location || "Meeting point", lat: String(lat), lng: String(lng), placeId: draft.meetingPlaceId }]);
-  }
+  const ed = useTourEditor({ initialId, onTourId });
+  const {
+    tourId, slug, published, archived, loading, saving, savedAt, choices, rules,
+    draft, set, draftDirty, stops, setStops, savedStops, stopsDirty, narratives, setNarratives, savedNarr,
+    legs, routeSource, via, openTour, saveTour, saveStops, changeVia, seedFirstStop, publish, unpublish,
+  } = ed;
 
   async function go(to: Step) {
     if (to === step) return;
@@ -287,23 +81,6 @@ export function CreateTourPopup({
     if (to >= 2 && !id) return;
     if (to === 2) seedFirstStop();
     setStep(to);
-  }
-
-  async function publish() {
-    if (!(await saveTour(true))) return;
-    toast.success("Published. It appears on the Tours page once it has dates.");
-    router.refresh();
-  }
-
-  async function unpublish() {
-    if (!tourId || !window.confirm("Take this tour off the site? It becomes a draft; its dates and bookings are kept.")) return;
-    setSaving(true);
-    const r = await setTourStatusAction(tourId, "draft").catch(() => ({ ok: false as const, error: "Could not unpublish." }));
-    setSaving(false);
-    if (!r.ok) return void toast.error(r.error);
-    setStatus("draft");
-    toast.success("Unpublished. It is a draft again.");
-    router.refresh();
   }
 
   if (loading) {
@@ -325,6 +102,7 @@ export function CreateTourPopup({
   const canRoute = Boolean(tourId) || (draft.title.trim().length >= 2 && draft.meetingLat !== "");
   const actions: SurfaceAction[] = [];
   if (!page && tourId) actions.push({ label: "Open as page", quiet: true, href: tourEditorHref(tourId, STEP_KEY[step]) });
+  if (tourId) actions.push({ label: "Open the suite", quiet: true, href: `/hub/tours/suite?tour=${encodeURIComponent(tourId)}` });
   if (published) actions.push({ label: "View", quiet: true, href: `/tours/${slug}` });
   if (published) actions.push({ label: "Unpublish", quiet: true, disabled: saving, onClick: unpublish });
   if (step > 1) actions.push({ label: "Back", quiet: true, onClick: () => go((step - 1) as Step) });

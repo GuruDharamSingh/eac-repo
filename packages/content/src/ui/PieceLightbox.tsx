@@ -160,7 +160,13 @@ export function PieceLightbox({ item, timeZone, onClose, primary, railSlot, acti
           ) : null}
           <h4 className="chn-kicker">Coverage</h4>
           <OutletMarks marks={item.marks} />
-          <Timeline events={item.timeline} identities={[]} timeZone={timeZone} limit={4} />
+          {item.hidden ? (
+            <p className="eac-c-hiddenline">
+              <strong>Hidden from the site</strong>
+            </p>
+          ) : (
+            <Timeline events={item.timeline} identities={[]} timeZone={timeZone} limit={4} />
+          )}
           <div className="chn-actions">
             {primary &&
               (primary.href ? (
@@ -174,7 +180,8 @@ export function PieceLightbox({ item, timeZone, onClose, primary, railSlot, acti
               ))}
             {actions?.map((a) => <ActionButton key={a.label} action={a} />)}
             {railSlot}
-            {item.links.studio && (
+            {/* Owner tool: only when the server says this viewer may edit it (item.can.edit), never to a stranger. */}
+            {item.can?.edit && item.links.studio && (
               <a className="chn-btn" href={item.links.studio}>
                 Open in Studio
               </a>

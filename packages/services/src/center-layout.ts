@@ -32,6 +32,8 @@ export const CENTER_SECTION_IDS = [
   'feed',
   'featured',
   'network',
+  // Content Cornerstone Step 6: the content library. Not in DEFAULT_CENTER_LAYOUT; an app opts in.
+  'content',
 ] as const;
 export type CenterSectionId = (typeof CENTER_SECTION_IDS)[number];
 

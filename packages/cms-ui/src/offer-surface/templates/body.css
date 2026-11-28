@@ -1,0 +1,115 @@
+/*
+ * The block editor's body, drawn inside the offer-page templates (lane R, 2026-11-27).
+ *
+ * Scope: ".ost-body", put by <OstBody> (body.tsx) on every reading template's body container, beside the
+ * template's own class (".ost-essay-body", ".ost-feature-cols", ...). The template still sets the body
+ * text face, size and colour on its direct children; this file draws everything the Studio editor can emit
+ * (packages/utils/src/essay-render.ts): lists, quotes, code, rules, marks, figures (.eac-image), pull
+ * quotes (.eac-pull), asides, dividers, thread cards, picture-with-text and galleries. It styles the
+ * `eac-*` classes ONLY under .ost-body, never globally (the article reader keeps its own, article/essay.css).
+ *
+ * Uses --os-* tokens and the --f* font variables only. Width: a figure never exceeds its column (the page
+ * has no breakout), so a "wide" or "full" block is simply column width. Narrow columns (phone, the 380px note
+ * column, the half-width columns of feature and gazette) stack picture-with-text and wrap gallery rows; this uses media
+ * queries and column classes, not container queries (a container inside the templates' CSS zoom froze Chrome).
+ */
+.ost-body { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.ost-body img, .ost-body video, .ost-body iframe, .ost-body svg, .ost-body table { max-width: 100%; }
+.ost-body img { height: auto; }
+.ost-body table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 0.92em; }
+.ost-body th, .ost-body td { border: 1px solid var(--os-line-soft); padding: 4px 8px; text-align: left; }
+.ost-body iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; }
+
+/* Headings inside a section */
+.ost-body h2, .ost-body h3, .ost-body h4 { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 1.15; color: var(--os-ink-bone); text-wrap: balance; }
+.ost-body h2 { font-size: calc(1.45em * var(--fhx)); margin-top: 1.4em; }
+.ost-body h3 { font-size: calc(1.2em * var(--fhx)); margin-top: 1.2em; }
+.ost-body h4 { font-size: calc(1.05em * var(--fhx)); margin-top: 1em; }
+
+/* Marks */
+.ost-body strong, .ost-body b { color: var(--os-ink-bone); font-weight: 600; }
+.ost-body em, .ost-body i { font-style: italic; }
+.ost-body u { text-decoration: underline; text-decoration-color: var(--os-line-strong); text-underline-offset: 3px; }
+.ost-body s, .ost-body del, .ost-body strike { text-decoration-color: var(--os-ink-faint); opacity: 0.85; }
+.ost-body code { font-family: var(--os-mono); font-size: 0.86em; background: var(--os-surface); border: 1px solid var(--os-line-soft); padding: 0.05em 0.35em; color: var(--os-ink-bone); }
+.ost-body mark { background: color-mix(in srgb, var(--os-bronze) 28%, transparent); color: var(--os-ink-bone); padding: 0 0.15em; }
+.ost-body a { color: var(--os-bronze); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--os-bronze) 45%, transparent); text-underline-offset: 3px; }
+.ost-body a:hover { text-decoration-color: var(--os-bronze); }
+.ost-body sub, .ost-body sup { font-size: 0.72em; }
+
+/* Lists */
+.ost-body ul, .ost-body ol { padding-left: 1.3em; }
+.ost-body ul { list-style: none; }
+.ost-body ul > li { position: relative; }
+.ost-body ul > li::before { content: ""; position: absolute; left: -1em; top: 0.68em; width: 5px; height: 5px; background: var(--os-bronze); border-radius: 50%; }
+.ost-body ol > li::marker { font-family: var(--os-mono); font-size: 0.82em; color: var(--os-bronze); }
+.ost-body li { margin: 0 0 0.35em; padding-left: 0.2em; }
+.ost-body li > p { margin: 0; font-size: inherit; }
+.ost-body li > p + p { margin-top: 0.4em; }
+
+/* Quote, code, rules */
+.ost-body blockquote { margin-inline: 0; padding: 0.1em 0 0.1em 1em; border-left: 2px solid var(--os-bronze); font-family: var(--fq); font-style: var(--fqi); color: var(--os-ink-2); }
+.ost-body blockquote > p { margin: 0 0 0.5em; font-family: inherit; font-size: inherit; color: inherit; }
+.ost-body blockquote > :last-child { margin-bottom: 0; }
+.ost-body pre { margin-inline: 0; padding: 10px 12px; background: var(--os-surface); border: 1px solid var(--os-line-soft); overflow-x: auto; font-size: 12px; line-height: 1.55; white-space: pre; overflow-wrap: normal; max-width: 100%; }
+.ost-body pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+.ost-body hr { border: 0; height: 1px; background: var(--os-line-soft); margin: 1.3em 0; }
+.ost-body hr.eac-divider--rule { background: var(--os-line-strong); }
+.ost-body hr.eac-divider--space { background: none; height: 1.4em; }
+.ost-body hr.eac-divider--ornament { background: none; height: auto; text-align: center; margin: 1.2em 0; }
+.ost-body hr.eac-divider--ornament::before { content: "· · ·"; letter-spacing: 0.6em; color: var(--os-bronze); font-size: 1.1em; }
+
+/* Pull quote (one beyond the lifted first) and aside */
+.ost-body .eac-pull { margin: 0.6em 0; padding: 0.5em 0.6em; border: 0; text-align: center; font-family: var(--fq); font-style: var(--fqi); font-size: 1.45em; line-height: 1.3; color: var(--os-ink-bone); break-inside: avoid; }
+.ost-body .eac-pull > p { font-size: inherit; line-height: inherit; color: inherit; font-family: inherit; margin: 0; }
+.ost-body .eac-pull cite { display: block; margin-top: 0.6em; font: 500 9.5px var(--os-mono); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: var(--os-ink-faint); }
+.ost-body .eac-aside { padding: 9px 12px; background: var(--os-surface); border-top: 2px solid var(--os-bronze); font-size: 0.9em; line-height: 1.5; color: var(--os-ink-muted); break-inside: avoid; }
+.ost-body .eac-aside > p { margin: 0; font-size: inherit; color: inherit; }
+
+/* Pictures */
+.ost-body figure { margin: 0.4em 0; max-width: 100%; }
+.ost-body .eac-image { break-inside: avoid; }
+.ost-body .eac-image img, .ost-body .eac-figtext img, .ost-body .eac-gallery__item img { display: block; width: 100%; height: auto; border: 1px solid var(--os-line-soft); }
+.ost-body figcaption { margin-top: 6px; font: 500 9.5px/1.5 var(--os-mono); letter-spacing: 0.06em; color: var(--os-ink-faint); text-transform: none; }
+
+/* picture with text: side by side while the column allows, stacked below 460px */
+.ost-body .eac-figtext { display: grid; grid-template-columns: var(--share, 45%) minmax(0, 1fr); gap: 14px; align-items: start; break-inside: avoid; }
+.ost-body .eac-figtext--right { grid-template-columns: minmax(0, 1fr) var(--share, 45%); }
+.ost-body .eac-figtext--right img { order: 2; }
+.ost-body .eac-figtext__text { min-width: 0; }
+.ost-body .eac-figtext__text > p { margin: 0; font-size: 0.95em; font-family: inherit; color: inherit; }
+.ost-body .eac-figtext figcaption { grid-column: 1 / -1; order: 3; margin-top: 0; }
+@media (max-width: 639px) {
+  .ost-body .eac-figtext, .ost-body .eac-figtext--right { grid-template-columns: minmax(0, 1fr); }
+  .ost-body .eac-figtext--right img { order: 0; }
+}
+.ost-note-text.ost-body .eac-figtext, .ost-feature-cols.ost-body .eac-figtext, .ost-gaz-cols.ost-body .eac-figtext { grid-template-columns: minmax(0, 1fr); }
+.ost-note-text.ost-body .eac-figtext--right img, .ost-feature-cols.ost-body .eac-figtext--right img, .ost-gaz-cols.ost-body .eac-figtext--right img { order: 0; }
+
+/* gallery: rows share a height by aspect ratio; two to a row on a narrow column */
+.ost-body .eac-gallery { display: flex; flex-direction: column; gap: 6px; }
+.ost-body .eac-gallery__row { display: flex; gap: 6px; min-width: 0; }
+.ost-body .eac-gallery__item { margin: 0; min-width: 0; }
+@media (max-width: 639px) {
+  .ost-body .eac-gallery__row { flex-wrap: wrap; }
+  .ost-body .eac-gallery__item { flex: 1 1 45% !important; }
+}
+.ost-note-text.ost-body .eac-gallery__row, .ost-gaz-cols.ost-body .eac-gallery__row { flex-wrap: wrap; }
+.ost-note-text.ost-body .eac-gallery__item, .ost-gaz-cols.ost-body .eac-gallery__item { flex: 1 1 45% !important; }
+
+/* Thread card: a small card (kind, title, when). Live only when <OstBody> found its piece. */
+.ost-body .eac-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0.5em 0; padding: 9px 11px; background: var(--os-card); border: 1px solid var(--os-line-dotted); border-top: 2px solid var(--os-bronze); break-inside: avoid; text-align: left; font-family: var(--fb); font-size: 13px; line-height: 1.3; cursor: default; }
+.ost-body .eac-card:has(.eac-card__cover) { grid-template-columns: 64px minmax(0, 1fr); align-items: center; }
+.ost-body .eac-card .eac-card__cover { width: 64px; height: 48px; object-fit: cover; border: 1px solid var(--os-line-soft); }
+.ost-body .eac-card figcaption { display: grid; gap: 2px; margin: 0; min-width: 0; font: inherit; letter-spacing: 0; color: inherit; }
+.ost-body .eac-card__kind { font: 500 8.5px/1.4 var(--os-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--os-bronze); }
+.ost-body .eac-card__title { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); font-size: calc(15px * var(--fhx)); line-height: 1.15; color: var(--os-ink-bone); }
+.ost-body .eac-card__title a { color: inherit; text-decoration: none; }
+.ost-body .eac-card__meta { font: 500 9.5px var(--os-mono); letter-spacing: 0.04em; color: var(--os-ink-faint); }
+.ost-body .eac-card__price { font: 500 10.5px var(--os-mono); color: var(--os-bronze); }
+.ost-body .eac-card__price--nfs { color: var(--os-ink-faint); }
+.ost-body .eac-card--compact { padding: 6px 9px; }
+.ost-body .eac-card--compact .eac-card__cover { width: 40px; height: 40px; }
+.ost-body .eac-card[data-live] { cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
+.ost-body .eac-card[data-live]:hover { border-color: var(--os-bronze); transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .ost-body .eac-card[data-live]:hover { transform: none; } }

@@ -81,6 +81,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-upload-forum-media',
+    where: {"mode": "dock", "why": "One picture or film added to a topic."},
     area: 'elktours.hub-api',
     label: 'Add a photo or video to a forum post',
     does: 'A follower or member adds a photo (15 MB) or video (100 MB) to a topic, reply or feed post. Photos have their location data removed. Followers-only and author-only posts are stored privately. Limited to 20 uploads per 10 minutes per person.',

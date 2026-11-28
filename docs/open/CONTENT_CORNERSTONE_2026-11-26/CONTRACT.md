@@ -271,3 +271,76 @@ Justin: people can network-search public content beyond what they published. As 
    - A stored image URL is shown only while its piece resolves.
 8. **Credit travels into text-only outlets.** When a post that carries a reference goes to an outlet with no link field (an Instagram or Facebook caption), the composer appends the credit line to the caption: "Photo: <owner> · <site>", plus the link where the outlet allows one. The poster can edit the wording but cannot remove the credit.
    - The default wording is the market's proposal, "Photo: owner · site · see the piece ↗" and "By owner · site · Read it there ↗", until Justin settles it.
+
+## 13. v1.2 fixes from the Step 3 signed-in check (2026-11-26)
+
+- **§10.2, amended.** An item's owner also gets `hidden: true` on their own hidden pieces. The `mine` scope, and the `person` scope for the owner, include them so the owner sees "Hidden from the site". Everyone else still never sees hidden rows.
+- **`missing` is for real failed or absent reads only.** By-design gaps move to `ContentSearchResult.notes?: string[]`, which the UI does not show.
+- **Facets apply the query's hard filters** (types, storeIds, saleStates, statuses, seriesId, q), so every facet count sits inside the selection.
+- **Store names never show a raw id.** The fallback chain is the display name, then the store name or slug, then the owner's public name, then "Store".
+- **Query-string name:** `includeHidden` is sent as `hidden=1` (`query-string.ts`).
+
+## 14. Files are not network-discoverable (2026-11-26, PM, from Justin's s11 rule)
+
+- Published content is what the network searches. An image is reusable because it belongs to a published piece (`images` on that item), not because a file sits outside `Private/` in a cloud folder. Reachable by URL is not discoverable.
+- `store='file'` rows never appear in the `network` scope, nor in the `person` scope for anyone but the owner, whatever their visibility.
+- Files are searchable by their owner (`mine`, and `person` for the owner), by affiliates of the file's org in the `org` scope (public and private files of that org), by site keepers in the `site` scope for the site's orgs, and by admins. Workshop files: managers of the org.
+- `can.pick` on a file: the owner and the org's affiliates only. The personal-file sharing rule of s4 (people sharing an org with the owner) is dropped.
+- Implemented in `contentReadSql` (`access.ts`), checked by `check-files.mts`.
+
+## 15. v1.3: directory identities are a store (2026-11-26, ArtDirect session; approved by the PM with conditions)
+
+The directory and the library are one search. Additive throughout; `published`, `files` and `all` return what they did.
+
+1. **Store `person`** (migration 298), key `person:<identityId>`. One row per public identity: a `users` row with a slug and `directory_listed`, either `entity_type`. A pseudonym is its own row. The row's owner, org and site columns stay NULL; `identity_control` and email are never read. An identity that stops being listed loses its row (indexer and hydration both re-check). The CHECK also allows `org` for a later org indexer; no org rows exist yet.
+2. **Index columns** (nullable, identity rows only): `place_city`, `place_region`, `place_country`, `entity_type`, `verified`, `rank_key` (verified first, then vouches, then name).
+3. **Freshness:** queue triggers on `users` (insert, delete, and updates of the directory columns only) and `profile_vouches`. `indexPerson`, the drain, `reindexAll` (`--stores=person`) and `reconcileContentIndex` (`person` drift, present once 298 is applied) in `services/content-index.ts`.
+4. **Types** (model.ts): `ContentStore` and `ContentType` gain `"person"`, `ContentView` gains `"people"`, `ContentListItem.person?: ContentPerson` (slug, entityType, headline, city, region, country, location, verified, vouches, claimStatus). `parseContentKey` and `resolveContentRefs` (KEY_RE) do not accept person keys yet.
+5. **Rights:** `contentReadSql` never admits identity rows unless `opts.people` is set, and then by its own clause only: published, PUBLIC, not hidden, the same for every viewer (no owner, keeper or admin widening). Facets use the same predicate. `can` on a person item is `pick` for signed-in viewers, nothing else.
+6. **Search:** `view: "people"` reads store person. Sort `"listed"` (rank_key; default in that view without q; elsewhere it reads as `"recent"`). Query filters `city`, `region`, `country`, `entityTypes`, `verified`, applied in the people view only. `facets.people` (entityTypes, regions, countries, cities with counts, plus a verified count) in the people view only; each dimension is counted under every filter except its own. Stores and sale facets are empty there.
+7. **Host:** `urls.person?({ id, slug, entityType })`; a host without it gets `links.public = null`.
+8. **Not changed:** `suggestContent`'s people query (moving it onto the index is a later change), the routes' `view` parser (`query-string.ts` VIEWS), MCP `content.search`.
+
+## 16. One row per real entity: orgs and their profile users (PM ruling, 2026-11-26 ~23:50)
+
+The link is `organizations.profile_user_id → users.id` (migration 099). On 2026-11-26, 16 of the 46 org-type directory profiles had an organizations row behind them. The other 30 are directory-only (places, venues, groups with no org site).
+
+- **One row per real entity.** An org with an `organizations` row is indexed once, as `org:<orgId>`. Its profile user gets **no** `person` row: the person indexer skips users that are any org's `profile_user_id`. Directory-only org profiles (no organizations row) stay `person` rows, as today.
+- **The directory reads both stores.** The `people` view spans `person` and `org` rows, with `entity_type` as a facet, so ArtDirect keeps all 73 profiles in one list.
+- **Aliases resolve.** `resolveContentRefs` and the `person:` scope treat `person:<profile_user_id>` as an alias of `org:<orgId>`. Old keys stored in blocks or threads (e.g. an org posting as its identity) therefore still resolve, and a `person:<profile_user_id>` scope means that org's work.
+- **Suggest de-duplicates** on the same rule: an org appears once, under Orgs.
+- **Order:** this lands together with the org indexer, in one copy-in, after its migration (if any) is applied alone. Until then, today's 16 person rows stay as they are. No change is needed now.
+- **The directory card must survive (ArtDirect dependency).** ArtDirect's directory (`apps/artdirect/src/app/page.tsx`, `toDossier`) draws only items that carry `item.person`, and links to `/<slug>` of the profile user. In the people view, an `org` row whose org has a `profile_user_id` must hydrate `person` from that profile user: slug, `entityType: 'organization'`, headline, place, verified, vouches, claimStatus. Its `links.public` comes from `host.urls.person(slug)`. **Acceptance:** a check-search G test where the people view still pages exactly the slugs of the listed identities (73 on 2026-11-26), so no org card drops off the directory.
+
+> **§16 is ON HOLD (2026-11-26 ~23:59).** Justin, relayed by the ArtDirect session: *"theres artist, organizations (just the org-user stewarded thing) then associated business which include places or business beyond the collective also being stewarded … that we list the org-user not the org itself… paid work would be the other part of this. and if we include that it should include ability to carry with it the booking/payout mechanism"*.
+> That points the other way: the **org-user** (a `users` row that is an `organizations.profile_user_id`, 16 on the live DB) is what gets listed, as a `person`-store row with `entity_type 'organization'`, and the org itself is not a separate listed row. Three kinds of listing: artists (27), org-users (16), associated businesses and places (30, entity_type 'organization' with no organizations row).
+> The likely revision once he confirms: no listed `org` store; `org:<orgId>` stays a **scope** (an org's pieces) and resolves to its org-user's `person:` row for display; suggest's Orgs group shows org-users. Paid-work rows must carry their booking and payout references (offer → booking/checkout) so a listing can be acted on. Do not build an org indexer until this is settled.
+
+## 16 (revised; supersedes the §16 text above). Orgs are listed through their org-users (Justin: "Yes, list org-users", 2026-11-27)
+
+- **No listed `org` store.** The directory lists **identities**, in three kinds Justin named:
+  - **artists:** 27 on 2026-11-27
+  - **organizations:** org-users, i.e. `users` rows that are some `organizations.profile_user_id`; 16
+  - **associated businesses and places:** `entity_type 'organization'` with no organizations row, stewarded beyond the collective; 30
+
+  All three stay `person`-store rows, exactly as today. The 73 rows and ArtDirect's cards (`toDossier`, `/<slug>`) are unchanged.
+- **Kind facet.** `listing_kind` = `artist` | `organization` | `associated`, derived at index time:
+  - `organization` when EXISTS an `organizations.profile_user_id = users.id`
+  - `associated` when `entity_type = 'organization'` without one
+  - `artist` otherwise
+
+  It is a people-view facet only.
+- **`org:<orgId>` stays a scope** (an org's pieces: threads, artwork, its files for affiliates). For display, an org shows as its org-user's `person:` row: name, avatar, slug, link. `resolveContentRefs` maps `org:<orgId>` to that person row where one exists.
+- **Suggest's Orgs group** lists org-users (and may list associated businesses under their own heading). Each org appears once.
+- **Paid work** (time offers are threads; objects are artwork) carries its **booking and payout references** in the index and on the hydrated item: the offer id, booking mode (rsvp, booked, paid) and checkout or booking link, so a listing found in search can be booked or bought through the existing booking and checkout mechanism. It never computes money itself.
+- **Order:** the `listing_kind` column (if stored) is one migration applied alone, plus a reindex of person rows. The paid-work fields follow EXTENDING.md §1 (thread kinds plus offer columns).
+
+## 17. v1.4: paid work and checkout through the library (2026-11-27, ArtDirect session's team; approved by the PM with conditions)
+
+Justin: "can we not put the stripe pay button on the ad its self … org agnostic as long as its through the library/search? essentially going through the non-org org oad … funds divied to orgs if in agreements with user about sale".
+
+1. **Offers view.** `searchContent` `view: "offers"`, filters `offerKinds` (event | service | series | artwork | workshop; meetings count as event), `priced`, `upcoming`; `facets.offers` in that view only; `item.offer` = { kind, price, sliding, takeUp, checkout, when, capacity } (`model.ts` ContentOffer / ContentTakeUp; the takeUp strings equal cms-ui `offer-surface/types.ts`). Threads now carry `price_minor` / `currency` (workshop_pages.price_member first, then threads.price). Published, files, all and people return what they did (check-search part H).
+2. **Services** are type `service`; `contentReadSql` hides them unless `opts.offers`. Service rows are written only when `CONTENT_INDEX_SERVICES=1` (off on 2026-11-27): apps built before v1.4 do not hide them.
+3. **Checkout.** `contentRoutes(host, { payments, limiter })` adds `checkout` (POST /api/content/checkout, body `CheckoutRequest`) and `checkoutReturn` (GET /api/content/checkout/return) only when `payments` is passed. `server/checkout.ts` is a thin adapter: commerce `createThreadOrder({ orgId: 'oad', networkSale: true })` for threads (settlement and the order line use the thread's own org; metadata records `sellerOrgId`), the market's `createOrder` for artwork (hand-off to the market page for shipping or more than one variant), and the injected Stripe functions from `@elkdonis/checkout/stripe` with an idempotency key `order-<id>`.
+4. **Guards.** The price is the server's; a client amount only within a stored sliding range. `returnTo` and the success URL come only from a verified host (site domain, `org_domains`, `<org slug>.<network host>`), else 400. POST requires `application/json` and an Origin, when present, must be a verified host (403). Rate limits 10/10 min per IP (last X-Forwarded-For entry) and 5/10 min per email; a host passes `redisRateLimiter(client)`.
+5. **Enabling** on any app needs Justin's go for that app, and waits on his call about order visibility: network-sold orders appear in the thread org's `listOrdersForOrg`, but sellers and managers cannot refund thread orders (no `store_id`; admin refund works), and no booking row is created, so `/hub/bookings` and ArtDirect `/bookings` do not list a network-sold service.

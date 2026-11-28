@@ -51,6 +51,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-hero-lead-set',
+    where: {"mode": "dock", "why": "Pick a tour, choose film, map or photos."},
     area: 'elktours.tours',
     label: 'Choose what guests see first on a tour',
     does: "Sets which hero a tour page opens with (film, 3D map or photos), or clears the choice.",
@@ -113,6 +114,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-tour-layout-publish',
+    where: {"mode": "place", "why": "Arranging blocks on a page.", "deep": "/studio/tour-detail"},
     area: 'elktours.tours',
     label: 'Publish the tour page layout',
     does: 'Saves the shared layout (Puck blocks) of every tour page for the site (site_config puck:tour-detail). Unknown blocks are dropped before the write.',

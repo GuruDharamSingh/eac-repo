@@ -7,7 +7,7 @@ import "@elkdonis/content/content.css";
 import "@elkdonis/content/summary.css";
 import { siteBuilderServer } from "@elkdonis/hub/server/site-builder";
 import { hubSite, getHubCardViewer } from "@/lib/hub-site";
-import { SiteBuilderCardMount } from "@/components/hub/hub-card-host";
+import { SiteBuilderCardMount, ChannelCardMount } from "@/components/hub/hub-card-host";
 import { cookies } from "next/headers";
 import {
   getOrgChatIdentity,
@@ -44,7 +44,6 @@ import { getForumSnapshot } from "@/lib/forum";
 import { getAllThreadsForOrg } from "@/lib/data";
 import { hubSeriesCards } from "@/lib/public-site";
 import { EmailFace } from "@/components/hub/EmailFace";
-import { ChannelFace } from "@/components/hub/ChannelFace";
 import { loadHubChannel } from "@/lib/hub-channel";
 // Lifted into the shared package when IFAC wanted the same canvas.
 import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
@@ -220,7 +219,7 @@ export default async function HubPage() {
         <SurfaceCardGrid className="hub-band-grid">
           {viewer.canEdit && <ComposeFace />}
 
-          {channelData && <ChannelFace data={channelData} />}
+          {channelData && <ChannelCardMount data={channelData} />}
 
           {/* The face IS the form: type it, press Enter. Opening the tile
               goes to the ideas feed, where they are discussed. */}

@@ -99,6 +99,7 @@ export async function OrgDefaultPage({
               <a href={designHref} className="underline underline-offset-4">Design this page →</a>
               <a href={designHref.replace(/\/design$/, "/classifieds")} className="underline underline-offset-4">Make a classifieds page →</a>
               <a href={designHref.replace(/\/design$/, "/cards")} className="underline underline-offset-4">Design the feed cards →</a>
+              <a href={designHref.replace(/\/design$/, "/look")} className="underline underline-offset-4">Choose the page look →</a>
             </p>
           </aside>
         )}

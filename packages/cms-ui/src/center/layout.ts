@@ -17,7 +17,8 @@ export type CenterSectionId =
   | "pinned"
   | "feed"
   | "featured"
-  | "network";
+  | "network"
+  | "content";
 
 export interface CenterLayout {
   columns: { left: CenterSectionId[]; right: CenterSectionId[] };

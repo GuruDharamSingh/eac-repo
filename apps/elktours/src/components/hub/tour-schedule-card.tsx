@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSurfaceOptional, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
+import { CalendarSync, type CalendarSyncProps } from "@/components/hub/calendar-sync";
 import { createTourDescriptor } from "@/components/office/create-tour/create-tour-popup";
 import { tourEditorHref } from "@/lib/office-links";
 
@@ -27,7 +28,7 @@ type Filter = "all" | "published" | "drafts";
  * Each is still a link to the editor page (/hub/tours/edit), so opening it in a
  * new tab works.
  */
-export function TourScheduleCard({ tours }: { tours: ScheduleCardTour[] }) {
+export function TourScheduleCard({ tours, calendar }: { tours: ScheduleCardTour[]; /** Null while the server has no Google set-up. */ calendar?: CalendarSyncProps | null }) {
   const drafts = tours.filter((t) => t.status !== "published").length;
   const [filter, setFilter] = React.useState<Filter>("all");
   const surface = useSurfaceOptional();
@@ -87,6 +88,8 @@ export function TourScheduleCard({ tours }: { tours: ScheduleCardTour[] }) {
           ))}
         </ul>
       )}
+
+      {calendar ? <CalendarSync {...calendar} /> : null}
 
       <span className="eac-hp-card-meta el-schedule-foot">
         <a href="/manage/schedule">Plan dates in the schedule</a>

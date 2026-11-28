@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAfterSave } from "@/lib/popup-refresh";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ type Result = { ok: boolean; error?: string };
 
 function useRun() {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [pending, setPending] = React.useState(false);
   const run = async (fn: () => Promise<Result>, success: string) => {
     setPending(true);
@@ -18,7 +20,7 @@ function useRun() {
       const r = await fn();
       if (r.ok) {
         toast.success(success);
-        router.refresh();
+        afterSave();
       } else toast.error(r.error ?? "Something went wrong.");
       return r.ok;
     } finally {

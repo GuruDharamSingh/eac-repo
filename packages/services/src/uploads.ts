@@ -16,6 +16,7 @@ import { nanoid } from 'nanoid';
 import { db } from '@elkdonis/db';
 import { validateUploadBuffer, type SniffedKind } from '@elkdonis/utils';
 import { davMkcol, davPut } from './dav';
+import { indexFilePath } from './content-index';
 import { getProxyFileUrl, uploadFilename } from './nextcloud';
 import { orgStorageRoot, resolveOrgPath } from './org-storage';
 import { createUserFolder, getStorageSlug, resolveUserPath, userStorageRoot } from './user-storage';
@@ -199,6 +200,10 @@ export async function registerLibraryItem(item: LibraryItem): Promise<string | n
     // read to the person as a failed upload.
     console.error('[uploads] library row not recorded:', (error as Error).message);
     return null;
+  } finally {
+    // Content library (Step 5): the stored file also joins the search index (content_index, store 'file').
+    // Never throws and never reads the bytes: a listing finds the file id.
+    await indexFilePath(item.path);
   }
 }
 

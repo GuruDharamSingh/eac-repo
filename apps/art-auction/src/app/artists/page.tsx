@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { OpenFrame } from "../center/_components/surfaces";
+import { artistFrame } from "../center/_components/descriptors";
 import type { Metadata } from "next";
 import { listStores } from "@elkdonis/commerce/queries";
 
@@ -29,9 +30,9 @@ export default async function ArtistsPage() {
         <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {artists.map((a) => (
             <li key={a.id}>
-              <Link
-                href={`/artists/${a.slug}`}
-                className="group flex items-center gap-4"
+              <OpenFrame
+                frame={artistFrame(a.slug ?? a.id, a.displayName)}
+                className="group flex w-full items-center gap-4 text-left"
               >
                 <span className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted">
                   {a.photoUrl && (
@@ -51,7 +52,7 @@ export default async function ArtistsPage() {
                     <span className="text-sm text-muted-foreground">{a.city}</span>
                   )}
                 </span>
-              </Link>
+              </OpenFrame>
             </li>
           ))}
         </ul>

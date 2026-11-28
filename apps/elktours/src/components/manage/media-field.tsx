@@ -19,6 +19,8 @@ interface MediaFieldProps {
   destination?: MediaDestination;
   /** Which files to offer. Default pictures. */
   accept?: string;
+  /** "large": the chosen picture fills the field's width with Change and Remove on it (a tour's cover). Default a thumbnail. */
+  preview?: "thumb" | "large";
 }
 
 const SRC = "/api/media/sources";
@@ -41,8 +43,9 @@ function sourcesFor(dest: MediaDestination | undefined): MediaLibrarySource[] {
  * destination's folder. A pick from elsewhere is copied in by /api/media/attach (2026-11-26); the field stores the
  * URL it answers with, as before.
  */
-export function MediaField({ value, onChange, label = "Image", hint, destination, accept = "image/*" }: MediaFieldProps) {
-  const [open, setOpen] = React.useState(!value);
+export function MediaField({ value, onChange, label = "Image", hint, destination, accept = "image/*", preview = "thumb" }: MediaFieldProps) {
+  // Closed until asked for: an empty field shows "Choose a picture", not the whole library (take A, 2026-11-26).
+  const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   // Keyed by the destination's content, not its identity: callers pass a fresh object on every render, and a new
   // sources list would make the library fetch again.
@@ -80,9 +83,26 @@ export function MediaField({ value, onChange, label = "Image", hint, destination
 
   return (
     <div className="space-y-2">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="block text-sm font-medium">{label}</span>
 
-      {value ? (
+      {value && preview === "large" ? (
+        <figure className="m-0 space-y-1">
+          <div className="relative overflow-hidden border border-border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="" className="aspect-[16/10] w-full object-cover" />
+            <div className="absolute bottom-3 left-3 flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" className="bg-background" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+                {open ? "Close the library" : "Change"}
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="bg-background" onClick={() => onChange("")}>
+                <Trash2 className="size-4" aria-hidden />
+                Remove
+              </Button>
+            </div>
+          </div>
+          <figcaption className="truncate text-xs text-muted-foreground">{decodeURI(value.split("?")[0]!.split("/").pop() ?? value)}</figcaption>
+        </figure>
+      ) : value ? (
         <div className="flex items-start gap-4 rounded-lg border border-border p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="" className="size-24 shrink-0 rounded-md border border-border object-cover" />

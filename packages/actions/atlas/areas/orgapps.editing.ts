@@ -18,6 +18,7 @@ export default {
   capabilities: [
     {
       id: 'page-save',
+      where: {"mode": "place", "why": "Building a page on the canvas.", "deep": "/studio/{slug}"},
       area: 'orgapps.editing',
       label: 'Publish a page from the visual editor',
       does: "Saves the page the person has been editing on the canvas (blocks, layout, words) so visitors see it at its address.",
@@ -159,6 +160,7 @@ export default {
     },
     {
       id: 'page-edits-save',
+      where: {"mode": "place", "why": "Editing wording and pictures in place on the page.", "deep": "/?edit"},
       area: 'orgapps.editing',
       label: 'Save edits to the home page text',
       does: "Saves the patches (changed text and images) laid over the home page's fixed layout.",

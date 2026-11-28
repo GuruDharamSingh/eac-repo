@@ -64,6 +64,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-place-add-from-search',
+    where: {"mode": "place", "why": "A map search.", "deep": "/manage/tours/{id}/stops"},
     area: 'elktours.places',
     label: 'Add a searched place to the catalogue',
     does: 'In the tour builder or the catalogue, picks a map-search result (catalogue, Photon or Overpass) and makes it a catalogue place (reusing one with the same source reference), returning a stop draft.',

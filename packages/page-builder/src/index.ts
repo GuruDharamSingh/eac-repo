@@ -47,6 +47,8 @@ export { itemsFromEndpoint } from "./fields/site-sources";
 export type { SiteSources, PickerCopy, PickerArtwork, PickerGallery, PickerPage, PickerArtworkStatus } from "./fields/site-sources";
 export { recordSourcesFrom } from "./fields/record-sources";
 export type { RecordSourcesLike, RecordSourcesOptions } from "./fields/record-sources";
+export { contentRecordSource, withContentSource, PIECE_BINDS } from "./fields/content-source";
+export type { ContentRecordSourceOptions } from "./fields/content-source";
 
 export { CanvasDrag } from "./drag/canvas-drag";
 // For a block's own control that lists items (a gallery's pictures): which

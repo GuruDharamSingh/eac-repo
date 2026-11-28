@@ -24,6 +24,7 @@ const FPANEL = 'components/manage/flyover-panel.tsx';
 const capabilities: Capability[] = [
   {
     id: 'elktours-asset-save',
+    where: {"mode": "dock", "why": "A picture or file and a few words."},
     area: 'elktours.assets',
     label: 'Save a tour, stop or place asset',
     does: 'Registers or edits an asset (photo, film, poster, document) on a tour, an experience, a stop or a place: file or https link, role, caption, alt text, attribution and licence. New assets start hidden.',
@@ -93,6 +94,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'elktours-asset-copy-to-stop',
+    where: {"mode": "dock", "why": "Pick a place’s picture and a stop."},
     area: 'elktours.assets',
     label: 'Use a place photo on a stop',
     does: "Offers a catalogue place's asset to a stop on a tour: copies it into a stop row (same file, hidden, source place).",

@@ -160,6 +160,9 @@ p.eac-dock__hint { margin: 0 0 8px; }
 }
 /* The store-front form (2026-11-24): a few lines, resizable only in height. */
 .eac-dock__field textarea { resize: vertical; min-height: 72px; }
+/* A single switch (the directory form, 2026-11-27): the box beside its words. */
+.eac-dock__field--check { flex-direction: row; align-items: center; gap: 8px; }
+.eac-dock__field--check input { width: auto; padding: 0; }
 
 /* The channel's one move (2026-11-07): the title on one line, cut with an ellipsis
    (the full reason is its title attribute), and its one button. Same inks as above. */
@@ -199,3 +202,22 @@ p.eac-dock__hint { margin: 0 0 8px; }
   [data-eac-outlined="true"] { animation: eac-dock-pulse 1.6s ease-out 2; }
 }
 @keyframes eac-dock-pulse { from { outline-offset: 10px; } to { outline-offset: 3px; } }
+
+/* Declared forms (2026-11-27, lane E): radio group, pictures, and the same form placed on a host's own page. */
+.eac-dock__field select {
+  padding: 6px 8px;
+  border: 1px solid var(--dk-line);
+  border-radius: 6px;
+  background: var(--dk-ground);
+  color: var(--dk-ink);
+  font: inherit;
+}
+fieldset.eac-dock__choice { border: 0; margin: 0 0 8px; padding: 0; min-width: 0; }
+fieldset.eac-dock__choice legend { padding: 0; margin-bottom: 2px; font-size: 13px; color: var(--dk-muted); }
+.eac-dock__thumbs { display: flex; flex-wrap: wrap; gap: 6px; }
+.eac-dock__thumbbtn { padding: 0; border: 2px solid var(--dk-line); border-radius: 6px; background: var(--dk-ground); cursor: pointer; line-height: 0; }
+.eac-dock__thumbbtn[aria-pressed="true"] { border-color: var(--dk-link); outline: 2px solid var(--dk-link); outline-offset: 1px; }
+.eac-dock__thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; }
+.eac-dock__thumb--big { width: 96px; height: 96px; border: 1px solid var(--dk-line); }
+/* The same form on a page of the host (a lesson step): not the floating corner box. */
+.eac-dock--inline { position: static; align-items: stretch; max-width: 100%; z-index: auto; font-size: 15px; }

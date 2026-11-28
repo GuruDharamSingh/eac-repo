@@ -30,6 +30,7 @@ import { boundOrg, managedOrgs, settleChannel, settleOrg } from './org';
 import { UNTRUSTED_NOTICE, plain, platformHref } from './sanitize';
 import { registerSiteTools } from './site-tools';
 import { registerDraftTools } from './draft-tools';
+import { registerContentTools } from './content-tools';
 
 export interface ToolContext {
   grant: McpGrant;
@@ -377,6 +378,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
   // The six site tools (pages, blocks, fields, surfaces): ./site-tools.ts
   registerSiteTools(server, ctx);
   registerDraftTools(server, ctx);
+  // content.search and content.resolve (Content Cornerstone Step 6): only when the host passes `content`.
+  registerContentTools(server, ctx);
 
   // ---------------------------------------------------------------- resource: the catalogue
   server.registerResource('catalogue', 'eac://catalogue', {

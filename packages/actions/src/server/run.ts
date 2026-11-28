@@ -27,6 +27,7 @@ import { CHANNEL_OUTLET_IDS } from '../channel';
 import { acceptSuggestion, dismissSuggestion, fillSlot, planPiece, planStep, saveDeliveryDraft } from './channel';
 import type { ActionSources } from './status';
 import { HUB_RUNNERS } from './hub-runners';
+import { RUNNERS_WAVE1 } from './runners-wave1';
 import type { SiteBuilderAdapter } from './site-adapter';
 
 export interface ActorContext {
@@ -133,6 +134,27 @@ async function orgEditor(ctx: ActorContext): Promise<Allowed> {
   return (await canManageOrgPeople(ctx.userId, ctx.orgId)) ? { ok: true } : { ok: false, error: 'Only the organisation’s owners and guides can change this.' };
 }
 
+/**
+ * A keeper of the org the host resolved: an owner of it, or a network admin (users.is_admin). Stricter than
+ * `orgEditor` (guides may not), and the admin clause is the marketplace's own keeper rule (isMarketKeeper).
+ * Only from the host's own pages: a keeper's hide is a public, visible act, and it is human-only (no agent door).
+ */
+async function orgKeeper(ctx: ActorContext): Promise<Allowed> {
+  if (!hostDoor(ctx)) return { ok: false, error: 'Hide and show artworks from the site itself.' };
+  if (!ctx.orgId) return { ok: false, error: 'No organisation to act on.' };
+  const rows = await db<Array<{ x: number }>>`
+    SELECT 1 AS x FROM users WHERE id = ${ctx.userId} AND is_admin = true
+    UNION ALL
+    SELECT 1 AS x FROM user_organizations WHERE user_id = ${ctx.userId} AND org_id = ${ctx.orgId} AND role = 'owner'
+    LIMIT 1
+  `;
+  return rows.length > 0 ? { ok: true } : { ok: false, error: 'Only the site’s keepers can hide or show artworks.' };
+}
+
+const ORDER_REFUND_INPUT = z.object({ orderId: z.string().trim().min(1).max(64), reason: z.string().trim().min(3, 'Give a reason.').max(300) });
+
+const ARTWORK_INPUT = z.object({ artworkId: z.string().trim().min(1).max(64) });
+
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Plain text from a form as HTML paragraphs: escaped, blank lines split paragraphs, single newlines become <br>. */
@@ -209,6 +231,33 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
       const { updateProfile } = await import('@elkdonis/services');
       await updateProfile(org.profile_user_id, { headline: cleared(input.headline), bio: cleared(input.bio) });
       return { ok: true };
+    },
+  }),
+
+  // A pen name (2026-11-27): services' createPseudonym, scoped to the signed-in account. The name's page gets an
+  // address of its own and is NOT in the directory (directory_listed false) until its owner lists it.
+  'pen-name': runner({
+    input: z.object({
+      displayName: z.string().trim().min(2, 'Give the name at least two characters.').max(120),
+      label: z.string().trim().max(120).optional(),
+    }),
+    failure: 'Could not create the pen name. Try again.',
+    async run(ctx, input) {
+      const { createPseudonym } = await import('@elkdonis/services');
+      const r = await createPseudonym(ctx.userId, { displayName: input.displayName, label: input.label || null });
+      return r.ok === true ? { ok: true, data: { identityId: r.identityId, slug: r.slug } } : { ok: false, error: r.error };
+    },
+  }),
+
+  // Start a piece of writing (2026-11-27): services' createWritingPost, a DRAFT homed on the person's own page
+  // (PERSONAL_ORG_ID), author = the signed-in person. Nothing is published; the Studio holds the writing.
+  'writing-start': runner({
+    input: z.object({ title: z.string().trim().min(1, 'Give the piece a title to start.').max(200) }),
+    failure: 'Could not start the piece. Try again.',
+    async run(ctx, input) {
+      const { createWritingPost, PERSONAL_ORG_ID } = await import('@elkdonis/services');
+      const r = await createWritingPost({ authorId: ctx.userId, orgId: PERSONAL_ORG_ID, title: input.title });
+      return r.ok === true ? { ok: true, data: { threadId: r.post.id, status: 'draft' } } : { ok: false, error: r.error };
     },
   }),
 
@@ -312,6 +361,77 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
       const { updatePost } = await import('@elkdonis/services');
       const post = await updatePost(t.id, t.orgId, { status: 'published' });
       return { ok: true, data: { threadId: post.id, slug: post.slug, status: 'published' } };
+    },
+  }),
+
+  // Hide / show one artwork on the org's market (commerce's adminHideArtwork / adminShowArtwork: the service holds the
+  // rules: only available, sold or draft, never one with an open order, `hiddenByAdmin` marker, content_index refresh).
+  'artwork-hide': runner({
+    input: ARTWORK_INPUT,
+    allowed: (ctx) => orgKeeper(ctx),
+    failure: 'Could not hide the artwork. Try again.',
+    async run(ctx, input) {
+      const { adminHideArtwork } = await import('@elkdonis/commerce/server');
+      try {
+        await adminHideArtwork(input.artworkId, ctx.userId, ctx.orgId!);
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'That could not be done.' };
+      }
+      return { ok: true, data: { artworkId: input.artworkId, hidden: true } };
+    },
+  }),
+  'artwork-show': runner({
+    input: ARTWORK_INPUT,
+    allowed: (ctx) => orgKeeper(ctx),
+    failure: 'Could not show the artwork. Try again.',
+    async run(ctx, input) {
+      const { adminShowArtwork } = await import('@elkdonis/commerce/server');
+      try {
+        await adminShowArtwork(input.artworkId, ctx.orgId!);
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'That could not be done.' };
+      }
+      return { ok: true, data: { artworkId: input.artworkId, hidden: false } };
+    },
+  }),
+
+  // Refund one order in full (2026-11-27, /hub/admin/sales). Human-only: no agent exposure (./agent.ts has no row),
+  // refused from every door but the host's own ('app'), and only for a network admin (users.is_admin). It repeats
+  // apps/art-auction/src/app/admin/actions.ts adminRefundOrder: a paid card order goes through Stripe when card
+  // payment is configured (refundStripeOrder: destination charge reversed, fee returned, then the ledger reversal),
+  // anything else is recorded only (refundOrder; the money moves by hand). The status is checked here BEFORE
+  // Stripe is called, because refundStripeOrder reaches Stripe before refundOrder's own status guard.
+  'sales-refund': runner({
+    input: ORDER_REFUND_INPUT,
+    async allowed(ctx) {
+      if (!hostDoor(ctx)) return { ok: false, error: 'Refunds are made from the admin sales page.' };
+      const rows = await db<Array<{ x: number }>>`SELECT 1 AS x FROM users WHERE id = ${ctx.userId} AND is_admin = true LIMIT 1`;
+      return rows.length > 0 ? { ok: true } : { ok: false, error: 'Only network admins can refund an order.' };
+    },
+    failure: 'The refund could not be completed. Check the order before trying again.',
+    async run(ctx, input) {
+      const refunds = ctx.sources?.orderRefund;
+      if (!refunds) return { ok: false, error: 'Refunds are not available from here.' };
+      // One refund of an order at a time. A row lock cannot cover this: refundStripeOrder and refundOrder use their own
+      // connections, and refundOrder's UPDATE of the same row would wait on our lock (deadlock). A transaction-scoped
+      // advisory lock on the order id covers guard, Stripe call and ledger reversal, and nothing else takes it, so the
+      // second click waits, re-reads the status and answers "already refunded". The Stripe idempotency key is the backstop.
+      return db.begin(async (tx) => {
+        await tx`SELECT pg_advisory_xact_lock(hashtext(${'order-refund:' + input.orderId}))`;
+        const { getOrderById } = await import('@elkdonis/commerce/queries');
+        const order = await getOrderById(input.orderId);
+        if (!order) return { ok: false, error: 'Order not found.' } as ActionResult;
+        if (order.status === 'refunded') return { ok: true, data: { orderId: order.id, already: true } } as ActionResult;
+        if (!['paid', 'fulfilled', 'completed'].includes(order.status)) return { ok: false, error: 'Only a paid order can be refunded.' } as ActionResult;
+        const card = order.paymentMethod === 'stripe' && refunds.cardAvailable();
+        if (card) {
+          await refunds.refundStripe({ orderId: order.id, actorUserId: ctx.userId, reason: input.reason, idempotencyKey: `refund-${order.id}` });
+        } else {
+          const { refundOrder } = await import('@elkdonis/commerce/server');
+          await refundOrder({ orderId: order.id, actorUserId: ctx.userId, reason: input.reason });
+        }
+        return { ok: true, data: { orderId: order.id, method: card ? 'stripe' : 'recorded', amountMinor: order.totalMinor, currency: order.currency } } as ActionResult;
+      });
     },
   }),
 
@@ -479,6 +599,8 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
 
   // Hub card entries (2026-11-08): ./hub-runners.ts, all appOnly.
   ...HUB_RUNNERS,
+  // Wiring wave 1 (2026-11-27): ./runners-wave1.ts.
+  ...RUNNERS_WAVE1,
 };
 
 /** The ids that have a runner: the entries a host, a route or a script can perform directly. */

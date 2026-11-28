@@ -15,6 +15,12 @@ export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
     "status": "approved",
     "wave": 1
   },
+  "listing": {
+    "text": "Change whether your page is listed in the artists’ directory? People who visit the directory see the change at once.",
+    "title": "Change where you show",
+    "status": "draft",
+    "wave": 2
+  },
   "org-details": {
     "text": "Change {org}’s name, line and bio. Visible on the network and its site.",
     "title": "Save org identity",
@@ -33,11 +39,47 @@ export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
     "status": "approved",
     "wave": 1
   },
+  "pen-name": {
+    "text": "Create this pen name? It gets a page address of its own. It is not listed in the directory until you choose to list it, and you can retire it later.",
+    "title": "Create a pen name",
+    "status": "draft",
+    "wave": 2
+  },
+  "pen-name-restore": {
+    "text": "Bring this pen name back? Its page and byline show again.",
+    "title": "Bring back a pen name",
+    "status": "draft",
+    "wave": 3
+  },
+  "pen-name-retire": {
+    "text": "Retire this pen name? Its page and byline are hidden. You can bring it back later.",
+    "title": "Retire a pen name",
+    "status": "draft",
+    "wave": 3
+  },
+  "post-anywhere": {
+    "text": "Post this now? It goes live there straight away, and people who visit see it.",
+    "title": "Post it",
+    "status": "draft",
+    "wave": 3
+  },
   "profile": {
     "text": "Save profile changes. Your name, line and bio update publicly and in the directory.",
     "title": "Save profile",
     "status": "approved",
     "wave": 1
+  },
+  "profile-photo": {
+    "text": "Use this picture as your profile photo? It shows on your page and in the directory.",
+    "title": "Change your photo",
+    "status": "draft",
+    "wave": 3
+  },
+  "profile-sections": {
+    "text": "Show or hide this part of your own page? Visitors to your page see the change at once.",
+    "title": "Change your page",
+    "status": "draft",
+    "wave": 3
   },
   "service": {
     "text": "Save your service “{title}” at {price}. If published, visitors can see it.",
@@ -71,5 +113,11 @@ export const REGISTRY_CONFIRM: Readonly<Record<string, ActionConfirm>> = {
     "text": "Save your changes to “{title}”? If it is published, readers see the new version.",
     "status": "draft",
     "wave": 3
+  },
+  "writing-start": {
+    "text": "Start a draft with this title? It stays a draft in your own space, and nobody else sees it until you publish it.",
+    "title": "Start a piece of writing",
+    "status": "draft",
+    "wave": 2
   }
 };

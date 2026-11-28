@@ -20,6 +20,8 @@ import type { ActionLinks, ActionStatus } from '../types';
 import { actionMeta } from '../catalogue';
 import { presentAction } from '../present';
 import { confirmView, isMoneyMeta, type ConfirmCard, type ConfirmMode } from '../confirm';
+import type { LoadedForm } from '../fields';
+import { loadDockForm } from './forms';
 import { routeFor, type ActionRoute } from '../route';
 import { REGISTRY_CONFIRM } from './registry-confirm';
 import { readDockState, writeDockStep, dockMarkDone, type DockState } from './dock-state';
@@ -82,6 +84,11 @@ export interface DockStep {
    * person to the control; money entries are always this), `check` (nothing to press), `read` (no task).
    */
   kind: 'do' | 'go' | 'check' | 'read';
+  /**
+   * A place step (type 'place', 2026-11-27): a thing done on another page, with where it is and a link there. Read from
+   * the step's `settings.place` (written by the rails seed); null for every other step.
+   */
+  place: null | { href: string; where: string; anchor: string | null };
   /** Present for a task step: the entry, its status, and the inputs of `presentAction`. */
   task: null | {
     id: string;
@@ -93,8 +100,10 @@ export interface DockStep {
     route: ActionRoute | null;
     /** The confirm card for a `do` step, already resolved for who is looking (confirm.ts). */
     confirm: ConfirmCard | null;
-    /** A module form key the dock draws inline, before it routes (ActionMeta.dockForm). */
+    /** A form key the dock draws inline, before it routes (ActionMeta.dockForm): the entry id for a declared form. */
     dockForm: string | null;
+    /** The declared form with the person's loaded values and lists (2026-11-27, ./forms.ts); null without one. */
+    form: LoadedForm | null;
   };
 }
 
@@ -204,7 +213,21 @@ export interface DockOptions {
 
 const isDone = (s: { status: string | null }) => s.status === 'completed' || s.status === 'waived';
 
+/** A place step's link: an https address or a path on this host, nothing else. */
+function placeOf(settings: Record<string, unknown> | undefined): DockStep['place'] {
+  const p = settings?.place as { href?: unknown; where?: unknown; anchor?: unknown } | undefined;
+  if (!p || typeof p.href !== 'string') return null;
+  if (!(p.href.startsWith('https://') || (p.href.startsWith('/') && !p.href.startsWith('//')))) return null;
+  return { href: p.href.slice(0, 500), where: typeof p.where === 'string' ? p.where.slice(0, 200) : '', anchor: typeof p.anchor === 'string' && /^[A-Za-z0-9_.:-]{1,120}$/.test(p.anchor) ? p.anchor : null };
+}
+
 const hubOf = (links: ActionLinks) => links.hub;
+
+async function orgNameOf(orgId: string | null): Promise<string | null> {
+  if (!orgId) return null;
+  const [o] = await db<Array<{ name: string | null }>>`SELECT name FROM organizations WHERE id = ${orgId} LIMIT 1`;
+  return o?.name ?? null;
+}
 
 async function orgSlugOf(orgId: string | null): Promise<string | null> {
   if (!orgId) return null;
@@ -284,10 +307,18 @@ async function dockStepRead(opts: DockOptions): Promise<StepResult> {
         const meta = actionMeta(t.id);
         const present = presentAction({ id: t.id, status, orgId, links: opts.links, params });
         const money = meta ? isMoneyMeta(meta) : false;
-        const kind: DockStep['kind'] = present.kind === 'run' || present.kind === 'form' ? (money || !meta?.runnable ? 'go' : 'do') : present.kind === 'none' ? 'check' : 'go';
+        // An entry with a dock form is done in the dock (2026-11-27): the form asks first, so the confirm card resolves for it.
+        // An org entry has no form without an org to act on.
+        const formOk = Boolean(meta?.dockForm) && !(meta?.scope === 'org' && !orgId);
+        const kind: DockStep['kind'] = formOk && meta?.runnable && !money ? 'do' : present.kind === 'run' || present.kind === 'form' ? (money || !meta?.runnable ? 'go' : 'do') : present.kind === 'none' ? 'check' : 'go';
         const route = kind === 'go' ? routeFor(t.id, { hub: hubOf(opts.links), market: opts.links.market ?? null, orgSlug: await orgSlugOf(orgId), partial: Boolean(status.partial) }) : null;
-        const confirm = kind === 'do' && meta ? confirmView({ ...meta, confirm: REGISTRY_CONFIRM[meta.id] ?? meta.confirm }, opts.confirmMode ?? 'live') : null;
-        picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm, dockForm: meta?.dockForm ?? null }, kind };
+        const form = formOk ? await loadDockForm(t.id, { userId, orgId, links: opts.links, params }, { status }).catch((err) => { console.error('[actions] dock form:', err); return null; }) : null;
+        // Confirm wording holds placeholders ({org}, {name}...): fill what is known now; the dock fills the rest from what is typed.
+        const vars: Record<string, string> = {};
+        if (orgId) vars.org = (await orgNameOf(orgId)) ?? '';
+        if (form) for (const [ph, field] of Object.entries<string>(form.form.confirmVars ?? {})) vars[ph] = form.values[field] ?? '';
+        const confirm = kind === 'do' && meta ? confirmView({ ...meta, confirm: REGISTRY_CONFIRM[meta.id] ?? meta.confirm }, opts.confirmMode ?? 'live', vars, form?.form.confirmVars) : null;
+        picked = { step, task: { id: t.id, label: meta?.label ?? t.id, params, orgId, status, route, confirm, dockForm: formOk ? meta?.dockForm ?? null : null, form }, kind };
         break;
       }
       if (ticked) continue;
@@ -295,7 +326,7 @@ async function dockStepRead(opts: DockOptions): Promise<StepResult> {
       const { step, task, kind } = picked;
       if (opts.state?.courseSlug !== c.slug || opts.state?.stepSlug !== step.slug) await writeDockStep(userId, c.slug, step.slug);
       const href = opts.stepHref ? opts.stepHref(c.slug, step.slug) : `/learn/${encodeURIComponent(c.slug)}/${encodeURIComponent(step.slug)}`;
-      return { justDone, step: { courseSlug: c.slug, courseTitle: c.title, stepSlug: step.slug, stepTitle: step.title, href, doneRequired: o.doneRequired, totalRequired: o.totalRequired, kind, task } };
+      return { justDone, step: { courseSlug: c.slug, courseTitle: c.title, stepSlug: step.slug, stepTitle: step.title, href, doneRequired: o.doneRequired, totalRequired: o.totalRequired, kind, place: task ? null : placeOf(step.settings), task } };
     }
   }
   return { step: null, justDone };
@@ -436,7 +467,7 @@ export async function dockData(opts: DockOptions): Promise<DockData | null> {
   ]);
   const step = read.step;
   const away: DockAway | null = state?.departedFrom
-    ? { returnHref: state.departedFrom, stepTitle: step?.stepTitle ?? null, anchor: step?.task?.route?.anchor ?? null, ticketOk: Boolean(opts.ticket && state.ticket === opts.ticket) }
+    ? { returnHref: state.departedFrom, stepTitle: step?.stepTitle ?? null, anchor: step?.task?.route?.anchor ?? step?.place?.anchor ?? null, ticketOk: Boolean(opts.ticket && state.ticket === opts.ticket) }
     : null;
   const done = await doneCard(withState, read, step).catch(() => null);
   if (!step && !post && !channel && !away && !done && !picker) return null;

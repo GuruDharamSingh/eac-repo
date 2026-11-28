@@ -14,6 +14,7 @@ import type { ChannelNextMove, ChannelPlanProposal } from '../channel';
 import { parseChannelPieceKey } from './channel';
 import { actionParams } from '../catalogue';
 import { getPaathDayStatus, type PaathDayStatus } from '@elkdonis/services/paath-day';
+import { CHECKS_WAVE1 } from './checks-wave1';
 
 /**
  * Readers a host passes in for entries whose state is computed by the host's own
@@ -34,6 +35,15 @@ export interface ActionSources {
    * not on this channel's board.
    */
   channelPlanProposals?: (q: { userId: string; orgId: string | null; pieceKey: string }) => Promise<ChannelPlanProposal[] | null>;
+  /**
+   * The card refund (2026-11-27, `sales-refund`): @elkdonis/checkout's `isCardPaymentAvailable` and
+   * `refundStripeOrder`, which this package cannot import (no dependency on checkout). Passed only by the
+   * host's own admin door (arts-collective hub/admin/sales/actions.ts); absent = the entry refuses.
+   */
+  orderRefund?: {
+    cardAvailable: () => boolean;
+    refundStripe: (q: { orderId: string; actorUserId: string; reason: string; idempotencyKey?: string }) => Promise<unknown>;
+  };
 }
 
 export interface StatusContext {
@@ -190,6 +200,20 @@ export const CHECKS: Record<string, Check> = {
     if (!row || row.n === 0) return none('Nothing written yet.');
     if (row.published === 0) return part(`${row.n} draft${row.n === 1 ? '' : 's'}, none published yet.`);
     return ok(`${row.published} piece${row.published === 1 ? '' : 's'} published.`);
+  },
+  // Pen names (2026-11-27): done once the person holds an active pen name (identity_control, relation pseudonym).
+  async 'pen-name'({ userId }) {
+    const [row] = await db<Array<{ n: number }>>`
+      SELECT COUNT(*)::int AS n FROM identity_control WHERE account_id = ${userId} AND relation = 'pseudonym' AND retired_at IS NULL
+    `;
+    return row?.n ? ok(`You have ${row.n} pen ${row.n === 1 ? 'name' : 'names'}.`) : none('No pen name yet.');
+  },
+  // A piece of writing started (2026-11-27): any writing piece of the person's, draft or published.
+  async 'writing-start'({ userId }) {
+    const [row] = await db<Array<{ n: number }>>`
+      SELECT COUNT(*)::int AS n FROM threads WHERE kind = 'writing' AND author_id = ${userId} AND status <> 'archived'
+    `;
+    return row?.n ? ok(`${row.n} piece${row.n === 1 ? '' : 's'} started.`) : none('No piece started yet.');
   },
   async 'show-on'({ userId }) {
     const [row] = await db<Array<{ n: number }>>`
@@ -373,6 +397,8 @@ export const CHECKS: Record<string, Check> = {
     const more = moves.length > 1 ? ` (and ${moves.length - 1} more)` : '';
     return { done: false, partial: true, detail: `Next: ${top.title}${top.reason ? ` · ${top.reason}` : ''}${more}`, href, next: moves };
   },
+  // Wiring wave 1 (2026-11-27): ./checks-wave1.ts.
+  ...CHECKS_WAVE1,
 };
 
 /**

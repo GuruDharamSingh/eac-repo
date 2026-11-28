@@ -38,6 +38,17 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "wave": 1
     }
   },
+  "channel-connect": {
+    "address": {
+      "host": "hub",
+      "path": "/channel/outlets",
+      "how": "Connect an account on the Outlets page"
+    },
+    "risk": [],
+    "roles": [
+      "person"
+    ]
+  },
   "cloud": {
     "address": {
       "host": "app",
@@ -172,6 +183,19 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "guide"
     ]
   },
+  "org-publish": {
+    "address": {
+      "host": "hub",
+      "path": "/hub/organization?org={org}",
+      "anchor": "org-offering",
+      "how": "Publish in the composer: a post, an event or a meeting"
+    },
+    "risk": [],
+    "roles": [
+      "owner",
+      "guide"
+    ]
+  },
   "org-site": {
     "address": {
       "host": "hub",
@@ -211,6 +235,58 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "wave": 1
     }
   },
+  "pen-name": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
+  },
+  "pen-name-restore": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
+  },
+  "pen-name-retire": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
+  },
+  "post-anywhere": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
+  },
   "profile": {
     "address": {
       "host": "hub",
@@ -231,6 +307,32 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
       "status": "approved",
       "wave": 1
     }
+  },
+  "profile-photo": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
+  },
+  "profile-sections": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [
+      "public"
+    ],
+    "roles": [
+      "person"
+    ]
   },
   "service": {
     "address": {
@@ -333,6 +435,17 @@ export const REGISTRY_DATA: Readonly<Record<string, RegistryData>> = {
     "risk": [
       "public"
     ],
+    "roles": [
+      "person"
+    ]
+  },
+  "writing-start": {
+    "address": {
+      "host": "hub",
+      "dock": true,
+      "how": "Done in the dock"
+    },
+    "risk": [],
     "roles": [
       "person"
     ]

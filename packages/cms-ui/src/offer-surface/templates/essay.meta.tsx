@@ -1,0 +1,52 @@
+import type { TemplateMeta } from "./meta";
+
+export const meta: TemplateMeta = {
+  id: "essay",
+  component: "EssayTemplate",
+  files: {
+    tsx: "packages/cms-ui/src/offer-surface/templates/essay.tsx",
+    css: "packages/cms-ui/src/offer-surface/templates/essay.css",
+    route: "apps/development/src/app/offer-templates/t/essay",
+  },
+  packet: "2g",
+  reads: [
+    { path: "pieces[0].title", required: true },
+    { path: "pieces[0].standfirst" },
+    { path: "pieces[0].date" },
+    { path: "pieces[0].minutes" },
+    { path: "pieces[0].series" },
+    { path: "owner.name", required: true },
+    { path: "site.name" },
+    { path: "pieces[0].sections[]", required: true, note: "id, title, html (sanitised by host)" },
+    { path: "pieces[0].picture" },
+    { path: "pieces[0].caption" },
+    { path: "pieces[0].pullQuote" },
+    { path: "pieces[1..]", note: "index rail; href when present" },
+    { path: "extras.talkCount" },
+  ],
+  actions: [
+    { control: "Profile (top bar)", opens: "link to /profile" },
+    { control: "Author name", opens: "profile layer (pf-owner) + hover card on desktop" },
+    { control: "+ Follow", opens: "follow / pf-owner" },
+    { control: "Index sub-entries", opens: "scrolls the text pane" },
+    { control: "Other pieces in index", opens: "wr-read" },
+    { control: "All writing", opens: "inert (no page to open; nothing navigates away)" },
+    { control: "Open the talk", opens: "talk" },
+  ],
+  patterns: [
+    { id: "reading-progress", name: "Reading progress line", use: "Bronze line under the nav that fills as the text pane scrolls.", rootClass: "ost-essay-bar", packet: "2g" },
+    { id: "index-rail", name: "Index rail with live sections", use: "Left rail listing pieces; the current piece shows its own sections, lit by scroll position.", rootClass: "ost-essay-rail", packet: "2g" },
+    { id: "drop-cap", name: "Drop cap", use: "Bronze initial letter on the first paragraph.", rootClass: "ost-essay-sec", packet: "2g", shared: true },
+    { id: "asterism", name: "Asterism", use: "Centred bronze section break.", rootClass: "ost-essay-ast", packet: "2g" },
+    { id: "pull-quote", name: "Centred pull quote", use: "Large centred quote between sections.", rootClass: "ost-essay-pull", packet: "2g", shared: true },
+  ],
+  adapted: [
+    "Text pane height follows the window (packet draws a fixed 440px frame).",
+    "Index entries for other pieces open the reading surface; sample pieces other than the first carry no text.",
+    "Phone: index becomes a sideways strip; the text flows on the page (no inner pane); the progress line and lit section follow the window scroll.",
+    "Text column is capped at 640px; the packet frame is a 620px window.",
+    "Sample pieces repeat one body for every section (sample data, not the template).",
+  ],
+  phoneHeight: 1851,
+  status: "draft",
+};

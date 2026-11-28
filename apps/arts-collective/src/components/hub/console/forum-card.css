@@ -1,0 +1,94 @@
+/*
+  Forum card (hub console). Plain CSS, namespaced `afc-`.
+
+  Every colour, radius and font here is a surface token (--sf-*), never a phone token (fs-*) and never a
+  literal, so the page's dark scope (which redefines --sf-bg, --sf-fg, --sf-accent ... and sets the square
+  --sf-radius) restyles the replies and the box with no change to this file. Contrast follows from the tokens:
+  --sf-fg on --sf-bg for text, --sf-muted for secondary lines, --sf-accent for roles and links,
+  --sf-on-accent on --sf-accent for the Reply button.
+*/
+
+/* The thread frame is "standard" width for a post; with replies under it, it should be the wide frame. */
+dialog.eac-surface[data-size="standard"]:has(.afc-replies) { --sf-width: var(--sf-w-wide); }
+
+.afc-pad { padding: 16px 0; }
+.afc-muted { color: var(--sf-muted); font-size: 13px; margin: 0; }
+.afc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── the replies ──────────────────────────────────────────────────────── */
+.afc-replies { margin-top: 28px; padding-top: 4px; color: var(--sf-fg); }
+.afc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.afc-kicker { font-family: var(--sf-font-record); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sf-muted); white-space: nowrap; }
+.afc-rule { flex: 1; height: 1px; background: var(--sf-rule); }
+
+.afc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.afc-reply { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--sf-line); }
+.afc-reply:first-child { border-top: 0; padding-top: 0; }
+.afc-reply.is-nested { margin-left: 24px; padding-left: 12px; border-left: 2px solid var(--sf-line); border-top-color: transparent; }
+.afc-reply.is-hidden { opacity: 0.8; }
+.afc-reply.is-hidden .afc-body,
+.afc-reply.is-hidden .afc-meta { opacity: 0.55; }
+
+.afc-avatar {
+  width: 36px; height: 36px; display: inline-grid; place-items: center; object-fit: cover;
+  background: var(--sf-bg-soft); color: var(--sf-muted); border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm); font-family: var(--sf-font-title); font-size: 15px;
+}
+.afc-main { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.afc-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; }
+.afc-name { font-weight: 600; color: var(--sf-fg); }
+.afc-role { font-family: var(--sf-font-record); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sf-accent); border: 1px solid var(--sf-accent); padding: 1px 6px; border-radius: var(--sf-radius-sm); }
+.afc-when { margin-left: auto; color: var(--sf-muted); font-size: 12px; }
+.afc-body { font-size: 14.5px; line-height: 1.6; color: var(--sf-fg); overflow-wrap: anywhere; }
+.afc-body p { margin: 0 0 0.6em; }
+.afc-body p:last-child { margin-bottom: 0; }
+.afc-body a { color: var(--sf-accent); text-underline-offset: 3px; }
+
+.afc-tools { display: flex; gap: 14px; }
+.afc-quiet { appearance: none; background: none; border: 0; padding: 2px 0; font: inherit; font-size: 12.5px; color: var(--sf-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.afc-quiet:hover:not(:disabled) { color: var(--sf-fg); }
+.afc-quiet:focus-visible, .afc-send:focus-visible, .afc-input:focus-visible { outline: 2px solid var(--sf-accent); outline-offset: 2px; }
+.afc-quiet:disabled { opacity: 0.6; cursor: default; }
+.afc-danger:hover:not(:disabled) { color: var(--sf-danger); }
+.afc-more { justify-self: start; margin: 8px 0 0; }
+
+.afc-hiddenbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 10px; border: 1px dashed var(--sf-rule); background: var(--sf-bg-soft); border-radius: var(--sf-radius-sm); font-size: 13px; }
+.afc-hiddenlabel { font-family: var(--sf-font-record); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sf-danger); }
+.afc-hiddenbar .afc-quiet { margin-left: auto; color: var(--sf-fg); }
+
+/* link card and media on a reply */
+.afc-link { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--sf-line); background: var(--sf-bg-soft); border-radius: var(--sf-radius-sm); text-decoration: none; color: var(--sf-fg); }
+.afc-link:hover { border-color: var(--sf-accent); }
+.afc-link-host { font-family: var(--sf-font-record); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sf-muted); }
+.afc-link-title { font-size: 14px; }
+.afc-media { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.afc-media img, .afc-media video { width: 100%; max-height: 320px; object-fit: cover; display: block; border: 1px solid var(--sf-line); border-radius: var(--sf-radius-sm); background: var(--sf-bg-soft); }
+
+/* ── the reply box ────────────────────────────────────────────────────── */
+.afc-note { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--sf-line); }
+.afc-note a { color: var(--sf-accent); text-underline-offset: 3px; }
+.afc-form { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--sf-rule); display: grid; gap: 10px; }
+.afc-replyto { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--sf-muted); }
+.afc-input {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 84px; padding: 10px 12px;
+  background: var(--sf-bg-soft); color: var(--sf-fg); border: 1px solid var(--sf-line); border-radius: var(--sf-radius-sm);
+  font: inherit; font-size: 14.5px; line-height: 1.5;
+}
+.afc-input::placeholder { color: var(--sf-faint); }
+.afc-formrow { display: flex; justify-content: flex-end; }
+.afc-send { appearance: none; border: 1px solid var(--sf-accent); background: var(--sf-accent); color: var(--sf-on-accent); padding: 9px 22px; border-radius: var(--sf-radius-sm); font: inherit; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+.afc-send:hover:not(:disabled) { filter: brightness(1.08); }
+.afc-send:disabled { opacity: 0.6; cursor: default; }
+.afc-error { margin: 0; font-size: 13px; color: var(--sf-danger); }
+
+/* ── the face's "Across your organisations" control, and that layer ──── */
+.afc-across { appearance: none; background: none; border: 0; padding: 4px 0 0; font: inherit; font-size: 12.5px; color: var(--sf-accent, currentColor); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+.afc-face-preview { display: grid; gap: 8px; }
+.afc-org { margin: 18px 0 6px; font-family: var(--sf-font-record); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sf-muted); }
+.afc-org:first-child { margin-top: 0; }
+
+@media (max-width: 560px) {
+  .afc-reply { grid-template-columns: 30px minmax(0, 1fr); gap: 10px; }
+  .afc-avatar { width: 30px; height: 30px; font-size: 13px; }
+  .afc-reply.is-nested { margin-left: 12px; }
+}

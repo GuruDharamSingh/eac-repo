@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAfterSave } from "@/lib/popup-refresh";
 import { toast } from "sonner";
 import type { Order } from "@elkdonis/commerce/types";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function OrderActions({
   actions: OrderActionSet;
 }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [pending, setPending] = React.useState(false);
   const [dialog, setDialog] = React.useState<DialogKind>(null);
 
@@ -46,7 +48,7 @@ export function OrderActions({
       if (res.ok) {
         toast.success(success);
         setDialog(null);
-        router.refresh();
+        afterSave();
       } else {
         toast.error(res.error ?? "Something went wrong.");
       }

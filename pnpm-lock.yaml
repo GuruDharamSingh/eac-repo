@@ -370,6 +370,9 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/channel':
+        specifier: workspace:*
+        version: link:../../packages/channel
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -382,6 +385,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -391,6 +397,9 @@ importers:
       '@elkdonis/dock':
         specifier: workspace:*
         version: link:../../packages/dock
+      '@elkdonis/hub':
+        specifier: workspace:*
+        version: link:../../packages/hub
       '@elkdonis/lms':
         specifier: workspace:*
         version: link:../../packages/lms
@@ -551,6 +560,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -569,6 +581,9 @@ importers:
       '@elkdonis/payments':
         specifier: workspace:*
         version: link:../../packages/payments
+      '@elkdonis/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
@@ -2563,6 +2578,9 @@ importers:
       '@elkdonis/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@elkdonis/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
       '@elkdonis/series-site':
         specifier: workspace:*
         version: link:../../packages/series-site
@@ -3012,6 +3030,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db
+      '@elkdonis/hub':
+        specifier: workspace:*
+        version: link:../hub
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../services
@@ -3276,6 +3297,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db
+      '@elkdonis/hub':
+        specifier: workspace:*
+        version: link:../hub
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../services

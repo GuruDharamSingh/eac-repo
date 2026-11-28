@@ -1,0 +1,94 @@
+@import "./body.css";
+/*
+ * Offer-page templates: the shared frame (owner: lane D). Prefix "ost-".
+ * Reads the --os-* tokens and --f* font variables of ../look.css; load
+ * offer.css first. Template files (<id>.css) style only ".ost-<id>-*" and
+ * ".ost-page[data-template=<id>] .ost-main".
+ *
+ * Every rule is scoped under .ost-page so it outranks offer.css's
+ * ".osf-root button { font: inherit }" (that rule made + FOLLOW draw large).
+ * The page is at least one window tall and scrolls normally; the gateway
+ * sits at the foot after the content.
+ */
+.ost-page { --ost-pad: 24px; background: var(--os-page); color: var(--os-ink-bone); font-family: var(--fb); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; min-height: calc(100dvh / var(--ost-z, 1)); }
+
+/* ── Top bar (packet 3a / 2m: 12px 20px, name 17px, buttons 10px / 6px 11px) ── */
+.ost-page .ost-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px var(--ost-pad); border-bottom: 1px solid var(--os-line-soft); }
+.ost-page .ost-sitename { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); font-size: calc(17px * var(--fhx)); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ost-page .ost-top-links { display: flex; gap: 8px; flex: none; }
+.ost-page .ost-toplink { font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 10px; line-height: normal; padding: 6px 11px; background: transparent; border: 1px solid var(--os-line-strong); cursor: pointer; color: var(--os-ink-bone); text-decoration: none; transition: background-color 0.3s, color 0.3s, border-color 0.2s; }
+.ost-page .ost-toplink:hover { border-color: var(--os-ink-bone); }
+.ost-page .ost-toplink.is-active { border-color: var(--os-ink-bone); box-shadow: inset 0 -2px 0 var(--os-bronze); }
+.ost-page .ost-toplink.is-follow { border-color: var(--os-bronze); color: var(--os-bronze); }
+.ost-page .ost-toplink.is-follow:hover { background: color-mix(in srgb, var(--os-bronze) 14%, transparent); }
+.ost-page .ost-toplink.is-follow.is-on { background: var(--os-bronze); color: var(--os-on-bronze); }
+.ost-page .ost-main { min-height: 0; min-width: 0; }
+.ost-page .ost-scroll { overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--os-line-dotted) transparent; }
+
+/* ── Gateway: "Also offered", one small door per offer (the packet's card language) ── */
+.ost-page .ost-gate { display: flex; align-items: center; gap: 14px; padding: 8px var(--ost-pad) 10px; border-top: 1px solid var(--os-line-soft); background: var(--os-foot); min-width: 0; }
+.ost-page .ost-gate-label { flex: none; font-family: var(--fk); font-weight: 400; font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-page .ost-gate-row { display: flex; gap: 8px; min-width: 0; overflow-x: auto; padding: 5px 2px 6px; margin: -5px -2px -6px; scrollbar-width: none; }
+.ost-page .ost-gate-row::-webkit-scrollbar { display: none; }
+.ost-page .ost-gate-face { flex: none; display: flex; align-items: center; gap: 9px; padding: 6px 9px 6px 6px; background: var(--os-page); border: 1px solid var(--os-line-dotted); border-top: 2px solid var(--os-bronze); cursor: pointer; text-align: left; text-decoration: none; color: var(--os-ink-bone); font: inherit; transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s, box-shadow 0.22s; }
+.ost-page .ost-gate-face:hover { transform: translateY(-3px); border-color: var(--os-bronze); box-shadow: var(--os-shadow-hover); }
+.ost-page .ost-gate-face.is-inert { cursor: default; }
+.ost-page .ost-gate-face.is-inert:hover { transform: none; border-color: var(--os-line-dotted); box-shadow: none; }
+.ost-page .ost-gate-box { width: 26px; height: 26px; }
+.ost-page .ost-gate-text { display: grid; min-width: 0; }
+.ost-page .ost-gate-kind { font: 500 8px/1.4 var(--os-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--os-bronze); }
+.ost-page .ost-gate-title { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); font-size: calc(14px * var(--fhx)); line-height: 1.15; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.ost-page .ost-gate-plus { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--os-line-strong); display: grid; place-items: center; font-size: 12px; line-height: 1; color: var(--os-ink-muted); flex: none; }
+.ost-page .ost-gate-face.is-inert .ost-gate-plus { opacity: 0.4; }
+@media (prefers-reduced-motion: reduce) { .ost-page .ost-gate-face { transition: none; } .ost-page .ost-gate-face:hover { transform: none; } }
+
+/* ── Phone: the gateway becomes a sideways shelf above the foot ── */
+@media (max-width: 639px) {
+  .ost-page { --ost-pad: 16px; }
+  .ost-page .ost-top { padding: 8px var(--ost-pad) 10px; }
+  .ost-page .ost-sitename { font-size: calc(15px * var(--fhx)); }
+  .ost-page .ost-top-links { gap: 6px; }
+  .ost-page .ost-toplink { font-size: 9px; padding: 5px 8px; }
+  .ost-page .ost-gate { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0 22px var(--ost-pad); }
+  .ost-page .ost-gate-row { gap: 8px; padding: 5px var(--ost-pad) 6px 2px; margin: -5px 0 -6px -2px; scroll-snap-type: x proximity; }
+  .ost-page .ost-gate-face { scroll-snap-align: start; min-width: 200px; }
+}
+
+/* ── Desktop scale-up (lane T, 2026-11-27) ─────────────────────────────────────────────
+   The packet frames are small browser windows (--ost-base px wide, set per template on
+   .ost-page[data-template=<id>]). On a wider window the WHOLE page (top bar, template, gateway)
+   scales up in proportion with CSS zoom, so a 1280 window shows the mock enlarged, not a narrow
+   column in the dark. The page itself is the column: no wider than --ost-base, centred, ruled at
+   its sides; the scaled column fills about 90% of the window up to a cap of 1.8x.
+   --ost-vw is the window width floored to a step (media queries cannot read a length into a
+   number, so zoom moves in steps of 128 to 320px, never more than about 12% at once). Below
+   640px it is 0, so a phone does not scale; below the base width the zoom stays 1 and the
+   template's own responsive rules apply unchanged.
+   Under zoom a vh or dvh length is multiplied too, so any height taken from the window divides
+   by --ost-z (min-height above, .ost-essay-grid in essay.css). --ost-vw sits on .osf-root so the
+   popup (offer.css, --osf-pz) reads the same steps. */
+.osf-root { --ost-vw: 0; }
+@media (min-width: 640px)  { .osf-root { --ost-vw: 640; } }
+@media (min-width: 768px)  { .osf-root { --ost-vw: 768; } }
+@media (min-width: 896px)  { .osf-root { --ost-vw: 896; } }
+@media (min-width: 1024px) { .osf-root { --ost-vw: 1024; } }
+@media (min-width: 1152px) { .osf-root { --ost-vw: 1152; } }
+@media (min-width: 1280px) { .osf-root { --ost-vw: 1280; } }
+@media (min-width: 1440px) { .osf-root { --ost-vw: 1440; } }
+@media (min-width: 1600px) { .osf-root { --ost-vw: 1600; } }
+@media (min-width: 1760px) { .osf-root { --ost-vw: 1760; } }
+@media (min-width: 1920px) { .osf-root { --ost-vw: 1920; } }
+
+.ost-page {
+  --ost-z: clamp(1, calc(var(--ost-vw, 0) * 0.9 / var(--ost-base, 700)), 1.8);
+  zoom: var(--ost-z);
+  width: 100%;
+  max-width: var(--ost-max, calc(var(--ost-base, 700) * 1px));
+  margin-inline: auto;
+  overflow-x: clip; /* belt and braces: real content must never push the page sideways */
+}
+.ost-page img, .ost-page video, .ost-page iframe { max-width: 100%; }
+.ost-page h1, .ost-page h2, .ost-page .ost-gaz-name { overflow-wrap: anywhere; }
+@media (min-width: 641px) {
+  .ost-page { border-inline: 1px solid var(--os-line-soft); }
+}

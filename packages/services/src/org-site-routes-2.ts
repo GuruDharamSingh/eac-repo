@@ -31,6 +31,7 @@ const SECTION_LABELS: Record<string, string> = {
   feed: 'Latest from the org',
   featured: 'Featured',
   network: 'Across the network',
+  content: 'Content library',
 };
 
 /**

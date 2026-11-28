@@ -1440,5 +1440,6 @@ export { cleanNav, groupNav, NAV_MAX_ITEMS } from "./nav-core";
 export type { NavItem, NavGroup } from "./nav-core";
 export { listSitePages } from "./site-pages";
 export type { SitePage } from "./site-pages";
-export { indexThread, indexArtwork, unindexContent, reindexAll, reconcileContentIndex, drainContentQueue, INDEXED_THREAD_KINDS } from './content-index';
-export type { DrainResult, ReindexResult, ReconcileResult, StoreDrift } from './content-index';
+export { indexThread, indexArtwork, unindexContent, reindexAll, reconcileContentIndex, drainContentQueue, INDEXED_THREAD_KINDS, indexFilesUnder, indexFilePath, classifyFilePath, fileIndexId } from './content-index';
+export type { DrainResult, ReindexResult, ReconcileResult, StoreDrift, IndexFilesResult, FileClass } from './content-index';
+export { repliesHiddenSupported, hiddenReplyIds, setReplyHidden } from "./forum-moderate-reply";

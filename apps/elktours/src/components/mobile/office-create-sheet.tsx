@@ -21,7 +21,7 @@ const TILES: Array<{ key: string; label: string; line: string; href: string; sur
 
 const QUIET: Array<{ label: string; line: string; href: string; surface?: SurfaceDescriptor }> = [
   { label: "Share a post", line: "A post or a link for Discover", href: "/manage/share" },
-  { label: "Add a place", line: "To the catalogue guests browse", href: "/manage/places", surface: pop("office-add-place", "Add a place", "wide", "service") },
+  { label: "Add a place", line: "To the catalogue guests browse", href: "/manage/places", surface: pop("office-add-place", "Add a place", "full", "service") },
   { label: "Offer availability", line: "The days you are free", href: "/hub", surface: pop("office-availability", "Offer availability", "wide") },
 ];
 

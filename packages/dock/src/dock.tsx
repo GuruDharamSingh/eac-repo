@@ -32,8 +32,9 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { presentAction, type PresentField, type Presentation } from "@elkdonis/actions/present";
 import { withTicket } from "@elkdonis/actions/route";
-import { CHANNEL_DOCK_ACTIONS, type ActionResult, type ActionStatus, type ChannelNextMove } from "@elkdonis/actions";
+import { CHANNEL_DOCK_ACTIONS, type ActionResult, type ActionStatus, type ChannelNextMove, type LoadedForm } from "@elkdonis/actions";
 import { DOCK_FORMS } from "./forms";
+import { DeclaredForm, resolveConfirm, type DockUpload } from "./declared-form";
 import "./dock.css";
 
 /** The route's JSON (packages/actions/src/server/dock.ts `DockData`; kept in step by hand: that file is server-only). */
@@ -47,6 +48,8 @@ export interface DockWire {
     doneRequired: number;
     totalRequired: number;
     kind?: "do" | "go" | "check" | "read";
+    /** A place step (type 'place'): where it is done and the link there (server/dock.ts `DockStep.place`). */
+    place?: null | { href: string; where: string; anchor?: string | null };
     task: null | {
       id: string;
       label?: string;
@@ -56,7 +59,9 @@ export interface DockWire {
       route?: { href: string; anchor: string | null; how: string | null } | null;
       /** A module form key drawn inline before routing (ActionMeta.dockForm). */
       dockForm?: string | null;
-      confirm?: { kind: "text" | "draft" | "generic"; text: string; title?: string; risk: string[]; money: boolean } | null;
+      /** The declared form with the person's loaded values and lists (server/forms.ts `loadDockForm`). */
+      form?: LoadedForm | null;
+      confirm?: { kind: "text" | "draft" | "generic"; text: string; title?: string; risk: string[]; money: boolean; template?: string; vars?: Record<string, string>; map?: Record<string, string> } | null;
     };
   };
   away?: null | { returnHref: string; stepTitle: string | null; anchor: string | null; ticketOk: boolean };
@@ -105,6 +110,8 @@ export interface DockProps {
   hiddenOn?: (path: string) => boolean;
   /** Take me there, Back to the trail, the picker and the Done card. */
   trail?: DockTrail;
+  /** Uploads one picture for an image field and gives back its address. Without it an image field is "choose from your pictures". */
+  upload?: DockUpload;
 }
 
 const HIDDEN_KEY = "eac-dock-hidden";
@@ -130,7 +137,7 @@ const defaultHidden = (path: string) => path === "/learn" || path.startsWith("/l
 
 const RISK_WORD: Record<string, string> = { public: "Public", emails: "Sends email", others: "Affects other people", irreversible: "Cannot be undone", money: "Money" };
 
-export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHidden, trail }: DockProps) {
+export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHidden, trail, upload }: DockProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [data, setData] = React.useState<DockWire | null>(null);
@@ -255,6 +262,27 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
     // Same-path navigation does not change , so read the dock again for the new departure.
     window.setTimeout(() => void load(), 500);
   };
+  /** A place step: "Take me there", as deep as its address goes (path, surface in the query, highlight). Same trail as a go step. */
+  const departPlace = async (s: NonNullable<DockWire["step"]>) => {
+    const p = s.place;
+    if (!p || !trail) return;
+    let target: string | null = null;
+    try {
+      const u = new URL(p.href, window.location.origin);
+      if (u.origin === window.location.origin) target = u.pathname + u.search + u.hash;
+    } catch {
+      target = null;
+    }
+    if (!target) {
+      window.open(p.href, "_blank", "noopener");
+      return;
+    }
+    setBusy(`go:${s.stepSlug}`);
+    const r = await trail.depart(s.courseSlug, s.stepSlug, pathname + window.location.search).catch(() => ({ ticket: null }));
+    setBusy(null);
+    router.push(withTicket(target, r.ticket));
+    window.setTimeout(() => void load(), 500);
+  };
   const nextStep = async () => {
     await trail?.ack().catch(() => undefined);
     await load();
@@ -296,7 +324,7 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
               </div>
             </div>
           )}
-          {!pending && !done && step && <StepPart step={step} links={data.links} busy={busy} ask={ask} depart={() => void depart(step)} onReturn={load} canTravel={Boolean(trail)} here={hereOn(step, pathname)} />}
+          {!pending && !done && step && <StepPart step={step} links={data.links} busy={busy} ask={ask} depart={() => void depart(step)} departPlace={() => void departPlace(step)} upload={upload} onReturn={load} canTravel={Boolean(trail)} here={hereOn(step, pathname)} />}
           {!pending && !done && step && trail && !data.picker && <p className="eac-dock__back"><button type="button" className="eac-dock__link" onClick={openPicker}>Choose a trail</button></p>}
           {!pending && data.picker && (
             <div className="eac-dock__part eac-dock__picker">
@@ -444,12 +472,14 @@ function pickerGroups(rows: NonNullable<DockWire["picker"]>): Array<[string, Non
   return [...by.entries()].sort((a, b) => (a[0] === "" ? 1 : b[0] === "" ? -1 : a[0] < b[0] ? -1 : 1));
 }
 
-function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }: {
+function StepPart({ step, links, busy, ask, depart, departPlace, upload, onReturn, canTravel, here }: {
   step: NonNullable<DockWire["step"]>;
   links: DockWire["links"];
   busy: string | null;
   ask: (key: string, id: string, input: unknown, opts: { org?: string | null }, card: { title: string; confirm?: NonNullable<NonNullable<DockWire["step"]>["task"]>["confirm"] | null }) => void;
   depart: () => void;
+  departPlace: () => void;
+  upload?: DockUpload;
   onReturn: () => void;
   canTravel: boolean;
   here: boolean;
@@ -471,6 +501,22 @@ function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }:
           {task.status.detail && <span className="eac-dock__detail">{task.status.detail}</span>}
         </p>
       )}
+      {task && !Module && task.form && (
+        <DeclaredForm
+          key={JSON.stringify(task.form.values)}
+          form={task.form.form}
+          values={task.form.values}
+          pick={task.form.pick}
+          lists={task.form.lists}
+          label={busy === key ? "Saving…" : task.form.form.submitLabel}
+          busy={busy !== null}
+          upload={upload}
+          onSubmit={(values, ctx) => {
+            const r = resolveConfirm(task.confirm, task.form!.form, values, task.label ?? step.stepTitle);
+            ask(key, task.id, values, { org: task.orgId, ...(ctx.subject ? { subject: ctx.subject } : {}) }, { title: r.title, confirm: { kind: r.draft ? "draft" : task.confirm?.kind === "generic" ? "generic" : "text", text: r.text, title: task.confirm?.title ? r.title : undefined, risk: r.risk, money: false } });
+          }}
+        />
+      )}
       {task && Module && (
         <Module
           key={JSON.stringify(task.status.values ?? {})}
@@ -480,7 +526,7 @@ function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }:
           submit={(values) => ask(key, task.id, values, { org: task.orgId }, { title: task.label ?? step.stepTitle, confirm: task.confirm })}
         />
       )}
-      {task && c && !Module && (
+      {task && c && !Module && !task.form && (
         c.kind === "form" ? (
           <DockForm
             key={JSON.stringify(task.status.values ?? {})}
@@ -506,6 +552,19 @@ function StepPart({ step, links, busy, ask, depart, onReturn, canTravel, here }:
         ) : (
           <Control c={c} step={step} done={task.status.done} busy={busy !== null} label={busy === key && c.kind === "run" ? c.busyLabel : null} onRun={() => ask(key, task.id, undefined, { org: task.orgId }, { title: task.label ?? step.stepTitle, confirm: task.confirm })} onReturn={onReturn} />
         )
+      )}
+      {!task && step.place && (
+        <>
+          <div className="eac-dock__act">
+            {canTravel && step.place.href.startsWith("/") ? (
+              <button type="button" className="eac-dock__btn" disabled={busy !== null} onClick={departPlace}>{busy === `go:${step.stepSlug}` ? "Going…" : "Take me there"}</button>
+            ) : (
+              <a className="eac-dock__btn" href={step.place.href} {...(typeof window !== "undefined" && step.place.href.startsWith(window.location.origin) ? {} : { target: "_blank", rel: "noopener" })}>Take me there</a>
+            )}
+            {step.place.where && <span className="eac-dock__hint">{step.place.where}</span>}
+          </div>
+          <p className="eac-dock__hint">When you have done it, open the lesson and press “I did it”.</p>
+        </>
       )}
       <p className="eac-dock__back">
         <a href={step.href}>Back to the lesson</a>

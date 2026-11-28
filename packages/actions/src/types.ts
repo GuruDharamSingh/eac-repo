@@ -126,8 +126,9 @@ export interface ActionMeta {
    */
   agent?: 'read' | 'draft';
   /**
-   * A key naming a module form the dock can draw inline (packages/dock/src/forms.tsx `DOCK_FORMS`), so the person finishes
-   * the step without leaving the page. Data only: the registry never imports a component. Precedence in the dock:
+   * Set when the dock can draw the entry's form inline, so the person finishes the step without leaving the page: the
+   * entry's own id when it has a declared form (./forms.ts `ACTION_FORMS`, ./fields.ts), or a custom key of
+   * packages/dock/src/forms.tsx `DOCK_FORMS` (the escape hatch). Data only: the registry never imports a component. Precedence in the dock:
    * dockForm (inline, confirm, run), then `address` (route and highlight), then nothing. Added 2026-11-16 (lane rails).
    */
   dockForm?: string;

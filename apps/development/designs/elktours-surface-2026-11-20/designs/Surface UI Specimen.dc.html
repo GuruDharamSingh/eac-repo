@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Brothers";src:url("apps/elktours/public/fonts/BrothersTypeface-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Venture";src:url("apps/elktours/public/fonts/Venture-nRqOR.otf") format("opentype");font-weight:400;font-display:swap}
+html{background:#2a2e35}
+body{margin:0;background:linear-gradient(180deg,#262a30 0%,#2c3037 40%,#2a2e35 100%);color:#f1ece2;font-family:"Basteleur",Georgia,serif;font-size:16.6px;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#dcc08a;text-underline-offset:3px}
+a:hover{color:#f1ece2}
+</style>
+</helmet>
+
+<div style="--bg:#343941;--soft:#393e46;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;--ac:#c9a25c;--on:#1b1e23;--dg:#ae3a31;--fl:rgba(241,236,226,.22);--t:'Brothers','Venture',Georgia,serif;--b:'Basteleur',Georgia,serif;--r:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--k:#c9a25c;--ok:#1b1e23;max-width:1240px;margin:0 auto;padding:56px 32px 120px;display:flex;flex-direction:column;gap:88px;color:var(--fg);font-family:var(--b)">
+
+<header data-screen-label="00 Intro" style="display:grid;gap:28px">
+  <div style="display:grid;gap:10px;max-width:780px">
+    <span style="font-family:'Venture',Georgia,serif;font-size:.8rem;letter-spacing:.16em;color:var(--ac)">EAC-REPO · PACKAGES/CMS-UI/SURFACE</span>
+    <h1 style="margin:0;font-family:var(--t);font-weight:400;font-size:3rem;line-height:1.05;letter-spacing:.02em">Surface UI, as elktours draws it</h1>
+    <p style="margin:0;color:var(--mu);font-size:1.05rem;line-height:1.6;text-wrap:pretty">One object at three sizes. A <span style="color:var(--fg)">face</span> is the card in a grid, a <span style="color:var(--fg)">surface</span> is the popup it opens (all surfaces stack inside one dialog), and a <span style="color:var(--fg)">page</span> is the same masthead, body and foot in the page flow. Everything below is drawn from the source and the elktours token map; nothing has been redesigned yet.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:18px">
+    <div style="display:grid;gap:10px">
+      <div style="height:150px;display:flex;align-items:flex-end;padding:18px;background:var(--soft);border:1px solid var(--fl)">
+        <div style="position:relative;width:130px;height:100px;background:var(--bg);border:1px solid var(--fl);padding:36px 10px 10px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px">
+          <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),transparent 66%)"></div>
+          <div style="position:absolute;top:9px;left:9px;width:18px;height:18px;background:color-mix(in srgb,var(--k) 14%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 30%,transparent)"></div>
+          <div style="height:5px;width:40%;background:var(--mu);opacity:.5"></div>
+          <div style="height:8px;width:80%;background:var(--fg);opacity:.8"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:baseline"><span style="font-family:var(--r);font-size:11px;color:var(--ac)">01</span><span style="font-family:var(--t);font-size:1.15rem">Face</span><span style="font-family:var(--r);font-size:11px;color:var(--mu)">SurfaceCard</span></div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div style="height:150px;display:flex;align-items:center;justify-content:center;padding:18px;background:#1f2227;border:1px solid var(--fl)">
+        <div style="width:190px;height:116px;background:var(--bg);border:1px solid var(--rl);display:grid;grid-template-rows:26px 1fr 20px;box-shadow:0 18px 40px -18px rgba(0,0,0,.6)">
+          <div style="border-bottom:2px solid var(--k);display:flex;align-items:center;gap:6px;padding:0 8px"><div style="width:12px;height:12px;background:color-mix(in srgb,var(--k) 20%,transparent)"></div><div style="height:6px;width:50%;background:var(--fg);opacity:.8"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 54px"><div></div><div style="background:var(--soft);border-left:1px solid var(--ln)"></div></div>
+          <div style="background:var(--soft);border-top:1px solid var(--rl);display:flex;justify-content:flex-end;align-items:center;padding:0 6px"><div style="width:34px;height:10px;background:var(--k)"></div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:baseline"><span style="font-family:var(--r);font-size:11px;color:var(--ac)">02</span><span style="font-family:var(--t);font-size:1.15rem">Surface</span><span style="font-family:var(--r);font-size:11px;color:var(--mu)">SurfaceFrame in one &lt;dialog&gt;</span></div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div style="height:150px;display:flex;flex-direction:column;gap:6px;padding:14px 18px;background:var(--soft);border:1px solid var(--fl)">
+        <div style="height:5px;width:46px;background:var(--mu);opacity:.6"></div>
+        <div style="flex:1;background:var(--bg);border:1px solid var(--rl);display:grid;grid-template-rows:24px 1fr 18px">
+          <div style="border-bottom:2px solid var(--k);display:flex;align-items:center;gap:6px;padding:0 8px"><div style="width:12px;height:12px;background:color-mix(in srgb,var(--k) 20%,transparent)"></div><div style="height:6px;width:40%;background:var(--fg);opacity:.8"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 70px"><div></div><div style="background:var(--soft);border-left:1px solid var(--ln)"></div></div>
+          <div style="background:var(--soft);border-top:1px solid var(--rl)"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:baseline"><span style="font-family:var(--r);font-size:11px;color:var(--ac)">03</span><span style="font-family:var(--t);font-size:1.15rem">Page</span><span style="font-family:var(--r);font-size:11px;color:var(--mu)">SurfacePage, no scrim or close</span></div>
+    </div>
+  </div>
+</header>
+
+<section data-screen-label="01 Tokens" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">01</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">Tokens</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">An app themes the surface by setting <span style="font-family:var(--r);font-size:.85em;color:var(--fg)">--eac-surface-*</span> and <span style="font-family:var(--r);font-size:.85em;color:var(--fg)">--eac-kind-*</span> in its own :root. Each kind gets an accent that colours the face's edge, the medallion, the masthead hairline and the primary button.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">surface.css :root · elktours globals.css "zinc and brass" (2026-10-18)</code></sc-if>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#343941;border:1px solid var(--fl)"></div><span style="font-family:var(--r);font-size:11px">--sf-bg</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#343941 card</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#393e46;border:1px solid var(--fl)"></div><span style="font-family:var(--r);font-size:11px">--sf-bg-soft</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#393e46 rail, foot</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#f1ece2"></div><span style="font-family:var(--r);font-size:11px">--sf-fg</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#f1ece2 ivory</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#b9b2a5"></div><span style="font-family:var(--r);font-size:11px">--sf-muted</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#b9b2a5</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#84827d"></div><span style="font-family:var(--r);font-size:11px">--sf-faint</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">derived 60% mix</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#727a86"></div><span style="font-family:var(--r);font-size:11px">--sf-line</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#727a86</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#b8b9b9"></div><span style="font-family:var(--r);font-size:11px">--sf-rule</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">derived, heads + feet</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#c9a25c"></div><span style="font-family:var(--r);font-size:11px">--sf-accent</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#c9a25c brass</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#1b1e23;border:1px solid var(--fl)"></div><span style="font-family:var(--r);font-size:11px">--sf-on-accent</span><span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">#1b1e23 ink on fills</span></div>
+    <div style="display:grid;gap:6px"><div style="height:56px;background:#ae3a31"></div><span style="font-family:var(--r);font-size:11px">--sf-danger</span><span style="font-family:var(--r);font-size:10.5px;color:#e8805c">#ae3a31 unset → default</span></div>
+  </div>
+
+  <div style="display:grid;gap:12px">
+    <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Kinds · glyph · elktours accent</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:8px">
+      <div style="--k:#e8805c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◉</span><span style="display:grid"><span style="font-size:.9rem">Writing</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">post · terracotta</span></span></div>
+      <div style="--k:#c9a25c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◆</span><span style="display:grid"><span style="font-size:.9rem">Event</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">event · brass</span></span></div>
+      <div style="--k:#c9a25c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◎</span><span style="display:grid"><span style="font-size:.9rem">Meeting / Series</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">meeting · brass</span></span></div>
+      <div style="--k:#7c9c8c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◈</span><span style="display:grid"><span style="font-size:.9rem">Workshop</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">workshop · sage</span></span></div>
+      <div style="--k:#7c9c8c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▥</span><span style="display:grid"><span style="font-size:.9rem">Board</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">board · sage</span></span></div>
+      <div style="--k:#f1ece2;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▦</span><span style="display:grid"><span style="font-size:.9rem">Calendar</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">calendar · ivory</span></span></div>
+      <div style="--k:#f1ece2;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">✎</span><span style="display:grid"><span style="font-size:.9rem">Compose</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">compose · ivory</span></span></div>
+      <div style="--k:#dcc08a;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▧</span><span style="display:grid"><span style="font-size:.9rem">Gallery</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">gallery · brass-light</span></span></div>
+      <div style="--k:#b9b2a5;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--fl)"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">•</span><span style="display:grid"><span style="font-size:.9rem">Neutral</span><span style="font-family:var(--r);font-size:10px;color:var(--mu)">neutral · muted (places)</span></span></div>
+      <div style="--k:#c9a25c;display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px dashed var(--fl)"><span style="display:flex;gap:6px;color:var(--k);font-size:.95rem;letter-spacing:.06em">◇ ▣ ▤ ▥ ☰ ▭ ✦ §</span><span style="display:grid"><span style="font-family:var(--r);font-size:10px;color:var(--mu)">service, product, questionnaire, poll, forum, document, idea, define → accent</span></span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:28px">
+    <div style="display:grid;gap:12px;align-content:start">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Three voices</span>
+      <div style="display:grid;grid-template-columns:88px 1fr;gap:10px 16px;align-items:baseline">
+        <span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">title</span><span style="font-family:var(--t);font-size:1.5rem;line-height:1.2">Le Marais at dusk</span>
+        <span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">body</span><span style="font-family:var(--b);font-size:1rem;line-height:1.5">Meet under the arcade on the north side of Place des Vosges.</span>
+        <span style="font-family:var(--r);font-size:10.5px;color:var(--mu)">record</span><span style="font-family:var(--r);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Event · Sat 22 Nov · 17:30</span>
+      </div>
+      <p style="margin:0;font-size:.85rem;color:var(--mu);line-height:1.5">elktours sets Brothers for titles and Basteleur for body. The record voice is not mapped, so kickers and facts fall back to the system monospace (the rest of the site uses Venture for labels).</p>
+    </div>
+    <div style="display:grid;gap:12px;align-content:start">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Four widths a surface can open at</span>
+      <div style="display:grid;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:37.3%;height:22px;border:1px solid var(--ln);background:var(--bg)"></div><span style="font-family:var(--r);font-size:11px">compact 440</span></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:54.2%;height:22px;border:1px solid var(--ln);background:var(--bg)"></div><span style="font-family:var(--r);font-size:11px">standard 640</span></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:79.7%;height:22px;border:1px solid var(--k);background:color-mix(in srgb,var(--k) 10%,var(--bg))"></div><span style="font-family:var(--r);font-size:11px">wide 940</span></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:calc(100% - 80px);height:22px;border:1px solid var(--ln);background:var(--bg)"></div><span style="font-family:var(--r);font-size:11px">full 1180</span></div>
+      </div>
+      <p style="margin:0;font-size:.85rem;color:var(--mu);line-height:1.5">Tour, place and experience popups all open wide. Below 640px every size becomes a bottom sheet.</p>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:12px">
+    <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">One face, three token maps</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+      <div style="display:grid;gap:8px">
+        <div style="padding:22px;background:#f2f1ee">
+          <div style="--k:#5b45a8;--bg:#fff;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;color:#16181d;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),#fff;border:1px solid #cfd4db;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 22px -18px rgba(0,0,0,.2);font-family:Georgia,serif">
+            <div style="position:absolute;inset:0 0 auto 0;height:2px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+            <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,#fff);border:1px solid color-mix(in srgb,var(--k) 26%,transparent);border-radius:6px">◎</span>
+            <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:#a3a8b5">+</span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Meeting</span>
+              <span style="font-size:1.26rem;line-height:1.22;font-weight:500">Thursday walk</span>
+              <span style="color:#5e667a;font-size:.86rem;line-height:1.5">Every week, 18:00 from the Pont Neuf.</span>
+            </div>
+          </div>
+        </div>
+        <span style="font-family:var(--r);font-size:11px;color:var(--mu)"><span style="color:var(--fg)">package defaults</span> · white, violet, 6px radius, lift</span>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div style="padding:22px;background:#1b1e20">
+          <div style="--k:#c9ae79;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;color:#e9e5dd;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),#24282a;border:1px solid #373c3f;box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 22px -18px rgba(0,0,0,.2);font-family:'Fraunces',Georgia,serif">
+            <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+            <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,#24282a);border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◎</span>
+            <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:#a3a09a">+</span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Meeting</span>
+              <span style="font-size:1.26rem;line-height:1.22;font-weight:500">Thursday walk</span>
+              <span style="color:#a3a09a;font-size:.86rem;line-height:1.5">Every week, 18:00 from the Pont Neuf.</span>
+            </div>
+          </div>
+        </div>
+        <span style="font-family:var(--r);font-size:11px;color:var(--mu)"><span style="color:var(--fg)">apps/sunjay</span> · slate + bronze, Fraunces, corners forced square</span>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div style="padding:22px;background:#2a2e35">
+          <div style="--k:#c9a25c;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;color:var(--fg);background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl)">
+            <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+            <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◎</span>
+            <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Meeting</span>
+              <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Thursday walk</span>
+              <span style="color:var(--mu);font-size:.86rem;line-height:1.5">Every week, 18:00 from the Pont Neuf.</span>
+            </div>
+          </div>
+        </div>
+        <span style="font-family:var(--r);font-size:11px;color:var(--mu)"><span style="color:var(--fg)">apps/elktours</span> · zinc + brass, no lift, firmer rule</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="02 Faces" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">02</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">Faces</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">The whole card is one hit target, drawn behind inert content, so a face can carry live controls (a month grid, an input, RSVP pills) that take their own clicks. A click elsewhere opens the surface; with only <span style="font-family:var(--r);font-size:.85em;color:var(--fg)">href</span> it navigates and the cue becomes →.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">SurfaceCard.tsx · SurfaceCardGrid · .eac-face* in surface.css · elktours override: no lift, border ivory 22% → 60%</code></sc-if>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;align-items:stretch">
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#f1ece2;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▦</span>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Calendar</span>
+          <span style="color:var(--mu);font-size:.86rem;line-height:1.5;max-width:36ch">Every gathering and departure, month by month.</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">a · default</span> layout="footer", medallion, "+" cue. Kicker dropped because it would repeat the title.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#c9a25c;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◆</span>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+        <div style="display:flex;flex-direction:column;gap:4px;margin:10px 0 4px;font-size:.84rem;flex:1">
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:6ch">22 Nov</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Le Marais at dusk</span></div>
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:6ch">23 Nov</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Left Bank bookshops</span></div>
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:6ch">29 Nov</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Montmartre before breakfast</span></div>
+          <span style="align-self:flex-start;margin-top:4px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);font-family:var(--r);font-size:.68rem;letter-spacing:.04em">3 this week</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Event</span>
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Departures</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">b · preview lines</span> .eac-preview-line + date in the kind colour, .eac-preview-cue chip.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#dcc08a;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▧</span>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+        <div style="display:flex;flex-direction:column;margin:10px 0 4px;flex:1">
+          <div style="flex:1;min-height:92px;aspect-ratio:16/7;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">cover image</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Gallery</span>
+          <span style="color:var(--mu);font-size:.86rem;line-height:1.5">142 images in the library.</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">c · preview cover</span> .eac-preview-cover grows into the row's slack (16:7 floor).</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#c9a25c;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;min-height:210px;padding:18px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+        <div style="display:flex;flex-direction:column;gap:6px;padding-right:28px">
+          <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Idea</span>
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Ideas</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:.84rem;flex:1">
+          <div style="display:flex;align-items:center;padding:8px 10px;border:1px solid var(--ln);background:#2e3239;color:var(--fa);font-size:.84rem">Suggest something, press Enter</div>
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k)">✦</span><span>A rainy-day covered-passage route</span></div>
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k)">✦</span><span>French-language departures on Sundays</span></div>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">d · layout="header"</span> title leads, live content below, medallion dropped, 18px top.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#c9a25c;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:18px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+          <button type="button" style="padding:5px 12px;border-radius:999px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-family:var(--b);font-size:.8rem;cursor:pointer">Going</button>
+          <button type="button" style="padding:5px 12px;border-radius:999px;border:1px solid var(--ln);background:transparent;color:var(--fg);font-family:var(--b);font-size:.8rem;cursor:pointer" style-hover="border-color:var(--fg)">Can't</button>
+          <span style="margin-left:auto;font-family:var(--r);font-size:.7rem;color:var(--mu)">7 going</span>
+        </div>
+        <div style="display:flex;flex-direction:column;margin:4px 0;flex:1">
+          <div style="flex:1;min-height:70px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">meeting photo</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Meeting · Thu 18:00</span>
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Thursday walk</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">e · tools</span> a live row takes the medallion's corner. No cue: the actions are on show.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#c9a25c;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▭</span>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">→</span>
+        <div style="display:flex;flex-direction:column;gap:4px;margin:10px 0 4px;font-size:.84rem;flex:1">
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:6ch">18 Nov</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Guide handbook</span></div>
+          <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:6ch">02 Nov</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Meeting-point photos</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Documents</span>
+          <span style="color:var(--mu);font-size:.86rem;line-height:1.5">Shared files for the team.</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">f · href</span> navigates instead of opening; the cue turns to →.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <div style="--k:#b9b2a5;flex:1;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:210px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);opacity:.55">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◇</span>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Experience</span>
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Add Experience</span>
+          <span style="color:var(--mu);font-size:.86rem;line-height:1.5">Coming soon.</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">g · disabled</span> 55% opacity, no hit target, no cue. Ready-made for "coming soon".</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+      <ul style="flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none">
+        <li style="--k:#e8805c;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:100px;padding:14px 16px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer" style-hover="border-color:rgba(241,236,226,.6)"><div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),transparent 66%)"></div><span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:6px;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◉</span><span style="font-family:var(--t);font-size:1rem">Journal post</span></li>
+        <li style="--k:#c9a25c;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:100px;padding:14px 16px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer" style-hover="border-color:rgba(241,236,226,.6)"><div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),transparent 66%)"></div><span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:6px;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◆</span><span style="font-family:var(--t);font-size:1rem">Gathering</span></li>
+        <li style="--k:#c9a25c;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:100px;padding:14px 16px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer" style-hover="border-color:rgba(241,236,226,.6)"><div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),transparent 66%)"></div><span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:6px;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▤</span><span style="font-family:var(--t);font-size:1rem">Questionnaire</span></li>
+        <li style="--k:#c9a25c;position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:100px;padding:14px 16px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer" style-hover="border-color:rgba(241,236,226,.6)"><div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),transparent 66%)"></div><span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:6px;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">▥</span><span style="font-family:var(--t);font-size:1rem">Poll</span></li>
+      </ul>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">h · small</span> the compose picker's options (.eac-options); glyph back in the flow.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:flex;flex-direction:column;gap:8px;grid-column:1/-1">
+      <div style="--k:#e8805c;position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:132px;padding:56px 20px 20px;background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 5%,transparent),transparent 64%),var(--bg);border:1px solid var(--fl);cursor:pointer;transition:border-color 180ms ease" style-hover="border-color:rgba(241,236,226,.6)">
+        <div style="position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)"></div>
+        <span style="position:absolute;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent)">◉</span>
+        <span style="position:absolute;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa)">+</span>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Writing</span>
+          <span style="font-family:var(--t);font-size:1.26rem;line-height:1.22">Journal</span>
+          <span style="color:var(--mu);font-size:.86rem;line-height:1.5;max-width:60ch">Notes from the guides between tours.</span>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">i · wide</span> spans the grid, min-height 132.</figcaption>
+    </figure>
+  </div>
+
+  <div style="display:grid;gap:12px">
+    <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">What /hub actually uses today: hubsite HubLinkCard</span>
+    <ul style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:14px;margin:0;padding:0;list-style:none">
+      <li style="display:flex;min-width:0"><a href="#" style="display:flex;flex-direction:column;gap:6px;width:100%;min-height:148px;padding:16px 18px;color:var(--fg);text-decoration:none;background:var(--bg);border:1px solid var(--ln);border-top:3px solid var(--rl);transition:border-color 120ms ease" style-hover="border-color:#f1ece2;color:#f1ece2"><span style="display:flex;justify-content:space-between;align-items:center;margin-bottom:auto"><span style="font-size:1.3rem;line-height:1;color:var(--ac)">✚</span><span style="color:var(--mu)">→</span></span><span style="margin-top:14px;font-family:var(--t);font-size:1.2rem;line-height:1.2">Publish</span><span style="color:var(--mu);font-size:.95rem;line-height:1.4">Journal posts, gatherings, pages: everything the site puts out.</span></a></li>
+      <li style="display:flex;min-width:0"><a href="#" style="display:flex;flex-direction:column;gap:6px;width:100%;min-height:148px;padding:16px 18px;color:var(--fg);text-decoration:none;background:var(--bg);border:1px solid var(--ln);border-top:3px solid var(--rl);transition:border-color 120ms ease" style-hover="border-color:#f1ece2;color:#f1ece2"><span style="display:flex;justify-content:space-between;align-items:center;margin-bottom:auto"><span style="font-size:1.3rem;line-height:1;color:var(--ac)">⌖</span><span style="color:var(--mu)">→</span></span><span style="margin-top:14px;font-family:var(--t);font-size:1.2rem;line-height:1.2">Tours</span><span style="color:var(--mu);font-size:.95rem;line-height:1.4">Write and edit tours, their stops, films and dates.</span><span style="padding-top:8px;border-top:1px solid var(--ln);font-family:var(--r);font-size:.74rem;color:var(--mu)">6 tours · 2 drafts</span></a></li>
+      <li style="display:flex;min-width:0"><a href="#" style="display:flex;flex-direction:column;gap:6px;width:100%;min-height:148px;padding:16px 18px;color:var(--fg);text-decoration:none;background:var(--bg);border:1px solid var(--ln);border-top:3px solid var(--rl);transition:border-color 120ms ease" style-hover="border-color:#f1ece2;color:#f1ece2"><span style="display:flex;justify-content:space-between;align-items:center;margin-bottom:auto"><span style="font-size:1.3rem;line-height:1;color:var(--ac)">▦</span><span style="color:var(--mu)">→</span></span><span style="margin-top:14px;font-family:var(--t);font-size:1.2rem;line-height:1.2">Calendar</span><span style="color:var(--mu);font-size:.95rem;line-height:1.4">Every gathering and departure, month by month.</span><span style="padding-top:8px;border-top:1px solid var(--ln);font-family:var(--r);font-size:.74rem;color:var(--mu)">Next: Le Marais at dusk · Sat 22 Nov 17:30</span></a></li>
+    </ul>
+    <p style="margin:0;font-size:.85rem;color:var(--mu);line-height:1.5;max-width:780px">These are plain links to pages, not faces: no kind, no medallion, no popup. Only Documents, Gallery and Email at the bottom of /hub are real faces. Moving hub actions into popups means swapping these for SurfaceCards.</p>
+  </div>
+</section>
+
+<section data-screen-label="03 Surface anatomy" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">03</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">The surface</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">Every popup composes the same frame: masthead, body with an optional rail, and a foot with one primary action in the kind's colour. A surface never lays itself out, which is why popups built weeks apart in different apps match.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">SurfaceShell.tsx → SurfaceFrame, ActionButton, SurfaceSection, SurfaceFacts, SurfaceSkeleton</code></sc-if>
+  </header>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:28px;align-items:start">
+    <div style="padding:44px 34px;background:repeating-linear-gradient(0deg,rgba(241,236,226,.025) 0 1px,transparent 1px 28px),#1f2227">
+      <div style="position:relative;max-width:940px;margin:0 auto">
+        <article style="--k:#c9a25c;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--bg);border:1px solid var(--rl);box-shadow:0 28px 70px -24px rgba(0,0,0,.6),0 2px 10px rgba(0,0,0,.12);overflow:hidden">
+          <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-bottom:2px solid var(--k)">
+            <span style="display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-size:1.15rem;line-height:1">◆</span>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden"><span style="text-decoration:underline;text-decoration-color:rgba(241,236,226,.3);text-underline-offset:3px;cursor:pointer">‹ Calendar</span><span style="color:var(--fa)">·</span><span>Tour departure</span></div>
+              <h3 style="margin:2px 0 0;font-family:var(--t);font-size:1.22rem;font-weight:400;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Le Marais at dusk</h3>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button type="button" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-size:1rem;cursor:pointer" style-hover="border-color:#f1ece2">←</button>
+              <button type="button" style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-size:1rem;cursor:pointer" style-hover="border-color:#f1ece2">✕</button>
+            </div>
+          </header>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 272px">
+            <div style="padding:20px 22px 22px;min-width:0">
+              <div style="height:190px;margin-bottom:16px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">tour cover · .eac-surface-cover</div>
+              <p style="margin:0 0 14px;font-size:1.02rem;line-height:1.5;color:var(--mu)">Two and a half hours through the old aristocratic quarter as the lamps come on.</p>
+              <section style="margin:0 0 4px">
+                <h4 style="margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Route</h4>
+                <ol style="margin:0;padding:0 0 0 1.2rem;display:grid;gap:4px;font-size:.95rem;line-height:1.5"><li>Place des Vosges</li><li>Hôtel de Sully</li><li>Rue des Rosiers</li><li>Marché des Enfants Rouges</li></ol>
+              </section>
+            </div>
+            <aside style="padding:20px 20px 22px;border-left:1px solid var(--ln);background:var(--soft);min-width:0">
+              <dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:0;font-size:.9rem">
+                <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">When</dt><dd style="margin:0">Sat 22 Nov, 17:30</dd>
+                <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Meets</dt><dd style="margin:0">Place des Vosges, north arcade</dd>
+                <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Length</dt><dd style="margin:0">2 h 30</dd>
+                <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Places</dt><dd style="margin:0">6 of 12 <span style="display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);font-family:var(--r);font-size:.66rem;letter-spacing:.04em;vertical-align:1px">filling</span></dd>
+                <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Price</dt><dd style="margin:0">€35 per person</dd>
+              </dl>
+            </aside>
+          </div>
+          <footer style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--rl);background:var(--soft)">
+            <span style="font-family:var(--r);font-size:.74rem;color:var(--mu)">Departure published</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-left:auto">
+              <button type="button" style="padding:8px 14px;border:1px solid transparent;background:transparent;color:var(--mu);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer" style-hover="color:#f1ece2;background:#393e46">Open page</button>
+              <button type="button" style="padding:8px 14px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer">Book a place</button>
+            </div>
+          </footer>
+        </article>
+        <sc-if value="{{ annotate }}" hint-placeholder-val="{{ true }}">
+          <span style="position:absolute;top:24px;left:-26px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#e8805c;color:#1b1e23;font:600 11px ui-monospace,Menlo,monospace">1</span>
+          <span style="position:absolute;top:60px;left:-26px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#e8805c;color:#1b1e23;font:600 11px ui-monospace,Menlo,monospace">2</span>
+          <span style="position:absolute;top:110px;left:-26px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#e8805c;color:#1b1e23;font:600 11px ui-monospace,Menlo,monospace">3</span>
+          <span style="position:absolute;top:110px;right:-26px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#e8805c;color:#1b1e23;font:600 11px ui-monospace,Menlo,monospace">4</span>
+          <span style="position:absolute;bottom:16px;left:-26px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#e8805c;color:#1b1e23;font:600 11px ui-monospace,Menlo,monospace">5</span>
+        </sc-if>
+      </div>
+    </div>
+    <ol style="margin:0;padding:0;list-style:none;display:grid;gap:14px;font-size:.88rem;line-height:1.45">
+      <li style="display:grid;grid-template-columns:22px 1fr;gap:8px"><span style="font-family:var(--r);color:#e8805c">1</span><span><span style="color:var(--fg)">Masthead.</span> <span style="color:var(--mu)">Glyph, kicker, title, then ← and ✕. In a stack the kicker turns into a breadcrumb back.</span></span></li>
+      <li style="display:grid;grid-template-columns:22px 1fr;gap:8px"><span style="font-family:var(--r);color:#e8805c">2</span><span><span style="color:var(--fg)">Kind hairline.</span> <span style="color:var(--mu)">2px in the kind colour, repeating the face's top edge so it reads as the same object, larger.</span></span></li>
+      <li style="display:grid;grid-template-columns:22px 1fr;gap:8px"><span style="font-family:var(--r);color:#e8805c">3</span><span><span style="color:var(--fg)">Main.</span> <span style="color:var(--mu)">Scrolls. Cover, lede, sections, prose. flush removes padding for galleries.</span></span></li>
+      <li style="display:grid;grid-template-columns:22px 1fr;gap:8px"><span style="font-family:var(--r);color:#e8805c">4</span><span><span style="color:var(--fg)">Rail.</span> <span style="color:var(--mu)">272px, soft ground, holds facts. On phones it stacks first, above the description.</span></span></li>
+      <li style="display:grid;grid-template-columns:22px 1fr;gap:8px"><span style="font-family:var(--r);color:#e8805c">5</span><span><span style="color:var(--fg)">Foot.</span> <span style="color:var(--mu)">Status on the left, actions on the right. One primary, filled in the kind colour.</span></span></li>
+    </ol>
+  </div>
+</section>
+
+<section data-screen-label="04 Vocabulary" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">04</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">Inside a surface</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">The small set of parts a surface body is built from. The pill tabs are elktours' own (surface-tabs.tsx); cms-ui has no shared tab strip yet.</p>
+  </header>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px">
+    <div style="display:grid;gap:14px;align-content:start;padding:20px 22px;background:var(--bg);border:1px solid var(--fl)">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Buttons · .eac-btn</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <button type="button" style="padding:8px 14px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer" style-hover="border-color:#f1ece2">Default</button>
+        <button type="button" style="padding:8px 14px;border:1px solid var(--k);background:var(--k);color:var(--ok);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer">Primary</button>
+        <button type="button" style="padding:8px 14px;border:1px solid transparent;background:transparent;color:var(--mu);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer" style-hover="color:#f1ece2;background:#393e46">Quiet</button>
+        <button type="button" style="padding:8px 14px;border:1px solid var(--ln);background:var(--bg);color:var(--dg);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer" style-hover="border-color:#ae3a31">Danger</button>
+        <button type="button" style="padding:8px 14px;border:1px solid color-mix(in srgb,var(--k) 40%,transparent);background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--fg);font-family:var(--b);font-size:.88rem;white-space:nowrap;cursor:pointer">Going ✓</button>
+        <button type="button" disabled="" style="padding:8px 14px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-family:var(--b);font-size:.88rem;white-space:nowrap;opacity:.55">Disabled</button>
+      </div>
+      <p style="margin:0;font-size:.8rem;color:#e8805c;line-height:1.45">Danger reads poorly: elktours never sets --eac-surface-danger, so it falls back to #ae3a31, about 1.9:1 on the card. Worth fixing before an owner "Remove" button lands.</p>
+    </div>
+    <div style="display:grid;gap:14px;align-content:start;padding:20px 22px;background:var(--bg);border:1px solid var(--fl)">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Tabs · elktours SurfaceTabs</span>
+      <div style="display:flex;gap:8px;overflow-x:auto">
+        <span style="flex:none;padding:6px 14px;border-radius:999px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-size:.85rem">Overview</span>
+        <span style="flex:none;padding:6px 14px;border-radius:999px;border:1px solid var(--ln);color:var(--mu);font-size:.85rem">Stops</span>
+        <span style="flex:none;padding:6px 14px;border-radius:999px;border:1px solid var(--ln);color:var(--mu);font-size:.85rem">Dates</span>
+      </div>
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl);margin-top:6px">Chips · .eac-chip</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);font-family:var(--r);font-size:.66rem;letter-spacing:.04em">published</span>
+        <span style="padding:1px 8px;border-radius:999px;background:color-mix(in srgb,#ae3a31 14%,transparent);color:#ae3a31;font-family:var(--r);font-size:.66rem;letter-spacing:.04em">cancelled</span>
+        <span style="padding:1px 8px;border-radius:999px;background:color-mix(in srgb,#7c9c8c 14%,transparent);font-family:var(--r);font-size:.66rem;letter-spacing:.04em">workshop</span>
+      </div>
+    </div>
+    <div style="display:grid;gap:14px;align-content:start;padding:20px 22px;background:var(--bg);border:1px solid var(--fl)">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Facts · SurfaceFacts</span>
+      <dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:0;font-size:.9rem">
+        <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Address</dt><dd style="margin:0">Place des Vosges, 75004 Paris</dd>
+        <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Position</dt><dd style="margin:0">48.85550, 2.36560</dd>
+        <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Tags</dt><dd style="margin:0">square, architecture</dd>
+      </dl>
+      <p style="margin:0;font-size:.8rem;color:var(--mu)">Null values are skipped, so the same call works for sparse records.</p>
+    </div>
+    <div style="display:grid;gap:14px;align-content:start;padding:20px 22px;background:var(--bg);border:1px solid var(--fl)">
+      <span style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--rl)">Loading, empty, status</span>
+      <div style="display:grid;gap:10px">
+        <span style="display:block;height:60px;background:linear-gradient(90deg,#393e46,#43474e,#393e46)"></span>
+        <span style="display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#393e46,#43474e,#393e46)"></span>
+        <span style="display:block;height:12px;width:82%;border-radius:6px;background:linear-gradient(90deg,#393e46,#43474e,#393e46)"></span>
+      </div>
+      <div style="padding:16px;text-align:center;color:var(--mu);font-size:.92rem;border:1px dashed var(--ln)">No tour stops at this place yet.</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap"><span style="font-family:var(--r);font-size:.74rem;color:var(--mu)">Saving…</span><span style="font-family:var(--r);font-size:.74rem;color:#ae3a31">Could not load this.</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="05 Stack and sizes" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">05</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">Stacking, compact, phone</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">Surfaces push onto one stack in one dialog (calendar → day → add an event), so a flow reads as one thing opening. The URL follows the top layer. On phones the same frame becomes a bottom sheet.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">SurfaceProvider.tsx open() / push() · url.ts · @media (max-width:640px)</code></sc-if>
+  </header>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px;align-items:start">
+
+    <figure style="margin:0;display:grid;gap:8px">
+      <div style="position:relative;height:420px;padding:28px 22px;background:#1f2227;overflow:hidden">
+        <div style="position:absolute;left:46px;right:46px;top:14px;height:120px;background:var(--bg);border:1px solid var(--rl);opacity:.45"><div style="--k:#f1ece2;height:30px;border-bottom:2px solid var(--k);display:flex;align-items:center;gap:10px;padding:0 14px"><span style="color:var(--k)">▦</span><span style="font-family:var(--t);font-size:1rem">November</span></div></div>
+        <div style="position:absolute;left:34px;right:34px;top:46px;height:120px;background:var(--bg);border:1px solid var(--rl);opacity:.72"><div style="--k:#f1ece2;height:30px;border-bottom:2px solid var(--k);display:flex;align-items:center;gap:10px;padding:0 14px"><span style="color:var(--k)">▦</span><span style="font-family:var(--t);font-size:1rem">Saturday 22 November</span></div></div>
+        <article style="--k:#c9a25c;position:absolute;left:22px;right:22px;top:80px;bottom:22px;display:grid;grid-template-rows:auto 1fr auto;background:var(--bg);border:1px solid var(--rl);box-shadow:0 28px 70px -24px rgba(0,0,0,.7)">
+          <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-bottom:2px solid var(--k)">
+            <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">◆</span>
+            <div style="min-width:0"><div style="display:flex;gap:6px;font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden"><span style="text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(241,236,226,.3)">‹ Sat 22</span><span style="color:var(--fa)">·</span><span>Event</span></div><div style="font-family:var(--t);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">New departure</div></div>
+            <div style="display:flex;gap:6px"><span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">←</span><span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">✕</span></div>
+          </header>
+          <div style="padding:16px 18px;display:grid;gap:10px;align-content:start">
+            <div style="display:grid;gap:4px"><span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Tour</span><div style="padding:8px 10px;border:1px solid var(--ln);background:#2e3239;font-size:.9rem">Le Marais at dusk</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="display:grid;gap:4px"><span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Date</span><div style="padding:8px 10px;border:1px solid var(--ln);background:#2e3239;font-size:.9rem">22 Nov</div></div><div style="display:grid;gap:4px"><span style="font-family:var(--r);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">Start</span><div style="padding:8px 10px;border:1px solid var(--ln);background:#2e3239;font-size:.9rem">17:30</div></div></div>
+          </div>
+          <footer style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.7rem;color:var(--mu)">Draft</span><span style="padding:7px 12px;background:var(--k);color:var(--ok);font-size:.85rem">Publish</span></footer>
+        </article>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">stack</span> layers beneath stay mounted; ← and the crumb pop one.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:grid;gap:8px">
+      <div style="height:420px;display:flex;align-items:center;justify-content:center;padding:22px;background:#1f2227">
+        <article style="--k:#c9a25c;width:100%;max-width:340px;display:grid;background:var(--bg);border:1px solid var(--rl);box-shadow:0 28px 70px -24px rgba(0,0,0,.7)">
+          <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-bottom:2px solid var(--k)">
+            <span style="display:grid;place-items:center;width:34px;height:34px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-size:1.05rem">§</span>
+            <div style="min-width:0"><div style="font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase">Define</div><div style="font-family:var(--t);font-size:1.1rem">Arrondissement</div></div>
+            <span style="display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ln)">✕</span>
+          </header>
+          <div style="padding:16px 18px;font-size:.95rem;line-height:1.55">One of the twenty numbered districts of Paris, spiralling out clockwise from the Louvre.</div>
+          <footer style="display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--rl);background:var(--soft)"><span style="padding:7px 12px;color:var(--mu);font-size:.85rem">Edit</span><span style="padding:7px 12px;background:var(--k);color:var(--ok);font-size:.85rem">Done</span></footer>
+        </article>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">compact · 440</span> opened over what you are reading, not instead of it.</figcaption>
+    </figure>
+
+    <figure style="margin:0;display:grid;gap:8px">
+      <div style="height:420px;display:flex;justify-content:center;padding:18px 0 0;background:#1f2227">
+        <div style="width:250px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(20,18,16,.5);border:1px solid #444a53;border-bottom:0;overflow:hidden">
+          <article style="--k:#b9b2a5;display:grid;max-height:92%;background:var(--bg);border-top:1px solid var(--rl)">
+            <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-bottom:2px solid var(--k)">
+              <span style="display:grid;place-items:center;width:30px;height:30px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k)">•</span>
+              <div style="min-width:0"><div style="font-family:var(--r);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase">Place · private</div><div style="font-family:var(--t);font-size:1rem;line-height:1.2">Passage du Grand-Cerf</div></div>
+              <span style="display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--ln);font-size:.85rem">✕</span>
+            </header>
+            <div style="padding:12px 14px;background:var(--soft);border-bottom:1px solid var(--ln)">
+              <dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;row-gap:6px;margin:0;font-size:.8rem"><dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:2px">Address</dt><dd style="margin:0">145 Rue Saint-Denis</dd><dt style="font-family:var(--r);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:2px">Tags</dt><dd style="margin:0">passage, covered</dd></dl>
+            </div>
+            <div style="padding:12px 14px;font-size:.82rem;line-height:1.5;color:var(--mu)">Rail first, then the copy.</div>
+            <footer style="display:flex;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--rl);background:var(--soft)"><span style="padding:6px 10px;background:var(--k);color:var(--bg);font-size:.8rem">Open page</span></footer>
+          </article>
+        </div>
+      </div>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">phone · bottom sheet</span> full width, 92dvh cap, title may wrap, rail moves above main.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section data-screen-label="06 Page size" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">06</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">At page size</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">"Open page" lands on this: the same panel in the page flow, with a crumb row above and no close. Server-rendered; the host passes interactive bits into the foot.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">SurfacePage.tsx · used by sunjay /[feed]/[slug]</code></sc-if>
+  </header>
+  <div style="padding:28px;background:var(--soft);border:1px solid var(--fl)">
+    <div style="max-width:940px;margin:0 auto;display:grid;gap:12px">
+      <a href="#" style="font-size:.9rem;text-decoration:none;color:var(--mu)">← Tours</a>
+      <article style="--k:#c9a25c;display:grid;background:var(--bg);border:1px solid var(--rl)">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px;padding:14px 18px;border-bottom:2px solid var(--k)">
+          <span style="display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-size:1.15rem">◆</span>
+          <div><div style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase">Walking tour · Paris</div><h3 style="margin:2px 0 0;font-family:var(--t);font-size:1.6rem;font-weight:400;line-height:1.15">Le Marais at dusk</h3></div>
+        </header>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 272px">
+          <div style="padding:20px 22px;display:grid;gap:12px"><p style="margin:0;font-size:1.02rem;line-height:1.5;color:var(--mu)">Two and a half hours through the old aristocratic quarter as the lamps come on.</p><div style="height:120px;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">route map</div></div>
+          <aside style="padding:20px;border-left:1px solid var(--ln);background:var(--soft)"><dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:0;font-size:.9rem"><dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Next</dt><dd style="margin:0">Sat 22 Nov, 17:30</dd><dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Price</dt><dd style="margin:0">€35</dd></dl></aside>
+        </div>
+        <footer style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--rl);background:var(--soft)"><span style="font-family:var(--r);font-size:.74rem;color:var(--mu)">3 dates published</span><span style="padding:8px 14px;background:var(--k);color:var(--ok);font-size:.88rem">Book</span></footer>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="07 Places today" style="display:flex;flex-direction:column;gap:28px">
+  <header style="display:grid;gap:6px;max-width:780px">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">07</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">What elktours has for places today</h2>
+    <p style="margin:0;color:var(--mu);line-height:1.55;text-wrap:pretty">The three pieces closest to the business/place card and the mini card in an expandable list. Only the popup uses Surface; the business card and catalogue rows are Tailwind with @elkdonis/primitives. Sample data.</p>
+    <sc-if value="{{ showSource }}" hint-placeholder-val="{{ true }}"><code style="font-family:var(--r);font-size:11px;color:var(--fa)">surfaces/place-popup.tsx · places/business-card.tsx · places/place-catalogue.tsx + place-details.tsx</code></sc-if>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:22px;align-items:start">
+    <figure style="margin:0;display:grid;gap:8px">
+      <article style="--k:#b9b2a5;--ok:#343941;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--bg);border:1px solid var(--rl);box-shadow:0 28px 70px -24px rgba(0,0,0,.5)">
+        <header style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-bottom:2px solid var(--k)">
+          <span style="display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-size:1.15rem">•</span>
+          <div style="min-width:0"><div style="font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase">Place · private</div><h3 style="margin:2px 0 0;font-family:var(--t);font-size:1.22rem;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Place des Vosges</h3></div>
+          <span style="display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln)">✕</span>
+        </header>
+        <div style="padding:20px 22px 22px;display:grid;gap:16px;min-height:340px;align-content:start">
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+              <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ t.pick }}" style="flex:none;white-space:nowrap;padding:6px 14px;border-radius:999px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-family:var(--b);font-size:.85rem;cursor:pointer">{{ t.label }}</button></sc-if>
+              <sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ t.pick }}" style="flex:none;white-space:nowrap;padding:6px 14px;border-radius:999px;border:1px solid var(--ln);background:transparent;color:var(--mu);font-family:var(--b);font-size:.85rem;cursor:pointer" style-hover="border-color:#f1ece2;color:#f1ece2">{{ t.label }}</button></sc-if>
+            </sc-for>
+          </div>
+          <sc-if value="{{ tabCopy }}" hint-placeholder-val="{{ true }}">
+            <div style="aspect-ratio:16/9;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu)">place image · aspect-video</div>
+            <dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:0;font-size:.9rem">
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Address</dt><dd style="margin:0">Place des Vosges, 75004 Paris</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Position</dt><dd style="margin:0">48.85550, 2.36560</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Tags</dt><dd style="margin:0">square, architecture, meeting point</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Source</dt><dd style="margin:0">osm (way/23284960)</dd>
+            </dl>
+            <p style="margin:0;font-size:.95rem;line-height:1.6">The oldest planned square in Paris, laid out under Henri IV. Thirty-six houses share one façade around a garden.</p>
+          </sc-if>
+          <sc-if value="{{ tabNotes }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:0;font-size:.95rem;line-height:1.6">Meet at the north arcade, by No. 1 bis. On Sunday mornings the arcade fills with musicians; use the Victor Hugo side instead.</p>
+          </sc-if>
+          <sc-if value="{{ tabStats }}" hint-placeholder-val="{{ false }}">
+            <dl style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:0;font-size:.9rem">
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Tours</dt><dd style="margin:0">2 (1 published)</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Times visited</dt><dd style="margin:0">14</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Guests</dt><dd style="margin:0">118</dd>
+              <dt style="font-family:var(--r);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px">Last visited</dt><dd style="margin:0">15 Nov 2026</dd>
+            </dl>
+          </sc-if>
+          <sc-if value="{{ tabAssets }}" hint-placeholder-val="{{ false }}">
+            <ul style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none">
+              <li style="border:1px solid var(--ln)"><div style="aspect-ratio:4/3;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239"></div><p style="margin:0;padding:4px 6px;font-size:.7rem;color:var(--mu)">image · on</p></li>
+              <li style="border:1px solid var(--ln)"><div style="aspect-ratio:4/3;background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),#2e3239"></div><p style="margin:0;padding:4px 6px;font-size:.7rem;color:var(--mu)">still · on</p></li>
+              <li style="border:1px solid var(--ln)"><div style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:#393e46;font-size:.7rem;text-transform:uppercase">flyover</div><p style="margin:0;padding:4px 6px;font-size:.7rem;color:var(--mu)">flyover · off</p></li>
+            </ul>
+          </sc-if>
+          <sc-if value="{{ tabTours }}" hint-placeholder-val="{{ false }}">
+            <ul style="margin:0;padding:0;list-style:none;border:1px solid var(--ln)">
+              <li style="display:flex;justify-content:space-between;gap:12px;padding:8px 12px;font-size:.9rem;border-bottom:1px solid var(--ln)"><span style="text-decoration:underline;text-underline-offset:4px">Le Marais at dusk</span><span style="color:var(--mu)">Stop 1</span></li>
+              <li style="display:flex;justify-content:space-between;gap:12px;padding:8px 12px;font-size:.9rem"><span style="text-decoration:underline;text-underline-offset:4px">Royal Paris</span><span style="color:var(--mu)">Stop 4 · draft</span></li>
+            </ul>
+          </sc-if>
+        </div>
+        <footer style="display:flex;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--rl);background:var(--soft)"><span style="padding:8px 14px;background:var(--k);color:var(--ok);font-size:.88rem">Open page</span></footer>
+      </article>
+      <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">PlacePopup</span> kind="neutral", wide, five tabs (click them). No map; position is lat/lng text.</figcaption>
+    </figure>
+
+    <div style="display:grid;gap:22px">
+      <figure style="margin:0;display:grid;gap:8px">
+        <div style="padding:12px;border:1px solid var(--ln);font-size:.875rem;line-height:1.45">
+          <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px">
+            <p style="margin:0;font-weight:700"><a href="#" style="color:var(--fg);text-decoration:none">Pâtisserie Stohrer</a><span style="margin-left:8px;font-weight:400;opacity:.75">Bakery</span></p>
+            <span style="display:inline-block;white-space:nowrap;border-radius:999px;border:1px solid var(--ln);padding:2px 8px;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8">Unclaimed · listed by Elkdonis</span>
+          </div>
+          <dl style="margin:6px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px">
+            <dt style="opacity:.7">Address</dt><dd style="margin:0">51 Rue Montorgueil, 75002 Paris</dd>
+            <dt style="opacity:.7">Hours</dt><dd style="margin:0">Mo-Su 08:00-20:30</dd>
+            <dt style="opacity:.7">Website</dt><dd style="margin:0"><a href="#" style="text-decoration:underline">stohrer.fr ↗</a></dd>
+          </dl>
+          <p style="margin:6px 0 0;font-size:.65rem;opacity:.7"><a href="#" style="color:var(--fg)">Is this your business?</a> · © OpenStreetMap contributors</p>
+        </div>
+        <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">BusinessCard</span> facts only (rules 1–3 of the associated-businesses brief): no buy, book, vouches or badge. Label voice is opacity, not the surface's mono kicker.</figcaption>
+      </figure>
+
+      <figure style="margin:0;display:grid;gap:8px">
+        <ul style="margin:0;padding:0;list-style:none;border:1px solid var(--ln)">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+            <li style="border-bottom:1px solid var(--ln)">
+              <div onClick="{{ r.toggle }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:12px 16px;cursor:pointer" style-hover="background:rgba(69,74,83,.35)">
+                <span style="width:56px;height:40px;flex:none;border:1px solid var(--ln);background:repeating-linear-gradient(135deg,rgba(241,236,226,.07) 0 4px,transparent 4px 8px),#2e3239"></span>
+                <span style="min-width:0;flex:1 1 180px;display:grid"><span style="font-weight:700;font-size:.95rem">{{ r.title }}</span><span style="font-size:.75rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.address }}</span></span>
+                <span style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ r.tags }}" as="tg" hint-placeholder-count="2"><span style="padding:2px 8px;background:#3e434c;font-size:.72rem">{{ tg }}</span></sc-for></span>
+                <span style="width:64px;text-align:right;font-size:.75rem;color:var(--mu)">{{ r.used }}</span>
+                <span style="width:84px;text-align:right;font-size:.75rem;color:var(--mu)">{{ r.last }}</span>
+              </div>
+              <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;gap:16px;padding:16px;border-top:1px solid var(--ln);background:var(--bg)">
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:18px">
+                    <div style="display:grid;gap:12px;align-content:start">
+                      <section><h4 style="margin:0 0 4px;font-family:var(--b);font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)">Public copy</h4><p style="margin:0;font-size:.85rem;line-height:1.55">{{ r.copy }}</p></section>
+                      <section style="padding:10px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.05)"><h4 style="margin:0 0 4px;font-family:var(--b);font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)">Private notes</h4><p style="margin:0;font-size:.85rem;line-height:1.55">{{ r.notes }}</p></section>
+                    </div>
+                    <div style="display:grid;gap:12px;align-content:start">
+                      <section><h4 style="margin:0 0 4px;font-family:var(--b);font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)">Stats</h4>
+                        <dl style="margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 12px;font-size:.85rem"><div><dt style="font-size:.7rem;color:var(--mu)">Tours</dt><dd style="margin:0;font-weight:700">{{ r.toursN }}</dd></div><div><dt style="font-size:.7rem;color:var(--mu)">Runs</dt><dd style="margin:0;font-weight:700">{{ r.runs }}</dd></div><div><dt style="font-size:.7rem;color:var(--mu)">Guests</dt><dd style="margin:0;font-weight:700">{{ r.guests }}</dd></div><div><dt style="font-size:.7rem;color:var(--mu)">Last visited</dt><dd style="margin:0;font-weight:700">{{ r.last }}</dd></div></dl>
+                      </section>
+                      <section><h4 style="margin:0 0 4px;font-family:var(--b);font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)">Media</h4><div style="display:flex;gap:8px"><span style="width:84px;height:56px;border:1px solid var(--ln);background:repeating-linear-gradient(135deg,rgba(241,236,226,.07) 0 4px,transparent 4px 8px),#2e3239"></span><span style="width:84px;height:56px;border:1px solid var(--ln);background:repeating-linear-gradient(135deg,rgba(241,236,226,.07) 0 4px,transparent 4px 8px),#2e3239"></span></div></section>
+                      <section><h4 style="margin:0 0 4px;font-family:var(--b);font-size:.72rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)">Tours using it</h4><p style="margin:0;font-size:.85rem;text-decoration:underline;text-underline-offset:4px">{{ r.tourName }}</p></section>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;border-top:1px solid var(--ln);padding-top:12px">
+                    <span style="padding:6px 12px;border:1px solid var(--ln);font-size:.85rem">Edit</span>
+                    <span style="padding:6px 12px;font-size:.85rem;color:#e8805c">Archive</span>
+                  </div>
+                </div>
+              </sc-if>
+            </li>
+          </sc-for>
+        </ul>
+        <figcaption style="font-family:var(--r);font-size:11px;color:var(--mu);line-height:1.5"><span style="color:var(--fg)">PlaceCatalogue rows</span> native &lt;details&gt; (click a row). The expanded body is PlaceDetails, two columns, then the business panel and reviews (trimmed here).</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="08 Observations" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:28px;padding-top:28px;border-top:1px solid var(--rl)">
+  <div style="display:grid;gap:6px;align-content:start">
+    <span style="font-family:var(--r);font-size:11px;letter-spacing:.14em;color:var(--ac)">08</span>
+    <h2 style="margin:0;font-family:var(--t);font-size:2rem;font-weight:400;letter-spacing:.02em">What this means for the two new pieces</h2>
+  </div>
+  <ul style="margin:0;padding:0 0 0 1.1rem;display:grid;gap:12px;font-size:.95rem;line-height:1.55;color:var(--mu)">
+    <li><span style="color:var(--fg)">A place card can be a face.</span> Medallion, kicker, title, blurb and a preview slot already exist; the preview could carry the map tile, and SurfaceFacts covers address, hours and link.</li>
+    <li><span style="color:var(--fg)">Places have no kind.</span> They borrow "neutral", so they get the muted accent and the • glyph. A "place" kind (glyph and accent) would set map and place cards apart from tours.</li>
+    <li><span style="color:var(--fg)">Nothing draws a map yet.</span> Faces, popups and catalogue rows all show position as text. pin-map.tsx and places-map.tsx exist on the manage side and could be wrapped as a preview.</li>
+    <li><span style="color:var(--fg)">The expandable row is native &lt;details&gt; with Tailwind.</span> A mini card form for a list (route stops, say) could reuse the summary row shape and put surface fields and facts in the open body.</li>
+    <li><span style="color:var(--fg)">Two label voices.</span> Surface uses mono uppercase kickers; the business card and catalogue use opacity and muted text. Picking one is part of merging.</li>
+  </ul>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;annotate&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Specimen&quot;}, &quot;showSource&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Specimen&quot;}}">
+class Component extends DCLogic {
+  state = { tab: 'copy', open: 'stohrer' };
+  renderVals() {
+    const tab = this.state.tab;
+    const tabs = [['copy', 'Public copy'], ['notes', 'Private notes'], ['stats', 'Stats'], ['assets', 'Assets (3)'], ['tours', 'Tours (2)']]
+      .map(([key, label]) => ({ key, label, on: tab === key, off: tab !== key, pick: () => this.setState({ tab: key }) }));
+    const places = [
+      { id: 'vosges', title: 'Place des Vosges', address: 'Place des Vosges, 75004 Paris', tags: ['square', 'architecture'], used: '2 tours', last: '15 Nov 2026', toursN: '2 (1 live)', runs: '14', guests: '118', tourName: 'Le Marais at dusk',
+        copy: 'The oldest planned square in Paris, laid out under Henri IV.', notes: 'Meet at the north arcade. On Sunday mornings use the Victor Hugo side.' },
+      { id: 'stohrer', title: 'Pâtisserie Stohrer', address: '51 Rue Montorgueil, 75002 Paris', tags: ['bakery', 'food'], used: '1 tour', last: '12 Nov 2026', toursN: '1', runs: '9', guests: '71', tourName: 'Les Halles to Montorgueil',
+        copy: 'A pastry shop on Rue Montorgueil, open since 1730.', notes: 'Queue is shortest before 10:00. Ask for the baba au rhum.' },
+      { id: 'eustache', title: 'Église Saint-Eustache', address: '2 Impasse Saint-Eustache, 75001 Paris', tags: ['church'], used: '1 tour', last: '8 Nov 2026', toursN: '1', runs: '6', guests: '40', tourName: 'Les Halles to Montorgueil',
+        copy: 'Gothic plan, Renaissance detail, beside the old market.', notes: 'Organ practice most Sunday afternoons; keep voices down inside.' },
+      { id: 'grandcerf', title: 'Passage du Grand-Cerf', address: '145 Rue Saint-Denis, 75002 Paris', tags: ['passage', 'covered'], used: 'unused', last: 'never', toursN: '0', runs: '0', guests: '0', tourName: 'Not in any tour.',
+        copy: 'A tall glass-roofed passage between Saint-Denis and Dussoubs.', notes: 'Good rain fallback. Gates close at 20:30.' }
+    ];
+    const rows = places.map(p => ({ ...p, open: this.state.open === p.id, toggle: () => this.setState(s => ({ open: s.open === p.id ? null : p.id })) }));
+    return {
+      tabs, rows,
+      tabCopy: tab === 'copy', tabNotes: tab === 'notes', tabStats: tab === 'stats', tabAssets: tab === 'assets', tabTours: tab === 'tours',
+      annotate: this.props.annotate ?? true,
+      showSource: this.props.showSource ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

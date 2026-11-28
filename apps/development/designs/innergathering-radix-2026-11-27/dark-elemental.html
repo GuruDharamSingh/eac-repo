@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elkdonis elemental dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap">
+<style id="static-css">
+/* Site fonts: the three faces apps/innergathering ships in public/fonts, referenced by relative path
+   (they load when this file sits in the monorepo; otherwise the Google fallbacks below are used). */
+@font-face{font-family:"Venture";src:url("fonts/Venture-nRqOR.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Brothers";src:url("fonts/BrothersTypeface-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Basteleur";src:url("fonts/Basteleur-Moonlight.woff2") format("woff2"),url("fonts/Basteleur-Moonlight.woff") format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("fonts/Basteleur-Bold.woff2") format("woff2"),url("fonts/Basteleur-Bold.woff") format("woff");font-weight:700;font-display:swap}
+
+:root{
+  --r:2px;
+  --f-label:"Venture","Cinzel",Georgia,serif;
+  --f-display:"Brothers","Cormorant Garamond",Georgia,serif;
+  --f-text:"Basteleur","Cormorant Garamond",Georgia,serif;
+  --gut:20px; --max:1120px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-text);font-size:17px;line-height:1.65;overflow-x:clip}
+html[data-scheme=dark]{color-scheme:dark}
+img,svg{max-width:100%}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:400;line-height:1.1;margin:0 0 .5em;letter-spacing:.005em}
+h1{font-size:clamp(40px,7vw,84px)} h2{font-size:clamp(30px,4.6vw,52px)} h3{font-size:clamp(21px,2.4vw,27px)}
+p{margin:0 0 1em}
+a{color:var(--accent-text)}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
+.sec{background:var(--bg);color:var(--text);padding:72px 0}
+.sec[data-tone=deep],.sec[data-tone=accent]{padding:80px 0}
+.eyebrow{font-family:var(--f-label);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);margin:0 0 14px}
+.muted{color:var(--text-muted)}
+.rule{border:0;height:2px;width:96px;background:var(--spectrum);margin:22px 0}
+
+/* spectrum: the logo board's gradient (blue, turquoise, cream, gold, orange, red), read from step 9 (dark) or 10 (light) */
+html[data-scheme="dark"]{--sp1:var(--blue-9);--sp2:var(--turquoise-9);--sp3:var(--gold-10);--sp4:var(--gold-9);--sp5:var(--orange-9);--sp6:var(--red-9)}
+html[data-scheme="light"]{--sp1:var(--blue-10);--sp2:var(--turquoise-10);--sp3:var(--gold-10);--sp4:var(--gold-10);--sp5:var(--orange-10);--sp6:var(--red-10)}
+:root{--spectrum:linear-gradient(90deg,var(--sp1),var(--sp2) 24%,var(--sp3) 46%,var(--sp4) 60%,var(--sp5) 80%,var(--sp6))}
+.spec-text{background:var(--spectrum);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+/* background glows: radial stops read steps 3-5 of a hue; the centre of each is that step at full strength,
+   so the contrast table measures text against the brightest stop, not an average */
+.sec[data-glow]{position:relative;isolation:isolate}
+.sec[data-glow=spectrum]{background:
+  radial-gradient(55% 75% at 0% 0%,var(--blue-4),transparent 70%),
+  radial-gradient(45% 60% at 48% 0%,var(--turquoise-3),transparent 70%),
+  radial-gradient(50% 70% at 100% 100%,var(--red-4),transparent 70%),
+  radial-gradient(45% 60% at 70% 100%,var(--orange-3),transparent 70%),var(--bg)}
+.sec[data-glow=cool]{background:
+  radial-gradient(60% 80% at 100% 0%,var(--blue-4),transparent 70%),
+  radial-gradient(50% 70% at 0% 100%,var(--turquoise-3),transparent 70%),var(--bg)}
+.sec[data-glow=warm]{background:
+  radial-gradient(55% 80% at 0% 100%,var(--red-4),transparent 70%),
+  radial-gradient(50% 70% at 60% 100%,var(--orange-3),transparent 70%),
+  radial-gradient(45% 60% at 100% 0%,var(--gold-3),transparent 70%),var(--bg)}
+.sec[data-glow=deep]{background:
+  radial-gradient(70% 90% at 50% 0%,var(--d-blue-4),transparent 70%),
+  linear-gradient(180deg,var(--bg),var(--bg-sunken)),var(--bg)}
+.center{text-align:center}.center .rule{margin-inline:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid2s{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack>*+*{margin-top:1em}
+
+/* header */
+.hdr{position:sticky;top:0;z-index:30;background:var(--bg);color:var(--text);border-bottom:1px solid var(--divider)}
+.hdr::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--spectrum);opacity:.85}
+.hdr .wrap{display:flex;align-items:center;gap:24px;height:64px}
+.brand{font-family:var(--f-display);font-size:24px;color:var(--text);text-decoration:none;white-space:nowrap}
+.nav{display:flex;gap:4px;margin-left:auto;align-items:center}
+.nav a,.nav button.nl{font-family:var(--f-label);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text);text-decoration:none;padding:10px 12px;border:0;background:none;border-bottom:2px solid transparent}
+.nav a[aria-current=page]{border-bottom-color:var(--solid)}
+.nav a:hover{background:var(--panel-hover)}
+.nav .door{border:1px solid var(--ctl-border);margin-left:8px}
+.burger{display:none;margin-left:auto;border:1px solid var(--ctl-border);background:none;padding:8px 12px;font-family:var(--f-label);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text)}
+.msheet{display:none;background:var(--bg);border-bottom:1px solid var(--divider)}
+.msheet a{display:block;padding:14px var(--gut);font-family:var(--f-label);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--text);text-decoration:none;border-top:1px solid var(--divider)}
+.msheet.open{display:block}
+
+/* controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--solid);color:var(--on-solid);border:1px solid var(--solid);border-radius:var(--r);padding:12px 22px;font-family:var(--f-label);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;min-height:44px}
+.btn:hover{background:var(--solid-hover);border-color:var(--solid-hover)}
+.btn.quiet{background:transparent;color:var(--text);border-color:var(--ctl-border)}
+.btn.quiet:hover{background:var(--panel-hover)}
+.btn.sm{padding:8px 14px;min-height:36px}
+.lnk{background:none;border:0;padding:0;color:var(--accent-text);text-decoration:underline;text-underline-offset:3px;font-family:var(--f-text);font-size:inherit}
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.field{display:block;margin:0 0 16px}
+.field>span{display:block;font-family:var(--f-label);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--ctl-border);border-radius:var(--r);padding:11px 12px;min-height:44px}
+.field input::placeholder{color:var(--text-muted)}
+.tag{display:inline-block;font-family:var(--f-label);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--border);color:var(--text);background:var(--bg-sunken);border-radius:var(--r)}
+.tag.a2{background:var(--a2);color:var(--on-a2);border-color:var(--a2)}
+.tag.a3{background:var(--a3);color:var(--on-a3);border-color:var(--a3)}
+.card{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.card.hot{cursor:pointer}.card.hot:hover{background:var(--panel-hover)}
+.ph{position:relative;background:repeating-linear-gradient(135deg,var(--divider) 0 1px,transparent 1px 11px),var(--bg-sunken);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-family:var(--f-label);font-size:10px;letter-spacing:.2em;text-transform:uppercase;min-height:140px}
+.meta{font-size:15px;color:var(--text-muted);margin:0 0 .6em}
+.offer .ph{margin:-20px -20px 16px;border-width:0 0 1px;min-height:120px}
+.offer h3{margin-top:10px}
+.bar{height:6px;background:var(--bg-sunken);border:1px solid var(--border)}
+.bar>i{display:block;height:100%;background:var(--solid)}
+
+/* hero */
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+.hero h1{margin-bottom:.2em}
+.hero .sub{font-family:var(--f-label);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--text-muted)}
+.hero .tag-line{font-size:20px;max-width:34ch}
+.hero .ph{min-height:380px}
+.hero h1{font-size:clamp(44px,7.4vw,92px)}
+.mark{display:block;width:min(360px,100%);margin:0 auto}
+.mark text{font-family:var(--f-display)}
+
+/* arts-collective.com ad */
+.ad{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:start}
+.ad h2{margin-bottom:.3em}
+.ad .host{font-family:var(--f-label);font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.ad-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ad-list li{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.ad-list h3{font-size:20px;margin:0 0 .3em}
+.ad-list p{margin:0;font-size:15.5px;color:var(--text-muted);line-height:1.5}
+.ad-net{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:36px;border-top:1px solid var(--divider)}
+.ad-net a{display:block;padding:16px 18px 4px 0;color:var(--text);text-decoration:none}
+.ad-net a+a{padding-left:18px;border-left:1px solid var(--divider)}
+.ad-net b{display:block;font-family:var(--f-label);font-weight:400;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-text);margin-bottom:4px}
+.ad-net span{font-size:15px;color:var(--text-muted);line-height:1.45;display:block}
+.ad-tag{display:inline-block;font-family:var(--f-label);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);border:1px solid var(--border);padding:2px 7px;margin-left:10px;vertical-align:2px}
+.aid p{font-size:18px}
+
+/* lists */
+.qual{display:grid;grid-template-columns:56px 1fr;gap:20px;padding:26px 0;border-top:1px solid var(--divider)}
+.qual .n{font-family:var(--f-display);font-size:40px;color:var(--accent-text);line-height:1}
+.members{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.member{text-align:center}
+.member .av{width:96px;height:96px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:var(--bg-sunken);border:1px solid var(--border);font-family:var(--f-display);font-size:34px;color:var(--text-muted)}
+.cities{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.cities>div{padding:18px 20px}.cities>div+div{border-left:1px solid var(--text-muted)}
+.cities b{display:block;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,3.4vw,42px)}
+.cities span{font-family:var(--f-label);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase}
+.slides{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,32%);gap:16px;overflow-x:auto;padding-bottom:8px}
+.slides .ph{min-height:220px}
+.join{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.bullets{padding-left:1.1em}.bullets li{margin:.4em 0}
+.warr{display:flex;flex-direction:column;gap:0}
+.shelf{list-style:none;margin:0;padding:0}
+.shelf li{display:grid;grid-template-columns:120px 1fr auto;gap:20px;padding:18px 0;border-top:1px solid var(--divider);align-items:center;cursor:pointer}
+.shelf li:hover{background:var(--panel-hover)}
+.shelf .ph{min-height:80px}
+.shelf h3{margin:0 0 .15em}
+.banner{padding:64px 0 40px;border-bottom:1px solid var(--divider)}
+.banner::before{content:"";display:block;width:96px;height:3px;background:var(--spectrum);margin-bottom:22px}
+.authcard{max-width:460px;margin:0 auto}
+.tabs{display:flex;border-bottom:1px solid var(--divider);margin-bottom:22px}
+.tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:12px;font-family:var(--f-label);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted)}
+.tabs button[aria-selected=true]{border-bottom-color:var(--solid);color:var(--text)}
+.band{padding:36px 0;border-top:1px solid var(--divider)}
+.band h2{font-size:clamp(24px,3vw,34px)}
+.rsvprow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid var(--divider);flex-wrap:wrap}
+.errands{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.errands a{display:block;padding:16px;border:1px solid var(--ctl-border);color:var(--text);text-decoration:none;font-family:var(--f-label);font-size:11px;letter-spacing:.16em;text-transform:uppercase;background:var(--panel)}
+.errands a:hover{background:var(--panel-hover)}
+.chat p{display:flex;gap:10px;align-items:center;margin:0 0 10px}
+.chat .av{width:32px;height:32px;flex:none;background:var(--bg-sunken);border:1px solid var(--border)}
+.chat .ln{height:10px;background:var(--divider);flex:1;max-width:var(--w,70%)}
+.notice{border:1px dashed var(--border);padding:10px 14px;font-size:14px;color:var(--text-muted);margin-bottom:24px}
+.foot .grid3{gap:32px}
+.foot a{color:var(--text)}
+.foot ul{list-style:none;margin:0;padding:0}.foot li{margin:.3em 0}
+.foot .fine{border-top:1px solid var(--divider);margin-top:36px;padding-top:18px;font-size:14px;color:var(--text-muted)}
+
+/* surfaces */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(10,12,20,.52);display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet{width:min(680px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--bg);color:var(--text);border:1px solid var(--ctl-border);border-radius:var(--r);box-shadow:0 18px 50px rgba(0,0,0,.5);overflow:hidden}
+.sheet::before{content:"";flex:none;height:3px;background:var(--spectrum)}
+.sh-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--divider);min-height:56px}
+.sh-head h2{font-size:22px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sh-head .crumb{background:none;border:0;color:var(--accent-text);font-family:var(--f-label);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;max-width:40%;overflow:hidden;text-overflow:ellipsis;padding:8px 0}
+.sh-head .hb,.sh-head .x{background:none;border:1px solid var(--ctl-border);color:var(--text);padding:6px 10px;min-height:36px;min-width:36px;font-family:var(--f-label);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;border-radius:var(--r)}
+.sh-head .hb .t{display:inline}
+.sh-body{padding:20px 22px;overflow:auto;flex:1}
+.sh-body .ph.cover{min-height:150px;margin-bottom:18px}
+.sh-body.read{font-size:17px}.sheet.big .sh-body.read{font-size:19.5px}
+.sh-foot{padding:14px 18px;border-top:1px solid var(--divider);display:flex;gap:10px;justify-content:flex-end;background:var(--bg-sunken);flex-wrap:wrap}
+.sh-grab{display:none}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:6px 14px;margin:0 0 18px;font-size:16px}
+.kv dt{font-family:var(--f-label);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted);padding-top:4px}.kv dd{margin:0}
+.done-mark{width:48px;height:48px;background:var(--a3);color:var(--on-a3);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;border-radius:var(--r)}
+.idx{list-style:none;margin:20px 0 0;padding:0;border-top:1px solid var(--divider)}
+.idx li{padding:10px 0;border-bottom:1px solid var(--divider)}
+.idx button{background:none;border:0;padding:0;text-align:left;color:var(--accent-text);text-decoration:underline;text-underline-offset:3px}
+
+/* theme panel */
+.tp-btn{position:fixed;right:16px;bottom:16px;z-index:90;background:var(--solid);color:var(--on-solid);border:1px solid var(--solid);padding:10px 16px;font-family:var(--f-label);font-size:11px;letter-spacing:.16em;text-transform:uppercase;border-radius:var(--r);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.tp{position:fixed;right:16px;bottom:64px;z-index:90;width:392px;max-width:calc(100vw - 24px);max-height:min(76vh,720px);display:none;flex-direction:column;background:var(--bg);color:var(--text);border:1px solid var(--ctl-border);border-top:3px solid var(--a3);border-radius:var(--r);box-shadow:0 18px 50px rgba(0,0,0,.4);font-family:system-ui,sans-serif;font-size:13px;line-height:1.45}
+.tp.open{display:flex}
+.tp h4{font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 6px}
+.tp-tabs{display:flex;border-bottom:1px solid var(--divider)}
+.tp-tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:10px 4px;font:600 12px system-ui,sans-serif;color:var(--text-muted)}
+.tp-tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--solid)}
+.tp-body{padding:12px 14px 16px;overflow:auto}
+.tp .seg{display:flex}.tp .seg button{flex:1;padding:8px;border:1px solid var(--ctl-border);background:var(--bg);color:var(--text);font:inherit;margin-left:-1px}
+.tp .seg button[aria-pressed=true]{background:var(--solid);color:var(--on-solid);border-color:var(--solid);position:relative}
+.tp .pal{display:grid;grid-template-columns:64px 44px 1fr auto;gap:8px;align-items:center;margin:6px 0}
+.tp input[type=color]{width:44px;height:32px;padding:0;border:1px solid var(--ctl-border);background:none}
+.tp code,.tp pre{font:11.5px/1.5 ui-monospace,Menlo,monospace}
+.tp pre{background:var(--bg-sunken);border:1px solid var(--divider);padding:10px;overflow:auto;margin:6px 0;white-space:pre}
+.tp table{border-collapse:collapse;width:100%;font-size:12px}
+.tp td,.tp th{border-top:1px solid var(--divider);padding:5px 6px;text-align:left;vertical-align:top}
+.tp th{font-weight:600;color:var(--text-muted)}
+.tp .tw{overflow-x:auto}
+.tp .sw{display:inline-block;width:14px;height:14px;border:1px solid var(--border);vertical-align:-2px;margin-right:6px}
+.tp .scale{display:grid;grid-template-columns:repeat(10,1fr);gap:0;margin:2px 0 8px}
+.tp .scale span{height:34px;font:10px/34px ui-monospace,monospace;text-align:center;border:1px solid transparent}
+.tp .lab{font-size:11px;color:var(--text-muted);margin-top:6px}
+.ok{color:var(--accent-text);font-weight:700}.bad{color:#b00020;font-weight:700}
+html[data-scheme=dark] .bad{color:#ff8a8a}
+.tp select{font:inherit;padding:6px;border:1px solid var(--ctl-border);background:var(--bg);color:var(--text);width:100%}
+.sb{position:absolute;left:0;top:0;z-index:40;background:#111;color:#fff;font:10px/1.3 ui-monospace,monospace;padding:1px 5px;pointer-events:none;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;opacity:.92}
+body.steps [data-reads]{outline:1px dashed rgba(255,0,120,.7);outline-offset:-1px}
+
+@media (max-width:820px){
+  :root{--gut:16px}
+  .nav{display:none}.burger{display:block}
+  .brand{font-size:19px}.hdr .wrap{gap:12px}
+  .hero .wrap,.grid2,.join{grid-template-columns:1fr;gap:32px}
+  .grid3{grid-template-columns:1fr}
+  .grid2s{grid-template-columns:1fr}
+  .members{grid-template-columns:repeat(2,1fr)}
+  .errands{grid-template-columns:repeat(2,1fr)}
+  .sec,.sec[data-tone=deep],.sec[data-tone=accent]{padding:48px 0}
+  .hero .ph{min-height:220px}
+  .cities{grid-template-columns:1fr}.cities>div+div{border-left:0;border-top:1px solid var(--text-muted)}
+  .slides{grid-auto-columns:78%}
+  .shelf li{grid-template-columns:84px 1fr}.shelf li .aside{display:none}
+  .qual{grid-template-columns:36px 1fr;gap:12px}
+  .ad{grid-template-columns:1fr;gap:28px}
+  .ad-net{grid-template-columns:1fr}.ad-net a+a{padding-left:0;border-left:0;border-top:1px solid var(--divider)}
+  .mark{width:min(240px,70%)}
+}
+@media (max-width:520px){.ad-list{grid-template-columns:1fr}}
+@media (max-width:640px){
+  body{font-size:16.5px}
+  .scrim{align-items:flex-end;padding:0}
+  .sheet{width:100%;max-height:92vh;border-radius:0;border-left:0;border-right:0;border-bottom:0}
+  .sh-grab{display:block;width:40px;height:3px;background:var(--border);margin:8px auto 0}
+  .sh-head .hb .t{display:none}
+  .sh-foot .btn{flex:1}
+  .sh-foot{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+  .tp{left:8px;right:8px;bottom:60px;width:auto;max-width:none;max-height:70vh}
+  .tp-btn{right:8px;bottom:8px}
+  .kv{grid-template-columns:78px 1fr}
+  body.has-sheet .tp-btn{display:none}
+}
+</style>
+<style id="gen-css"></style>
+</head>
+<body data-tone="plain">
+<div id="app"></div>
+<div id="surface"></div>
+<button class="tp-btn" id="tpb" aria-expanded="false" aria-controls="tp">Theme</button>
+<aside class="tp" id="tp" data-tone="plain" aria-label="Theme panel"></aside>
+
+<script>
+/*CORE*/
+/* ---- OKLCH, contrast, 10-step scales, role resolution. No DOM access in this block. ---- */
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function hexToRgb(h){h=h.replace('#','');if(h.length===3)h=[...h].map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+const lin=c=>{c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)};
+const delin=c=>c<=.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-.055;
+function hexToOklch(hex){
+  const[r,g,b]=hexToRgb(hex).map(lin);
+  const l=Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b),m=Math.cbrt(.2119034982*r+.6806995451*g+.1073969566*b),s=Math.cbrt(.0883024619*r+.2817188376*g+.6299787005*b);
+  const L=.2104542553*l+.7936177850*m-.0040720468*s,a=1.9779984951*l-2.4285922050*m+.4505937099*s,bb=.0259040371*l+.7827717662*m-.8086757660*s;
+  return[L,Math.hypot(a,bb),(Math.atan2(bb,a)*180/Math.PI+360)%360];
+}
+function oklabToLin(L,a,b){const l=(L+.3963377774*a+.2158037573*b)**3,m=(L-.1055613458*a-.0638541728*b)**3,s=(L-.0894841775*a-1.2914855480*b)**3;
+  return[4.0767416621*l-3.3077115913*m+.2309699292*s,-1.2684380046*l+2.6097574011*m-.3413193965*s,-.0041960863*l-.7034186147*m+1.7076147010*s];}
+/* Out-of-gamut: keep L and H, reduce C (same rule as packages/gradients oklchToHex). */
+function oklchToHex(L,C,H){
+  const h=H*Math.PI/180,ok=c=>oklabToLin(L,c*Math.cos(h),c*Math.sin(h)).every(v=>v>=-1e-4&&v<=1+1e-4);
+  let best=C;
+  if(!ok(C)){let lo=0,hi=C;for(let i=0;i<24;i++){const mid=(lo+hi)/2;ok(mid)?lo=mid:hi=mid}best=lo}
+  const rgb=oklabToLin(L,best*Math.cos(h),best*Math.sin(h)).map(v=>Math.round(clamp(delin(clamp(v,0,1)),0,1)*255));
+  return'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+const lum=h=>{const[r,g,b]=hexToRgb(h).map(lin);return .2126*r+.7152*g+.0722*b};
+const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+
+/* Ten steps. Steps 1-6 sit on a fixed lightness curve per scheme (every scale shares it, so step n matches in value
+   across hues). 7 is the input border / focus ring step, 8 is the seed itself (kept inside a lightness band so a label
+   can sit on it), 9 is one small notch from 8 (hover, and the spectrum stops in dark), 10 is text. */
+const STEPS=10;
+const CURVE={
+  light:{L:[.992,.972,.945,.918,.885,.84],C:[.06,.14,.26,.38,.52,.70]},
+  dark:{L:[.115,.150,.185,.220,.260,.310],C:[.18,.25,.32,.40,.48,.58]}
+};
+function genScale(seed,scheme,o={}){
+  let[L0,C0,H]=hexToOklch(seed);
+  let C=Math.max(C0,o.minC||0);if(o.maxC!=null)C=Math.min(C,o.maxC);if(o.H!=null)H=o.H;
+  const cv=CURVE[scheme],out=cv.L.map((l,i)=>oklchToHex(l,C*cv.C[i],H));
+  let L7,L8,L9,L10,c7,c9,c10;
+  if(scheme==='light'){L8=o.L8??clamp(L0,.42,.74);L7=o.L7??Math.min(.80,L8+.07);L9=o.L9??L8-.05;L10=o.L10??Math.min(.30,L9-.08);c7=.8;c9=.95;c10=.6}
+  else{L8=o.L8??clamp(L0,.50,.70);L7=o.L7??.50;L9=o.L9??L8+.045;L10=o.L10??.92;c7=.8;c9=.95;c10=.3}
+  out.push(oklchToHex(L7,C*c7,H),oklchToHex(L8,C,H),oklchToHex(L9,C*c9,H),oklchToHex(L10,C*c10,H));
+  return out;
+}
+/* The board's eight colours: six hues plus white and black, which are the neutral scale's two ends. */
+const HUES=['blue','turquoise','green','gold','orange','red'];
+const NAMES=[...HUES,'neutral'];
+function buildScales(pal,tint){
+  const S={light:{},dark:{}};
+  for(const sc of['light','dark']){
+    for(const n of HUES)S[sc][n]=genScale(pal[n],sc);
+    const nSeed=tint==='none'?'#808080':pal[tint];
+    S[sc].neutral=genScale(nSeed,sc,{maxC:tint==='none'?0:.014,...(sc==='light'?{L7:.62,L8:.52,L9:.44,L10:.22}:{L7:.52,L8:.62,L9:.74,L10:.95})});
+  }
+  return S;
+}
+/* Tone specs. A ref is "<family>:<scale>-<step>"; family a = the active scheme, l = light, d = dark.
+   A spec is a list of variants (tried in order); role candidates are tried in order. Roles stay pointers. */
+function toneVariants(tone,scheme,hue){
+  const base=(o)=>({solid:['a:red-8','a:red-9','a:red-10'],solidHover:['a:red-9','a:red-10','a:red-10'],onSolid:['a:neutral-1','a:neutral-10'],
+    text:['a:neutral-10','a:neutral-9'],muted:['a:neutral-9','a:neutral-10'],accentText:['a:gold-10','a:gold-9'],
+    ring:['a:turquoise-7','a:turquoise-8','a:turquoise-9','a:turquoise-10'],ctlBorder:['a:neutral-7','a:neutral-8','a:neutral-9'],
+    a2:['a:gold-8','a:gold-9'],onA2:['a:neutral-1','a:neutral-10'],a3:['a:turquoise-8','a:turquoise-9'],onA3:['a:neutral-1','a:neutral-10'],...o});
+  if(tone==='plain')return[base({bg:'a:neutral-1',sunken:'a:neutral-2',panel:'a:neutral-3',hover:'a:neutral-4',divider:'a:neutral-5',border:'a:neutral-6'})];
+  if(tone==='soft')return[base(scheme==='dark'?{bg:'a:neutral-2',sunken:'a:neutral-1',panel:'a:neutral-3',hover:'a:neutral-4',divider:'a:neutral-5',border:'a:neutral-6'}
+                                :{bg:'a:neutral-2',sunken:'a:neutral-3',panel:'a:neutral-1',hover:'a:neutral-3',divider:'a:neutral-5',border:'a:neutral-6'})];
+  /* deep: the navy of the blue scale, dark in both schemes */
+  if(tone==='deep')return[{bg:'d:blue-2',sunken:'d:blue-1',panel:'d:blue-3',hover:'d:blue-4',divider:'d:blue-5',border:'d:blue-6',
+    text:['d:neutral-10'],muted:['d:blue-10','d:neutral-9','d:neutral-10'],
+    solid:['d:gold-8','d:gold-9'],solidHover:['d:gold-9','d:gold-10'],onSolid:['d:neutral-1','d:neutral-10'],
+    accentText:['d:gold-10','d:gold-9'],ring:['d:gold-8','d:gold-9'],ctlBorder:['d:blue-8','d:blue-9','d:neutral-8'],
+    a2:['d:red-8','d:red-9'],onA2:['d:neutral-10','d:neutral-1'],a3:['d:turquoise-8','d:turquoise-9'],onA3:['d:neutral-1','d:neutral-10']}];
+  /* accent: a band filled with the hue's own step 8 (the board colour), labels in black or white, whichever passes */
+  if(tone==='accent'){
+    const H=hue||'gold',N=['a:neutral-1','a:neutral-10'],mk=(g)=>({bg:`a:${H}-${g}`,sunken:`a:${H}-${g===8?9:8}`,panel:`a:${H}-${g===8?9:8}`,hover:`a:${H}-${g===8?9:8}`,divider:`a:${H}-7`,border:`a:${H}-7`,
+      text:N,muted:N,solid:N,solidHover:N,onSolid:[`a:${H}-8`,...N],accentText:N,ring:N,ctlBorder:N,a2:N,onA2:[`a:${H}-8`,...N],a3:N,onA3:[`a:${H}-8`,...N]});
+    return[mk(8),mk(9)];
+  }
+}
+const parseRef=(s,scheme)=>{const[f,r]=s.split(':'),i=r.lastIndexOf('-');return{fam:f==='a'?(scheme==='dark'?'d':'l'):f,scale:r.slice(0,i),step:+r.slice(i+1),raw:s}};
+const hexOf=(S,ref,scheme)=>{const r=parseRef(ref,scheme);return S[r.fam==='l'?'light':'dark'][r.scale][r.step-1]};
+const CHECKS=[['text','bg',4.5],['text','sunken',4.5],['text','panel',4.5],['text','hover',4.5],['muted','bg',4.5],['muted','panel',4.5],
+  ['accentText','bg',4.5],['accentText','panel',4.5],['onSolid','solid',4.5],['onSolid','solidHover',4.5],['onA2','a2',4.5],['onA3','a3',4.5],
+  ['solid','bg',3],['ring','bg',3],['ring','panel',3],['ctlBorder','bg',3],['ctlBorder','panel',3],['divider','bg',0]];
+function resolveVariant(S,sp,scheme){
+  const R={},hx=r=>hexOf(S,r,scheme);
+  const set=(role,ref,first)=>{R[role]={ref,hex:hx(ref),first}};
+  for(const k of['bg','sunken','panel','hover','divider','border'])set(k,sp[k],true);
+  const minOver=(c,gs)=>Math.min(...gs.map(g=>cr(hx(c),R[g].hex)));
+  const need=(role,min,gs)=>{let best=null;for(let i=0;i<sp[role].length;i++){const m=minOver(sp[role][i],gs);if(m>=min){set(role,sp[role][i],i===0);return}if(!best||m>best.m)best={i,m}}set(role,sp[role][best.i],best.i===0)};
+  const bestOf=(role,gs)=>{let bi=0,bm=-1;sp[role].forEach((c,i)=>{const m=Math.min(...gs.map(g=>cr(hx(c),R[g].hex)));if(m>bm){bm=m;bi=i}});set(role,sp[role][bi],true)};
+  need('text',4.5,['bg','sunken','panel','hover']);need('muted',4.5,['bg','panel']);
+  /* fill, hover fill and the label on them are chosen together */
+  let pick=0,found=false;
+  for(let i=0;i<sp.solid.length&&!found;i++){
+    const s=hx(sp.solid[i]),h=hx(sp.solidHover[i]);
+    const lab=Math.max(...sp.onSolid.map(c=>Math.min(cr(hx(c),s),cr(hx(c),h))));
+    if(cr(s,R.bg.hex)>=3&&lab>=4.5){pick=i;found=true}
+  }
+  set('solid',sp.solid[pick],pick===0);set('solidHover',sp.solidHover[pick],pick===0);bestOf('onSolid',['solid','solidHover']);
+  need('accentText',4.5,['bg','panel']);need('ring',3,['bg','panel']);need('ctlBorder',3,['bg','panel']);
+  /* accent 2 / 3 fills: first step whose best label reaches 4.5 */
+  for(const[f,on]of[['a2','onA2'],['a3','onA3']]){let pk=0;for(let i=0;i<sp[f].length;i++){const m=Math.max(...sp[on].map(c=>cr(hx(c),hx(sp[f][i]))));if(m>=4.5){pk=i;break}}set(f,sp[f][pk],pk===0);bestOf(on,[f])}
+  R.checks=CHECKS.map(([fg,bg,min])=>{const ratio=cr(R[fg].hex,R[bg].hex);return{fg,bg,min,ratio,pass:min===0?null:ratio>=min}});
+  R.fails=R.checks.filter(c=>c.pass===false).length;
+  return R;
+}
+/* Gradient grounds. Each glow's centre is its step at full strength, so text is measured against that stop.
+   The spectrum (brand wordmark, hero heading) is large text: 3:1 against the ground and every glow stop under it. */
+const GLOW_STOPS={plain:['a:blue-4','a:turquoise-3','a:red-4','a:orange-3','a:gold-3'],soft:['a:blue-4','a:turquoise-3'],deep:['d:blue-4']};
+const SPEC_STOPS={dark:['blue-9','turquoise-9','gold-10','gold-9','orange-9','red-9'],light:['blue-10','turquoise-10','gold-10','gold-10','orange-10','red-10']};
+function gradientChecks(S,R,tone,scheme){
+  const hx=r=>hexOf(S,r,scheme),out=[];
+  for(const g of GLOW_STOPS[tone]||[]){
+    out.push({label:`text on glow ${refLabel(g)}`,min:4.5,ratio:cr(R.text.hex,hx(g)),reads:refLabel(R.text.ref)});
+    out.push({label:`text-muted on glow ${refLabel(g)}`,min:4.5,ratio:cr(R.muted.hex,hx(g)),reads:refLabel(R.muted.ref)});
+  }
+  if(tone==='plain'||tone==='deep'){
+    const fam=tone==='deep'?'dark':scheme,grounds=[['bg',R.bg.hex],...(GLOW_STOPS[tone]||[]).map(g=>[refLabel(g),hx(g)])];
+    for(const st of SPEC_STOPS[fam]){const h=S[fam][st.split('-')[0]][+st.split('-')[1]-1];
+      const worst=grounds.reduce((w,[n,gh])=>{const r=cr(h,gh);return!w||r<w.r?{n,r}:w},null);
+      out.push({label:`spectrum ${st} on ${worst.n} (large text)`,min:3,ratio:worst.r,reads:(fam==='dark'?'d·':'l·')+st});}
+  }
+  return out.map(c=>({...c,pass:c.ratio>=c.min}));
+}
+function resolveTone(S,tone,scheme,hue){
+  const vs=toneVariants(tone,scheme,hue);let best=null;
+  vs.forEach((v,i)=>{const R=resolveVariant(S,v,scheme);R.variant=i;if(!best||R.fails<best.fails)best=R});
+  const extra=gradientChecks(S,best,tone,scheme);best.checks=best.checks.concat(extra);best.fails+=extra.filter(c=>!c.pass).length;
+  return best;
+}
+const TONE_KEYS=['plain','soft','deep','accent:gold'];
+function resolveAll(S){const out={light:{},dark:{}};for(const sc of['light','dark'])for(const k of TONE_KEYS){const[t,h]=k.split(':');out[sc][k]=resolveTone(S,t,sc,h)}return out}
+/*ENDCORE*/
+
+/* ---------------- state ---------------- */
+/* The logo board's elemental palette (Bön). White #F5F5F5 and black #000000 are the neutral scale's ends. */
+const DEFAULT_PAL={blue:'#1F4E9A',turquoise:'#2CA6A4',green:'#2E6B3F',gold:'#D4A017',orange:'#D45A1F',red:'#B42A2A'};
+const ROLE_VAR={bg:'--bg',sunken:'--bg-sunken',panel:'--panel',hover:'--panel-hover',divider:'--divider',border:'--border',text:'--text',muted:'--text-muted',
+  accentText:'--accent-text',solid:'--solid',solidHover:'--solid-hover',onSolid:'--on-solid',ring:'--ring',ctlBorder:'--ctl-border',a2:'--a2',onA2:'--on-a2',a3:'--a3',onA3:'--on-a3'};
+const ST={scheme:'dark',tint:'none',pal:{...DEFAULT_PAL},steps:false,tab:'controls',toneKey:'plain',open:false,big:false,authMode:'in',menu:false};
+try{const j=JSON.parse(localStorage.getItem('ig-elemental-10')||'null');if(j){if(j.scheme)ST.scheme=j.scheme;if(j.tint)ST.tint=j.tint;if(j.pal)Object.assign(ST.pal,j.pal)}}catch(e){}
+let S,RES;
+const varName=(ref,scheme)=>{const r=parseRef(ref,scheme);const p=ref.startsWith('a:')?'':r.fam+'-';return`--${p}${r.scale}-${r.step}`};
+const refLabel=ref=>{const[f,r]=ref.split(':');return(f==='a'?'':f+'·')+r};
+
+function rebuild(){
+  S=buildScales(ST.pal,ST.tint);RES=resolveAll(S);
+  let css='';
+  for(const[sc,k]of[['light','l'],['dark','d']])css+=`:root{${NAMES.map(n=>S[sc][n].map((h,i)=>`--${k}-${n}-${i+1}:${h};`).join('')).join('')}}\n`;
+  for(const[sc,k]of[['light','l'],['dark','d']])css+=`html[data-scheme="${sc}"]{${NAMES.map(n=>Array.from({length:STEPS},(_,i)=>i+1).map(i=>`--${n}-${i}:var(--${k}-${n}-${i});`).join('')).join('')}}\n`;
+  for(const sc of['light','dark'])for(const key of TONE_KEYS){
+    const[t,h]=key.split(':'),R=RES[sc][key];
+    const sel=h?`html[data-scheme="${sc}"] [data-tone="accent"][data-hue="${h}"]`:`html[data-scheme="${sc}"] [data-tone="${t}"]`;
+    css+=`${sel}{${Object.entries(ROLE_VAR).map(([r,v])=>`${v}:var(${varName(R[r].ref,sc)});`).join('')}}\n`;
+  }
+  document.getElementById('gen-css').textContent=css;
+  document.documentElement.dataset.scheme=ST.scheme;
+  try{localStorage.setItem('ig-elemental-10',JSON.stringify({scheme:ST.scheme,tint:ST.tint,pal:ST.pal}))}catch(e){}
+}
+
+/* ---------------- sample data (placeholders; nothing here is member content) ---------------- */
+const MEET={
+ 'meet-1':{kind:'Meeting',title:'Philosophical Reading Group',when:'Thursdays, 7:00 pm Eastern',len:'90 minutes',where:'Online',host:'Host A',going:14,cycle:'This week: confirmed',
+   short:'A weekly reading and conversation. Bring a question; the text is posted ahead.',
+   body:['A standing group that meets weekly to read one short text together and talk it through. Newcomers are welcome at any session.','The reading is shared with the confirmation email. Sessions are held online; the link arrives when you confirm your place.']},
+ 'meet-2':{kind:'Meeting',title:'Daily Online Presence',when:'Every day, 7:00 am Eastern',len:'15 minutes',where:'Online',host:'Host B',going:6,cycle:'Open',
+   short:'Fifteen minutes of shared attention, held every morning.',
+   body:['A short, quiet sitting held at the same time each day. No preparation is needed.','Join for one day or every day.']},
+ 'meet-3':{kind:'Workshop',title:'Objective Arts Workshop',when:'Saturday, 2:00 pm Eastern',len:'2 hours',where:'Online',host:'Host C',going:9,cycle:'One-off',
+   short:'A single session of making in response to a proposed question.',
+   body:['Participants make work in response to a shared inquiry, then look at it together.','Materials are listed in the confirmation email.']}
+};
+const PIECES={
+ 'piece-1':{title:'Notes after a reading session',lede:'What stayed after the text was put down.',author:'Member A',date:'Nov 2026',
+   body:['This is placeholder text standing in for a published piece. It shows the reading surface: measure, size and the index under the text.','A second paragraph, to show the rhythm of body copy at the reading size. The size can be changed from the head with Aa.','A third paragraph. On the writing page the same piece can be docked into the page as a stage; here it opens as a surface over the list.']},
+ 'piece-2':{title:'On making in public',lede:'Working where others can see the work.',author:'Member B',date:'Oct 2026',
+   body:['Placeholder text for the second piece. It exists so that Next swaps the piece in place.','A second paragraph of placeholder text.']},
+ 'piece-3':{title:'A question held open',lede:'Why a group might choose not to answer.',author:'Member C',date:'Oct 2026',
+   body:['Placeholder text for the third piece.','A second paragraph of placeholder text.']},
+ 'piece-4':{title:'Three cities, one table',lede:'Meeting across Toronto, Los Angeles and Paris.',author:'Member A',date:'Sep 2026',
+   body:['Placeholder text for the fourth piece.','A second paragraph of placeholder text.']}
+};
+const PIECE_IDS=Object.keys(PIECES);
+const BOARD=[['Member A','Role title'],['Member B','Role title'],['Member C','Role title'],['Member D','Role title']];
+
+/* ---------------- routing ---------------- */
+function route(){const h=(location.hash.slice(1)||'/'),[p,q]=h.split('?');const m=/(?:^|&)s=([^&]*)/.exec(q||'');return{path:p||'/',stack:m?decodeURIComponent(m[1]).split('/').filter(Boolean):[]}}
+function nav(path,stack){location.hash='#'+path+(stack&&stack.length?'?s='+stack.join('/'):'')}
+const ttl=id=>MEET[id]?MEET[id].title:PIECES[id]?PIECES[id].title:({rsvp:'RSVP',done:'Done',share:'Share'})[id]||id;
+
+/* ---------------- page pieces ---------------- */
+const hat=(t,cls='')=>`<div class="ph ${cls}" data-reads="sunken">${t}</div>`;
+function offerCard(id){const m=MEET[id];return`<article class="card offer hot" data-reads="panel" data-s="${id}">
+  ${hat('cover')}
+  <div class="row"><span class="tag">${m.kind}</span><span class="tag a3" data-reads="a3">${m.cycle}</span></div>
+  <h3>${m.title}</h3><p class="meta">${m.when} · ${m.where}</p><p>${m.short}</p>
+  <div class="row"><button class="btn sm" data-reads="solid" data-s="${id}/rsvp">RSVP</button><button class="btn quiet sm" data-s="${id}">Details</button></div></article>`}
+function sec(tone,inner,{hue,cls='',id='',glow='',style=''}={}){return`<section class="sec ${cls}" ${id?`id="${id}"`:''} data-tone="${tone}" ${hue?`data-hue="${hue}"`:''} ${glow?`data-glow="${glow}"`:''} ${style?`style="${style}"`:''} data-reads="bg">${inner}</section>`}
+/* The EAC ring mark from the logo board: three brushed rings and the letters, filled with the spectrum. */
+function ringMark(){return`<svg class="mark" viewBox="0 0 240 240" role="img" aria-label="EAC">
+  <defs><linearGradient id="spg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--sp1)"/><stop offset=".3" style="stop-color:var(--sp2)"/><stop offset=".5" style="stop-color:var(--sp3)"/><stop offset=".65" style="stop-color:var(--sp4)"/><stop offset=".82" style="stop-color:var(--sp5)"/><stop offset="1" style="stop-color:var(--sp6)"/></linearGradient></defs>
+  <g fill="none" stroke="url(#spg)" stroke-linecap="round">
+   <circle cx="120" cy="120" r="104" stroke-width="3.5" stroke-dasharray="560 94" transform="rotate(-70 120 120)"/>
+   <circle cx="120" cy="120" r="96" stroke-width="1.6" stroke-dasharray="470 133" transform="rotate(30 120 120)"/>
+   <circle cx="120" cy="120" r="111" stroke-width="1" stroke-dasharray="300 397" transform="rotate(150 120 120)"/></g>
+  <text x="120" y="138" text-anchor="middle" font-size="62" fill="url(#spg)" letter-spacing="1">EAC</text></svg>`}
+/* Replaces "Start Here" and "Inside The Collective": an ad for the network hub. Copy from apps/arts-collective/src/app/page.tsx. */
+const AC_OFFER=[['Stripe checkout','Sell work, tickets and workshops, paid straight to your collective.'],['Email services','Reach your members and the people who follow your work.'],['Subdomain hosting','A site of your own on arts-collective.com, or on your own domain.'],['Workshop creation','Set up workshops and take bookings online.']];
+const AC_NET=[['The Grand Forum','forum.arts-collective.com','Discussion across every collective, with the network wiki and dictionary.'],['ArtDirect','directory.arts-collective.com','The directory of the network’s artists and their pages.'],['Art Auction','market.arts-collective.com','The collective’s market for members’ work.']];
+function adBlock(){return`<div class="wrap"><div class="ad"><div><p class="host spec-text">arts-collective.com<span class="ad-tag">Network</span></p><h2>Create a Collective</h2><hr class="rule">
+  <p>Arts Collective seeks to provide the online tools and server to help community leaders emerge. We keep track of the efforts of our members, and of their members, because simply showing up is half the battle when it comes to keeping communities going.</p>
+  <p class="muted">One account works across the whole Arts Collective network.</p>
+  <div class="row" style="margin-top:22px"><a class="btn" data-reads="solid" href="#/" onclick="return false">Start your own collective</a><a class="btn quiet" href="#/" onclick="return false">Visit arts-collective.com</a></div></div>
+  <div><p class="eyebrow">To this end we provide</p><ul class="ad-list">${AC_OFFER.map(([t,b])=>`<li data-reads="panel"><h3>${t}</h3><p>${b}</p></li>`).join('')}</ul></div></div>
+  <div class="ad-net">${AC_NET.map(([n,h,b])=>`<a href="#/" onclick="return false"><b>${n} →</b><span>${h}</span><span>${b}</span></a>`).join('')}</div></div>`}
+function boardList(){return`<ul class="members">${BOARD.map(([n,r])=>`<li class="member"><div class="av" data-reads="sunken">${n.slice(-1)}</div><p style="margin:0">${n}</p><p class="meta">${r}</p></li>`).join('')}</ul>`}
+
+const PAGES={};
+PAGES['/']=()=>
+ sec('plain',`<div class="wrap hero"><div><p class="eyebrow">Toronto · Los Angeles · Paris</p><h1 class="spec-text">Elkdonis Arts Collective</h1><p class="sub">Non-Profit Organization</p><hr class="rule">
+   <p class="tag-line">The collective is committed to using art as the means of inquiry.</p>
+   <div class="row" style="margin-top:28px"><button class="btn" data-reads="solid" data-go="/offerings">See what's on</button><button class="btn quiet" data-go="/login">Sign in</button></div></div>
+   ${ringMark()}</div>`,{cls:'hero',glow:'spectrum'})
+ +sec('plain',`<div class="wrap"><div class="row" style="justify-content:space-between;align-items:end;margin-bottom:28px"><div><p class="eyebrow">Open to everyone</p><h2 style="margin:0">Current Offerings</h2></div><a href="#/offerings" class="lnk">All offerings →</a></div>
+   <div class="grid3">${['meet-1','meet-2','meet-3'].map(offerCard).join('')}</div></div>`)
+ +sec('soft',`<div class="wrap row" style="justify-content:space-between"><p style="margin:0;max-width:60ch">Already part of the collective? <strong>Sign in</strong> to join the conversation, or <strong>create an account</strong> to get started.</p>
+   <div class="row"><button class="btn" data-go="/login" data-reads="solid">Create account</button><button class="btn quiet" data-go="/login">Sign in</button></div></div>`,{cls:'',id:''}).replace('class="sec "','class="sec " style="padding:28px 0"')
+ +sec('soft',`<div class="wrap aid"><div class="center" style="margin-bottom:44px"><h2 style="font-size:clamp(40px,6.4vw,80px)">A Mutual Aid Society</h2><hr class="rule"></div><div class="grid2">
+   <div class="stack"><p>Elkdonis Arts is a community organization dedicated to promoting and practicing objective arts, several forms of education, and cultural exchange for public benefit.</p><p>We provide accessible educational programs, workshops, lectures, and learning opportunities across diverse disciplines, including visual arts, theatre, philosophy, literature and cultural studies. We support artists, educators, thinkers, and creatives by offering opportunities to present, develop, and share artistic and intellectual work. We aim to engage and support emerging creatives through mentorship and community-based learning. Towards this end, we collaborate with individuals and organizations locally, nationally, and internationally in furtherance of these purposes.</p></div>
+   <div><p>Our original group was first formed in Newmarket Ontario, Canada, 1990. We opened the first internet cafe in town, and held concerts and raves, as well as other performative, theatrical and literary events. Our group has undergone many radical transformations since. We helped usher in digital community and new digital group work to the internet, and that involved many experiments attempting to adapt ever changing web and mobile apps to our work over the years. Remaining true to the essence of our celebrated &ldquo;philosophical reading groups&rdquo;, often spontaneously hosted, this collective is quintessentially nomadic, eclectic, reflexive and dedicated to seeking knowledge and passing on what we have met well. Our current international collaborations are focused in Paris, Los Angeles and Toronto and surrounds, where our founding members are respectively situated and engaged in a wide variety of creative acts &amp; inquiries.</p></div></div></div>`,{id:'about',glow:'cool'})
+ +sec('plain',`<div class="wrap"><p class="eyebrow">Gallery</p><div class="slides">${[1,2,3,4,5].map(n=>hat('image '+n)).join('')}</div></div>`)
+ +sec('plain',adBlock(),{id:'network',glow:'warm'})
+ +sec('soft',`<div class="wrap"><div class="grid2" style="align-items:center"><div><p class="eyebrow">Across the arts collectives</p><h2>The Grand Forum</h2><p>The independent forum used across the arts collectives, shared by every group in the network rather than owned by any one of them.</p><button class="btn" data-reads="solid">Enter the forum</button></div>
+   <div class="card" data-reads="panel"><p class="eyebrow">The work question</p><h3>What is Art For?</h3><p class="muted">Signed-out visitors can answer below the thread.</p><label class="field"><span>Your answer</span><textarea rows="3" placeholder="Write a short answer"></textarea></label><button class="btn quiet sm">Send answer</button></div></div></div>`)
+ +sec('plain',`<div class="wrap" style="max-width:1040px"><div class="center" style="margin-bottom:32px"><p class="eyebrow">Community Support</p><h2>Fundraising Goal</h2><hr class="rule"></div><div class="grid2s">
+   <div class="card" data-reads="panel"><p>We Will Specialize in Grant Writing, Finding, and Even Our Own Micro Grants</p><div class="bar" style="margin:0 0 6px"><i data-reads="solid" style="width:18%"></i></div><p class="meta">Sample progress bar, 18% of goal</p><a class="btn" data-reads="solid" href="#/" onclick="return false">Support on GoFundMe</a></div>
+   <div><p>We are just getting started. Every contribution goes directly to our artists and programs.</p><p class="meta">Instagram · GoFundMe · Substack, links in the footer</p></div></div></div>`)
+ +sec('accent',`<div class="wrap"><div class="cities">${[['Toronto','Operations · Technology · Performance'],['Los Angeles','Music · Education · Outreach'],['Paris','Research · Writing · European Networks']].map(([c,l])=>`<div><b>${c}</b><span>${l}</span></div>`).join('')}</div></div>`,{hue:'gold',style:'padding:44px 0'})
+ +sec('plain',`<div class="wrap"><p class="eyebrow center">The Board</p>${boardList()}</div>`)
+ +sec('deep',`<div class="wrap center" style="max-width:780px"><blockquote style="margin:0 0 28px;font-size:clamp(19px,2.3vw,25px);line-height:1.8">&ldquo;The collective is committed to using art as the means of inquiry. Each inquiry focuses on a particular question that is grounded in what it is to be human. We are unique in our purpose and are not commercial. Our works are intended to be experienced, not sold.&rdquo;</blockquote><p class="eyebrow">Elkdonis Arts Collective, founded in Toronto</p></div>`,{glow:'deep'});
+
+PAGES['/offerings']=()=>
+ `<header class="banner" data-tone="plain" data-reads="bg"><div class="wrap"><p class="eyebrow">Open to everyone</p><h1 style="font-size:clamp(36px,6vw,64px)">Offerings</h1><p class="muted" style="max-width:52ch">Meetings, workshops and events open to the public. Each opens in a panel over this page.</p></div></header>`
+ +sec('soft',`<div class="wrap"><div class="grid3">${Object.keys(MEET).map(offerCard).join('')}</div></div>`)
+ +sec('plain',`<div class="wrap"><p class="eyebrow">Notice</p><div class="card" data-reads="panel"><p style="margin:0">Nothing else is scheduled this month. Check back soon.</p></div></div>`);
+
+PAGES['/writing']=()=>
+ `<header class="banner" data-tone="plain" data-reads="bg"><div class="wrap"><p class="eyebrow">From the members</p><h1 style="font-size:clamp(36px,6vw,64px)">Writing</h1><p class="muted" style="max-width:52ch">Pieces by members, each kept on its author's page.</p></div></header>`
+ +sec('plain',`<div class="wrap"><ul class="shelf">${PIECE_IDS.map(id=>{const p=PIECES[id];return`<li data-s="${id}" tabindex="0" data-reads="panel">${hat('cover')}<div><h3>${p.title}</h3><p class="muted" style="margin:0 0 .3em">${p.lede}</p><span class="meta">${p.author} · ${p.date}</span></div><span class="aside tag">Read</span></li>`}).join('')}</ul></div>`);
+
+PAGES['/about']=()=>
+ `<header class="banner" data-tone="plain" data-reads="bg"><div class="wrap" style="max-width:820px"><p class="eyebrow">The Collective</p><h1 style="font-size:clamp(36px,6vw,64px)">About</h1>
+   <p style="font-size:19px">We are Elkdonis Arts Collective. Elkdonis Arts is a community organization dedicated to promoting and practicing various art methodologies, education, and cultural exchange for public benefit. We support artists, educators, thinkers, and creatives by offering opportunities to present, develop, and share artistic and intellectual work.</p><a class="lnk" href="#/about">Read the living About document →</a></div></header>`
+ +sec('plain',`<div class="wrap" style="max-width:820px"><h2>What is Art For?</h2><p>We are interested in the creative process as a method of invocation and inquiry. The artist endeavours to penetrate experience in order to know the self and the world.</p></div>`)
+ +sec('soft',`<div class="wrap" style="max-width:820px"><h2>Three Qualities</h2><p class="muted">Although our collective in practice is broadly inclusive, experimental, and evolving, its art is nonetheless characterized by three essential qualities:</p>
+   ${[['I','Essentialism','Our work centers on the soulfulness of presence, what emerges when form is stripped to its most honest state.'],['II','Timelessness','Our art invites viewers to experience the eternal present. In doing so, we unlock new dimensions of perception and connection.'],['III','Spaciousness','We prioritize the viewer’s experience, crafting scenes that envelop and engage.']].map(([n,t,b])=>`<div class="qual"><span class="n">${n}</span><div><h3>${t}</h3><p style="margin:0">${b}</p></div></div>`).join('')}</div>`)
+ +sec('plain',`<div class="wrap"><h2>Three Commitments</h2><div class="grid3" style="margin-top:24px">${[['Inquiry Through Making','Creating art as the medium to inquire into our shared human existence.'],['Sanctuary','Providing a place where beauty and inquiry can meet.'],['Education & Community','Providing education through demonstrations, workshops, and inviting access to our process as it happens.']].map(([t,b])=>`<div class="card" data-reads="panel"><div style="color:var(--accent-text);font-size:22px">&#10022;</div><h3>${t}</h3><p style="margin:0">${b}</p></div>`).join('')}</div></div>`)
+ +sec('soft',`<div class="wrap"><h2>The Board</h2><p class="muted">The listed members of the non-profit. Each keeps their own page; names here are placeholders.</p>${boardList()}</div>`)
+ +sec('plain',adBlock(),{id:'network',glow:'warm'})
+ +sec('deep',`<div class="wrap center" style="max-width:760px"><blockquote style="margin:0 0 22px;font-size:clamp(18px,2.1vw,22px);line-height:1.8">&ldquo;Our works are timeless, essential, reductionist, and often violate scale.&rdquo;</blockquote><p class="eyebrow">Toronto · Los Angeles · Paris</p></div>`,{glow:'deep'});
+
+PAGES['/login']=()=>
+ sec('soft',`<div class="wrap"><div class="authcard card" data-reads="panel"><div class="tabs" role="tablist"><button role="tab" aria-selected="${ST.authMode==='in'}" data-auth="in">Sign in</button><button role="tab" aria-selected="${ST.authMode==='up'}" data-auth="up">Create account</button></div>
+  <h2 style="font-size:30px">${ST.authMode==='in'?'Welcome back':'Start Here'}</h2>
+  <p class="muted">Sign in to RSVP for gatherings. One account works across the whole Arts Collective network.</p>
+  ${ST.authMode==='up'?'<label class="field"><span>Name</span><input placeholder="Your name"></label>':''}
+  <label class="field"><span>Email</span><input data-reads="ctlBorder" placeholder="you@example.org"></label>
+  <label class="field"><span>Password</span><input type="password" placeholder="Password"></label>
+  <button class="btn" data-reads="solid" style="width:100%" data-go="/hub">${ST.authMode==='in'?'Sign in':'Create account'}</button>
+  <p class="center muted" style="margin:14px 0">or</p><button class="btn quiet" style="width:100%">Continue with Google</button>
+  <p class="meta center" style="margin:16px 0 0">By continuing you accept the network <a href="#/login">Terms</a>.</p></div></div>`,{cls:'',id:''}).replace('class="sec "','class="sec " style="padding:56px 0 72px"');
+
+PAGES['/hub']=()=>{
+ const wk=['meet-1','meet-2'].map(id=>`<div class="rsvprow"><div><strong>${MEET[id].title}</strong><div class="meta" style="margin:0">${MEET[id].when}</div></div><div class="row"><button class="btn sm" data-reads="solid" aria-pressed="true">Coming</button><button class="btn quiet sm">Can't make it</button></div></div>`).join('');
+ return`<header class="banner" data-tone="plain" data-reads="bg"><div class="wrap"><p class="eyebrow">Portal</p><h1 style="font-size:clamp(34px,5vw,56px)">Welcome back, Member A</h1></div></header>`
+ +sec('plain',`<div class="wrap"><p class="notice" data-reads="sunken">Signed-in view, drawn with placeholder data only. Nothing here comes from a member's account.</p>
+  <div class="band" style="border-top:0;padding-top:0"><h2>This week</h2>${wk}</div>
+  <div class="band"><h2>Make</h2><div class="grid3"><div class="card hot" data-reads="panel"><h3>Publish</h3><p class="muted">Write a post or a piece.</p></div><div class="card hot" data-reads="panel"><h3>Group research</h3><p class="muted">Questionnaire · Poll · Arrange a time</p></div><div class="card hot" data-reads="panel"><h3>Studio</h3><p class="muted">Open the editor.</p></div></div></div>
+  <div class="band"><h2>You</h2><div class="card row" data-reads="panel"><div class="member"><div class="av" data-reads="sunken" style="margin:0">A</div></div><div><strong>Member A</strong><p class="meta" style="margin:0">Role title · profile page</p></div><button class="btn quiet sm" style="margin-left:auto">Edit profile</button></div></div>
+  </div>`)
+ +sec('soft',`<div class="wrap"><div class="grid2" style="gap:32px"><div><h2 style="font-size:30px">General Chat</h2><div class="card chat" data-reads="panel">${[60,80,45,70].map(w=>`<p><span class="av"></span><span class="ln" style="--w:${w}%"></span></p>`).join('')}<label class="field" style="margin:14px 0 0"><span>Message</span><input placeholder="Write a message"></label></div></div>
+   <div><h2 style="font-size:30px">Errands</h2><div class="errands" style="grid-template-columns:1fr 1fr"><a href="#/hub" data-reads="panel">Manage</a><a href="#/hub" data-reads="panel">Forum</a><a href="#/hub" data-reads="panel">Calendar</a><a href="#/hub" data-reads="panel">Email</a></div></div></div></div>`);
+}
+
+function header(path){
+ const L=[['/offerings','Offerings'],['/writing','Writing'],['/about','About']];
+ const cur=p=>path===p?' aria-current="page"':'';
+ const hub=path==='/hub';
+ return`<header class="hdr" data-tone="plain" data-reads="bg"><div class="wrap"><a class="brand spec-text" href="#/">Elkdonis Arts Collective</a>
+  <nav class="nav" aria-label="Primary">${L.map(([p,t])=>`<a href="#${p}"${cur(p)}>${t}</a>`).join('')}<a class="door" href="#${hub?'/hub':'/login'}"${cur(hub?'/hub':'/login')}>${hub?'Portal':'Sign in'}</a></nav>
+  <button class="burger" aria-expanded="${ST.menu}" data-menu>${ST.menu?'Close':'Menu'}</button></div>
+  <nav class="msheet${ST.menu?' open':''}" aria-label="Primary">${L.map(([p,t])=>`<a href="#${p}">${t}</a>`).join('')}<a href="#${hub?'/hub':'/login'}">${hub?'Portal':'Sign in'}</a></nav></header>`;
+}
+function footer(){return`<footer class="sec foot" data-tone="deep" data-reads="bg" style="padding:56px 0 40px"><div class="wrap"><div class="grid3"><div><a class="brand spec-text" href="#/">Elkdonis Arts Collective</a><p class="muted" style="margin-top:10px">Toronto · Los Angeles · Paris</p></div>
+ <div><p class="eyebrow">Follow</p><ul><li><a href="#/" onclick="return false">Instagram</a></li><li><a href="#/" onclick="return false">GoFundMe</a></li><li><a href="#/" onclick="return false">Substack</a></li></ul></div>
+ <div><p class="eyebrow">Contact</p><ul><li><a href="#/" onclick="return false">info@elkdonis-arts.org</a></li><li><button class="lnk" style="color:var(--text)" data-s="share">Leave a message</button></li></ul></div></div>
+ <div class="fine"><a href="#/login">Member sign in</a> · <a href="#/" onclick="return false">Your data</a></div></div></footer>`}
+
+/* ---------------- surfaces ---------------- */
+function layer(id,stack,i){
+ const prev=stack[i-1];
+ if(MEET[id]){const m=MEET[id];return{title:m.title,hb:'↗|Share',foot:`<button class="btn quiet" data-close>Close</button><button class="btn" data-reads="solid" data-push="rsvp">RSVP</button>`,
+  body:`${hat('cover','cover')}<div class="row" style="margin-bottom:14px"><span class="tag">${m.kind}</span><span class="tag a3" data-reads="a3">${m.cycle}</span></div>
+  <dl class="kv"><dt>When</dt><dd>${m.when}</dd><dt>Length</dt><dd>${m.len}</dd><dt>Where</dt><dd>${m.where}</dd><dt>Host</dt><dd>${m.host}</dd><dt>Coming</dt><dd>${m.going} so far (sample)</dd></dl>${m.body.map(t=>`<p>${t}</p>`).join('')}`}}
+ if(id==='rsvp'){const m=MEET[prev]||MEET['meet-1'];return{title:'Are you coming?',foot:`<button class="btn quiet" data-pop>Back</button><button class="btn" data-reads="solid" data-push="done">Yes, I'm coming</button>`,
+  body:`<p class="muted">${m.title} · ${m.when}</p><label class="field"><span>Your name</span><input data-reads="ctlBorder" placeholder="Your name"></label><label class="field"><span>Email</span><input placeholder="you@example.org"></label><p class="meta">A confirmation link is sent to this address. Signed-in members skip this step.</p>`}}
+ if(id==='done'){return{title:'One more step',foot:`<button class="btn quiet" data-reads="solid">Add to calendar</button><button class="btn" data-close>Done</button>`,
+  body:`<div class="done-mark" data-reads="a3">&#10003;</div><h3>Check your email to confirm your place.</h3><p class="muted">The link in the message confirms your RSVP. If it does not arrive in a few minutes, look in the spam folder.</p>`}}
+ if(id==='share'){return{title:'Share',foot:`<button class="btn" data-pop>Done</button>`,body:`<label class="field"><span>Link</span><input readonly value="https://elkdonis-arts.org/offerings?surface=${stack.slice(0,i).join('/')||'meet-1'}"></label><div class="row"><button class="btn quiet sm">Copy link</button><button class="btn quiet sm">Email</button></div>`}}
+ if(PIECES[id]){const p=PIECES[id],ix=PIECE_IDS.indexOf(id),nx=PIECE_IDS[(ix+1)%PIECE_IDS.length];
+  return{title:p.title,hb:'Aa|'+(ST.big?'−':'+'),read:true,foot:`<button class="btn quiet" data-close>Close</button><button class="btn quiet" data-swap="${nx}">Next ›</button>`,
+  body:`<p class="meta">${p.author} · ${p.date}</p><p style="font-size:1.12em">${p.lede}</p>${p.body.map(t=>`<p>${t}</p>`).join('')}<ul class="idx">${PIECE_IDS.filter(x=>x!==id).map(x=>`<li><button data-swap="${x}">${PIECES[x].title}</button></li>`).join('')}</ul>`}}
+ return{title:id,body:'',foot:''};
+}
+function surfaceHtml(stack){
+ if(!stack.length)return'';
+ const i=stack.length-1,id=stack[i],L=layer(id,stack,i),prev=stack[i-1];
+ const hb=L.hb?(([ic,t])=>`<button class="hb" data-hb="${id}" aria-label="${t||ic}">${ic}${t?` <span class="t">${t}</span>`:''}</button>`)(L.hb.split('|')):'';
+ return`<div class="scrim" data-scrim><div class="sheet${ST.big?' big':''}" data-tone="plain" role="dialog" aria-modal="true" aria-label="${L.title}" tabindex="-1"><div class="sh-grab"></div>
+  <div class="sh-head" data-reads="bg">${prev?`<button class="crumb" data-pop>‹ ${ttl(prev)}</button>`:''}<h2>${L.title}</h2>${hb}<button class="x" data-close aria-label="Close">✕</button></div>
+  <div class="sh-body${L.read?' read':''}">${L.body}</div><div class="sh-foot" data-reads="sunken">${L.foot}</div></div></div>`;
+}
+
+/* ---------------- theme panel ---------------- */
+const STEP_JOBS=[[1,'Page background','bg'],[2,'Subtle background: sunken areas','bg-sunken'],[3,'Component background; glows','panel'],[4,'Component hover / selected; glows','panel-hover'],[5,'Divider (decorative); deep glow','divider'],[6,'Stronger decorative border','border'],[7,'Input border and focus ring (3:1)','ring, ctl-border'],[8,'The board colour itself: solid fill (3:1 on ground, label 4.5:1)','solid'],[9,'Solid hover; secondary text; spectrum stops (dark)','solid-hover, text-muted'],[10,'High-contrast text; accent text (4.5:1+)','text, accent-text']];
+const ROLE_LABEL={bg:'bg',sunken:'bg-sunken',panel:'panel',hover:'panel-hover',divider:'divider',border:'border',text:'text',muted:'text-muted',accentText:'accent-text',solid:'solid',solidHover:'solid-hover',onSolid:'on-solid',ring:'ring',ctlBorder:'ctl-border',a2:'accent-2',onA2:'on-accent-2',a3:'accent-3',onA3:'on-accent-3'};
+function tpBody(){
+ const sc=ST.scheme,R=RES[sc][ST.toneKey];
+ if(ST.tab==='controls')return`<h4>Scheme</h4><div class="seg">${['light','dark'].map(x=>`<button data-sch="${x}" aria-pressed="${sc===x}">${x}</button>`).join('')}</div>
+  <h4>Neutral tint</h4><div class="seg">${['none','blue','turquoise'].map(x=>`<button data-tint="${x}" aria-pressed="${ST.tint===x}">${x}</button>`).join('')}</div>
+  <h4>Palette (the only stored colours)</h4>${HUES.map(n=>`<div class="pal"><span>${n}</span><input type="color" data-pal="${n}" value="${ST.pal[n].toLowerCase()}" aria-label="${n} colour"><code data-hex="${n}">${ST.pal[n]}</code><span><i class="sw" style="background:var(--${n}-8);margin:0"></i> ${n}-8</span></div>`).join('')}<p class="lab">White #F5F5F5 and black #000000 from the board are the two ends of the neutral scale.</p>
+  <h4>Overlay</h4><label><input type="checkbox" data-steps ${ST.steps?'checked':''}> Show steps: label each element with the step it reads</label>
+  <p class="lab">Pass/fail summary, all 6 tones in both schemes: <b class="${summary().fails?'bad':'ok'}">${summary().text}</b></p>
+  <p style="margin-top:12px"><button class="btn quiet sm" data-reset>Reset palette</button></p>`;
+ if(ST.tab==='scales'){return`<h4>Step jobs (same on every scale)</h4><div class="tw"><table><tr><th>Step</th><th>Job</th><th>Roles</th></tr>${STEP_JOBS.map(([n,j,r])=>`<tr><td>${n}</td><td>${j}</td><td><code>${r}</code></td></tr>`).join('')}</table></div>
+  <h4>Generated scales, ${sc} scheme (steps 1 to 10)</h4>${NAMES.map(n=>`<div class="lab">${n}</div><div class="scale">${S[sc][n].map((h,i)=>`<span style="background:${h};color:${cr(h,'#000')>cr(h,'#fff')?'#000':'#fff'}" title="${n}-${i+1} ${h}">${i+1}</span>`).join('')}</div>`).join('')}
+  <p class="lab">Dark scheme uses its own scales (steps 1 to 6 on a dark lightness curve, 10 is light text); it is not an inversion of the light hexes.</p>`}
+ const tonePick=`<select data-tone-pick aria-label="Tone">${TONE_KEYS.map(k=>`<option value="${k}" ${k===ST.toneKey?'selected':''}>${k.replace(':',' · ')}</option>`).join('')}</select>`;
+ if(ST.tab==='roles'){
+  const ex=(k,r)=>`<tr><td><code>${ROLE_VAR[k]}</code></td><td><code>var(${varName(r[k].ref,sc)})</code></td><td><i class="sw" style="background:${r[k].hex}"></i>${refLabel(r[k].ref)}</td></tr>`;
+  return`<h4>Tone</h4>${tonePick}<h4>Role map (pointers, never hex)</h4><div class="tw"><table><tr><th>Role</th><th>Points to</th><th>Step</th></tr>${Object.keys(ROLE_VAR).map(k=>ex(k,R)).join('')}</table></div>
+  <h4>The layers, as generated</h4><pre>${layerCode(sc,R)}</pre>`}
+ if(ST.tab==='contrast'){
+  return`<h4>Tone</h4>${tonePick}<p class="lab">Scheme: ${sc}. A step changed from the first choice is marked <b>stepped</b>.${R.variant?' Ground moved to a darker step for this tone.':''}</p>
+  <div class="tw"><table><tr><th>Text / ground</th><th>Ratio</th><th>Need</th><th></th><th>Reads</th></tr>${R.checks.map(c=>`<tr><td>${c.label||`${ROLE_LABEL[c.fg]} on ${ROLE_LABEL[c.bg]}`}</td><td>${c.ratio.toFixed(2)}</td><td>${c.min?c.min+':1':'n/a'}</td><td>${c.pass===null?'<span class="lab">decorative</span>':c.pass?'<span class="ok">pass</span>':'<span class="bad">FAIL</span>'}</td><td><code>${c.reads||refLabel(R[c.fg].ref)}</code>${!c.label&&R[c.fg].first===false?' <b>stepped</b>':''}</td></tr>`).join('')}</table></div>
+  <p class="lab">4.5:1 body text; 3:1 for the fill, focus ring, input border and the spectrum (large text only). Glow rows measure against each glow's centre, its brightest point. Dividers and card edges are decorative (the fill and label carry meaning), so they carry no requirement.</p>`}
+}
+function summary(){let f=0,t=0;for(const sc of['light','dark'])for(const k of TONE_KEYS)for(const c of RES[sc][k].checks)if(c.pass!==null){t++;if(!c.pass)f++}return{fails:f,text:`${t-f}/${t} pairs pass`}}
+function layerCode(sc,R){const k=sc==='dark'?'d':'l';
+ return`/* 1 palette: stored */\nblue:${ST.pal.blue}  red:${ST.pal.red}  ...\n\n/* 2 shades: generated, OKLCH */\n--l-red-8:${S.light.red[7]};  --d-red-8:${S.dark.red[7]};\n\n/* 2b scheme alias */\nhtml[data-scheme=${sc}]{--red-8:var(--${k}-red-8)}\n\n/* 3 role = pointer */\n--solid:var(${varName(R.solid.ref,sc)});\n--on-solid:var(${varName(R.onSolid.ref,sc)});\n\n/* 4 tone re-points roles */\n[data-tone="deep"]{--bg:var(${varName(RES[sc].deep.bg.ref,sc)})}\n\n/* 5 block reads roles only */\n.btn{background:var(--solid);\n     color:var(--on-solid)}`}
+function renderPanel(){
+ const tp=document.getElementById('tp');
+ tp.classList.toggle('open',ST.open);document.getElementById('tpb').setAttribute('aria-expanded',ST.open);
+ document.getElementById('tpb').textContent=ST.open?'Close theme':'Theme';
+ if(!ST.open)return;
+ tp.innerHTML=`<div class="tp-tabs" role="tablist">${[['controls','Controls'],['scales','Scales'],['roles','Roles'],['contrast','Contrast']].map(([k,t])=>`<button role="tab" aria-selected="${ST.tab===k}" data-tab="${k}">${t}</button>`).join('')}</div><div class="tp-body">${tpBody()}</div>`;
+}
+
+/* ---------------- steps overlay ---------------- */
+function badges(){
+ document.querySelectorAll('.sb').forEach(n=>n.remove());
+ document.querySelectorAll('[data-sbpos]').forEach(n=>{n.style.position='';n.removeAttribute('data-sbpos')});
+ document.body.classList.toggle('steps',ST.steps);
+ if(!ST.steps)return;
+ document.querySelectorAll('[data-reads]').forEach(el=>{
+  const t=el.closest('[data-tone]'),key=t.dataset.tone==='accent'?'accent:'+(t.dataset.hue||'gold'):t.dataset.tone,R=RES[ST.scheme][key];
+  const label=el.dataset.reads.split(',').map(r=>`${ROLE_LABEL[r]||r}=${refLabel(R[r].ref)}`).join(' · ');
+  if(getComputedStyle(el).position==='static'){el.style.position='relative';el.setAttribute('data-sbpos','1')}
+  const b=document.createElement('span');b.className='sb';b.textContent=label;el.prepend(b);
+ });
+}
+
+/* ---------------- render ---------------- */
+function render(){
+ const{path,stack}=route();
+ const page=(PAGES[path]||PAGES['/']);
+ document.getElementById('app').innerHTML=header(path)+`<main>${page()}</main>`+footer();
+ document.getElementById('surface').innerHTML=surfaceHtml(stack);
+ document.body.style.overflow=stack.length?'hidden':'';document.body.classList.toggle('has-sheet',stack.length>0);
+ if(stack.length){const s=document.querySelector('.sheet');s&&s.focus({preventScroll:true})}
+ renderPanel();badges();
+}
+function update(){rebuild();renderPanel();badges()}
+
+document.addEventListener('click',e=>{
+ const t=e.target,q=s=>t.closest(s);
+ const{path,stack}=route();
+ let el;
+ if(t.classList&&t.classList.contains('scrim')){nav(path,[]);return}
+ if(el=q('[data-close]')){nav(path,[]);return}
+ if(el=q('[data-pop]')){nav(path,stack.slice(0,-1));return}
+ if(el=q('[data-push]')){nav(path,[...stack,el.dataset.push]);return}
+ if(el=q('[data-swap]')){nav(path,[...stack.slice(0,-1),el.dataset.swap]);return}
+ if(el=q('[data-hb]')){if(el.dataset.hb.startsWith('piece-')){ST.big=!ST.big;render()}else nav(path,[...stack,'share']);return}
+ if(el=q('[data-s]')){const v=el.dataset.s;nav(path,v.split('/'));return}
+ if(el=q('[data-go]')){nav(el.dataset.go,[]);return}
+ if(el=q('[data-menu]')){ST.menu=!ST.menu;render();return}
+ if(el=q('[data-auth]')){ST.authMode=el.dataset.auth;render();return}
+ if(q('#tpb')){ST.open=!ST.open;renderPanel();return}
+ if(el=q('[data-tab]')){ST.tab=el.dataset.tab;renderPanel();return}
+ if(el=q('[data-sch]')){ST.scheme=el.dataset.sch;update();return}
+ if(el=q('[data-tint]')){ST.tint=el.dataset.tint;update();return}
+ if(q('[data-reset]')){ST.pal={...DEFAULT_PAL};update();return}
+});
+document.addEventListener('keydown',e=>{
+ const{path,stack}=route();
+ if(e.key==='Escape'&&stack.length){nav(path,stack.slice(0,-1));return}
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('li[data-s]')){e.preventDefault();nav(path,e.target.dataset.s.split('/'))}
+});
+document.addEventListener('input',e=>{
+ const t=e.target;
+ if(t.dataset.pal){ST.pal[t.dataset.pal]=t.value;const c=document.querySelector(`[data-hex="${t.dataset.pal}"]`);if(c)c.textContent=t.value;rebuild();badges();if(ST.tab!=='controls')renderPanel()}
+});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.matches('[data-steps]')){ST.steps=t.checked;badges()}
+ if(t.matches('[data-tone-pick]')){ST.toneKey=t.value;renderPanel()}
+});
+let lastPath=route().path;
+window.addEventListener('hashchange',()=>{ST.menu=false;const y=window.scrollY,np=route().path;render();if(np!==lastPath){window.scrollTo(0,0);lastPath=np}else window.scrollTo(0,y)});
+rebuild();render();
+</script>
+</body>
+</html>

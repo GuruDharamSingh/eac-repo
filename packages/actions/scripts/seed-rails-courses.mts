@@ -9,8 +9,17 @@
 // Org and author are copied from the `getting-started` course row. Courses are published (a frozen version, as
 // publishCourse in packages/lms/src/content.ts does it) and public. A default run is made as ensureDefaultRun does.
 // Steps are matched by slug, so re-running keeps step ids (and learners' progress) and only changes what changed.
-// Task steps use the getting-started shape: type 'task', settings.task = {id, scope}. Nothing here touches a course
+// Task steps use the getting-started shape: type 'task', settings.task = {id, scope}. A capability the dock cannot run
+// becomes a PLACE step (2026-11-27): type 'place' ("I did it" button), a short line on what it does, where it is done and
+// a "Take me there" link to the page (a full address, because the lesson is read on Sophia). A gap, or a capability
+// with no recorded address, is a "Coming later" reading step. Nothing here touches a course
 // whose slug does not start with `rails-`, except the tag update on EXISTING_TAGS (area/builds_on only, --write only).
+// Every jsonb parameter is cast through text ($n::text::jsonb). A bare $n::jsonb with a JSON.stringify(...) string makes
+// postgres.js encode the string again, storing a JSON *string* (the 2026-11-16 and 2026-11-27 writes did that; Sophia's
+// course pages then crashed on outline.modules). Repaired rows: ~/eac-backups/lms-dblenc-20261127/.
+// Every jsonb parameter is cast through text ($n::text::jsonb). A bare $n::jsonb given a JSON.stringify(...) string makes
+// postgres.js encode the string again, so the row stores a JSON *string* (the 2026-11-16 and 2026-11-27 writes did this, and
+// Sophia's course pages then crashed on outline.modules). Rows repaired from: ~/eac-backups/lms-dblenc-20261127/.
 import { db } from '@elkdonis/db';
 import { loadAreas } from '../atlas/index';
 import { loadNexus } from '../atlas/tracks/index';
@@ -18,6 +27,7 @@ import type { Capability } from '../atlas/types';
 import { ACTION_CATALOGUE, COURSE_ACTIONS } from '../src/catalogue';
 import { REGISTRY_DATA } from '../src/registry-data';
 import { hashContent, newId, plainText, slugify, RESERVED_STEP_SLUGS } from '../../lms/src/util';
+import { APP_NAMES, pickAddress, placeUrl, plainHow } from '../atlas/origins';
 
 const PREFIX = 'rails-';
 const MODEL_SLUG = 'getting-started';
@@ -35,8 +45,8 @@ if (WRITE && REMOVE) throw new Error('--write and --remove are exclusive');
 const DRY = !WRITE && !REMOVE;
 
 // ── build the plan from the nexus ───────────────────────────────────────────
-type Kind = 'task' | 'not-wired' | 'gap';
-interface PlanStep { slug: string; kind: Kind; type: 'task' | 'reading'; title: string; summary: string; bodyHtml: string | null; settings: Record<string, unknown>; detail: string }
+type Kind = 'task' | 'place' | 'gap';
+interface PlanStep { slug: string; kind: Kind; type: 'task' | 'place' | 'reading'; title: string; summary: string; bodyHtml: string | null; settings: Record<string, unknown>; detail: string }
 interface PlanModule { id: string; title: string; steps: PlanStep[] }
 interface PlanCourse { slug: string; id: string; title: string; summary: string; area: string; buildsOn: string[]; modules: PlanModule[] }
 
@@ -55,12 +65,42 @@ const courseActionIds = new Set(COURSE_ACTIONS.map((m) => m.id));
 const problems: string[] = [];
 const notes: string[] = [];
 
-function pageLink(cap: Capability): string | null {
-  for (const h of cap.hosts) {
-    const a = h.address;
-    if (a && a.app === 'arts-collective' && a.path && a.path.startsWith('/') && !/[{}]/.test(a.path) && /^\/(hub|studio|channel)(\/|$)/.test(a.path)) return a.path;
-  }
-  return null;
+/** Step choices for entries that cover more than one capability (org-publish saves a post, an event or a meeting). */
+const TASK_PARAMS: Record<string, Record<string, string>> = { 'meeting-save': { kind: 'meeting' } };
+
+/** "Coming later: <what>": nothing to do yet (a gap in a track, or no recorded address). */
+function laterStep(slug: string, what: string, extra: string | null, detail: string): PlanStep {
+  return {
+    slug, kind: 'gap', type: 'reading', title: clip(`Coming later: ${what}`, 120), summary: 'Nothing to do here yet.',
+    bodyHtml: `<p>Coming later: ${esc(what)}.</p>${extra ? `<p>${esc(extra)}</p>` : ''}<p>Nothing to do here yet. Carry on with the next step.</p>`,
+    settings: {}, detail,
+  };
+}
+
+/** A place step: what it does, where it is done, and a deep link there. */
+function placeStep(slug: string, cap: Capability): PlanStep {
+  const addr = pickAddress(cap);
+  if (!addr) return laterStep(slug, cap.label, firstSentence(cap.does), `${cap.id} (no address recorded)`);
+  const url = placeUrl(addr.app, addr.path);
+  const where = APP_NAMES[addr.app] ?? addr.app;
+  const how = plainHow(addr.how);
+  const whereLine = `Where: ${where}${how ? `. Look for: ${how.replace(/\.$/, '')}` : ''}.`;
+  // Round 2 (2026-11-27, Justin): "Take me there" stays, as deep as the atlas address allows: the path, plus ?surface=
+  // when the address names one (placeUrl cuts queries off, so it is put back here). One plain line on what it does above it.
+  // A surface with a {placeholder} (an org) cannot be a fixed link; the anchor is the data-eac-anchor value to outline.
+  const surface = addr.surface && !addr.surface.includes('{') ? addr.surface : null;
+  const deep = url && surface ? `${url}?surface=${encodeURIComponent(surface)}` : url;
+  const anchor = addr.anchor ?? cap.id;
+  const body = [
+    `<p>${esc(firstSentence(cap.does))}</p>`,
+    `<p>${esc(whereLine)}</p>`,
+    deep ? `<p><a href="${esc(deep)}">Take me there</a></p>` : `<p>There is no public link to it yet. Ask the collective to do this one with you.</p>`,
+    `<p>When you have done it, press “I did it” below.</p>`,
+  ].join('');
+  return {
+    slug, kind: 'place', type: 'place', title: cap.label, summary: firstSentence(cap.does), bodyHtml: body,
+    settings: deep ? { place: { href: deep, where: clip(whereLine, 200), anchor } } : {}, detail: `${cap.id} -> ${deep ?? '(no link)'}`,
+  };
 }
 
 const plan: PlanCourse[] = courses.map((c) => {
@@ -81,15 +121,12 @@ const plan: PlanCourse[] = courses.map((c) => {
     const steps: PlanStep[] = t.steps.map((s): PlanStep => {
       if (typeof s !== 'string') {
         gapNo++;
-        return {
-          slug: uniq(`gap-${gapNo}`), kind: 'gap', type: 'reading', title: clip(`Gap: ${s.gap}`, 120), summary: 'No action exists yet.',
-          bodyHtml: `<p>Gap: no action exists yet (${esc(s.gap)})</p>`, settings: {}, detail: s.gap,
-        };
+        return laterStep(uniq(`gap-${gapNo}`), s.gap, null, s.gap);
       }
       const cap = caps.get(s);
       if (!cap) {
         problems.push(`${c.id}/${tid}: step '${s}' is not an atlas capability`);
-        return { slug: uniq(slugify(s)), kind: 'not-wired', type: 'reading', title: s, summary: 'Not wired to the dock yet.', bodyHtml: `<p>Not wired to the dock yet: ${esc(s)}</p>`, settings: {}, detail: s };
+        return laterStep(uniq(slugify(s)), s, null, s);
       }
       const entry = typeof cap.entry === 'string' ? cap.entry : null;
       // A task step needs an entry the dock can use: a course action (person/org scope) that has registry-data.
@@ -104,12 +141,11 @@ const plan: PlanCourse[] = courses.map((c) => {
         const scope = catalogueById.get(entry)!.scope === 'org' ? 'org' : 'person';
         return {
           slug: uniq(slugify(s)), kind: 'task', type: 'task', title: cap.label, summary: firstSentence(cap.does), bodyHtml: null,
-          settings: { task: { id: entry, scope } }, detail: `${entry} (${scope}) <- ${s}`,
+          settings: { task: { id: entry, scope, ...(TASK_PARAMS[s] ? { params: TASK_PARAMS[s] } : {}) } }, detail: `${entry} (${scope}) <- ${s}`,
         };
       }
-      const link = pageLink(cap);
-      const body = `<p>Not wired to the dock yet: ${esc(s)}${link ? ` <a href="${esc(link)}">${esc(link)}</a>` : ''}</p>`;
-      return { slug: uniq(slugify(s)), kind: 'not-wired', type: 'reading', title: cap.label, summary: 'Not wired to the dock yet.', bodyHtml: body, settings: {}, detail: `${s}${link ? ` -> ${link}` : ''}${why ? `  [${why}]` : ''}` };
+      const step = placeStep(uniq(slugify(s)), cap);
+      return why ? { ...step, detail: `${step.detail}  [${why}]` } : step;
     });
     return { id: tid, title: t.label, steps };
   });
@@ -119,7 +155,7 @@ const plan: PlanCourse[] = courses.map((c) => {
     area: c.area, buildsOn: c.builds_on.map((b) => PREFIX + b), modules,
   };
 });
-if (notes.length) console.log('NOTES (capability has an entry the dock cannot use as a task step; made a plain step):\n' + notes.map((p) => '  ' + p).join('\n') + '\n');
+if (notes.length) console.log('NOTES (capability has an entry the dock cannot use as a task step; made a place step):\n' + notes.map((p) => '  ' + p).join('\n') + '\n');
 if (problems.length) console.error('PROBLEMS:\n' + problems.map((p) => '  ' + p).join('\n'));
 
 // ── executor: reads always run; writes run in the transaction, or are printed in a dry run ──
@@ -194,7 +230,7 @@ async function applyCourse(x: Exec, model: ModelRow, c: PlanCourse): Promise<voi
         await x.write(`INSERT INTO lms_steps (id, course_id, type, slug) VALUES ($1, $2, $3, $4)`, [stepId, courseId, s.type, s.slug]);
       }
       await x.write(
-        `INSERT INTO lms_step_drafts (step_id, title, summary, body_html, settings, refs, updated_by) VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7)
+        `INSERT INTO lms_step_drafts (step_id, title, summary, body_html, settings, refs, updated_by) VALUES ($1, $2, $3, $4, $5::text::jsonb, $6::text::jsonb, $7)
          ON CONFLICT (step_id) DO UPDATE SET title = EXCLUDED.title, summary = EXCLUDED.summary, body_html = EXCLUDED.body_html, settings = EXCLUDED.settings, refs = EXCLUDED.refs, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
         [stepId, s.title, s.summary, s.bodyHtml, JSON.stringify(s.settings), '{}', model.created_by],
       );
@@ -203,7 +239,7 @@ async function applyCourse(x: Exec, model: ModelRow, c: PlanCourse): Promise<voi
     }
     outline.modules.push({ id: m.id, title: m.title, summary: null, steps: refs });
   }
-  await x.write(`UPDATE lms_courses SET draft_outline = $2::jsonb WHERE id = $1`, [courseId, JSON.stringify(outline)]);
+  await x.write(`UPDATE lms_courses SET draft_outline = $2::text::jsonb WHERE id = $1`, [courseId, JSON.stringify(outline)]);
 
   // Publish: freeze changed steps, then the course, as publishCourse does.
   const ids = [...draftOf.keys()];
@@ -219,7 +255,7 @@ async function applyCourse(x: Exec, model: ModelRow, c: PlanCourse): Promise<voi
     if (last?.content_hash === hash) { versionOf.set(stepId, last.id); continue; }
     const vid = newId();
     await x.write(
-      `INSERT INTO lms_step_versions (id, step_id, version_no, title, summary, body_html, settings, refs, plain_text, content_hash, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10, $11)`,
+      `INSERT INTO lms_step_versions (id, step_id, version_no, title, summary, body_html, settings, refs, plain_text, content_hash, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8::text::jsonb, $9, $10, $11)`,
       [vid, stepId, (last?.version_no ?? 0) + 1, d.title, d.summary, d.body, JSON.stringify(d.settings), '{}', [d.title, d.summary, plainText(d.body)].filter(Boolean).join('\n'), hash, model.created_by],
     );
     versionOf.set(stepId, vid);
@@ -242,7 +278,7 @@ async function applyCourse(x: Exec, model: ModelRow, c: PlanCourse): Promise<voi
   const versionId = newId();
   stats.versions++;
   await x.write(
-    `INSERT INTO lms_course_versions (id, course_id, version_no, title, summary, outline, change_kind, notes, published_by) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)`,
+    `INSERT INTO lms_course_versions (id, course_id, version_no, title, summary, outline, change_kind, notes, published_by) VALUES ($1, $2, $3, $4, $5, $6::text::jsonb, $7, $8, $9)`,
     [versionId, courseId, nextNo, c.title, c.summary, JSON.stringify(snapshot), changeKind, 'seed-rails-courses', model.created_by],
   );
   await x.write(`UPDATE lms_courses SET published_version_id = $2, updated_at = NOW() WHERE id = $1`, [courseId, versionId]);
@@ -259,27 +295,27 @@ async function applyCourse(x: Exec, model: ModelRow, c: PlanCourse): Promise<voi
     if (model.created_by) await x.write(`INSERT INTO lms_run_staff (run_id, user_id, role) VALUES ($1, $2, 'guide') ON CONFLICT DO NOTHING`, [runId, model.created_by]);
   }
   await x.write(
-    `INSERT INTO lms_events (org_id, actor_id, verb, object_type, object_id, object_version_id, result) VALUES ($1, $2, 'published', 'course', $3, $4, $5::jsonb)`,
+    `INSERT INTO lms_events (org_id, actor_id, verb, object_type, object_id, object_version_id, result) VALUES ($1, $2, 'published', 'course', $3, $4, $5::text::jsonb)`,
     [model.org_id, model.created_by, courseId, versionId, JSON.stringify({ changeKind, stepsFrozen: frozen, seed: 'rails' })],
   );
 }
 
 // ── print the plan ──────────────────────────────────────────────────────────
-const kinds: Record<Kind, number> = { task: 0, 'not-wired': 0, gap: 0 };
+const kinds: Record<Kind, number> = { task: 0, place: 0, gap: 0 };
 console.log(`mode: ${DRY ? 'DRY RUN (writes nothing)' : WRITE ? 'WRITE' : 'REMOVE'}\n`);
 console.log(`=== plan: ${plan.length} courses ===`);
 for (const c of plan) {
-  const per: Record<Kind, number> = { task: 0, 'not-wired': 0, gap: 0 };
+  const per: Record<Kind, number> = { task: 0, place: 0, gap: 0 };
   for (const m of c.modules) for (const s of m.steps) { per[s.kind]++; kinds[s.kind]++; }
-  console.log(`\n${c.slug}  [${c.area}]  builds_on: ${c.buildsOn.length ? c.buildsOn.join(', ') : '-'}  | task ${per.task}, not-wired ${per['not-wired']}, gap ${per.gap}`);
+  console.log(`\n${c.slug}  [${c.area}]  builds_on: ${c.buildsOn.length ? c.buildsOn.join(', ') : '-'}  | task ${per.task}, place ${per.place}, gap ${per.gap}`);
   console.log(`  "${c.title}" -- ${c.summary}`);
   for (const m of c.modules) {
     console.log(`  section ${m.id}: ${m.title}`);
     for (const s of m.steps) console.log(`    [${s.kind.padEnd(9)}] ${s.slug}: ${s.detail}`);
   }
 }
-const total = kinds.task + kinds['not-wired'] + kinds.gap;
-console.log(`\n=== totals: ${plan.length} courses, ${total} steps: task ${kinds.task}, not-wired ${kinds['not-wired']}, gap ${kinds.gap} ===`);
+const total = kinds.task + kinds.place + kinds.gap;
+console.log(`\n=== totals: ${plan.length} courses, ${total} steps: task ${kinds.task}, place ${kinds.place}, gap ${kinds.gap} ===`);
 const taskEntries = new Set(plan.flatMap((c) => c.modules.flatMap((m) => m.steps.filter((s) => s.kind === 'task').map((s) => (s.settings.task as { id: string }).id))));
 console.log(`distinct task entries: ${taskEntries.size}; all in registry-data: ${[...taskEntries].every((e) => REGISTRY_DATA[e]) ? 'yes' : 'NO'}`);
 

@@ -8,6 +8,10 @@ import { OfferingPage } from "@/components/sites/OfferingPage";
 import { OrgDefaultPage } from "@/components/sites/OrgDefaultPage";
 import { SiteNav } from "@/components/sites/SiteNav";
 import { SiteFooter } from "@/components/sites/SiteFooter";
+import { OfferSitePage } from "@/components/sites/OfferSitePage";
+import { readOfferLook } from "@/lib/offer-site";
+import { loadOfferPage } from "@/lib/offer-load";
+import { cleanTemplate } from "@/lib/offer-load/keys";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +35,13 @@ export const dynamic = "force-dynamic";
  */
 export default async function OrgSiteRootPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
   const ctx = await loadSiteContext(slug);
   if (!ctx) notFound();
   const { org, user, canEdit, canEditSite, mainSiteUrl } = ctx;
@@ -43,7 +50,8 @@ export default async function OrgSiteRootPage({
     return <SilexLayout org={org} />;
   }
 
-  if (!org.subdomain_confirmed && !canEdit) {
+  const devPreview = process.env.NODE_ENV === "development" && sp.look === "preview";
+  if (!org.subdomain_confirmed && !canEdit && !devPreview) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
@@ -55,6 +63,26 @@ export default async function OrgSiteRootPage({
         </div>
       </div>
     );
+  }
+
+  // The single-offer page in the surface design: only for a site that saved
+  // `offer:look` with "Use the new page" on (/hub/sites/<slug>/look). `?look=preview`
+  // forces it in development only, never in production.
+  const look = await readOfferLook(org.id);
+  const preview = devPreview;
+  if (look?.enabled || preview) {
+    const data = await loadOfferPage(
+      slug,
+      user ? { userId: user.id, name: null, email: user.email } : null,
+      `${ctx.proto}://${ctx.host}`,
+      // Dev preview only: `?featured=thread:<id>|artwork:<uuid>` and `?template=<id>` try a piece and template the site has not chosen.
+      { featuredKey: preview && typeof sp.featured === "string" ? sp.featured : null }
+    );
+    if (data) {
+      const shown = preview && !look?.enabled ? data : { ...data, look: look!.look };
+      const forced = preview && data.featured && typeof sp.template === "string" ? cleanTemplate(sp.template, data.featured.kind) : null;
+      return <OfferSitePage data={shown} template={forced ?? data.templateId} signInHref={ctx.loginUrl} />;
+    }
   }
 
   const designed = await renderOrgHome({ id: org.id, slug }, { canEdit });

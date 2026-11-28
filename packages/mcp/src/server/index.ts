@@ -5,5 +5,5 @@ export { dbGrantStore, memoryGrantStore, mintGrant, revokeGrant, hashKey, newKey
 export { dbAudit, memoryAudit, type AuditRow, type AuditSink } from './audit';
 export { settleOrg, settleChannel, managedOrgs, orgIdOf, boundOrg } from './org';
 export { plain, platformHref, platformHosts, UNTRUSTED_NOTICE } from './sanitize';
-export type { McpHostOptions, McpLms, McpPages, McpDrafts, McpDraft, McpDraftStepResult, DraftContract } from './types';
+export type { McpContent, McpContentItem, McpHostOptions, McpLms, McpPages, McpDrafts, McpDraft, McpDraftStepResult, DraftContract } from './types';
 export { manifest, buildManifest, type ManifestBlock } from '../manifest';

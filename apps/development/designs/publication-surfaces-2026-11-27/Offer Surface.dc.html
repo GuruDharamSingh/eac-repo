@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"><style>:root{--fh:'Fraunces',Georgia,serif;--fhw:600;--fhi:normal;--fht:none;--fhl:-.01em;--fhx:1;--fb:'Spectral',Georgia,serif;--fq:'Fraunces',Georgia,serif;--fqi:italic;--fu:'Spectral',Georgia,serif;--fuw:600;--fut:uppercase;--ful:.14em;--fk:'Spectral',Georgia,serif;--fkl:.18em}body{margin:0;background:#121416}a{color:#c8a45b}@keyframes dcPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}</style></helmet>
+<div style="width:100%;box-sizing:border-box;background:#24282a;border:{{ rootBd }};border-top:1px solid #5a6064;box-shadow:{{ rootSh }};color:#e9e5dd;display:flex;flex-direction:column;max-height:{{ maxH }}">
+<sc-if value="{{ isSheet }}" hint-placeholder-val="{{ false }}"><div style="display:grid;place-items:center;padding:8px 0 0"><i style="width:38px;height:4px;border-radius:2px;background:#5a6064"></i></div></sc-if>
+<div style="display:grid;grid-template-columns:{{ hCols }};gap:12px;align-items:center;padding:13px 14px 12px 16px;border-bottom:2px solid {{ kc }};transition:border-color .3s">
+<sc-if value="{{ mkBox }}" hint-placeholder-val="{{ true }}"><span style="width:36px;height:36px;display:grid;place-items:center;border:1px solid {{ kcB }};background:{{ kcBg }};color:{{ kc }};font-size:16px"><dc-import name="Surface Icon" kind="{{ gk }}" set="{{ icons }}" style="width:17px;height:17px" hint-size="17px,17px"></dc-import></span></sc-if><sc-if value="{{ mkThumb }}" hint-placeholder-val="{{ false }}"><span style="position:relative;width:40px;height:40px;margin:0 4px 4px 0;background:repeating-linear-gradient(135deg,#202427 0 5px,#2a2f32 5px 6px);border:1px solid #4a5054"><span style="position:absolute;right:-5px;bottom:-5px;width:18px;height:18px;display:grid;place-items:center;background:{{ kc }};color:#1b1e20;font-size:10px;box-shadow:0 0 0 2px #24282a"><dc-import name="Surface Icon" kind="{{ gk }}" set="{{ icons }}" style="width:11px;height:11px" hint-size="11px,11px"></dc-import></span></span></sc-if><sc-if value="{{ isAv }}" hint-placeholder-val="{{ false }}"><span style="width:36px;height:36px;border-radius:50%;border:1px solid #c8a45b;background:repeating-linear-gradient(135deg,#202427 0 5px,#2a2f32 5px 6px)"></span></sc-if>
+<div style="display:grid;gap:3px;min-width:0">
+<div style="display:flex;gap:6px;align-items:center;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#a3a09a;white-space:nowrap;overflow:hidden"><sc-if value="{{ hasCrumb }}" hint-placeholder-val="{{ false }}"><button onClick="{{ back }}" style="background:transparent;border:0;padding:0;color:#c8a45b;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer">‹ {{ crumb }}</button><span>·</span></sc-if><sc-if value="{{ mkInline }}" hint-placeholder-val="{{ false }}"><span style="color:{{ kc }};display:grid;font-size:11px"><dc-import name="Surface Icon" kind="{{ gk }}" set="{{ icons }}" style="width:12px;height:12px" hint-size="12px,12px"></dc-import></span></sc-if><span>{{ k }}</span></div>
+<div style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);text-transform:var(--fht);letter-spacing:var(--fhl);font-size:calc(20px * var(--fhx));line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t }}</div>
+</div>
+<div style="display:flex;gap:6px;align-items:center"><sc-if value="{{ hasHA }}" hint-placeholder-val="{{ false }}"><button onClick="{{ haClick }}" style="height:28px;min-width:28px;padding:0 9px;background:transparent;border:1px solid #5a6064;color:#e9e5dd;cursor:pointer;font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;white-space:nowrap;transition:border-color .2s,color .2s" style-hover="border-color:#c8a45b;color:#c8a45b">{{ haText }}</button></sc-if><sc-if value="{{ showClose }}" hint-placeholder-val="{{ true }}"><button onClick="{{ close }}" style="background:transparent;border:1px solid #5a6064;color:#e9e5dd;width:28px;height:28px;cursor:pointer;font-size:12px">✕</button></sc-if></div>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto;padding:16px;display:grid;gap:12px;align-content:start;scrollbar-width:thin;scrollbar-color:#3d4246 transparent">
+
+<sc-if value="{{ isSvc }}" hint-placeholder-val="{{ true }}">
+<div style="font-family:var(--fq);font-style:var(--fqi);font-size:15px;line-height:1.4;color:#a3a09a">An hour of private work, arranged to suit you.</div>
+<div style="display:flex;flex-wrap:wrap;gap:5px"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.06em;border:1px solid #5a6064;padding:3px 7px">60 MIN</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.06em;border:1px solid #5a6064;padding:3px 7px">ONLINE</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.06em;border:1px dashed #5a6064;color:#a3a09a;padding:3px 7px">SLIDING $50–90</span></div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">What happens in a session, who it is for, and anything to prepare beforehand.</p>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a">Pick a time</span>
+<sc-for list="{{ slots }}" as="sl" hint-placeholder-count="3"><button onClick="{{ sl.pick }}" style="display:flex;align-items:center;gap:9px;background:#1b1e20;color:#e9e5dd;border:1.5px solid {{ sl.bd }};padding:8px 10px;cursor:pointer;font-family:var(--fb);font-size:12.5px;text-align:left;transition:border-color .2s"><i style="width:12px;height:12px;flex:none;border-radius:50%;border:1.5px solid {{ sl.bd }};background:{{ sl.dot }}"></i>{{ sl.label }}</button></sc-for>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a3a09a">PAY WHAT YOU CAN</span><span style="font-family:var(--fh);font-weight:var(--fhw);font-size:calc(20px * var(--fhx))">${{ pay }}</span></div>
+<input type="range" min="50" max="90" step="5" value="{{ pay }}" onChange="{{ onPay }}" style="width:100%;accent-color:#c8a45b;margin:0">
+<button onClick="{{ toOwner }}" style="display:flex;align-items:center;gap:9px;background:transparent;color:#e9e5dd;border:0;border-top:1px solid #373c3f;padding:11px 0 0;cursor:pointer;text-align:left"><i style="width:26px;height:26px;flex:none;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><div style="display:grid;flex:1"><span style="font-family:var(--fb);font-size:12.5px">Host Name</span><span style="font:500 8.5px 'JetBrains Mono',monospace;color:#8da882">● REPLIES WITHIN A DAY</span></div><span style="color:#8f8c86">›</span></button>
+</sc-if>
+
+<sc-if value="{{ isEvt }}" hint-placeholder-val="{{ false }}">
+<div style="height:120px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f;display:grid;place-items:center;font:9px 'JetBrains Mono',monospace;color:#8f8c86">event poster</div>
+<div style="display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);font-size:calc(32px * var(--fhx));line-height:1;color:#c8a45b">14</span><span style="font:500 8.5px/1.5 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a3a09a">SAT · DEC<br>8:00 PM</span><div style="display:grid;border-left:1px solid #373c3f;padding-left:10px"><span style="font-family:var(--fb);font-size:12.5px">Venue name</span><span style="font:500 8.5px 'JetBrains Mono',monospace;color:#8f8c86">STREET, CITY</span></div></div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">One evening, two acts, doors at seven.</p>
+<div style="display:grid"><div style="display:grid;grid-template-columns:46px 1fr;padding:5px 0;border-bottom:1px dotted #3d4246"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#8f8c86;padding-top:2px">7:00</span><span style="font-family:var(--fb);font-size:12.5px">Doors</span></div><div style="display:grid;grid-template-columns:46px 1fr;padding:5px 0;border-bottom:1px dotted #3d4246"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#8f8c86;padding-top:2px">7:45</span><span style="font-family:var(--fb);font-size:12.5px">Act one</span></div><div style="display:grid;grid-template-columns:46px 1fr;padding:5px 0;border-bottom:1px dotted #3d4246"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#8f8c86;padding-top:2px">8:30</span><span style="font-family:var(--fb);font-size:12.5px">Act two</span></div></div>
+<div style="display:flex;align-items:center"><i style="width:24px;height:24px;border-radius:50%;border:2px solid #24282a;background:#3a3f43"></i><i style="width:24px;height:24px;border-radius:50%;border:2px solid #24282a;background:#4d5357;margin-left:-7px"></i><i style="width:24px;height:24px;border-radius:50%;border:2px solid #24282a;background:#454b4f;margin-left:-7px"></i><span style="margin-left:9px;font-family:var(--fb);font-size:12px;color:#a3a09a">23 coming</span></div>
+</sc-if>
+
+<sc-if value="{{ isRsvp }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.5;color:#a3a09a">23 people have said they're coming · 40 spaces.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">YOUR NAME</span><input style="min-width:0;background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"></label><label style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">EMAIL</span><input type="email" style="min-width:0;background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"></label></div>
+<div style="display:flex;gap:8px;align-items:center;font-family:var(--fb);font-size:12.5px"><span style="width:14px;height:14px;border:1.5px solid #c8a45b;color:#c8a45b;display:grid;place-items:center;font-size:10px;line-height:1">✓</span>Email me a reminder beforehand</div>
+<span style="font-family:var(--fb);font-size:12px;color:#a3a09a">or <u>sign in</u> to keep track of your RSVPs</span>
+<div style="border:1px dashed #5a6064;padding:9px 10px;display:grid;gap:3px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#c8a45b">IF THE EVENT IS PRICED</span><span style="font-family:var(--fb);font-size:12px;line-height:1.45;color:#c9c4ba">The button reads "Get a place · $20" and pushes Pay instead.</span></div>
+</sc-if>
+
+<sc-if value="{{ isRead }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#c8a45b">{{ pc.series }}</span>
+<div style="font-family:var(--fq);font-style:var(--fqi);font-size:16px;line-height:1.4;color:#a3a09a">A standfirst: one or two sentences that say what this piece is about.</div>
+<div style="display:flex;align-items:center;gap:8px"><i style="width:22px;height:22px;flex:none;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><button onClick="{{ toOwner }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px;font-family:var(--fb);font-size:12px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Author name</button><span style="font:500 9px 'JetBrains Mono',monospace;color:#8f8c86">{{ pc.date }} · {{ pc.min }} MIN</span></div>
+<p style="margin:0;font-family:var(--fb);font-size:{{ rs }};line-height:1.62;transition:font-size .2s;color:#d6d1c7"><span style="float:left;font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);font-size:calc(46px * var(--fhx));line-height:.8;margin:4px 7px 0 0;color:#c8a45b">T</span>he whole piece reads here, in the surface. Its index sits underneath, and choosing another piece swaps this one out without leaving the page.</p>
+<div style="height:100px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f;display:grid;place-items:center;font:9px 'JetBrains Mono',monospace;color:#8f8c86">picture</div>
+<p style="margin:0;font-family:var(--fb);font-size:{{ rs }};line-height:1.62;transition:font-size .2s;color:#d6d1c7">Headings, pictures and quotes break it up where the writer wants them to.</p>
+<div style="font-family:var(--fq);font-style:var(--fqi);font-size:19px;line-height:1.3;text-align:center;padding:4px 8px">“A pull quote, set large.”</div>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a;border-top:1px solid #373c3f;padding-top:11px">In this series</span>
+<sc-for list="{{ pieces }}" as="pz" hint-placeholder-count="3"><button onClick="{{ pz.pick }}" style="display:grid;grid-template-columns:24px 1fr auto;gap:6px;align-items:baseline;background:transparent;border:0;border-bottom:1px solid #373c3f;padding:6px 0;cursor:pointer;text-align:left;color:{{ pz.c }}"><span style="font:500 9.5px 'JetBrains Mono',monospace">{{ pz.n }}</span><span style="font-family:var(--fb);font-size:12.5px">{{ pz.title }}</span><span style="font:500 9px 'JetBrains Mono',monospace;color:#8f8c86">{{ pz.min }} MIN</span></button></sc-for>
+</sc-if>
+
+<sc-if value="{{ isTalk }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:24px 1fr;gap:9px"><i style="width:24px;height:24px;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><div style="display:grid;gap:3px"><span style="font-family:var(--fb);font-size:12.5px"><button onClick="{{ toMember }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Name</button> <span style="font:500 9px 'JetBrains Mono',monospace;color:#8f8c86">· 2H</span></span><span style="font-family:var(--fb);font-size:13px;line-height:1.5;color:#d6d1c7">Looking forward to this one.</span></div></div>
+<div style="display:grid;grid-template-columns:24px 1fr;gap:9px;border-top:1px solid #373c3f;padding-top:10px"><i style="width:24px;height:24px;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><div style="display:grid;gap:5px"><span style="font-family:var(--fb);font-size:12.5px"><button onClick="{{ toMember }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Name</button> <span style="font:500 9px 'JetBrains Mono',monospace;color:#8f8c86">· 5H</span></span><span style="font-family:var(--fb);font-size:13px;line-height:1.5;color:#d6d1c7">From last time.</span><div style="width:130px;height:74px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f;display:grid;place-items:center;font:9px 'JetBrains Mono',monospace;color:#8f8c86">photo</div></div></div>
+<div style="display:grid;grid-template-columns:24px 1fr;gap:9px;border-top:1px solid #373c3f;padding-top:10px"><i style="width:24px;height:24px;border-radius:50%;border:1.5px solid #c8a45b;background:#2a2f32"></i><div style="display:grid;gap:3px"><span style="font-family:var(--fb);font-size:12.5px"><button onClick="{{ toOwner }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Host</button> <span style="font:500 9px 'JetBrains Mono',monospace;color:#c8a45b">· HOST · 1D</span></span><span style="font-family:var(--fb);font-size:13px;line-height:1.5;color:#d6d1c7">Thanks for reading. Replies are open.</span></div></div>
+<div style="display:flex;gap:6px;border-top:1px solid #373c3f;padding-top:11px"><input placeholder="Say something…" style="flex:1;min-width:0;background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"><span style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;border:1px solid #5a6064;padding:8px 10px">Photo</span></div>
+</sc-if>
+
+<sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">LINK</span><div style="background:#1b1e20;border:1px solid #5a6064;padding:9px 10px;font:500 11px 'JetBrains Mono',monospace;color:#c9c4ba;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">site.org/profile/host-name?surface={{ shareSlug }}</div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><span style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;border:1px solid #5a6064;padding:9px 0;text-align:center">Email</span><span style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;border:1px solid #5a6064;padding:9px 0;text-align:center">Message</span><span style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;border:1px solid #5a6064;padding:9px 0;text-align:center">Embed</span></div>
+<p style="margin:0;font-family:var(--fb);font-size:12.5px;line-height:1.5;color:#a3a09a">The link opens this profile with the same popup on top, so whoever gets it lands on the offer.</p>
+</sc-if>
+
+<sc-if value="{{ isSer }}" hint-placeholder-val="{{ false }}">
+<div style="font-family:var(--fq);font-style:var(--fqi);font-size:16px;line-height:1.35;color:#e9e5dd">One hour, one work, one host.</div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">Every week a different host opens a single piece and talks about how they see it. No background needed.</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #373c3f;border-bottom:1px solid #373c3f"><div style="padding:7px 0;display:grid;gap:2px"><span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86">WHEN</span><span style="font-family:var(--fb);font-size:12px">Mondays</span></div><div style="padding:7px 8px;border-left:1px solid #373c3f;display:grid;gap:2px"><span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86">TIME</span><span style="font-family:var(--fb);font-size:12px">6 pm PT · 9 ET</span></div><div style="padding:7px 8px;border-left:1px solid #373c3f;display:grid;gap:2px"><span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86">WHERE</span><span style="font-family:var(--fb);font-size:12px">Online · free</span></div></div>
+<div style="display:flex;align-items:center;gap:8px"><div style="display:flex"><i style="width:24px;height:24px;border-radius:50%;border:2px solid #24282a;background:#3a3f43"></i><i style="width:24px;height:24px;border-radius:50%;border:2px solid #24282a;background:#4d5357;margin-left:-7px"></i></div><span style="font-family:var(--fb);font-size:12px;color:#a3a09a">Hosted by <button onClick="{{ toOwner }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Host Name</button> and <button onClick="{{ toGuest }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Another host</button></span></div>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a">Next session</span>
+<button onClick="{{ toSession }}" style="display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;background:#1b1e20;border:1px solid #5a6064;padding:10px 11px;cursor:pointer;text-align:left;color:#e9e5dd;transition:border-color .2s" style-hover="border-color:#c8a45b"><span style="display:grid;justify-items:center;line-height:1"><span style="font:500 8px 'JetBrains Mono',monospace;color:#a3a09a">MON</span><span style="font-family:var(--fh);font-weight:var(--fhw);font-size:calc(22px * var(--fhx));color:#c8a45b">14</span><span style="font:500 8px 'JetBrains Mono',monospace;color:#a3a09a">DEC</span></span><span style="display:grid;gap:2px"><span style="font-family:var(--fb);font-size:13px">Session title</span><span style="font:500 8.5px 'JetBrains Mono',monospace;color:#8f8c86">SESSION 7 · HOST NAME</span></span><span style="color:#c8a45b">→</span></button>
+<span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8f8c86">▸ EARLIER SESSIONS (6)</span>
+</sc-if>
+
+<sc-if value="{{ isSub }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">We'll send a reminder a couple of days before each session, with its details and the join link.</p>
+<p style="margin:0;font-family:var(--fb);font-size:12.5px;line-height:1.5;color:#a3a09a">Subscribing doesn't mark you as coming. Each email lets you say you're coming to that session.</p>
+<label style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">EMAIL</span><input type="email" style="background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"></label>
+</sc-if>
+
+<sc-if value="{{ isSession }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);font-size:calc(32px * var(--fhx));line-height:1;color:#c8a45b">14</span><span style="font:500 8.5px/1.5 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a3a09a">MON · DEC<br>6 PM PT · 9 PM ET · ONLINE</span></div>
+<div style="display:flex;align-items:center;gap:8px"><i style="width:24px;height:24px;flex:none;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><button onClick="{{ toOwner }}" style="background:transparent;border:0;padding:0;color:#e9e5dd;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#5a6064;text-underline-offset:3px;font-family:var(--fb);font-size:12.5px" style-hover="color:#c8a45b;text-decoration-color:#c8a45b">Host Name</button></div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">What this session will cover, written by its host.</p>
+<div style="display:flex;justify-content:space-between;border:1px solid #373c3f;padding:8px 10px;font-family:var(--fb);font-size:12px"><span>▭ Notes for this session.pdf</span><span style="font:500 9px 'JetBrains Mono',monospace;color:#8f8c86">240 KB</span></div>
+<span style="font-family:var(--fb);font-size:12px;color:#a3a09a">Part of Series name. Subscribers get the join link by email.</span>
+</sc-if>
+
+<sc-if value="{{ isArt }}" hint-placeholder-val="{{ false }}">
+<div style="height:180px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f;display:grid;place-items:center;font:9px 'JetBrains Mono',monospace;color:#8f8c86">the work</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><i style="height:44px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #c8a45b"></i><i style="height:44px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f"></i><i style="height:44px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f"></i></div>
+<div style="display:grid"><div style="display:grid;grid-template-columns:80px 1fr;padding:5px 0;border-bottom:1px dashed #3d4246"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86;padding-top:2px">MEDIUM</span><span style="font-family:var(--fb);font-size:12.5px">Acrylic on panel</span></div><div style="display:grid;grid-template-columns:80px 1fr;padding:5px 0;border-bottom:1px dashed #3d4246"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86;padding-top:2px">SIZE</span><span style="font-family:var(--fb);font-size:12.5px">40 × 50 cm</span></div><div style="display:grid;grid-template-columns:80px 1fr;padding:5px 0;border-bottom:1px dashed #3d4246"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8f8c86;padding-top:2px">EDITION</span><span style="font-family:var(--fb);font-size:12.5px">1 of 1 · 2026</span></div></div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">A few lines from the artist about the work.</p>
+</sc-if>
+
+<sc-if value="{{ isOrder }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a">How it reaches you</span>
+<sc-for list="{{ ships }}" as="sh" hint-placeholder-count="2"><button onClick="{{ sh.pick }}" style="display:flex;align-items:center;gap:9px;background:#1b1e20;color:#e9e5dd;border:1.5px solid {{ sh.bd }};padding:9px 10px;cursor:pointer;font-family:var(--fb);font-size:12.5px;text-align:left;transition:border-color .2s"><i style="width:12px;height:12px;flex:none;border-radius:50%;border:1.5px solid {{ sh.bd }};background:{{ sh.dot }}"></i><span style="flex:1">{{ sh.label }}</span><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#a3a09a">{{ sh.cost }}</span></button></sc-for>
+<sc-if value="{{ shipping }}" hint-placeholder-val="{{ true }}"><label style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">ADDRESS</span><input style="background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"></label></sc-if>
+<div style="display:grid;font-family:var(--fb);font-size:12.5px"><div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:#a3a09a">Work</span><span>$420</span></div><div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:#a3a09a">Delivery</span><span>${{ shipCost }}</span></div><div style="display:flex;justify-content:space-between;padding:7px 0 0;border-top:1px solid #5a6064;font-weight:600"><span>Total</span><span>${{ amount }}</span></div></div>
+</sc-if>
+
+<sc-if value="{{ isProf }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ pfPortrait }}" hint-placeholder-val="{{ true }}"><div style="height:150px;background:repeating-linear-gradient(135deg,#202427 0 7px,#262b2e 7px 8px);border:1px solid #373c3f;display:grid;place-items:center;font:9px 'JetBrains Mono',monospace;color:#8f8c86">portrait</div></sc-if>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#ce8b62">{{ pf.role }}</span>
+<sc-if value="{{ pfHasBio }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">{{ pf.bio }}</p></sc-if>
+<sc-if value="{{ pfHasLinks }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pf.links }}" as="ln" hint-placeholder-count="3"><span style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;border:1px solid #5a6064;padding:7px 10px">{{ ln }}</span></sc-for></div></sc-if>
+<sc-if value="{{ pfOwner }}" hint-placeholder-val="{{ true }}">
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a;border-top:1px solid #373c3f;padding-top:11px">Offered here</span>
+<div style="display:grid;border-top:1px solid #373c3f"><sc-for list="{{ pfOffers }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.go }}" style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;background:transparent;color:#e9e5dd;border:0;border-bottom:1px solid #373c3f;padding:9px 0;cursor:pointer;text-align:left;transition:background .2s" style-hover="background:#2a2e31"><span style="width:30px;height:30px;display:grid;place-items:center;border:1px solid {{ o.kcB }};background:{{ o.kcBg }};color:{{ o.kc }};font-size:13px"><dc-import name="Surface Icon" kind="{{ o.k }}" set="{{ icons }}" style="width:14px;height:14px" hint-size="14px,14px"></dc-import></span><span style="display:grid;gap:2px;min-width:0"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);text-transform:var(--fht);font-size:calc(15px * var(--fhx));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.t }}</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ o.mc }}">{{ o.m }}</span></span><span style="color:#8f8c86;padding-right:2px">›</span></button></sc-for></div>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a">Writing</span>
+<div style="display:grid;border-top:1px solid #373c3f"><sc-for list="{{ pfPieces }}" as="w" hint-placeholder-count="2"><button onClick="{{ w.go }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:baseline;background:transparent;color:#e9e5dd;border:0;border-bottom:1px solid #373c3f;padding:8px 0;cursor:pointer;text-align:left"><span style="font-family:var(--fb);font-size:13px">{{ w.title }}</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">{{ w.date }} · {{ w.min }} MIN</span></button></sc-for></div>
+</sc-if>
+<sc-if value="{{ pfGuest }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a;border-top:1px solid #373c3f;padding-top:11px">Here</span>
+<button onClick="{{ toSeries }}" style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;background:#1b1e20;border:1px solid #5a6064;padding:9px 10px;cursor:pointer;text-align:left;color:#e9e5dd;transition:border-color .2s" style-hover="border-color:#c8a45b"><span style="width:30px;height:30px;display:grid;place-items:center;border:1px solid rgba(200,164,91,.38);background:rgba(200,164,91,.12);color:#c8a45b;font-size:13px"><dc-import name="Surface Icon" kind="ser" set="{{ icons }}" style="width:14px;height:14px" hint-size="14px,14px"></dc-import></span><span style="display:grid;gap:2px;min-width:0"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);text-transform:var(--fht);font-size:calc(15px * var(--fhx));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Series name</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">CO-HOSTS · MONDAYS · FREE</span></span><span style="color:#c8a45b">→</span></button>
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a">On their site</span>
+<div style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px dashed #5a6064;padding:9px 10px"><span style="width:30px;height:30px;display:grid;place-items:center;border:1px solid rgba(200,164,91,.38);background:rgba(200,164,91,.12);color:#c8a45b;font-size:13px"><dc-import name="Surface Icon" kind="evt" set="{{ icons }}" style="width:14px;height:14px" hint-size="14px,14px"></dc-import></span><span style="display:grid;gap:2px;min-width:0"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);text-transform:var(--fht);font-size:calc(15px * var(--fhx));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Their event title</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">EVENT · SAT 21 DEC · ANOTHERHOST.ORG</span></span><span style="color:#a3a09a">↗</span></div>
+<span style="font-family:var(--fb);font-size:12px;line-height:1.45;color:#a3a09a">Their own offers open on their own site. Following them here is the same as following them there.</span>
+</sc-if>
+<sc-if value="{{ pfMember }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--fk);font-size:9.5px;text-transform:uppercase;letter-spacing:var(--fkl);color:#a3a09a;border-top:1px solid #373c3f;padding-top:11px">Their replies here</span>
+<div style="display:grid;border-top:1px solid #373c3f"><div style="display:grid;gap:3px;padding:8px 0;border-bottom:1px solid #373c3f"><span style="font-family:var(--fb);font-size:13px;line-height:1.45;color:#d6d1c7">“Looking forward to this one.”</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">ON EVENT TITLE · 2H</span></div><div style="display:grid;gap:3px;padding:8px 0;border-bottom:1px solid #373c3f"><span style="font-family:var(--fb);font-size:13px;line-height:1.45;color:#d6d1c7">“Is there step-free access at the venue?”</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">ON EVENT TITLE · 3D</span></div><div style="display:grid;gap:3px;padding:8px 0;border-bottom:1px solid #373c3f"><span style="font-family:var(--fb);font-size:13px;line-height:1.45;color:#d6d1c7">“This one stayed with me all week.”</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#8f8c86">ON TITLE OF THE PIECE · 20 SEP</span></div></div>
+<span style="font-family:var(--fb);font-size:12px;line-height:1.45;color:#a3a09a">People who only post here have no page or offers. Their name opens this from anything they write.</span>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isFol }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:11px"><i style="width:42px;height:42px;flex:none;border-radius:50%;border:1px solid #c8a45b;background:repeating-linear-gradient(135deg,#202427 0 5px,#2a2f32 5px 6px)"></i><div style="display:grid;gap:3px"><span style="font-family:var(--fh);font-weight:var(--fhw);font-style:var(--fhi);text-transform:var(--fht);font-size:calc(17px * var(--fhx))">{{ fwName }}</span><span style="font-family:var(--fk);font-size:9px;text-transform:uppercase;letter-spacing:var(--fkl);color:#ce8b62">{{ fwRole }}</span></div></div>
+<p style="margin:0;font-family:var(--fb);font-size:13px;line-height:1.55;color:#d6d1c7">New offers and writing from {{ fwName }}, by email. At most one a week.</p>
+<label style="display:grid;gap:4px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">EMAIL</span><input type="email" style="background:#1b1e20;border:1px solid #5a6064;color:#e9e5dd;padding:8px 9px;font-family:var(--fb);font-size:12.5px;outline:none" style-focus="border-color:#c8a45b"></label>
+<span style="font-family:var(--fb);font-size:12px;color:#a3a09a">or <u>sign in</u> to follow from your Center</span>
+</sc-if>
+
+<sc-if value="{{ isPay }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid #373c3f;background:#1b1e20;padding:10px 12px;display:grid;gap:5px;font-family:var(--fb);font-size:12.5px"><div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#a3a09a">For</span><span style="text-align:right">{{ payItem }}</span></div><div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#a3a09a">Detail</span><span style="text-align:right">{{ payDetail }}</span></div><div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #373c3f;font-weight:600"><span>Total</span><span>${{ amount }}</span></div></div>
+<div style="display:flex;align-items:center;gap:9px"><i style="width:24px;height:24px;flex:none;border-radius:50%;border:1px solid #5a6064;background:#2a2f32"></i><span style="flex:1;font-family:var(--fb);font-size:12.5px">Paying as Your name</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#c8a45b">CHANGE</span></div>
+<div style="display:grid;gap:6px;border:1px solid #5a6064;padding:11px;background:#1f2225"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#a3a09a">CARD · HANDLED BY STRIPE</span><div style="background:#1b1e20;border:1px solid #5a6064;padding:9px 10px;font:500 11.5px 'JetBrains Mono',monospace;color:#6f6c67">1234 1234 1234 1234</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="background:#1b1e20;border:1px solid #5a6064;padding:9px 10px;font:500 11.5px 'JetBrains Mono',monospace;color:#6f6c67">MM / YY</div><div style="background:#1b1e20;border:1px solid #5a6064;padding:9px 10px;font:500 11.5px 'JetBrains Mono',monospace;color:#6f6c67">CVC</div></div></div>
+<span style="font-family:var(--fb);font-size:11.5px;line-height:1.45;color:#a3a09a">Card details go to Stripe, not this site. When it's done you come back to this popup.</span>
+</sc-if>
+
+<sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+<span style="width:46px;height:46px;border-radius:50%;background:#8da882;color:#1b1e20;display:grid;place-items:center;font-size:21px;animation:dcPop .5s cubic-bezier(.3,1.5,.5,1) both">✓</span>
+<span style="font-family:var(--fb);font-size:14px">{{ doneLine }}</span>
+<p style="margin:0;font-family:var(--fb);font-size:12.5px;line-height:1.5;color:#a3a09a">{{ doneNote }}</p>
+<sc-if value="{{ doneTalk }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toTalk }}" style="display:flex;justify-content:space-between;background:#1b1e20;border:1px solid #5a6064;padding:10px 11px;cursor:pointer;color:#e9e5dd;font-family:var(--fb);font-size:12.5px"><span>Talk · 8</span><span style="color:#c8a45b">→</span></button></sc-if>
+</sc-if>
+
+</div>
+<sc-if value="{{ isSheet }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 16px 26px;background:#1f2225;border-top:1px solid #373c3f;display:grid;gap:8px">
+<sc-if value="{{ hasSt }}" hint-placeholder-val="{{ true }}"><span style="text-align:center;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#8f8c86">{{ st }}</span></sc-if>
+<div style="display:flex;gap:8px"><sc-if value="{{ hasQuiet }}" hint-placeholder-val="{{ false }}"><button onClick="{{ qa }}" style="flex:none;font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10.5px;background:transparent;color:#e9e5dd;border:1px solid #5a6064;padding:13px 12px;cursor:pointer">{{ ql }}</button></sc-if><button onClick="{{ pa }}" style="flex:1;font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:11px;background:#c8a45b;color:#1b1e20;border:1px solid #c8a45b;padding:13px 0;cursor:pointer">{{ pl }}</button></div>
+</div></sc-if>
+<sc-if value="{{ notSheet }}" hint-placeholder-val="{{ true }}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px 10px 16px;background:#1f2225;border-top:1px solid #373c3f">
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#8f8c86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st }}</span>
+<div style="display:flex;gap:6px;flex:none">
+<sc-if value="{{ hasQuiet }}" hint-placeholder-val="{{ true }}"><button onClick="{{ qa }}" style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;background:transparent;color:#e9e5dd;border:1px solid #5a6064;padding:8px 11px;cursor:pointer">{{ ql }}</button></sc-if>
+<button onClick="{{ pa }}" style="font-family:var(--fu);font-weight:var(--fuw);text-transform:var(--fut);letter-spacing:var(--ful);font-size:10px;background:#c8a45b;color:#1b1e20;border:1px solid #c8a45b;padding:8px 13px;cursor:pointer;transition:filter .2s" style-hover="filter:brightness(1.08)">{{ pl }}</button>
+</div>
+</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:640},&quot;mark&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;box&quot;,&quot;inline&quot;,&quot;thumb&quot;],&quot;default&quot;:&quot;box&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;icons&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;glyph&quot;,&quot;things&quot;,&quot;marks&quot;,&quot;stamps&quot;],&quot;default&quot;:&quot;things&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;layer&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;svc-offer&quot;,&quot;evt-offer&quot;,&quot;evt-rsvp&quot;,&quot;wr-read&quot;,&quot;talk&quot;,&quot;share&quot;,&quot;ser-offer&quot;,&quot;ser-sub&quot;,&quot;ser-session&quot;,&quot;art-offer&quot;,&quot;art-order&quot;,&quot;pay&quot;,&quot;done&quot;,&quot;pf-owner&quot;,&quot;pf-guest&quot;,&quot;pf-member&quot;,&quot;follow&quot;],&quot;default&quot;:&quot;svc-offer&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;crumb&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;docked&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;sheet&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;headActions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;headAction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;share&quot;,&quot;page&quot;,&quot;aa&quot;,&quot;follow&quot;,&quot;site&quot;,&quot;none&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;maxH&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ctx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;onGo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id: string, patch?: object) =&gt; void&quot;},&quot;onReplace&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id: string, patch?: object) =&gt; void&quot;},&quot;onBack&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onSet&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(patch: object) =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { copied: false, big: false, followed: false };
+  renderVals() {
+    const p = this.props;
+    const id = p.layer ?? "svc-offer";
+    const c = p.ctx ?? {};
+    const slots = ["Tue 17 Dec · 10:00 am", "Wed 18 Dec · 7:00 pm", "Sat 21 Dec · 11:00 am"];
+    const slot = c.slot ?? 1, pay = c.pay ?? 80, piece = c.piece ?? 0, flow = c.flow ?? "svc", ship = c.ship ?? "ship";
+    const go = (to, patch) => () => p.onGo && p.onGo(to, patch);
+    const set = (patch) => p.onSet && p.onSet(patch);
+    const PIECES = [
+      { title: "Title of the piece", series: "Notes from the lab · 3 of 8", min: 4, date: "20 SEP" },
+      { title: "An earlier piece", series: "Notes from the lab · 2 of 8", min: 2, date: "12 SEP" },
+      { title: "Another title", series: "Notes from the lab · 1 of 8", min: 6, date: "02 SEP" },
+    ];
+    const pc = PIECES[piece % 3];
+    const PEOPLE = {
+      owner: { name: "Host Name", k: "Profile", role: "Practice · City", bio: "Two or three sentences about who they are and what they do, in their own words.", links: ["Site", "Instagram", "Email"], st: "312 following" },
+      guest: { name: "Another host", k: "Co-host", role: "Practice · Another city", bio: "A line or two in their own words, carried over from their own site.", links: ["Their site", "Instagram"], st: "88 following" },
+      member: { name: "Name", k: "Member", role: "Posts in the talk · since Sep 2026", bio: "", links: [], st: "8 replies on this site" },
+    };
+    const isProf = id.startsWith("pf-");
+    const who = isProf ? id.slice(3) : (c.fwho || "owner");
+    const pf = PEOPLE[who] || PEOPLE.owner;
+    const fkey = "f_" + who, followed = !!c[fkey];
+    const shipCost = ship === "ship" ? 15 : 0;
+    const PAY = {
+      svc: { item: "One-to-one session", detail: slots[slot], amount: pay, g: "◇" },
+      art: { item: "Title of the work", detail: ship === "ship" ? "Shipped · 5 days" : "Collect from the studio", amount: 420 + shipCost, g: "▣" },
+      evt: { item: "Event title · one place", detail: "Sat 14 Dec · 8:00 pm", amount: 20, g: "◆" },
+      ser: { item: "Series name", detail: "Mondays", amount: 0, g: "◎" },
+    };
+    const fp = PAY[flow] || PAY.svc;
+    const DONE = {
+      svc: { t: "You're booked", line: slots[slot] + " · online", note: "The join link arrives by email and waits in your Center.", talk: false, q: "Add to calendar" },
+      art: { t: "Order placed", line: "Title of the work · $" + (420 + shipCost), note: "A receipt is on its way. Tracking follows when it ships.", talk: false, q: null },
+      evt: { t: "You're coming", line: "Sat 14 Dec · 8:00 pm · Venue name", note: "A reminder comes the day before. The talk is open to everyone coming.", talk: true, q: "Add to calendar" },
+      ser: { t: "You're subscribed", line: "Series name · Mondays", note: "Each email lets you say you're coming to that session.", talk: true, q: null },
+    };
+    DONE.fol = { t: "You're following", line: pf.name + " · by email", note: "New offers and writing arrive by email. Each one has an unfollow link, and so does your Center.", talk: false, q: null };
+    const dn = DONE[flow] || DONE.svc;
+    const M = {
+      "svc-offer": { g: "◇", k: "Service", t: "One-to-one session", st: "3 times open this week", pl: "Book · $" + pay, pa: go("pay", { flow: "svc" }), ql: "Share", qa: go("share") },
+      "evt-offer": { g: "◆", k: "Event", t: "Event title", st: "23 coming · 40 spaces", pl: "I'm coming", pa: go("evt-rsvp"), ql: "Share", qa: go("share") },
+      "evt-rsvp": { g: "◆", k: "RSVP", t: "Are you coming?", st: "Free · no account needed", pl: "Yes, I'm coming", pa: go("done", { flow: "evt" }) },
+      "wr-read": { g: "◉", k: "Writing", t: pc.title, st: pc.min + " min · 12 replies", pl: "Open the talk", pa: go("talk"), ql: "Next ›", qa: () => p.onReplace && p.onReplace("wr-read", { piece: (piece + 1) % 3 }) },
+      talk: { g: "☰", k: "Talk", t: "Talk · 8", st: "Anyone can read", pl: "Post", pa: () => {} },
+      share: { g: "↗", k: "Share", t: "Share this", st: "", pl: this.state.copied ? "✓ Copied" : "Copy link", pa: () => this.setState({ copied: true }) },
+      "ser-offer": { g: "◎", k: "Series", t: "Series name", st: "Weekly · Mondays · free", pl: "Subscribe", pa: go("ser-sub"), ql: "Share", qa: go("share") },
+      "ser-sub": { g: "◎", k: "Subscribe", t: "Subscribe to the series?", st: "One email per session", pl: "Subscribe", pa: go("done", { flow: "ser" }) },
+      "ser-session": { g: "◎", k: "Session 7", t: "Session title", st: "Mon 14 Dec · 6 pm PT", pl: "I'm coming", pa: go("evt-rsvp") },
+      "art-offer": { g: "▣", k: "Artwork", t: "Title of the work", st: "1 of 1 · ships in 5 days", pl: "Order · $420", pa: go("art-order"), ql: "Share", qa: go("share") },
+      "art-order": { g: "▣", k: "Order", t: "Delivery", st: "Total $" + (420 + shipCost), pl: "Continue to pay", pa: go("pay", { flow: "art" }) },
+      pay: { g: fp.g, k: "Pay", t: "Confirm and pay", st: "Secure · Stripe", pl: "Pay $" + fp.amount, pa: go("done", { flow }) },
+      "pf-owner": { g: "", k: pf.k, t: pf.name, st: followed ? "You're following" : pf.st, pl: followed ? "✓ Following" : "Follow", pa: followed ? () => set({ [fkey]: false }) : go("follow", { fwho: who }) },
+      "pf-member": { g: "", k: pf.k, t: pf.name, st: pf.st, pl: "Reply in the talk", pa: () => p.onBack && p.onBack() },
+      follow: { g: "+", k: "Follow", t: "Follow " + pf.name, st: "By email · unfollow any time", pl: "Follow", pa: go("done", { flow: "fol", [fkey]: true }) },
+      done: { g: "✓", k: "Done", t: dn.t, st: "", pl: "Done", pa: () => p.onClose && p.onClose(), ql: dn.q, qa: () => {} },
+    };
+    M["pf-guest"] = M["pf-owner"];
+    const m = M[id] || M["svc-offer"];
+    const sheet = !!p.sheet;
+    const HA_DEF = { "svc-offer": "share", "evt-offer": c.featured ? "page" : "share", "ser-offer": "share", "art-offer": "share", "ser-session": "share", "wr-read": "aa", talk: "follow", "pf-guest": "site" };
+    const haKey = p.headAction ?? (p.headActions ? HA_DEF[id] : null);
+    const HA = {
+      share: { icon: "↗", label: "↗ Share", go: go("share") },
+      page: { icon: "⤢", label: "⤢ Its page", go: () => {} },
+      aa: { icon: "Aa", label: this.state.big ? "Aa −" : "Aa +", go: () => this.setState((x) => ({ big: !x.big })) },
+      site: { icon: "⤢", label: "⤢ Their site", go: () => {} },
+      follow: { icon: this.state.followed ? "✓" : "+", label: this.state.followed ? "✓ Following" : "+ Follow", go: () => this.setState((x) => ({ followed: !x.followed })) },
+    };
+    const ha = haKey && haKey !== "none" ? HA[haKey] : null;
+    const KC = { evt: "#ce8b62", svc: "#8da882", ser: "#8ea7c2", art: "#c48fa6", wr: "#c8a45b", talk: "#7fafa8", pf: "#d9cfbf", share: "#c8a45b", fol: "#c8a45b", done: "#8da882" };
+    const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")"; };
+    const kOf = (k) => (p.tint ? KC[k] || "#c8a45b" : "#c8a45b");
+    const gk = isProf ? "pf" : ({ "◇": "svc", "◆": "evt", "◉": "wr", "☰": "talk", "↗": "share", "◎": "ser", "▣": "art", "+": "fol", "✓": "done" })[m.g] || "evt";
+    const kc = kOf(gk);
+    const mark = sheet ? p.mark ?? "box" : "box";
+    const thumbable = isProf || (["svc", "evt", "ser", "art", "wr"].includes(gk) && !["done", "share", "talk", "follow"].includes(id));
+    const mode = mark === "thumb" && !thumbable ? "inline" : mark;
+    const v = {
+      g: m.g, k: m.k, t: m.t, st: m.st, pl: m.pl, pa: m.pa, ql: m.ql, qa: m.qa, hasQuiet: !!m.ql && !(m.ql === "Share" && (haKey === "share" || haKey === "page")), hasSt: !!m.st,
+      hasHA: !!ha, haText: ha ? (sheet ? ha.icon : ha.label) : "", haClick: ha ? ha.go : null,
+      isSheet: sheet, notSheet: !sheet,
+      rootBd: sheet ? "0" : "1px solid #5a6064",
+      rootSh: sheet ? "0 -18px 40px -10px rgba(0,0,0,.7)" : "0 30px 60px -24px rgba(0,0,0,.85)",
+      rs: this.state.big ? "15.5px" : "13.5px",
+      crumb: p.crumb ?? "", hasCrumb: !!p.crumb, back: () => p.onBack && p.onBack(),
+      showClose: !p.docked, close: () => p.onClose && p.onClose(),
+      maxH: p.maxH ?? "none",
+      isSvc: id === "svc-offer", isEvt: id === "evt-offer", isRsvp: id === "evt-rsvp", isRead: id === "wr-read", isTalk: id === "talk", isShare: id === "share",
+      isSer: id === "ser-offer", isSub: id === "ser-sub", isSession: id === "ser-session", isArt: id === "art-offer", isOrder: id === "art-order", isPay: id === "pay", isDone: id === "done",
+      pay, onPay: (e) => set({ pay: +e.target.value }),
+      slots: slots.map((l, i) => ({ label: l, bd: i === slot ? "#c8a45b" : "#5a6064", dot: i === slot ? "radial-gradient(#c8a45b 0 3px, transparent 3.5px)" : "none", pick: () => set({ slot: i }) })),
+      pc, pieces: PIECES.map((x, i) => ({ ...x, n: "0" + (3 - i), c: i === piece % 3 ? "#c8a45b" : "#e9e5dd", pick: () => p.onReplace && p.onReplace("wr-read", { piece: i }) })),
+      shareSlug: c.shareSlug ?? "event",
+      toSession: go("ser-session"), toTalk: go("talk"),
+      ships: [["ship", "Ship to me · 5 days", "$15"], ["collect", "Collect from the studio", "FREE"]].map(([k, l, cost]) => ({ label: l, cost, bd: ship === k ? "#c8a45b" : "#5a6064", dot: ship === k ? "radial-gradient(#c8a45b 0 3px, transparent 3.5px)" : "none", pick: () => set({ ship: k }) })),
+      shipping: ship === "ship", shipCost,
+      amount: id === "art-order" ? 420 + shipCost : fp.amount, payItem: fp.item, payDetail: fp.detail,
+      gk, icons: p.icons ?? "things", kc, kcB: rgba(kc, .38), kcBg: rgba(kc, .12),
+      mkBox: mode === "box" && !isProf, mkThumb: mode === "thumb" && !isProf, mkInline: mode === "inline",
+      hCols: mode === "inline" ? "minmax(0,1fr) auto" : "auto minmax(0,1fr) auto",
+      isProf, isAv: isProf && mode !== "inline", pf, pfPortrait: isProf && who !== "member", pfHasBio: !!pf.bio, pfHasLinks: pf.links.length > 0,
+      pfOwner: id === "pf-owner", pfGuest: id === "pf-guest", pfMember: id === "pf-member", isFol: id === "follow", fwName: pf.name, fwRole: pf.role,
+      pfOffers: [["◆", "Event title", "ON NOW · SAT 14 DEC · 8 PM", "evt-offer", { featured: true }], ["◇", "One-to-one session", "SERVICE · $90 · 60 MIN", "svc-offer"], ["◎", "Series name", "SERIES · MONDAYS · FREE", "ser-offer"], ["▣", "Title of the work", "ARTWORK · $420 · 1 OF 1", "art-offer"]].map(([g, t, m2, to, patch], i) => ({ g, k: to.split("-")[0], kc: kOf(to.split("-")[0]), kcB: rgba(kOf(to.split("-")[0]), .38), kcBg: rgba(kOf(to.split("-")[0]), .12), t, m: m2, mc: i === 0 ? "#c8a45b" : "#8f8c86", go: go(to, patch) })),
+      pfPieces: PIECES.slice(0, 2).map((x, i) => ({ ...x, go: go("wr-read", { piece: i }) })),
+      toOwner: go("pf-owner"), toGuest: go("pf-guest"), toMember: go("pf-member"), toSeries: go("ser-offer"),
+      doneLine: dn.line, doneNote: dn.note, doneTalk: dn.talk,
+    };
+    return v;
+  }
+}
+</script>
+</body>
+</html>

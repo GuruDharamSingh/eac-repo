@@ -13,6 +13,7 @@ const h = (file: string, fn: string, service: string[], note?: string): Host => 
 const capabilities: Capability[] = [
   {
     id: 'pkg-email-contacts',
+    where: {"mode": "dock", "why": "Paste addresses."},
     area: 'email.contacts',
     label: 'Add, edit, stop or remove an address in an org\'s book',
     does: 'Pastes addresses into an org\'s contacts (skipping anyone who unsubscribed), edits a contact\'s name, tags and notes, writes an unsubscribed row for an address the org was asked to stop mailing, or deletes a manual contact.',

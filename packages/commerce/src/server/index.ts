@@ -964,6 +964,71 @@ export async function updateStore(
   `;
 }
 
+/**
+ * The store's own profile, written to the store only, never to the owner's network profile (2026-11-26). An
+ * empty string clears a field, so the network profile shows through again; undefined leaves it as it is.
+ * `coverUrl` and `theme` need migration 296.
+ */
+export async function updateStoreProfile(
+  storeId: string,
+  input: {
+    displayName?: string | null;
+    headline?: string | null;
+    city?: string | null;
+    photoUrl?: string | null;
+    coverUrl?: string | null;
+    theme?: { accent?: string | null } | null;
+    bioHtml?: string | null;
+    links?: ArtistProfileUpdateInput["links"];
+    /** The artist profile's timeline and files (migration 297); replaces the stored lists when given. */
+    timeline?: Array<{ year: string; text: string }>;
+    files?: Array<{ name: string; url: string; size?: number | null }>;
+  }
+): Promise<void> {
+  const text = (v: string | null | undefined, max: number) =>
+    v === undefined ? undefined : (String(v ?? "").trim().slice(0, max) || null);
+  const url = (v: string | null | undefined) => {
+    const t = text(v, 2000);
+    if (t === undefined || t === null) return t;
+    return /^(https?:\/\/|\/)/.test(t) ? t : null;
+  };
+  const accent = input.theme?.accent && /^#[0-9a-f]{6}$/i.test(input.theme.accent) ? input.theme.accent.toLowerCase() : null;
+  const bioHtml = input.bioHtml !== undefined ? (input.bioHtml ? sanitizeRichText(input.bioHtml) : null) : undefined;
+  // Timeline and files: capped lists of short, clean entries; a file must point at this site's media or https.
+  const profilePatch: Record<string, unknown> | null =
+    input.timeline !== undefined || input.files !== undefined
+      ? {
+          ...(input.timeline !== undefined
+            ? { timeline: input.timeline.slice(0, 40).map((t) => ({ year: String(t?.year ?? "").trim().slice(0, 12), text: String(t?.text ?? "").trim().slice(0, 240) })).filter((t) => t.text) }
+            : {}),
+          ...(input.files !== undefined
+            ? { files: input.files.slice(0, 12).map((f) => ({ name: String(f?.name ?? "").trim().slice(0, 120) || "File", url: url(f?.url) ?? "", size: typeof f?.size === "number" ? f.size : null })).filter((f) => f.url) }
+            : {}),
+        }
+      : null;
+  const v = {
+    displayName: text(input.displayName, 120),
+    headline: text(input.headline, 200),
+    city: text(input.city, 120),
+    photoUrl: url(input.photoUrl),
+    coverUrl: url(input.coverUrl),
+  };
+  await db`
+    UPDATE store SET
+      display_name = ${v.displayName !== undefined ? v.displayName : db`display_name`},
+      headline = ${v.headline !== undefined ? v.headline : db`headline`},
+      city = ${v.city !== undefined ? v.city : db`city`},
+      photo_url = ${v.photoUrl !== undefined ? v.photoUrl : db`photo_url`},
+      cover_url = ${v.coverUrl !== undefined ? v.coverUrl : db`cover_url`},
+      theme = ${input.theme !== undefined ? db`${jsonb(accent ? { accent } : {})}` : db`theme`},
+      bio_html = ${bioHtml !== undefined ? bioHtml : db`bio_html`},
+      links = ${input.links !== undefined ? db`${jsonb(serializeLinks(input.links))}` : db`links`},
+      profile = ${profilePatch ? db`COALESCE(profile, '{}'::jsonb) || ${jsonb(profilePatch)}` : db`profile`},
+      updated_at = NOW()
+    WHERE id = ${storeId}
+  `;
+}
+
 /** Admin approves a pending store application. */
 export async function approveStore(
   storeId: string,

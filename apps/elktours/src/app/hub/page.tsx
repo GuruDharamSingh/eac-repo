@@ -25,6 +25,7 @@ import { TourScheduleCard } from "@/components/hub/tour-schedule-card";
 import { OfficeFaces } from "@/components/office/office-faces";
 import { listSuggestionsAction } from "@/lib/suggestion-actions";
 import { countOverlaps } from "@/lib/slot-overlaps";
+import { getCalendarLink, googleCalendarAvailable } from "@elkdonis/services/google-calendar";
 
 export const metadata: Metadata = { title: "Hub" };
 export const dynamic = "force-dynamic";
@@ -45,9 +46,9 @@ const TALK_BASE = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "
  *   then          Working together: Forum · Ideas · Pipeline
  *   editor tools  Email, Gallery, Documents open in place (no page of their own on this site yet)
  */
-export default async function HubPage({ searchParams }: { searchParams: Promise<{ payouts?: string }> }) {
+export default async function HubPage({ searchParams }: { searchParams: Promise<{ payouts?: string; calendar?: string; calendar_error?: string }> }) {
   const viewer = await requireOrgMember("/hub");
-  const { payouts: returned = null } = await searchParams;
+  const { payouts: returned = null, calendar: calendarReturn, calendar_error: calendarError } = await searchParams;
 
   const from = startOfMonth(new Date());
   const [profile, standing, events, board, documents, media, emailThreads, tours, identity] = await Promise.all([
@@ -111,6 +112,20 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
   // Overlap notices for the Office band: a guide sees their own, an owner all.
   const overlaps = viewer.canEdit ? await countOverlaps({ guideUserId: viewer.role === "owner" ? undefined : viewer.userId }) : 0;
 
+  // "Sync to Google Calendar" on the Tours offered card; absent until the server is set up for it.
+  const calendarLink =
+    viewer.canEdit && (await googleCalendarAvailable().catch(() => false))
+      ? await getCalendarLink(viewer.userId, siteConfig.orgId).catch(() => null)
+      : undefined;
+  const calendar =
+    calendarLink === undefined
+      ? null
+      : {
+          link: calendarLink,
+          isOwner: viewer.role === "owner",
+          notice: calendarError ? { ok: false, text: calendarError.slice(0, 300) } : calendarReturn === "connected" ? { ok: true, text: "Connected." } : null,
+        };
+
   return (
     <main className="hub">
       <div className="eac-hs el-c2">
@@ -153,6 +168,7 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
 
         {viewer.canEdit ? (
           <TourScheduleCard
+            calendar={calendar}
             tours={tours.map((t) => {
               const d = next.get(t.id);
               return { id: t.id, slug: t.slug, title: t.title, status: t.status, next: d ? formatDeparture(d.startsAt) : null };

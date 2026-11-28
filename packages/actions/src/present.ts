@@ -140,6 +140,9 @@ export function presentAction({ id, status, orgId, links, params }: PresentInput
     case 'thread-publish':
     case 'thread-pin':
       return { kind: 'none', hint: 'This acts on one post; it is offered beside the post itself.' };
+    case 'artwork-hide':
+    case 'artwork-show':
+      return { kind: 'none', hint: 'This acts on one artwork; the market’s content library offers it beside the piece.' };
     // Channel (2026-11-07): the next moves live on the channel's own pages; the other
     // channel entries act on one piece, slot or step and are offered beside it there.
     case 'channel-next':

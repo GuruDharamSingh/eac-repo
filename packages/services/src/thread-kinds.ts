@@ -37,7 +37,10 @@
  *
  *     AND t.kind <> ALL(${OFF_FEED_KINDS})
  */
-export const OFF_FEED_KINDS: string[] = ['wiki_page', 'writing', 'document', 'series_session', 'tour', 'experience'];
+// 2026-11-27 (Justin): `writing` is no longer here. Studio writing pieces live on the forum, in feeds and in
+// search like any other thread; `visibility` and `status` alone decide who sees one. At the change, 18 published
+// PUBLIC pieces became listable (oad 15, amrit_canada 3). Built apps pick this up at their next rebuild.
+export const OFF_FEED_KINDS: string[] = ['wiki_page', 'document', 'series_session', 'tour', 'experience'];
 
 /**
  * A guided tour with stops and dated departures (migration 208). Listed only

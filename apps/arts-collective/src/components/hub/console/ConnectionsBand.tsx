@@ -50,6 +50,7 @@ export function ConnectionsBand({
   orgSlug,
   paymentsReady,
   follower = false,
+  files = true,
 }: {
   state: ConsoleState;
   /** The storage root is keyed on the org ID, not its slug — `amrit_canada`,
@@ -62,6 +63,8 @@ export function ConnectionsBand({
   /** A follower has no team folder and no use for the org's service counts,
    *  so only their own files show. */
   follower?: boolean;
+  /** false: leave the files card out (the Content card holds files now). */
+  files?: boolean;
 }) {
   const { all, total } = { all: state.people.all, total: state.people.total };
   const onNextcloud = all.filter((p) => p.hasNextcloud).length;
@@ -113,18 +116,20 @@ export function ConnectionsBand({
       </div>
 
       <div className="mt-4">
-        <FilesCard
-          title="Files"
-          sources={[
-            {
-              id: "org",
-              label: "Team folder",
-              endpoint: `/api/org/${encodeURIComponent(orgSlug)}/files`,
-              initialPath: "Media",
-            },
-            mine,
-          ]}
-        />
+        {files && (
+          <FilesCard
+            title="Files"
+            sources={[
+              {
+                id: "org",
+                label: "Team folder",
+                endpoint: `/api/org/${encodeURIComponent(orgSlug)}/files`,
+                initialPath: "Media",
+              },
+              mine,
+            ]}
+          />
+        )}
       </div>
     </section>
   );

@@ -19,6 +19,8 @@ import { ArtworkGallery } from "@/components/artwork-gallery";
 import { VirtualExhibit } from "@/components/virtual-exhibit";
 import { FavoriteButton } from "@/components/favorite-button";
 import { MessageArtistButton } from "@/components/message-artist-button";
+import { OpenFrame } from "@/app/center/_components/surfaces";
+import { artistFrame } from "@/app/center/_components/descriptors";
 import { addArtworkToCart } from "@/app/actions";
 import { getCurrentUserId, listActableStores } from "@/lib/marketplace-auth";
 
@@ -130,12 +132,12 @@ export default async function ArtworkDetailPage({
             {artwork.artistName && (
               <p className="mt-2 text-lg text-muted-foreground">
                 {artwork.artistSlug ? (
-                  <Link
-                    href={`/artists/${artwork.artistSlug}`}
+                  <OpenFrame
+                    frame={artistFrame(artwork.artistSlug, artwork.artistName)}
                     className="underline-offset-4 hover:underline"
                   >
                     {artwork.artistName}
-                  </Link>
+                  </OpenFrame>
                 ) : (
                   artwork.artistName
                 )}

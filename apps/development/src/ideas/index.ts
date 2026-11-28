@@ -10,9 +10,11 @@ import blockContract from "./block-contract";
 import fiveColourTheme from "./five-colour-theme";
 import patternBlocks from "./pattern-blocks";
 import pickersInPuck from "./pickers-in-puck";
+import designHandoffs from "./design-handoffs";
+import forumSurfaceFan from "./forum-surface-fan";
 import type { Idea } from "./types";
 
 // The registry: one file per idea, listed here. Newest first.
-export const IDEAS: Idea[] = [blockContract, fiveColourTheme, lmsPrimer, workshopWorkspace, pickersInPuck, patternBlocks, freePlacement, themeEditor, versionsAndBranches, manjushri, designSystemProposal, fieldsLens];
+export const IDEAS: Idea[] = [forumSurfaceFan, designHandoffs, blockContract, fiveColourTheme, lmsPrimer, workshopWorkspace, pickersInPuck, patternBlocks, freePlacement, themeEditor, versionsAndBranches, manjushri, designSystemProposal, fieldsLens];
 
 export const ideaBySlug = (slug: string) => IDEAS.find((i) => i.slug === slug);

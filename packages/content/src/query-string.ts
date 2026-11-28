@@ -3,22 +3,27 @@
 // Browser-safe: no database import. The route parses with parseContentQuery; the card's remote source
 // (and any client) serialises with contentQueryParams, so the two cannot drift.
 //
-//   ?q=&scope=mine|org:<id>|site|network&view=&types=a,b&statuses=&series=&sort=&cursor=&limit=
+//   ?q=&scope=mine|mine+orgs|org:<id>|site|network&view=&types=a,b&statuses=&series=&sort=&cursor=&limit=
 //   v1.1: &stores=a,b&sale=a,b&hidden=1
+//   v1.4: view=offers, types=service, &kinds=event,service,series,artwork,workshop&priced=1|0&upcoming=1 (offers view only)
 //
 // Parsing is lenient about junk (an unknown word is dropped) and never throws. Rights are NOT in here:
 // the viewer comes from the session, and `hidden=1` is only a request the server checks against rights.
 // ============================================================================
 
-import type { ContentStatus, ContentType, ContentView } from "./model";
+import type { ContentOfferKind, ContentStatus, ContentType, ContentView } from "./model";
 import type { ContentQuery, ContentSaleState, ContentScope, ContentSort } from "./search-types";
 
 const TYPES: readonly ContentType[] = [
   "artwork", "product", "writing", "video", "series", "meeting", "event", "workshop", "questionnaire", "poll",
   "image", "audio", "document", "file",
+  // v1.4: a service thread; the server returns one only in the offers view (access.ts), whatever `types` asks.
+  "service",
 ];
 const STATUSES: readonly ContentStatus[] = ["draft", "scheduled", "live", "published", "archived"];
-const VIEWS: readonly ContentView[] = ["published", "files", "all"];
+// "people" (v1.3) is read server-side only (ArtDirect's index) and is not parsed here yet; "offers" is v1.4.
+const VIEWS: readonly ContentView[] = ["published", "files", "all", "offers"];
+const OFFER_KINDS: readonly ContentOfferKind[] = ["event", "service", "series", "artwork", "workshop"];
 const SORTS: readonly ContentSort[] = ["recent", "next", "title", "relevance"];
 const SALE: readonly ContentSaleState[] = ["for_sale", "in_auction", "sold", "reserved", "passed", "withdrawn", "not_for_sale"];
 
@@ -33,6 +38,8 @@ const one = <T extends string>(raw: string | null, allowed: readonly T[]): T | u
 /** "mine" | "site" | "network" | "org:<id>". Anything else is null. */
 export function parseScope(raw: string | null): ContentScope | null {
   if (!raw) return null;
+  // `mine+orgs` (a "+" in a query string decodes to a space, so both spellings are accepted).
+  if (raw === "mine+orgs" || raw === "mine orgs") return { kind: "mine", includeManagedOrgs: true };
   if (raw === "mine" || raw === "site" || raw === "network") return { kind: raw };
   if (raw.startsWith("org:") && raw.length > 4 && raw.length <= 80) return { kind: "org", orgId: raw.slice(4) };
   // v1.2 (CONTRACT 11): another person's public work. Written against the contract; A adds the variant to search-types.ts.
@@ -41,7 +48,8 @@ export function parseScope(raw: string | null): ContentScope | null {
 }
 
 export function scopeParam(s: ContentScope): string {
-  const x = s as { kind: string; orgId?: string; userId?: string };
+  const x = s as { kind: string; orgId?: string; userId?: string; includeManagedOrgs?: boolean };
+  if (x.kind === "mine" && x.includeManagedOrgs) return "mine+orgs";
   return x.kind === "org" ? `org:${x.orgId}` : x.kind === "person" ? `person:${x.userId}` : x.kind;
 }
 
@@ -71,6 +79,14 @@ export function parseContentQuery(sp: URLSearchParams): ContentQuery | null {
   const sale = pick(sp.get("sale"), SALE);
   if (sale) out.saleStates = sale;
   if (sp.get("hidden") === "1") out.includeHidden = true;
+  // v1.4 offers filters: the server reads them only in the offers view, so they are kept only there.
+  if (out.view === "offers") {
+    const kinds = pick(sp.get("kinds"), OFFER_KINDS);
+    if (kinds) out.offerKinds = kinds;
+    const priced = sp.get("priced");
+    if (priced === "1" || priced === "0") out.priced = priced === "1";
+    if (sp.get("upcoming") === "1") out.upcoming = true;
+  }
   return out;
 }
 
@@ -89,5 +105,10 @@ export function contentQueryParams(q: ContentQuery): URLSearchParams {
   if (q.storeIds?.length) p.set("stores", q.storeIds.join(","));
   if (q.saleStates?.length) p.set("sale", q.saleStates.join(","));
   if (q.includeHidden) p.set("hidden", "1");
+  if (q.view === "offers") {
+    if (q.offerKinds?.length) p.set("kinds", q.offerKinds.join(","));
+    if (q.priced !== undefined) p.set("priced", q.priced ? "1" : "0");
+    if (q.upcoming) p.set("upcoming", "1");
+  }
   return p;
 }

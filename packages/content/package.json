@@ -14,6 +14,7 @@
     "./media-library": "./src/ui/MediaLibrary.tsx",
     "./summary": "./src/summary/index.ts",
     "./summary.css": "./src/summary/summary.css",
+    "./host": "./src/host.ts",
     "./content.css": "./src/content.css",
     "./hub": "./src/hub/index.ts",
     "./hub/server": "./src/hub/server.ts",
@@ -24,6 +25,7 @@
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/hub": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "lucide-react": "^0.544.0"
   },

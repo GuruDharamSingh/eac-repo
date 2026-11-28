@@ -78,18 +78,31 @@ export interface CreateThreadOrderInput {
   /** @deprecated See {@link CreateServiceOrderInput.payeeName}. */
   payoutEmail?: string;
   etransferDueHours?: number;
+  /**
+   * Network sale (2026-11-27): the thread may belong to ANY org. The org
+   * equality check on the thread is skipped; every other refusal (kind,
+   * published, registration open, price, sliding range, payee) is unchanged.
+   * `orgId` is then the SELLING org (the network org `oad`), recorded on the
+   * order as `metadata.sellerOrgId`; the thread's own org is what
+   * resolveSettlement and the order line use, so an accepted agreement between
+   * the author and the thread's org still applies. Omitted = the rule every
+   * existing caller has: `orgId` must own the thread.
+   */
+  networkSale?: boolean;
+  /** Network sale only: the selling org to record. Defaults to `orgId`. */
+  sellerOrgId?: string;
 }
 
 export async function createThreadOrder(input: CreateThreadOrderInput): Promise<Order> {
   const rail = input.paymentMethod ?? "etransfer";
 
   const rows = (await db`
-    SELECT t.id, t.title, t.author_id, t.status, t.price, t.currency, t.kind,
+    SELECT t.id, t.org_id, t.title, t.author_id, t.status, t.price, t.currency, t.kind,
            wp.price_member, wp.price_sliding_min, wp.registration_status
     FROM threads t
     LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
     WHERE t.id = ${input.threadId}
-      AND t.org_id = ${input.orgId}
+      AND (${input.networkSale === true}::boolean OR t.org_id = ${input.orgId})
       AND t.kind = ANY(${(input.kinds ?? PURCHASABLE_THREAD_KINDS) as unknown as string[]})
     LIMIT 1
   `) as unknown as Row[];
@@ -127,6 +140,9 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
   const currency = ((svc.currency as string | null) ?? "CAD") as Currency;
   const title = svc.title as string;
   const authorId = (svc.author_id as string | null) ?? null;
+  // The org that owns the thread: the caller's org for an ordinary sale, the
+  // thread's own org for a network sale. Settlement and the line use this one.
+  const threadOrgId = input.networkSale === true ? (svc.org_id as string) : input.orgId;
 
   // The payee is the person who authored the service, on the same rules as
   // every other sale. Previously this used the SELLING APP'S configured email,
@@ -134,7 +150,7 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
   // a hardcoded zero regardless of what had been agreed.
   const settlement = await resolveSettlement({
     makerUserId: authorId,
-    orgId: input.orgId,
+    orgId: threadOrgId,
     amountMinor: totalMinor,
   });
   amountMinor = totalMinor;
@@ -180,7 +196,14 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
         NOW() + (${dueHours} || ' hours')::interval,
         ${amountMinor}, ${amountMinor}, ${currency},
         ${input.notes ?? null},
-        ${tx.json({ kind: svc.kind as string, threadId: input.threadId, orgId: input.orgId })},
+        ${tx.json({
+          kind: svc.kind as string,
+          threadId: input.threadId,
+          orgId: input.orgId,
+          ...(input.networkSale === true
+            ? { networkSale: true, sellerOrgId: input.sellerOrgId ?? input.orgId, threadOrgId }
+            : {}),
+        })},
         -- Record where the buyer was actually told to send money, so a caller
         -- rendering its own confirmation screen reads it off the order instead
         -- of holding a constant that may not be who was named.
@@ -206,7 +229,7 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
         artist_share_minor, gallery_share_minor, currency,
         agreement_id, org_share_percent, payee_org_id
       ) VALUES (
-        ${orderRow.id as string}, ${input.threadId}, ${authorId}, ${input.orgId},
+        ${orderRow.id as string}, ${input.threadId}, ${authorId}, ${threadOrgId},
         ${title}, ${quantity}, ${unitMinor},
         ${settlement.makerShareMinor}, ${settlement.orgShareMinor}, ${currency},
         ${settlement.agreementId}, ${settlement.orgSharePercent}, ${settlement.payeeOrgId}

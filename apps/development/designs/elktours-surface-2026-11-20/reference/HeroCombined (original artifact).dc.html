@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hero, combined</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Marcellus&amp;family=Marcellus+SC&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#dcc08a}a:hover{color:#f1ece2}
+</style>
+</helmet>
+<div style="width: 1440px; height: 780px; box-sizing: border-box; padding: 30px 60px; background: #2b2f36; color: #f1ece2; font-family: Inter, system-ui, sans-serif;">
+  <div style="position: relative; width: 1320px; height: 720px; border-radius: 14px; overflow: hidden; background: {{frameBg}}; box-shadow: 0 18px 40px -20px rgba(0,0,0,0.6);">
+
+    <!-- THE CARD: overview or a stop. Text left, picture right. -->
+    <sc-if value="{{showCard}}" hint-placeholder-val="{{true}}">
+      <div style="position: absolute; left: 24px; right: 24px; top: 24px; height: 576px; box-sizing: border-box; padding: 26px; border-radius: 14px; background: rgba(27,30,35,0.88); border: 1px solid rgba(201,162,92,0.35); display: flex; gap: 30px">
+
+        <!-- LEFT: the tour narrative -->
+        <div style="flex: 0 0 560px; position: relative; display: flex; flex-direction: column;">
+
+          <!-- always here: tour name, date, booking -->
+          <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid rgba(201,162,92,0.3);">
+            <div style="min-width: 0;">
+              <p style="margin: 0; font-family: Marcellus, Georgia, serif; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Discover the Heart of Paris: Île de la Cité</p>
+              <p style="margin: 2px 0 0; font-size: 12px; color: #c8c2b7;">Next walk [Sat date] · [€ price] per person</p>
+            </div>
+            <button type="button" onClick="{{goBook}}" style="margin-left: auto; flex: 0 0 auto; height: 40px; padding: 0 18px; border-radius: 10px; border: 0; background: #c9a25c; color: #1b1e23; font-family: 'Marcellus SC', Georgia, serif; font-size: 14px; letter-spacing: 0.1em; cursor: pointer;">Book</button>
+          </div>
+
+          <!-- the narrative at this point of the walk -->
+          <div style="padding: 22px 4px 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <sc-if value="{{card.isStop}}" hint-placeholder-val="{{false}}">
+                <span style="width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; background: #c9a25c; color: #1b1e23; font-family: 'Marcellus SC', Georgia, serif; font-size: 14px;">{{card.numeral}}</span>
+              </sc-if>
+              <span style="font-family: 'Marcellus SC', Georgia, serif; font-size: 13px; letter-spacing: 0.16em; color: #dcc08a;">{{card.kicker}}</span>
+            </div>
+            <h2 style="margin: 12px 0 0; font-family: Marcellus, Georgia, serif; font-weight: 400; font-size: 36px; line-height: 1.12;">{{card.title}}</h2>
+            <p style="margin: 16px 0 0; font-family: Marcellus, Georgia, serif; font-size: 21px; line-height: 1.5; color: #ece6da;">{{card.narrative}}</p>
+            <p style="margin: 14px 0 0; font-size: 13px; color: #a9a397;">{{card.flow}}</p>
+          </div>
+
+          <!-- the place (or tour) details: collapsed under the narrative, grows up over it -->
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: {{panelH}}; box-sizing: border-box; border-radius: 12px; background: #2b2f36; border: 1px solid rgba(201,162,92,0.35); overflow: hidden; transition: height 0.25s; box-shadow: 0 -16px 30px -18px rgba(0,0,0,0.7);">
+            <button type="button" onClick="{{togglePanel}}" aria-expanded="{{open}}" style="width: 100%; height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: transparent; border: 0; border-bottom: 1px solid rgba(241,236,226,0.08); color: #f1ece2; cursor: pointer; text-align: left;">
+              <span style="font-family: 'Marcellus SC', Georgia, serif; font-size: 13px; letter-spacing: 0.12em; color: #dcc08a;">{{card.panelTitle}}</span>
+              <span style="font-size: 12px; color: #c8c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{card.panelLine}}</span>
+              <span style="margin-left: auto; font-family: 'Marcellus SC', Georgia, serif; font-size: 12px; letter-spacing: 0.1em; color: #f1ece2;">{{panelCta}}</span>
+            </button>
+            <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 14px;">
+              <dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px;">
+                <sc-for list="{{card.facts}}" as="f" hint-placeholder-count="4">
+                  <div><dt style="font-family: 'Marcellus SC', Georgia, serif; font-size: 11px; letter-spacing: 0.14em; color: #a9a397;">{{f.k}}</dt><dd style="margin: 2px 0 0; font-size: 14px;">{{f.v}}</dd></div>
+                </sc-for>
+              </dl>
+              <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #e6e0d5;">{{card.about}}</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #c8c2b7;"><span style="font-family: 'Marcellus SC', Georgia, serif; letter-spacing: 0.12em; color: #c9a25c;">From your guide · </span>[The guide's note.]</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <sc-for list="{{card.links}}" as="l" hint-placeholder-count="2">
+                  <a href="#" style="padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(201,162,92,0.4); font-size: 13px; text-decoration: none;">{{l}} ↗</a>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: the picture, with this card's own gallery -->
+        <div style="flex: 1 1 auto; min-width: 0; position: relative; border-radius: 10px; overflow: hidden; background: {{card.cur.bg}}; box-shadow: 0 0 0 6px #23262c, 0 0 0 7px rgba(201,162,92,0.4)">
+          <sc-if value="{{card.cur.isPhoto}}" hint-placeholder-val="{{true}}">
+            <div style="position: absolute; inset: 0; display: grid; place-items: center;">
+              <span style="font-family: 'Marcellus SC', Georgia, serif; letter-spacing: 0.14em; font-size: 13px; color: rgba(241,236,226,0.7);">[Photo · {{card.cur.caption}}]</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{card.cur.isSv}}" hint-placeholder-val="{{false}}">
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dcc08a" stroke-width="1.3" aria-hidden="true"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 5l2.2 7L12 19l-2.2-7z"></path></svg>
+              <span style="font-family: 'Marcellus SC', Georgia, serif; font-size: 15px; letter-spacing: 0.14em;">Live Street View</span>
+              <span style="font-size: 12px; color: #d9d3c8;">Drag to look around</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{card.cur.isFilm}}" hint-placeholder-val="{{false}}">
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+              <span style="font-family: 'Marcellus SC', Georgia, serif; font-size: 12px; letter-spacing: 0.2em; color: #dcc08a;">Fly-over · rendered film</span>
+              <button type="button" style="display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 22px 0 16px; border-radius: 999px; border: 1px solid #c9a25c; background: rgba(27,30,35,0.62); color: #f1ece2; font-family: 'Marcellus SC', Georgia, serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dcc08a" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M10 8l6 4-6 4z" fill="#dcc08a"></path></svg>
+                Watch the fly-over
+              </button>
+            </div>
+          </sc-if>
+          <sc-if value="{{card.cur.isMap}}" hint-placeholder-val="{{false}}">
+            <svg viewBox="0 0 700 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%;">
+              <path d="M-20 340 C 120 300, 230 320, 330 295 S 530 250, 720 270" fill="none" stroke="#2f4250" stroke-width="44" stroke-linecap="round"></path>
+              <path d="M580 300 L525 275 L465 288 L410 260 L355 270 L300 298 L245 320 L185 312 L130 262" fill="none" stroke="#c9a25c" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"></path>
+              <g fill="#1b1e23" stroke="#c9a25c" stroke-width="2"><circle cx="580" cy="300" r="12"></circle><circle cx="525" cy="275" r="12"></circle><circle cx="465" cy="288" r="12"></circle><circle cx="410" cy="260" r="12"></circle><circle cx="355" cy="270" r="12"></circle><circle cx="300" cy="298" r="12"></circle><circle cx="245" cy="320" r="12"></circle><circle cx="185" cy="312" r="12"></circle><circle cx="130" cy="262" r="12"></circle></g>
+            </svg>
+            <div style="position: absolute; left: 0; right: 0; top: 60px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+              <span style="font-family: 'Marcellus SC', Georgia, serif; font-size: 12px; letter-spacing: 0.2em; color: #dcc08a;">3D route · interactive map</span>
+              <button type="button" style="display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 22px 0 16px; border-radius: 999px; border: 1px solid #c9a25c; background: #c9a25c; color: #1b1e23; font-family: 'Marcellus SC', Georgia, serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1e23" stroke-width="1.6" aria-hidden="true"><path d="M12 2.5l8.5 4.8v9.4L12 21.5l-8.5-4.8V7.3z"></path><path d="M12 12l8.5-4.7M12 12v9.5M12 12L3.5 7.3"></path></svg>
+                Explore the 3D route
+              </button>
+            </div>
+          </sc-if>
+
+          <!-- gallery controls -->
+          <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px;">
+            <sc-for list="{{card.tabs}}" as="t" hint-placeholder-count="2">
+              <button type="button" onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #c9a25c; background: {{t.bg}}; color: {{t.fg}}; font-family: 'Marcellus SC', Georgia, serif; font-size: 12px; letter-spacing: 0.1em; cursor: pointer;">{{t.label}}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{card.arrows}}" hint-placeholder-val="{{true}}">
+            <button type="button" aria-label="Previous picture" onClick="{{card.prev}}" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(241,236,226,0.3); background: rgba(27,30,35,0.55); color: #f1ece2; cursor: pointer; display: grid; place-items: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <button type="button" aria-label="Next picture" onClick="{{card.next}}" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(241,236,226,0.3); background: rgba(27,30,35,0.55); color: #f1ece2; cursor: pointer; display: grid; place-items: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </sc-if>
+          <div style="position: absolute; left: 14px; top: 16px; font-size: 12px; color: #f1ece2; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">{{card.cur.caption}}</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- BOOKING -->
+    <sc-if value="{{isBook}}" hint-placeholder-val="{{false}}">
+      <div style="position: absolute; inset: 0 0 150px 0; display: grid; place-items: center;">
+        <div style="width: 440px; box-sizing: border-box; padding: 28px; border-radius: 14px; background: #23262c; border: 1px solid rgba(201,162,92,0.45); box-shadow: 0 20px 40px -24px rgba(201,162,92,0.3);">
+          <p style="margin: 0; font-family: 'Marcellus SC', Georgia, serif; font-size: 13px; letter-spacing: 0.16em; color: #c9a25c;">Book this tour</p>
+          <p style="margin: 6px 0 0; font-family: Marcellus, Georgia, serif; font-size: 34px;">[€ price] <span style="font-family: Inter, sans-serif; font-size: 15px; color: #c8c2b7;">per person</span></p>
+          <p style="margin: 18px 0 8px; font-size: 14px; color: #c8c2b7;">Pick a date</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <sc-for list="{{dates}}" as="dt" hint-placeholder-count="3">
+              <button type="button" onClick="{{dt.pick}}" aria-pressed="{{dt.on}}" style="padding: 8px 12px; border-radius: 8px; border: 1px solid {{dt.ring}}; background: {{dt.bg}}; color: #f1ece2; font-size: 14px; cursor: pointer;">{{dt.label}}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 14px; color: #c8c2b7;">People</span>
+            <span style="display: inline-flex; align-items: center; gap: 12px;">
+              <button type="button" aria-label="Fewer people" onClick="{{less}}" style="width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgba(241,236,226,0.25); background: transparent; color: #f1ece2; cursor: pointer;">−</button>
+              <span style="min-width: 16px; text-align: center;">{{party}}</span>
+              <button type="button" aria-label="More people" onClick="{{more}}" style="width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgba(241,236,226,0.25); background: transparent; color: #f1ece2; cursor: pointer;">+</button>
+            </span>
+          </div>
+          <button type="button" style="margin-top: 20px; width: 100%; height: 50px; border-radius: 10px; border: 0; background: #c9a25c; color: #1b1e23; font-family: 'Marcellus SC', Georgia, serif; font-size: 17px; letter-spacing: 0.1em; cursor: pointer;">Book now</button>
+          <p style="margin: 12px 0 0; font-size: 13px; color: #c8c2b7;">Meeting point: [Meeting place] · [Cancellation policy]</p>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- THE ROW: Overview, nine stops, Book. Frosted cards on the hero's edge; hover lifts them over the card. -->
+    <div style="position: absolute; left: 0; right: 0; bottom: 14px; padding: 0 36px; display: flex; gap: 8px; align-items: flex-end;">
+      <sc-for list="{{row}}" as="c" hint-placeholder-count="11">
+        <button type="button" onClick="{{c.pick}}" onMouseEnter="{{c.enter}}" onMouseLeave="{{c.leave}}" aria-pressed="{{c.on}}" aria-label="{{c.label}}" style="flex: 0 0 106px; padding: 0; border-radius: 10px; overflow: hidden; background: rgba(27,30,35,0.82); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: {{c.border}}; box-shadow: {{c.shadow}}; cursor: pointer; color: #f1ece2; text-align: left; display: flex; flex-direction: column; transform: {{c.lift}}; transition: transform 0.2s;">
+          <span style="position: relative; display: block; height: {{c.picH}}; background: {{c.bg}}; transition: height 0.2s;">
+            <sc-if value="{{c.isStop}}" hint-placeholder-val="{{true}}">
+              <span style="position: absolute; top: 6px; left: 6px; width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; background: {{c.badgeBg}}; border: 1px solid #c9a25c; color: {{c.badgeFg}}; font-family: 'Marcellus SC', Georgia, serif; font-size: 10px;">{{c.numeral}}</span>
+            </sc-if>
+            <sc-if value="{{c.svOnly}}" hint-placeholder-val="{{false}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dcc08a" stroke-width="1.5" aria-hidden="true" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);"><circle cx="12" cy="12" r="9"></circle><path d="M12 6l1.8 6L12 18l-1.8-6z"></path></svg>
+            </sc-if>
+            <sc-if value="{{c.isOverview}}" hint-placeholder-val="{{false}}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dcc08a" stroke-width="1.6" aria-hidden="true" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);"><path d="M3 11l9-7 9 7v9H3z"></path><path d="M9 20v-6h6v6"></path></svg>
+            </sc-if>
+            <sc-if value="{{c.isBook}}" hint-placeholder-val="{{false}}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1e23" stroke-width="1.6" aria-hidden="true" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>
+            </sc-if>
+          </span>
+          <span style="display: block; padding: 7px 8px 8px;">
+            <span style="display: block; font-family: Marcellus, Georgia, serif; font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.title}}</span>
+            <sc-if value="{{c.grown}}" hint-placeholder-val="{{false}}">
+              <span style="display: block; margin-top: 6px; font-size: 10px; line-height: 1.35; color: #c8c2b7;">{{c.line1}}</span>
+              <span style="display: block; margin-top: 3px; font-size: 10px; color: #dcc08a;">{{c.line2}}</span>
+            </sc-if>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":780}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 3, hover: -1, slide: {}, open: false, date: 0, party: 2 };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var NUM = ['I','II','III','IV','V','VI','VII','VIII','IX'];
+    var SV_BG = 'radial-gradient(ellipse at 50% 120%, #4a5160 0%, #1d2026 70%)';
+    var TONES = ['#6d6559','#5f6a6e','#5f5a6e','#5b5f66','#6e6150','#566259','#6a5d52','#5d6470','#6b6457'];
+    // narrative: sample wording to show the idea; the guide writes the real text
+    var STOPS = [
+      { title: 'Notre-Dame', kind: 'Cathedral', entry: 'Free entry', built: '1163–1345', photos: ['West front', 'Rose window', 'Flying buttresses'],
+        narrative: 'We begin at the cathedral at the heart of the island, newly reopened after the fire, and read its west front like a book in stone.',
+        about: 'Gothic cathedral begun in 1163; it reopened in December 2024 after the 2019 fire.', links: ['Official site', 'Wikipedia'] },
+      { title: 'Hôtel-Dieu', kind: 'Hospital', entry: 'Free', built: 'Rebuilt 1867–1878', photos: [],
+        narrative: 'Next door, the city’s oldest hospital reminds us the island was a place of living and healing, not only of worship.',
+        about: "Paris's oldest hospital, founded in the 7th century beside the cathedral.", links: ['Wikipedia'] },
+      { title: 'Sainte-Chapelle', kind: 'Royal chapel', entry: 'Ticket · not included', built: '1242–1248', photos: ['Upper chapel glass', 'From the courtyard'],
+        narrative: 'Inside the palace walls the mood changes: a royal chapel made as a reliquary, all light and coloured glass.',
+        about: "Finished in 1248 for Louis IX's relics; the upper chapel is almost all stained glass.", links: ['Tickets', 'Official site', 'Wikipedia'] },
+      { title: 'Conciergerie', kind: 'Palace & prison', entry: 'Ticket · not included', built: '14th century', photos: ['Hall of the Men-at-Arms'],
+        narrative: 'The same palace keeps a darker story. When the kings left, it became the prison of the Revolution.',
+        about: "Medieval royal palace, later the Revolution's prison; Marie-Antoinette was held here in 1793.", links: ['Tickets', 'Wikipedia'] },
+      { title: 'Place Dauphine', kind: 'Square', entry: 'Free', built: 'From 1607', photos: [],
+        narrative: 'Out of history’s heavy rooms and into Henri IV’s quiet triangle of houses, one of the first planned squares in Paris.',
+        about: 'A triangular square laid out under Henri IV from 1607.', links: ['Wikipedia'] },
+      { title: 'Square du Vert-Galant', kind: 'Garden', entry: 'Free', built: '', photos: ['The island tip', 'Henri IV on the Pont Neuf'],
+        narrative: 'At the island’s western tip we meet Henri IV again, on horseback on the Pont Neuf, and the river opens out.',
+        about: 'The western point of the island, below the statue of Henri IV on the Pont Neuf.', links: ['Wikipedia'] },
+      { title: 'The bouquinistes', kind: 'Booksellers', entry: 'Free', built: '', photos: ['Green book boxes on the quay'],
+        narrative: 'Along the parapets, the green boxes of the booksellers carry us from the island towards the city of print.',
+        about: "Second-hand booksellers in green boxes along the Seine's parapets.", links: ['Wikipedia'] },
+      { title: 'Pont des Arts', kind: 'Footbridge', entry: 'Free', built: '1801–04, rebuilt 1984', photos: [],
+        narrative: 'We cross between the Institut de France and the Louvre: the academies on one bank, the palace on the other.',
+        about: 'Footbridge to the Institut de France, first built in 1801–04.', links: ['Wikipedia'] },
+      { title: 'Louvre Pyramid', kind: 'Museum', entry: 'Ticket for the museum', built: '1989', photos: ['The pyramid at night', 'Cour Napoléon'],
+        narrative: 'And we finish where the old palace meets the glass pyramid, the crossing of the river complete.',
+        about: "I. M. Pei's glass pyramid, opened in 1989.", links: ['Museum site', 'Wikipedia'] }
+    ];
+    var N = STOPS.length;
+    var sel = st.sel;
+    var isBook = sel === N + 1;
+    var isOverview = sel === 0;
+
+    var slides, tone, card = {};
+    var gi = st.slide[sel] || 0;
+    if (isOverview) {
+      slides = [
+        { kind: 'photo', label: 'Photo', caption: 'Notre-Dame from the Seine', bg: '#6d6559' },
+        { kind: 'film', label: 'Fly-over', caption: 'Fly-over · rendered film', bg: 'linear-gradient(135deg, #3a3f47, #1f2228)' },
+        { kind: 'map', label: '3D route', caption: '3D route · interactive map', bg: '#1f2329' }
+      ];
+      card = {
+        isStop: false, numeral: '', kicker: 'The walk · 9 stops',
+        title: 'The island where Paris began',
+        narrative: 'On this walk we cross the Île de la Cité from the cathedral at its heart, through the royal palace and its prison, out to the island’s tip, and over the river to the Louvre.',
+        flow: 'Start with stop I below, or hover the cards to see where the walk goes.',
+        panelTitle: 'About this tour', panelLine: '[Length] · Small group · [Language] · Meet at [Meeting place]',
+        facts: [{ k: 'Length', v: '[Length]' }, { k: 'Group', v: 'Small group' }, { k: 'Meet at', v: '[Meeting place]' }, { k: 'Included', v: 'Licensed guide · [item]' }],
+        about: 'Not included: [entry tickets, e.g. Sainte-Chapelle], [food and drinks].', links: []
+      };
+      tone = '#6d6559';
+    } else if (!isBook) {
+      var i = sel - 1, s = STOPS[i];
+      slides = s.photos.map(function (p) { return { kind: 'photo', label: 'Photos', caption: p, bg: TONES[i] }; });
+      slides.push({ kind: 'sv', label: 'Street View', caption: 'Street View', bg: SV_BG });
+      var nextTxt = i < N - 1 ? 'Then on to ' + NUM[i + 1] + ', ' + STOPS[i + 1].title + ' · [3 min walk]' : 'The end of the walk.';
+      var facts = [{ k: 'Time here', v: '[20 min]' }, { k: 'Entry', v: s.entry }];
+      if (s.built) facts.push({ k: 'Built', v: s.built });
+      facts.push({ k: 'Open', v: '[Opening hours]' });
+      card = {
+        isStop: true, numeral: NUM[i], kicker: 'Stop ' + NUM[i] + ' of IX',
+        title: s.title, narrative: s.narrative, flow: nextTxt,
+        panelTitle: 'About ' + s.title, panelLine: s.kind + ' · ' + s.entry + ' · [20 min]',
+        facts: facts, about: s.about, links: s.links
+      };
+      tone = TONES[i];
+    }
+
+    var frameBg = isBook ? 'linear-gradient(135deg, #3a3f47, #1f2228)' : 'linear-gradient(135deg, ' + (tone || '#3a3f47') + ', #1f2228)';
+    if (!isBook) {
+      var n = slides.length;
+      gi = Math.min(gi, n - 1);
+      var setIdx = function (k) { var m = Object.assign({}, self.state.slide); m[sel] = (k + n) % n; self.setState({ slide: m }); };
+      var c = slides[gi];
+      card.cur = { bg: c.bg, caption: c.caption, isPhoto: c.kind === 'photo', isSv: c.kind === 'sv', isFilm: c.kind === 'film', isMap: c.kind === 'map' };
+      card.arrows = c.kind === 'photo' && n > 1;
+      card.prev = function () { setIdx(gi - 1); };
+      card.next = function () { setIdx(gi + 1); };
+      // tabs: one per kind of media (Photos / Street View, or Photo / Fly-over / 3D route)
+      var seen = {}, tabs = [];
+      slides.forEach(function (sl, k) {
+        if (seen[sl.label]) return; seen[sl.label] = true;
+        var on = sl.label === c.label;
+        tabs.push({ label: sl.label, on: on, bg: on ? '#c9a25c' : 'rgba(27,30,35,0.6)', fg: on ? '#1b1e23' : '#f1ece2', pick: function () { setIdx(k); } });
+      });
+      card.tabs = tabs.length > 1 ? tabs : [];
+    }
+
+    var row = [];
+    for (var k = 0; k <= N + 1; k++) {
+      (function (k) {
+        var on = k === sel;
+        var grown = k === st.hover;
+        var base = { on: on, grown: grown, isStop: false, isOverview: false, isBook: false, svOnly: false,
+          picH: grown ? '96px' : '46px',
+          lift: grown ? 'translateY(-8px)' : 'none',
+          shadow: grown ? '0 18px 36px -12px rgba(0,0,0,0.7)' : '0 6px 14px -8px rgba(0,0,0,0.6)',
+          border: on ? '2px solid #c9a25c' : '1px solid rgba(241,236,226,0.18)',
+          pick: function () { self.setState({ sel: k, open: false }); },
+          enter: function () { self.setState({ hover: k }); },
+          leave: function () { self.setState({ hover: -1 }); } };
+        if (k === 0) {
+          Object.assign(base, { isOverview: true, title: 'The walk', label: 'Tour overview', bg: '#3a3f47', line1: 'The island where Paris began', line2: '9 stops' });
+        } else if (k === N + 1) {
+          Object.assign(base, { isBook: true, title: 'Book', label: 'Book this tour', bg: '#c9a25c', line1: '[€ price] per person', line2: 'Next [Sat date]' });
+        } else {
+          var s = STOPS[k - 1];
+          Object.assign(base, { isStop: true, numeral: NUM[k - 1], title: s.title, label: 'Stop ' + NUM[k - 1] + ': ' + s.title,
+            svOnly: s.photos.length === 0, bg: s.photos.length ? TONES[k - 1] : SV_BG,
+            badgeBg: on ? '#c9a25c' : 'rgba(27,30,35,0.8)', badgeFg: on ? '#1b1e23' : '#dcc08a',
+            line1: s.narrative.split(/[,:.]/)[0] + '…', line2: s.kind });
+        }
+        row.push(base);
+      })(k);
+    }
+
+    var dates = ['[Sat date]', '[Sun date]', '[Wed date]'].map(function (d, i) {
+      var on = i === st.date;
+      return { label: d, on: on, ring: on ? '#c9a25c' : 'rgba(241,236,226,0.2)', bg: on ? 'rgba(201,162,92,0.18)' : 'transparent', pick: function () { self.setState({ date: i }); } };
+    });
+
+    return {
+      frameBg: frameBg, showCard: !isBook, isBook: isBook,
+      card: card, row: row, dates: dates, party: st.party,
+      open: st.open,
+      panelH: st.open ? 'calc(100% - 70px)' : '58px',
+      panelCta: st.open ? 'Less ▾' : 'More ▴',
+      togglePanel: function () { self.setState({ open: !self.state.open }); },
+      goBook: function () { self.setState({ sel: N + 1 }); },
+      less: function () { self.setState({ party: Math.max(1, self.state.party - 1) }); },
+      more: function () { self.setState({ party: Math.min(12, self.state.party + 1) }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -5,8 +5,7 @@
 // `orgId` maps to scope org; `ownerUserId` maps to scope mine, so it must be the
 // viewer (both current callers pass the viewer's own id). The items come from
 // the one mapping in hydrate.ts, which carries the logic this file had; the old
-// loader is kept as list-legacy.ts only as the reference for check-search.mts'
-// parity test, and goes in Step 7.
+// loader (list-legacy.ts, the parity reference) was removed in Step 7.
 //
 // Rights come from the viewer (access.ts), never from the query. This module
 // is not marked `server-only`: keep it out of client bundles by importing

@@ -32,6 +32,16 @@ const capabilities: Capability[] = [
         service: ['checkRsvpEligibility', 'setRsvpStatus', 'countConfirmedRsvps', 'nextcloud#grantMaterialsAccess'],
       },
       {
+        key: 'api:apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts#POST',
+        address: {
+          app: 'arts-collective',
+          path: '/sites/{org}',
+          anchor: 'rsvp-to-event',
+          how: 'The surfaces\' RSVP layer of the single-offer page (components/sites/offer-actions.ts); same logic as the rsvp route plus followOnRsvp (the person becomes a follower).',
+        },
+        service: ['rsvpRoutes (services rsvp-handler)', 'followDecision'],
+      },
+      {
         "key": "api:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#POST",
         "service": [
           "@elkdonis/services#checkRsvpEligibility",
@@ -121,7 +131,7 @@ const capabilities: Capability[] = [
   },
   {
     id: 'cancel-rsvp',
-    updated: '2026-11-16',
+    updated: '2026-11-27',
     area: 'sites.audience',
     label: 'Cancel an RSVP or leave a workshop',
     does: 'Removes the person’s RSVP and, for a workshop, revokes the materials access.',
@@ -138,6 +148,16 @@ const capabilities: Capability[] = [
           how: 'The Cancel RSVP control (components/sites/RsvpPanel.tsx)',
         },
         service: ['deleteRsvp', 'isEnrolledInWorkshop', 'nextcloud#revokeMaterialsAccess'],
+      },
+      {
+        key: 'api:apps/arts-collective/src/app/api/threads/[id]/rsvp-and-follow/route.ts#DELETE',
+        address: {
+          app: 'arts-collective',
+          path: '/sites/{org}',
+          anchor: 'cancel-rsvp',
+          how: 'The surfaces\' RSVP layer of the single-offer page (components/sites/offer-actions.ts); the same rsvpRoutes DELETE as the rsvp route (2026-11-27).',
+        },
+        service: ['rsvpRoutes (services rsvp-handler)', 'nextcloud#revokeMaterialsAccess'],
       },
       {
         "key": "api:apps/amrit-canada/src/app/api/threads/[id]/rsvp/route.ts#DELETE",

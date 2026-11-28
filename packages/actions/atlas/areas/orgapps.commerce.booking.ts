@@ -36,6 +36,10 @@ export default {
       hosts: [
         { key: sa(AD, 'bookServiceAction'), service: SVC_CHECKOUT, address: { app: 'artdirect', path: '/{slug}/services/{service}', how: 'the Book button of the service page (components/booking, ServiceBookingForm from @elkdonis/checkout/components)' } },
         { key: sa(SJ, 'bookServiceAction'), service: SVC_CHECKOUT, address: { app: 'sunjay', path: '/services/{service}', how: 'the booking block (blocks/booking.client.tsx) on a service page' } },
+        { key: 'api:apps/arts-collective/src/app/api/content/checkout/route.ts#POST', service: ['@elkdonis/content/routes#contentRoutes(checkout)', '@elkdonis/commerce#createThreadOrder(networkSale)', '@elkdonis/checkout/stripe#startStripeCheckout'], address: { app: 'arts-collective', path: '/sites/{org}', how: "the Pay / Order layers of the single-offer page's surfaces (components/sites/offer-actions.ts): content-library checkout, sold through the network org oad, any org's priced offer; guest by email; JSON only, verified host and Origin, Redis rate limit per IP and email (2026-11-27, Justin's go for arts-collective)" } },
+        { key: 'api:apps/sunjay/src/app/api/content/checkout/route.ts#POST', service: ['@elkdonis/content/routes#contentRoutes(checkout)', '@elkdonis/commerce#createThreadOrder(networkSale)', '@elkdonis/checkout/stripe#startStripeCheckout'], address: { app: 'sunjay', path: '/api/content/checkout', how: "content-library checkout mounted as on arts-collective (lib/content-checkout.ts, site = sunjay on paratheater.arts-collective.com); no page on sunjay calls it yet; same guards (JSON only, verified host and Origin, Redis rate limit) (2026-11-27, Justin's go relayed by the content library PM)" } },
+        { key: 'api:apps/artdirect/src/app/api/content/checkout/route.ts#POST', service: ['@elkdonis/content/routes#contentRoutes(checkout)', '@elkdonis/commerce#createThreadOrder(networkSale)', '@elkdonis/checkout/stripe#startStripeCheckout'], address: { app: 'artdirect', path: '/api/content/checkout', how: "content-library checkout mounted as on arts-collective (lib/content-checkout.ts, site = oad on directory.arts-collective.com); no page on ArtDirect calls it yet; same guards (JSON only, verified host and Origin, Redis rate limit) (2026-11-27, Justin's go relayed by the content library PM)" } },
+        { key: 'sql:packages/commerce/src/server/service-orders.ts#createThreadOrder', service: ['@elkdonis/commerce#resolveSettlement'], address: { app: 'any', path: '(shared)', how: "the order every thread checkout makes (service, workshop, event, tour); 2026-11-27 adds optional networkSale/sellerOrgId so the content-library checkout (packages/content/src/server/checkout.ts) can sell any org's thread through the network org oad: the thread's own org stays the settlement and line org, the seller is recorded in metadata; omitted = the org must own the thread, as before" } },
         { key: sa(HE, 'bookAndPay'), service: ['@elkdonis/checkout/booking#startServiceCheckout', '@elkdonis/checkout/booking#bookingAvailability', '@elkdonis/checkout/booking#publicOriginFrom'], address: { app: 'hidden-enneagram', path: '/services/{slug}', how: 'the one Book and pay button (components/booking, blocks/service.tsx); times are asked after payment' } },
         {
           "key": "sa:apps/elastrocal/src/app/services/[slug]/actions.ts#bookServiceAction",
@@ -108,6 +112,7 @@ export default {
     },
     {
       id: 'booking-offer-book',
+      updated: '2026-11-27',
       area: 'orgapps.commerce.booking',
       label: 'Book a time on a bookable offering',
       does: "A booker reserves a time on an offering with the booking module: free ones are booked at once, paid ones hold the time, then go to Stripe. The hold lasts 75 minutes and is released if the card session cannot start.",
@@ -119,6 +124,7 @@ export default {
         pk(BK('bookings', 'createBooking'), 'the write: under a transaction; open_hours locks the host and the slot row, set_dates locks the slot row, FOR UPDATE; also used by elktours bookTourAction on the booking tables and bookFreeOffering'),
         pk(BK('bookings', 'attachOrder'), 'links the card order to the held booking (once)'),
         pk(BK('bookings', 'releaseBooking'), 'gives the hold back when the order or session fails'),
+        pk(BK('network', 'run'), 'recordNetworkBooking (2026-11-27): after the content-library checkout makes the order of a service sold through `oad`, inserts a booking_offers stub (request_time, closed) if the thread has none, then the awaiting_payment booking linked to the order; markBookingPaid confirms it; ArtDirect /bookings lists it (listHostNetworkBookings)'),
       ],
       entry: null,
       status: "bookings.status is confirmed (free, or paid and markBookingPaid ran) or awaiting_seller",
@@ -132,6 +138,8 @@ export default {
     },
     {
       id: 'booking-time-confirm',
+      where: {"mode": "place", "why": "Takes money.", "deep": "/bookings"},
+      updated: '2026-11-27',
       area: 'orgapps.commerce.booking',
       label: 'Confirm a time for a booking',
       does: "The host confirms one of the times the booker suggested, or the booker confirms one of the times the host suggested. The booking becomes confirmed and both are emailed.",
@@ -155,6 +163,8 @@ export default {
     },
     {
       id: 'booking-times-propose',
+      where: {"mode": "dock", "why": "Up to three times and a note."},
+      updated: '2026-11-27',
       area: 'orgapps.commerce.booking',
       label: 'Suggest other times for a booking',
       does: "Either side replaces the open proposal with up to three new times and a note. The held slot is released and the other side is emailed.",
@@ -178,6 +188,8 @@ export default {
     },
     {
       id: 'booking-cancel',
+      where: {"mode": "place", "why": "May refund money.", "deep": "/bookings"},
+      updated: '2026-11-27',
       area: 'orgapps.commerce.booking',
       label: 'Cancel a booking',
       does: "The host or the booker cancels a booking. A paid booking is marked refund-due with an amount from the offer's cancellation rule; nothing is refunded automatically and the other side is emailed.",
@@ -201,6 +213,7 @@ export default {
     },
     {
       id: 'booking-offer-save',
+      where: {"mode": "place", "why": "Carries prices and rules: money.", "deep": "/{slug}/services/{service}"},
       area: 'orgapps.commerce.booking',
       label: 'Save how a service is booked',
       does: "The service's owner sets open hours, length, capacity, approval, cancellation rule and questions for booking, and can pause or close it.",
@@ -223,6 +236,7 @@ export default {
     },
     {
       id: 'booking-hold-lifecycle',
+      updated: '2026-11-27',
       area: 'orgapps.commerce.booking',
       label: 'Expire holds and send reminders',
       does: "Releases lapsed paid holds, expires the booking of a cancelled order, and emails reminders for confirmed bookings.",
@@ -240,6 +254,7 @@ export default {
     },
     {
       id: 'slots-create',
+      where: {"mode": "dock", "why": "Dates and times as a short form."},
       area: 'orgapps.commerce.booking',
       label: 'Add tour dates (slots)',
       does: "An editor adds departure dates for a tour: several days and start times at once, each with places, guide and booking cutoff.",
@@ -265,6 +280,7 @@ export default {
     },
     {
       id: 'slot-edit',
+      where: {"mode": "dock", "why": "Pick a departure, change a few fields."},
       area: 'orgapps.commerce.booking',
       label: 'Change a tour date',
       does: "An editor changes a departure's time, places, guide, note, and on the booking tables its own minimum, cutoff, price and waitlist.",
@@ -356,6 +372,7 @@ export default {
     },
     {
       id: 'slot-booking-window',
+      where: {"mode": "dock", "why": "Pick a departure, close or reopen booking."},
       area: 'orgapps.commerce.booking',
       label: 'Close or reopen booking on a tour date',
       does: "An editor closes booking on a departure now, or reopens it for a number of hours.",
@@ -377,6 +394,7 @@ export default {
     },
     {
       id: 'tour-booking-defaults-save',
+      where: {"mode": "dock", "why": "Three numbers and a switch."},
       area: 'orgapps.commerce.booking',
       label: "Save a tour's booking defaults",
       does: "Saves the minimum to run, the cutoff and the waitlist for a tour's departures.",

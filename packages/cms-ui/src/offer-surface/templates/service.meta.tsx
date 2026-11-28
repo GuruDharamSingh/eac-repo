@@ -1,0 +1,51 @@
+import type { TemplateMeta } from "./meta";
+
+export const meta: TemplateMeta = {
+  id: "service",
+  component: "ServiceTemplate",
+  files: {
+    tsx: "packages/cms-ui/src/offer-surface/templates/service.tsx",
+    css: "packages/cms-ui/src/offer-surface/templates/service.css",
+    route: "apps/development/src/app/offer-templates/t/service",
+  },
+  packet: "2n",
+  reads: [
+    { path: "featured.title", required: true },
+    { path: "featured.standfirst" },
+    { path: "featured.description" },
+    { path: "featured.price", note: "price tag; opening amount" },
+    { path: "featured.sliding", note: "SLIDING tag and the step 3 slider" },
+    { path: "featured.durationMinutes" },
+    { path: "featured.venue.online" },
+    { path: "featured.slots[]", note: "up to three, step 3 radios" },
+    { path: "featured.poster", note: "else images[0], else placeholder" },
+    { path: "owner.id", required: true },
+    { path: "owner.name", required: true },
+    { path: "featured.hostId" },
+    { path: "featured.coHostIds[]", note: "every host name is a PersonName (hover card on desktop, opens the profile layer)" },
+    { path: "extras.category", note: "kicker: Service · One to one" },
+    { path: "extras.replyNote", note: "sage line under the host name" },
+  ],
+  actions: [
+    { control: "Profile → (host row)", opens: "pf-owner" },
+    { control: "Host name(s) (PersonName)", opens: "pf-owner / pf-guest / pf-member (profileLayerFor); hover card on desktop" },
+    { control: "Send enquiry / Demo reply / Pay and confirm / Start over", opens: "inert" },
+    { control: "Times that suit, slot radios, price slider", opens: "inert" },
+    { control: "Add to calendar", opens: "inert" },
+  ],
+  patterns: [
+    { id: "step-strip", name: "Step strip", use: "Four numbered steps joined by a line that fills sage as the visitor goes on.", rootClass: "ost-service-steps", packet: "2n" },
+    { id: "rail-panel", name: "Rail panel", use: "A raised side column holding the action; changes content step by step.", rootClass: "ost-service-rail", packet: "2n", shared: true },
+    { id: "mono-tags", name: "Mono tags", use: "Small boxed mono facts; bronze for the price, dashed for the sliding range.", rootClass: "ost-service-tags", packet: "2n", shared: true },
+    { id: "host-row", name: "Host row", use: "Avatar, name, reply note and a Profile button that opens the profile surface.", rootClass: "ost-service-host", packet: "2n", shared: true },
+    { id: "slot-radios", name: "Slot radios", use: "Pick one offered time; selected has a bronze border and dot.", rootClass: "ost-service-slots", packet: "2n", shared: true },
+  ],
+  adapted: [
+    "The page column is 720px (the packet frame is 700px; 20px more so the 40px title stays on one line in our Fraunces). Rail 284px as drawn. The header bar spans the window as the shell draws it.",
+    "Step 4 'Pay' is a front-end demo; it does not open the pay flow, so no payment can happen.",
+    "Step 3 footnote reads the packet's 'CARD PAYMENT BY STRIPE'; nothing is charged and the steps open no pay layer (inert by design).",
+    "Slot labels and price range come from the offer, not the packet's fixed strings.",
+  ],
+  phoneHeight: 1100,
+  status: "matches-packet",
+};

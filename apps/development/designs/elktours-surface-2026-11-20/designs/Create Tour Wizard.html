@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub · Create a tour (prototype)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<style>
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Moonlight.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Basteleur";src:url("apps/elktours/public/fonts/Basteleur-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Brothers";src:url("apps/elktours/public/fonts/BrothersTypeface-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Venture";src:url("apps/elktours/public/fonts/Venture-nRqOR.otf") format("opentype");font-weight:400;font-display:swap}
+
+/* elktours "zinc and brass", resolved through surface.css */
+:root{
+  --bg:#343941;--soft:#393e46;--sunk:#2e3239;--fg:#f1ece2;--mu:#b9b2a5;--fa:#84827d;--ln:#727a86;--rl:#b8b9b9;
+  --ac:#c9a25c;--on:#1b1e23;--dg:#e8805c;--route:#e8805c;--placec:#8fb3c4;
+  --t:"Brothers","Venture",Georgia,serif;--b:"Basteleur",Georgia,serif;--r:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--v:"Venture",Georgia,serif;
+}
+[data-kind="tour"],[data-kind="event"]{--k:#c9a25c;--ok:#1b1e23}
+[data-kind="place"]{--k:#8fb3c4;--ok:#1b1e23}
+[data-kind="calendar"]{--k:#f1ece2;--ok:#2a2e35}
+[data-kind="post"]{--k:#e8805c;--ok:#1b1e23}
+[data-kind="neutral"]{--k:#b9b2a5;--ok:#343941}
+*{box-sizing:border-box}
+html{background:#2a2e35}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,#262a30 0%,#2c3037 40%,#2a2e35 100%);color:var(--fg);font-family:var(--b);font-size:16.6px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:#dcc08a;text-underline-offset:3px} a:hover{color:var(--fg)}
+button{font:inherit;color:inherit}
+.mono{font-family:var(--r);font-size:.7rem;color:var(--mu)}
+.muted{color:var(--mu)}
+
+/* ── prototype bar + hub ───────────────────────────────────────────── */
+.proto{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:center;padding:8px 16px;background:#1f2227;border-bottom:1px solid #3a3f46;font-family:var(--r);font-size:.72rem;color:var(--mu)}
+.proto button{background:none;border:0;padding:0;color:#dcc08a;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit}
+.hub{max-width:1180px;margin:0 auto;padding:44px 24px 96px;display:grid;gap:34px}
+.hub-k{font-family:var(--v);font-size:.8rem;letter-spacing:.16em;color:var(--ac)}
+.hub h1{margin:4px 0 0;font-family:var(--t);font-weight:400;font-size:2.3rem;line-height:1.1;letter-spacing:.02em}
+.hub-sub{margin:8px 0 0;color:var(--mu);max-width:60ch}
+.band{display:grid;gap:14px}
+.band-h{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding-bottom:8px;border-bottom:1px solid var(--rl)}
+.band-h h2{margin:0;font-family:var(--t);font-weight:400;font-size:1.35rem}
+.band-h p{margin:0;color:var(--mu);font-size:.9rem}
+
+/* ── faces (SurfaceCard) ──────────────────────────────────────────── */
+.face-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;align-items:stretch}
+.face{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:220px;padding:56px 20px 20px;color:var(--fg);
+  background:radial-gradient(124% 96% at 0% 0%,color-mix(in srgb,var(--k) 6%,transparent),transparent 64%),var(--bg);border:1px solid rgba(241,236,226,.22);transition:border-color 180ms ease}
+.face::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--k),color-mix(in srgb,var(--k) 34%,transparent) 40%,transparent 66%)}
+.face:not(.is-disabled):hover,.face:not(.is-disabled):focus-within{border-color:rgba(241,236,226,.6)}
+.face-hit{position:absolute;inset:0;z-index:0;border:0;padding:0;margin:0;background:transparent;cursor:pointer}
+.face-hit:focus-visible{outline:2px solid var(--k);outline-offset:2px}
+.face>:not(.face-hit){position:relative;z-index:1;pointer-events:none}
+.face-glyph{position:absolute!important;top:16px;left:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;line-height:1;color:var(--k);background:color-mix(in srgb,var(--k) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 26%,transparent);transition:background 180ms,color 180ms,border-color 180ms}
+.face:not(.is-disabled):hover .face-glyph{background:var(--k);border-color:var(--k);color:var(--ok)}
+.face-cue{position:absolute!important;top:15px;right:15px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:.85rem;color:var(--fa);border:1px solid transparent;border-radius:999px;transition:all 180ms}
+.face:hover .face-cue{color:var(--k);border-color:color-mix(in srgb,var(--k) 32%,transparent);background:color-mix(in srgb,var(--k) 9%,transparent)}
+.face-head{display:flex;flex-direction:column;gap:6px}
+.face-kicker{font-family:var(--r);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.face-title{font-family:var(--t);font-size:1.26rem;line-height:1.22}
+.face-blurb{color:var(--mu);font-size:.86rem;line-height:1.5;max-width:36ch}
+.face-preview{display:flex;flex-direction:column;gap:5px;margin:6px 0 6px;font-size:.84rem;flex:1}
+.face-preview::after{content:"";flex:1}
+.pline{display:flex;gap:8px;align-items:baseline;min-width:0}
+.pline>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdate{flex:none;font-family:var(--r);font-size:.7rem;color:var(--k);min-width:5.2ch}
+.pcue{align-self:flex-start;margin-top:4px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);font-family:var(--r);font-size:.68rem;letter-spacing:.04em}
+.face.is-disabled{opacity:.55}.face.is-disabled .face-hit{cursor:default}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.week span{display:grid;place-items:center;height:30px;border:1px solid var(--ln);font-family:var(--r);font-size:.64rem;color:var(--mu)}
+.week span.free{border-color:var(--k);background:color-mix(in srgb,var(--k) 16%,transparent);color:var(--fg)}
+.dsegs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
+.dseg{height:3px;background:var(--ln)}
+.dseg.done{background:color-mix(in srgb,var(--k) 60%,transparent)}.dseg.on{background:var(--k)}
+
+/* ── the surface dialog + stack ───────────────────────────────────── */
+dialog.surface{margin:auto;padding:0;border:0;background:transparent;color:var(--fg);max-width:none;max-height:none;width:min(var(--w,640px),calc(100vw - 32px));overflow:visible}
+dialog.surface::backdrop{background:rgba(20,18,16,.56);backdrop-filter:blur(3px)}
+.stack{display:grid}
+.layer{grid-area:1/1;justify-self:center;align-self:center;width:100%;max-width:var(--lw,640px);transition:transform 260ms cubic-bezier(.2,.8,.2,1),opacity 220ms ease,filter 220ms ease}
+.layer.is-under{transform:translateY(-18px) scale(.97);opacity:.42;filter:brightness(.75);pointer-events:none}
+.layer.enter{animation:rise 260ms cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.panel{display:grid;grid-template-rows:auto minmax(0,1fr) auto;max-height:min(88vh,920px);background:var(--bg);border:1px solid var(--rl);box-shadow:0 28px 70px -24px rgba(0,0,0,.65),0 2px 10px rgba(0,0,0,.14);overflow:hidden}
+.panel.wizard{grid-template-rows:auto auto minmax(0,1fr) auto;height:min(88vh,860px)}
+.s-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-bottom:2px solid var(--k)}
+.wizard .s-head{border-bottom:0;padding-bottom:12px}
+.s-glyph{display:grid;place-items:center;width:38px;height:38px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);font-size:1.15rem;line-height:1}
+.s-headings{min-width:0}
+.s-kicker{display:flex;align-items:center;gap:8px;font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.crumb{background:none;border:0;padding:0;cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--fg);text-decoration:underline;text-decoration-color:rgba(241,236,226,.3);text-underline-offset:3px}
+.crumb:hover{text-decoration-color:var(--k)}
+.sep{color:var(--fa)}
+.draft-chip{padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);letter-spacing:.06em}
+.s-title{margin:2px 0 0;font-family:var(--t);font-weight:400;font-size:1.22rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-title.empty{color:var(--fa)}
+.s-controls{display:flex;gap:6px;align-items:center}
+.iconbtn{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-size:1rem;line-height:1;cursor:pointer}
+.iconbtn:hover{border-color:var(--fg)}.iconbtn:disabled{opacity:.4;cursor:default}
+.iconbtn.sm{width:26px;height:26px;font-size:.8rem}
+.iconbtn:focus-visible,.btn:focus-visible,.pill:focus-visible{outline:2px solid var(--k);outline-offset:2px}
+.s-body{display:grid;grid-template-columns:minmax(0,1fr);min-height:0;overflow:auto}
+.s-main{padding:20px 22px 26px;min-width:0}
+.s-rail{padding:20px;border-left:1px solid var(--ln);background:var(--soft);min-width:0}
+.s-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--rl);background:var(--soft)}
+.s-status{font-family:var(--r);font-size:.74rem;color:var(--mu);min-width:0}
+.s-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font-size:.88rem;line-height:1.2;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--fg)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--k,var(--ac));border-color:var(--k,var(--ac));color:var(--ok,var(--on))}
+.btn.primary:hover{filter:brightness(.94)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--mu)}
+.btn.quiet:hover{color:var(--fg);background:var(--soft)}
+.btn.danger{color:var(--dg)}.btn.danger:hover{border-color:var(--dg)}
+.btn.sm{padding:5px 10px;font-size:.8rem}
+.linkbtn{background:none;border:0;padding:0;color:#dcc08a;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+/* ── wizard step strip: the kind hairline, split into the steps ───── */
+.wz-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--ln)}
+.wz-step{display:grid;gap:1px;align-content:start;text-align:left;padding:9px 18px 11px;background:none;border:0;border-top:2px solid var(--ln);cursor:pointer;min-width:0}
+.wz-step+.wz-step{box-shadow:inset 1px 0 0 rgba(114,122,134,.45)}
+.wz-step .n{font-family:var(--r);font-size:.62rem;letter-spacing:.14em;color:var(--fa)}
+.wz-step .l{font-size:.98rem;color:var(--mu)}
+.wz-step .st{font-family:var(--r);font-size:.66rem;color:var(--fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wz-step.done{border-top-color:color-mix(in srgb,var(--k) 55%,transparent)}
+.wz-step.done .l{color:var(--fg)}.wz-step.done .n::after{content:" ✓";color:var(--k)}
+.wz-step.on{border-top-color:var(--k);background:color-mix(in srgb,var(--k) 7%,transparent)}
+.wz-step.on .l{color:var(--fg)}.wz-step.on .n{color:var(--k)}
+.wz-step.warn .st{color:var(--dg)}
+.wz-step:hover .l{color:var(--fg)}
+.wz-step:focus-visible{outline:2px solid var(--k);outline-offset:-2px}
+.wz-panes{min-height:0;display:grid}
+.wz-pane{display:none;min-height:0;grid-area:1/1}
+.wz-pane.on{display:grid}
+.wz-pane>.s-main,.wz-pane>.s-rail{overflow:auto;min-height:0}
+.pane-desc,.pane-details{grid-template-columns:minmax(0,1fr) 340px}
+.pane-route{grid-template-columns:minmax(0,1fr) 390px}
+
+/* ── fields (cms-ui fields.css, sunken in this palette) ──────────── */
+.sec{margin:0 0 28px}
+.sec>h3,.rail-k{margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.field{display:grid;gap:6px;min-width:0;margin-bottom:16px}
+.field>label,.flabel{display:flex;align-items:baseline;gap:6px;font-size:.86rem;font-weight:700;line-height:1.3}
+.field>label .muted,.flabel .muted{font-weight:400}
+.fhint{margin:0;font-size:.78rem;line-height:1.45;color:var(--mu)}
+.count{margin-left:auto;font-family:var(--r);font-size:.68rem;font-weight:400;color:var(--fa)}
+.input{width:100%;min-width:0;padding:9px 11px;border:1px solid var(--ln);background:var(--sunk);color:var(--fg);font:inherit;font-size:.95rem;line-height:1.35;border-radius:0}
+.input::placeholder{color:var(--fa)}
+.input:focus{outline:2px solid var(--k,var(--ac));outline-offset:1px;border-color:var(--k,var(--ac))}
+.input.title-in{font-family:var(--t);font-size:1.5rem;padding:10px 12px}
+.input.sm{padding:6px 8px;font-size:.85rem}
+textarea.input{resize:vertical;min-height:4.8em}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0 14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:6px 14px;border-radius:999px;border:1px solid var(--ln);background:transparent;color:var(--mu);font-size:.85rem;cursor:pointer;white-space:nowrap}
+.pill:hover{border-color:var(--fg);color:var(--fg)}
+.pill.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.pill:disabled{opacity:.45;cursor:default;border-style:dashed}
+.prefix{display:grid;grid-template-columns:auto minmax(0,1fr)}
+.prefix>span{display:grid;place-items:center;padding:0 10px;border:1px solid var(--ln);border-right:0;background:var(--soft);font-family:var(--r);font-size:.8rem;color:var(--mu)}
+.rt{border:1px solid var(--ln);background:var(--sunk)}
+.rt:focus-within{outline:2px solid var(--k);outline-offset:1px;border-color:var(--k)}
+.rt-bar{display:flex;gap:2px;padding:4px;border-bottom:1px solid var(--ln)}
+.rt-bar span{padding:3px 9px;font-size:.78rem;color:var(--mu)}
+.rt textarea{display:block;width:100%;min-height:7em;padding:10px 11px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:.95rem;resize:vertical;outline:none}
+.dur{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center}
+.dur-read{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;font-family:var(--r);font-size:.74rem;color:var(--mu)}
+.dur-read b{font-weight:500;font-size:1.05rem;color:var(--fg)}
+.dur input[type=range]{width:100%;margin:0;accent-color:var(--k);cursor:pointer}
+.dur-ticks{grid-column:1/2;display:flex;justify-content:space-between;padding:0 2px;font-family:var(--r);font-size:.62rem;color:var(--fa)}
+.dur-num{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--mu)}
+.dur-num .input{width:7ch;padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums}
+.check{display:flex;align-items:center;gap:10px;font-size:.9rem;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--k);margin:0}
+.ph{background:repeating-linear-gradient(135deg,rgba(241,236,226,.06) 0 6px,transparent 6px 12px),var(--sunk);display:flex;align-items:center;justify-content:center;font-family:var(--r);font-size:10.5px;color:var(--mu);text-align:center;letter-spacing:.03em}
+.cover{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}
+.cover .ph{height:96px}
+.cover-empty{display:grid;place-items:center;gap:4px;height:96px;border:1px dashed var(--ln);background:transparent;color:var(--mu);font-size:.85rem;cursor:pointer;width:100%}
+.cover-empty:hover{border-color:var(--fg);color:var(--fg)}
+
+/* ── maps ─────────────────────────────────────────────────────────── */
+.mapbox{position:relative;height:300px;border:1px solid var(--ln);background:#1f2227}
+.mapbox.sm{height:200px}
+.mapbox>div{position:absolute;inset:0}
+.leaflet-container{background:#1f2227;font-family:var(--b);cursor:crosshair}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.88) brightness(.82) contrast(.92)}
+.leaflet-control-attribution{background:rgba(42,46,53,.86)!important;color:var(--mu)!important;font-family:var(--r);font-size:10px!important}
+.leaflet-control-attribution a{color:#dcc08a!important}
+.leaflet-bar{border:1px solid var(--ln)!important;border-radius:0!important;box-shadow:none!important}
+.leaflet-bar a{background:var(--bg)!important;color:var(--fg)!important;border-bottom-color:var(--ln)!important;border-radius:0!important}
+.leaflet-bar a:hover{background:var(--soft)!important}
+.leaflet-popup-content-wrapper{background:var(--bg);color:var(--fg);border-radius:0;border:1px solid var(--rl);box-shadow:0 18px 40px -14px rgba(0,0,0,.75);padding:0}
+.leaflet-popup-content{margin:0;font-size:.9rem;line-height:1.45}
+.leaflet-popup-tip{background:var(--bg);box-shadow:none;border:1px solid var(--rl)}
+.leaflet-tooltip.tip{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-radius:0;box-shadow:none;font-family:var(--b);font-size:.8rem;padding:3px 8px}
+.leaflet-tooltip.tip::before{display:none}
+.mk-place{width:16px;height:16px;border-radius:999px;background:#2a2e35;border:2px solid var(--placec);box-shadow:0 0 0 3px rgba(20,18,16,.35);cursor:pointer;transition:transform 140ms}
+.mk-place:hover{transform:scale(1.25)}
+.mk-place.cand{background:var(--placec);box-shadow:0 0 0 5px color-mix(in srgb,var(--placec) 30%,transparent)}
+.mk-stop{width:28px;height:28px;display:grid;place-items:center;background:var(--ac);color:var(--on);font:600 12px var(--r);border:2px solid var(--on);box-shadow:0 3px 10px rgba(0,0,0,.55);cursor:pointer}
+.mk-stop.start{outline:2px solid var(--ac);outline-offset:2px}
+.mk-stop.open{background:var(--fg)}
+.mk-new{width:24px;height:24px;border-radius:999px;border:2px solid var(--route);background:rgba(232,128,92,.18);box-shadow:0 0 0 4px rgba(20,18,16,.35)}
+.mk-new::after{content:"";position:absolute;left:9px;top:9px;width:6px;height:6px;border-radius:999px;background:var(--route)}
+.pop{display:grid;gap:8px;width:272px;padding:14px 14px 12px;border-top:2px solid var(--k)}
+.pop-k{font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.pop-t{font-family:var(--t);font-size:1.15rem;line-height:1.2}
+.pop-d{color:var(--mu);font-size:.85rem}
+.pop-m{font-family:var(--r);font-size:.66rem;color:var(--mu)}
+.pop-a{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+.pop .field{margin:0}
+.pop .field>label{font-size:.78rem}
+
+/* ── description pane ─────────────────────────────────────────────── */
+.readout{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-top:10px;font-size:.9rem}
+.readout .ro-t{display:grid;min-width:0;flex:1 1 220px}
+.readout small{font-family:var(--r);font-size:.68rem;color:var(--mu)}
+.near{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.pin{flex:none;width:26px;height:26px;display:grid;place-items:center;background:var(--ac);color:var(--on);font-family:var(--r);font-size:.76rem;font-weight:600}
+.pin.start{outline:1px solid var(--ac);outline-offset:2px}
+.pin.ghost{background:transparent;border:1px dashed var(--ac);color:var(--ac)}
+.pin.route{background:transparent;border:1px solid var(--route);color:var(--route)}
+.tourcard{border:1px solid var(--ln);background:var(--bg)}
+.tourcard .ph{aspect-ratio:4/3}
+.tourcard .tc-b{padding:18px 18px 16px;display:grid;gap:6px}
+.tc-k{font-family:var(--v);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
+.tc-t{font-family:var(--t);font-size:1.3rem;line-height:1.25}
+.tc-t.empty{color:var(--fa)}
+.tc-x{color:var(--mu);font-size:.875rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tc-f{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:.875rem}
+.tc-f span:last-child{color:var(--mu)}
+.rail-note{margin:10px 0 22px;font-size:.8rem;color:var(--mu);line-height:1.45}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:7px;font-size:.88rem}
+.checklist li{display:flex;gap:10px;align-items:baseline}
+.checklist li::before{content:"○";font-family:var(--r);color:var(--fa);width:1em}
+.checklist li.ok::before{content:"✓";color:var(--ac)}
+.checklist li.ok{color:var(--mu)}
+
+/* ── route pane ───────────────────────────────────────────────────── */
+.map-main{position:relative;min-height:0;min-width:0}
+.map-main>#routeMap{position:absolute;inset:0}
+.map-tools{position:absolute;top:12px;left:12px;right:60px;z-index:600;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+.map-tools>*{pointer-events:auto}
+.segtool{display:inline-flex;background:var(--bg);border:1px solid var(--ln);box-shadow:0 6px 18px -8px rgba(0,0,0,.6)}
+.segtool button{padding:8px 13px;border:0;background:none;color:var(--mu);font-size:.85rem;cursor:pointer;white-space:nowrap}
+.segtool button+button{border-left:1px solid var(--ln)}
+.segtool button:hover{color:var(--fg)}
+.segtool button.on{background:var(--fg);color:var(--bg)}
+.segtool button[data-mode=draw].on{background:var(--route);color:var(--on)}
+.draw-tools{display:flex;gap:6px}
+.draw-tools[hidden]{display:none}
+.map-hint{position:absolute;left:12px;bottom:26px;z-index:600;max-width:min(360px,calc(100% - 24px));padding:9px 12px;background:rgba(52,57,65,.95);border:1px solid var(--ln);font-size:.82rem;color:var(--mu);line-height:1.45;pointer-events:none}
+.map-hint b{color:var(--fg);font-weight:700}
+.pane-route>.s-rail{padding:0}
+.route-head{position:sticky;top:0;z-index:2;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px 10px;background:var(--soft);border-bottom:1px solid var(--rl)}
+.route-head b{font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase}
+.srow{border-bottom:1px solid var(--ln);background:var(--bg)}
+.srow.open{box-shadow:inset 2px 0 0 var(--ac)}
+.srow.add.open,.srow.confirm.open{box-shadow:inset 2px 0 0 var(--placec)}
+.srow.confirm.open{box-shadow:inset 2px 0 0 var(--route)}
+.srow-sum{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 16px;background:none;border:0;text-align:left;cursor:pointer}
+.srow-sum:hover{background:rgba(69,74,83,.38)}
+.srow-t{display:grid;min-width:0}
+.srow-t b{font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow-t small{font-family:var(--r);font-size:.66rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:var(--fa);font-size:.8rem;transition:transform 200ms}
+.srow.open .chev{transform:rotate(180deg)}
+.srow-body{display:grid;gap:14px;padding:2px 16px 16px 56px}
+.srow-body .field{margin:0}
+.placecard{display:grid;gap:8px;padding:12px;border:1px solid var(--ln);background:#30343b;border-top:2px solid var(--k)}
+.pc-k{font-family:var(--r);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.pc-d{margin:0;font-size:.85rem;color:var(--mu)}
+.facts{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:12px;row-gap:5px;margin:0;font-size:.85rem}
+.facts dt{font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-top:3px}
+.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.privnotes{display:grid;gap:6px;padding:10px 12px;border:1px solid rgba(220,192,138,.35);background:rgba(201,162,92,.06)}
+.privnotes p{margin:0;font-size:.85rem}
+.privnotes .by{font-family:var(--r);font-size:.66rem;color:var(--mu)}
+.media-row{display:flex;flex-wrap:wrap;gap:6px}
+.thumb{width:64px;height:48px;flex:none}
+.addmedia{width:64px;height:48px;border:1px dashed var(--ln);background:none;color:var(--mu);font-size:.75rem;cursor:pointer}
+.addmedia:hover{border-color:var(--fg);color:var(--fg)}
+.srow-actions{display:flex;gap:6px;flex-wrap:wrap}
+.srow-actions .danger{margin-left:auto}
+.near-list{display:grid;border:1px solid var(--ln)}
+.near-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--ln);font-size:.88rem}
+.near-item:last-child{border-bottom:0}
+.near-item .nm{display:grid;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.near-item .nm b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.near-item .nm:hover b{text-decoration:underline;text-underline-offset:3px}
+.near-item small{font-family:var(--r);font-size:.64rem;color:var(--mu)}
+.add-alt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.totals div{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--ln)}
+.totals span{font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.totals b{font-family:var(--t);font-weight:400;font-size:1.2rem}
+.srow-empty{padding:18px 16px;display:grid;gap:10px;justify-items:start;color:var(--mu);font-size:.9rem}
+
+/* ── details pane: the tour page, previewed ──────────────────────── */
+.pv-bar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin:-20px -22px 20px;padding:9px 22px;background:var(--sunk);border-bottom:1px solid var(--ln);font-family:var(--r);font-size:.68rem;color:var(--mu)}
+.pv-cover{aspect-ratio:16/7;margin-bottom:18px}
+.pv-title{margin:0;font-family:var(--t);font-weight:400;font-size:2.1rem;line-height:1.1}
+.pv-title.empty{color:var(--fa)}
+.pv-lede{margin:8px 0 18px;color:var(--mu);font-size:1.05rem;max-width:60ch}
+.pv-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--ln);border:1px solid var(--ln);margin-bottom:20px}
+.pv-facts div{display:grid;gap:2px;padding:10px 12px;background:var(--bg)}
+.pv-facts span{font-family:var(--r);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.pv-hl{margin:0 0 22px;padding-left:1.1rem;display:grid;gap:3px;font-size:.95rem}
+.pv-mapbox{position:relative;height:230px;border:1px solid var(--ln);margin-bottom:26px}
+.pv-mapbox>div{position:absolute;inset:0}
+.pv-mapbox .leaflet-container{cursor:default}
+.pv-h{margin:0 0 14px;padding-bottom:6px;border-bottom:1px solid var(--rl);font-family:var(--r);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.pv-stop{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;padding:12px;margin:0 -12px;cursor:pointer;border:1px solid transparent}
+.pv-stop:hover{border-color:rgba(241,236,226,.18)}
+.pv-stop.sel{border-color:color-mix(in srgb,var(--ac) 55%,transparent);background:color-mix(in srgb,var(--ac) 5%,transparent)}
+.pv-num{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pv-line{flex:1;width:2px;background:repeating-linear-gradient(180deg,var(--route) 0 5px,transparent 5px 10px);opacity:.6}
+.pv-body{display:grid;gap:10px;min-width:0;padding-bottom:8px}
+.pv-st{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.pv-st h4{margin:0;font-family:var(--t);font-weight:400;font-size:1.25rem}
+.pv-fig{margin:0;display:grid;gap:6px}
+.pv-media{aspect-ratio:16/8}
+.pv-alts{display:flex;gap:6px}
+.pv-alts .ph{width:72px;height:48px}
+.pv-cap{width:100%;padding:4px 0;border:0;border-bottom:1px dashed var(--ln);background:transparent;color:var(--fg);font:inherit;font-size:.85rem;font-style:italic}
+.pv-cap:focus{outline:none;border-bottom:1px solid var(--ac)}
+.pv-cap::placeholder{color:var(--fa)}
+.pv-nomedia{justify-self:start;padding:14px 18px;border:1px dashed var(--ln);background:none;color:var(--mu);cursor:pointer;font-size:.85rem}
+.pv-notes{margin:0;font-size:.95rem;line-height:1.55}
+.pv-take{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border:1px dashed rgba(232,128,92,.5);font-size:.82rem;color:var(--mu)}
+.pv-take .mono{color:var(--dg);flex:none}
+.me-title{display:flex;align-items:center;gap:10px;margin:16px 0 6px}
+.me-title b{font-family:var(--t);font-weight:400;font-size:1.15rem}
+.me-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:8px}
+.me-item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--ln);background:var(--bg)}
+.me-f{display:grid;gap:4px;min-width:0}
+.me-role{font-family:var(--r);font-size:.62rem;color:var(--mu)}
+.me-ord{display:flex;flex-direction:column;gap:3px}
+.stopchips .pill{padding:4px 10px;font-family:var(--r);font-size:.75rem}
+
+/* ── create place layer ───────────────────────────────────────────── */
+.sugg{padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--placec) 16%,transparent);font-family:var(--r);font-size:.6rem;font-weight:400;letter-spacing:.06em;color:var(--fg)}
+.priv-field{padding:12px;border:1px solid rgba(220,192,138,.35);background:rgba(201,162,92,.05)}
+.priv-field .field{margin:0}
+
+/* ── toast ────────────────────────────────────────────────────────── */
+.toast{position:fixed;left:50%;bottom:24px;z-index:9999;transform:translate(-50%,20px);opacity:0;padding:10px 16px;background:var(--fg);color:var(--bg);font-size:.9rem;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:opacity 200ms,transform 200ms;pointer-events:none;max-width:calc(100vw - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ── narrower screens: rail stacks, phone is a bottom sheet ──────── */
+@media (max-width:900px){
+  .pane-desc,.pane-details,.pane-route{grid-template-columns:minmax(0,1fr)}
+  .wz-pane.on{display:block;overflow:auto}
+  .wz-pane>.s-main,.wz-pane>.s-rail{overflow:visible}
+  .wz-pane>.s-rail{border-left:0;border-top:1px solid var(--ln)}
+  .map-main{height:340px}
+  .route-head{position:static}
+}
+@media (max-width:640px){
+  dialog.surface{width:100vw;max-width:100vw;margin:auto 0 0}
+  .layer{max-width:100vw}
+  .panel{max-height:92dvh;border-bottom:0}
+  .panel.wizard{height:92dvh}
+  .s-head{padding:12px 12px 12px 16px}
+  .wz-step{padding:8px 10px 9px}.wz-step .st{display:none}
+  .srow-body{padding-left:16px}
+  .cover{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.layer,.face,.face-glyph,.face-cue,.toast{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <span>Prototype · "Create a tour" and "Add a place" are wired · drafts save in this browser</span>
+  <button type="button" data-act="loadSample">Load a sample draft</button>
+  <button type="button" data-act="clearDraft">Clear draft</button>
+  <a href="Surface Forms.dc.html">Field + step variations</a>
+  <a href="Surface UI Specimen.dc.html">Surface UI specimen</a>
+</div>
+
+<main class="hub">
+  <header>
+    <div class="hub-k">ELKDONIS TOURS &amp; EXPERIENCES</div>
+    <h1>Welcome back, Jaswant.</h1>
+    <p class="hub-sub">The office. Every card opens in place, and anything half-done is kept as a draft.</p>
+  </header>
+
+  <section class="band">
+    <div class="band-h"><h2>Run tours</h2><p>When you're free, and what you'll run.</p></div>
+    <div class="face-grid">
+      <article class="face" data-kind="calendar">
+        <button type="button" class="face-hit" data-act="notWired" aria-label="Offer availability"></button>
+        <span class="face-glyph" aria-hidden="true">▦</span><span class="face-cue" aria-hidden="true">+</span>
+        <div class="face-preview"><div class="week"><span>M</span><span>T</span><span class="free">W</span><span>T</span><span class="free">F</span><span class="free">S</span><span>S</span></div><span class="pcue">3 days offered this week</span></div>
+        <div class="face-head"><span class="face-kicker">Availability</span><span class="face-title">Offer availability</span><span class="face-blurb">Say which days you could guide or host. The office is told.</span></div>
+      </article>
+      <article class="face" data-kind="event">
+        <button type="button" class="face-hit" data-act="notWired" aria-label="Offer a tour"></button>
+        <span class="face-glyph" aria-hidden="true">◆</span><span class="face-cue" aria-hidden="true">+</span>
+        <div class="face-preview">
+          <div class="pline"><span class="pdate">Sat 22</span><span>Le Marais at dusk · 17:30</span></div>
+          <div class="pline"><span class="pdate">Sun 23</span><span>Left Bank bookshops · 10:00</span></div>
+        </div>
+        <div class="face-head"><span class="face-kicker">Departures</span><span class="face-title">Offer a tour</span><span class="face-blurb">Pick a tour and a start time. Only tours with a start time appear on /tours.</span></div>
+      </article>
+      <article class="face" data-kind="post">
+        <button type="button" class="face-hit" data-act="notWired" aria-label="Personal takes"></button>
+        <span class="face-glyph" aria-hidden="true">◉</span><span class="face-cue" aria-hidden="true">+</span>
+        <div class="face-head"><span class="face-kicker">Your view</span><span class="face-title">Personal takes</span><span class="face-blurb">Your own notes on the stops of a tour you run, shown beside the site's notes on your departures.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-h"><h2>Make tours</h2><p>The catalogue everyone builds from.</p></div>
+    <div class="face-grid">
+      <article class="face" data-kind="tour" id="faceCreate">
+        <button type="button" class="face-hit" data-act="openWizard" aria-haspopup="dialog" aria-label="Create a tour"></button>
+        <span class="face-glyph" aria-hidden="true">⌖</span><span class="face-cue" aria-hidden="true" id="draftCue">+</span>
+        <div class="face-preview" id="draftPreview"></div>
+        <div class="face-head"><span class="face-kicker">Tour</span><span class="face-title">Create a tour</span><span class="face-blurb">Description, route, details. Saved as a draft as you go.</span></div>
+      </article>
+      <article class="face" data-kind="place" id="facePlace">
+        <button type="button" class="face-hit" data-act="openAddPlace" aria-haspopup="dialog" aria-label="Add a place"></button>
+        <span class="face-glyph" aria-hidden="true">⊙</span><span class="face-cue" aria-hidden="true">+</span>
+        <div class="face-preview"><span class="pcue" id="placeCount">15 places in Paris</span></div>
+        <div class="face-head"><span class="face-kicker">Place</span><span class="face-title">Add a place</span><span class="face-blurb">Drop a pin, take the suggested name and address, add notes. Places belong to the catalogue, credited to you.</span></div>
+      </article>
+      <article class="face is-disabled" data-kind="neutral" aria-disabled="true">
+        <span class="face-glyph" aria-hidden="true">◇</span>
+        <div class="face-head"><span class="face-kicker">Experience</span><span class="face-title">Add an experience</span><span class="face-blurb">Coming soon.</span></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<dialog class="surface" id="dlg" aria-label="Surface"><div class="stack" id="stack"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let n_ = 1; const uid = p => `${p}${n_++}${Math.random().toString(36).slice(2, 6)}`;
+const dist = (a, b) => { const R = 6371000, r = Math.PI / 180; const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r; const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
+const fmtMin = v => { v = Math.round(v); if (v < 60) return `${v} min`; const h = Math.floor(v / 60), m = v % 60; return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`; };
+const fmtTime = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const STEPS = ['Description', 'Route', 'Details'];
+const PARIS = [48.8572, 2.3622];
+
+let toastT; function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+
+/* ── the catalogue (sample) ─────────────────────────────────────── */
+const PLACES = [
+  { id: 'vosges', title: 'Place des Vosges', lat: 48.85561, lng: 2.36549, address: 'Place des Vosges, 75004 Paris', tags: ['square', 'architecture'], desc: 'The oldest planned square in Paris, laid out under Henri IV. Thirty-six houses share one façade.', by: 'Jaswant', notes: [{ by: 'Jaswant', text: 'Meet at the north arcade. On Sunday mornings use the Victor Hugo side.' }], link: '' },
+  { id: 'hugo', title: 'Maison de Victor Hugo', lat: 48.85467, lng: 2.36639, address: '6 Place des Vosges, 75004 Paris', tags: ['museum', 'house'], desc: "Hugo's apartment on the square, now a museum.", by: 'Amrit', notes: [], link: 'maisonsvictorhugo.paris.fr' },
+  { id: 'sully', title: 'Hôtel de Sully', lat: 48.85456, lng: 2.3641, address: '62 Rue Saint-Antoine, 75004 Paris', tags: ['mansion', 'garden'], desc: 'A 17th-century mansion whose garden opens onto the square through a back door.', by: 'Jaswant', notes: [{ by: 'Amrit', text: 'The garden passage closes early in winter. Check before you plan on it.' }], link: '' },
+  { id: 'catherine', title: 'Place du Marché Sainte-Catherine', lat: 48.85528, lng: 2.36291, address: 'Place du Marché Sainte-Catherine, 75004 Paris', tags: ['square', 'cafés'], desc: 'A small car-free square ringed by café terraces.', by: 'Amrit', notes: [], link: '' },
+  { id: 'stpaul', title: 'Saint-Paul-Saint-Louis', lat: 48.85475, lng: 2.36116, address: '99 Rue Saint-Antoine, 75004 Paris', tags: ['church', 'baroque'], desc: 'The Jesuit church on Rue Saint-Antoine.', by: 'Jaswant', notes: [], link: '' },
+  { id: 'villagestpaul', title: 'Village Saint-Paul', lat: 48.85339, lng: 2.36167, address: 'Rue Saint-Paul, 75004 Paris', tags: ['courtyards', 'antiques'], desc: 'Linked courtyards of antique dealers.', by: 'Amrit', notes: [], link: '' },
+  { id: 'sens', title: 'Hôtel de Sens', lat: 48.853, lng: 2.3591, address: '1 Rue du Figuier, 75004 Paris', tags: ['medieval', 'library'], desc: 'One of the few medieval mansions left in Paris.', by: 'Jaswant', notes: [], link: '' },
+  { id: 'carnavalet', title: 'Musée Carnavalet', lat: 48.85749, lng: 2.36259, address: '23 Rue de Sévigné, 75003 Paris', tags: ['museum', 'history'], desc: 'The museum of the history of Paris, in two joined mansions.', by: 'Amrit', notes: [{ by: 'Jaswant', text: 'The courtyard is a good place to talk if it rains.' }], link: 'carnavalet.paris.fr' },
+  { id: 'rosiers', title: 'Rue des Rosiers', lat: 48.85731, lng: 2.35896, address: 'Rue des Rosiers, 75004 Paris', tags: ['street', 'food'], desc: 'The heart of the old Jewish quarter, the Pletzl.', by: 'Jaswant', notes: [{ by: 'Jaswant', text: 'Very crowded on Sunday afternoons. Keep the group to one side.' }], link: '' },
+  { id: 'picasso', title: 'Musée Picasso', lat: 48.85982, lng: 2.36244, address: '5 Rue de Thorigny, 75003 Paris', tags: ['museum', 'art'], desc: 'In the Hôtel Salé.', by: 'Amrit', notes: [], link: 'museepicassoparis.fr' },
+  { id: 'soubise', title: 'Hôtel de Soubise', lat: 48.85998, lng: 2.35781, address: '60 Rue des Francs-Bourgeois, 75003 Paris', tags: ['archives', 'courtyard'], desc: 'Home of the National Archives; the horseshoe courtyard is open to walk through.', by: 'Jaswant', notes: [], link: '' },
+  { id: 'enfants', title: 'Marché des Enfants Rouges', lat: 48.86275, lng: 2.3619, address: '39 Rue de Bretagne, 75003 Paris', tags: ['market', 'food'], desc: 'The oldest covered market in Paris.', by: 'Amrit', notes: [{ by: 'Amrit', text: 'Closed Mondays. The Moroccan stall will do tea for a group.' }], link: '' },
+  { id: 'temple', title: 'Square du Temple', lat: 48.8644, lng: 2.3606, address: 'Rue de Bretagne, 75003 Paris', tags: ['garden'], desc: "A garden on the site of the Templars' fortress.", by: 'Jaswant', notes: [], link: '' },
+  { id: 'hdv', title: 'Hôtel de Ville', lat: 48.85641, lng: 2.35222, address: "Place de l'Hôtel de Ville, 75004 Paris", tags: ['landmark', 'square'], desc: 'City hall, on the old Place de Grève.', by: 'Amrit', notes: [], link: '' },
+  { id: 'bastille', title: 'Place de la Bastille', lat: 48.85321, lng: 2.36912, address: 'Place de la Bastille, 75004 Paris', tags: ['landmark', 'square'], desc: 'Where the fortress stood.', by: 'Jaswant', notes: [], link: '' },
+];
+const placeById = id => PLACES.find(p => p.id === id);
+
+/* ── draft state ────────────────────────────────────────────────── */
+const KEY = 'elk-create-tour-draft-v1';
+const blank = () => ({ step: 1, city: 'Paris', title: '', summary: '', body: '', meeting: null, cover: false, price: '', length: '120', maxParty: '', languages: ['English'], effort: '', highlights: '', includes: '', stops: [], path: [], routeConfirmed: false, savedAt: null, detailSel: null, customPlaces: [], status: 'draft' });
+let S = null;
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(blank(), JSON.parse(raw)); } catch (_) {}
+if (S) S.customPlaces.forEach(p => { if (!placeById(p.id)) PLACES.push(p); });
+const U = { mode: 'browse', addOpen: false, confirmOpen: false, flagged: false };
+let saveT = null;
+function scheduleSave() { if (!S) return; setStatus('Saving…'); clearTimeout(saveT); saveT = setTimeout(saveNow, 600); }
+function saveNow() { if (!S) return; clearTimeout(saveT); S.savedAt = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) {} setStatus(`Draft saved ${fmtTime(S.savedAt)}`); renderDraftFace(); }
+function setStatus(t) { const el = $('#wzStatus'); if (el) el.textContent = t; }
+
+/* ── reverse geocoding: OpenStreetMap Nominatim, with an offline guess ─ */
+async function reverse(lat, lng) {
+  const near = PLACES.map(p => ({ p, d: dist({ lat, lng }, p) })).sort((a, b) => a.d - b.d)[0];
+  const fallback = { source: 'guess', name: near && near.d < 30 ? near.p.title : '', address: near ? `Near ${near.p.title}` : '', road: '', website: '' };
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 3500);
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&extratags=1`, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+    clearTimeout(t); if (!r.ok) return fallback;
+    const j = await r.json(); const a = j.address || {};
+    const road = a.road || a.pedestrian || a.footway || a.square || a.place || '';
+    const l1 = [a.house_number, road].filter(Boolean).join(' ');
+    const l2 = [a.postcode, a.city || a.town || 'Paris'].filter(Boolean).join(' ');
+    const name = j.name || a.amenity || a.shop || a.tourism || a.historic || '';
+    const ex = j.extratags || {};
+    return { source: 'osm', name, address: [l1, l2].filter(Boolean).join(', '), road, website: ex.website || ex['contact:website'] || '' };
+  } catch (_) { return fallback; }
+}
+
+/* ── map helpers ────────────────────────────────────────────────── */
+function tiles(map) { L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors', referrerPolicy: 'strict-origin-when-cross-origin' }).addTo(map); }
+const dotIcon = cand => L.divIcon({ className: '', html: `<div class="mk-place${cand ? ' cand' : ''}"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+const stopIcon = (n, start, open) => L.divIcon({ className: '', html: `<div class="mk-stop${start ? ' start' : ''}${open ? ' open' : ''}">${n}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+const newIcon = () => L.divIcon({ className: '', html: '<div class="mk-new" style="position:relative"></div>', iconSize: [24, 24], iconAnchor: [12, 12] });
+const center = () => S && S.meeting ? [S.meeting.lat, S.meeting.lng] : PARIS;
+
+/* ── dialog + stack (SurfaceProvider) ───────────────────────────── */
+const dlg = $('#dlg'), stackEl = $('#stack');
+const WIDTH = { compact: 440, standard: 640, wide: 940, full: 1180 };
+const stack = [];
+function sizeDialog() { const w = Math.max(...stack.map(l => WIDTH[l.size])); dlg.style.setProperty('--w', w + 'px'); }
+function renderStack() { stack.forEach((l, i) => { l.el.classList.toggle('is-under', i < stack.length - 1); l.el.inert = i < stack.length - 1; }); sizeDialog(); }
+function pushLayer(el, size, animate = true) {
+  const wrap = document.createElement('div'); wrap.className = 'layer' + (animate ? ' enter' : ''); wrap.style.setProperty('--lw', WIDTH[size] + 'px'); wrap.appendChild(el);
+  stackEl.appendChild(wrap); stack.push({ el: wrap, panel: el, size }); renderStack();
+  setTimeout(() => wrap.classList.remove('enter'), 300); return wrap;
+}
+function popLayer() {
+  if (stack.length <= 1) return closeSurface();
+  const l = stack.pop(); if (l.panel._cp && l.panel._cp.map) l.panel._cp.map.remove();
+  l.el.remove(); renderStack();
+  const top = stack[stack.length - 1]; if (top.panel === wizardEl) { [meetMap, routeMap, detailMap].forEach(m => m && m.invalidateSize()); }
+}
+function openSurface(origin, el, size) {
+  while (stack.length) { const l = stack.pop(); if (l.panel._cp && l.panel._cp.map) l.panel._cp.map.remove(); l.el.remove(); }
+  const wrap = pushLayer(el, size, false);
+  if (!dlg.open) dlg.showModal();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (origin && !reduce) {
+    const fr = origin.getBoundingClientRect(), pr = el.getBoundingClientRect();
+    el.style.transformOrigin = '0 0'; el.style.transition = 'none';
+    el.style.transform = `translate(${fr.left - pr.left}px,${fr.top - pr.top}px) scale(${fr.width / pr.width},${fr.height / pr.height})`; el.style.opacity = '.35';
+    el.getBoundingClientRect();
+    el.style.transition = 'transform 360ms cubic-bezier(.2,.8,.2,1), opacity 240ms ease'; el.style.transform = ''; el.style.opacity = '';
+    setTimeout(() => { el.style.transition = ''; el.style.transformOrigin = ''; }, 380);
+  }
+  return wrap;
+}
+function closeSurface() {
+  if (S && stack.some(l => l.panel === wizardEl)) saveNow();
+  while (stack.length) { const l = stack.pop(); if (l.panel._cp && l.panel._cp.map) l.panel._cp.map.remove(); if (l.panel === wizardEl) l.el.removeChild(wizardEl); l.el.remove(); }
+  if (dlg.open) dlg.close(); renderDraftFace();
+}
+dlg.addEventListener('cancel', e => { e.preventDefault(); popLayer(); });
+dlg.addEventListener('click', e => { if (e.target === dlg) closeSurface(); });
+
+/* ── the wizard surface ─────────────────────────────────────────── */
+let wizardEl = null, meetMap = null, mm = null, routeMap = null, rm = null, detailMap = null, dm = null, tempPopup = null;
+function buildWizard() {
+  const el = document.createElement('article'); el.className = 'panel wizard'; el.dataset.kind = 'tour';
+  el.setAttribute('role', 'document');
+  el.innerHTML = `
+  <header class="s-head">
+    <span class="s-glyph" aria-hidden="true">⌖</span>
+    <div class="s-headings">
+      <div class="s-kicker"><button type="button" class="crumb" data-act="close">‹ Hub</button><span class="sep">·</span><span>New tour</span><span class="draft-chip" id="wzChip">Draft</span></div>
+      <h2 class="s-title" id="wzTitle">Untitled tour</h2>
+    </div>
+    <div class="s-controls"><button type="button" class="iconbtn" data-act="close" aria-label="Close and keep the draft">✕</button></div>
+  </header>
+  <nav class="wz-steps" id="wzSteps" aria-label="Steps"></nav>
+  <div class="wz-panes">
+    <section class="wz-pane pane-desc" data-pane="1">
+      <div class="s-main">
+        <section class="sec"><h3>City</h3>
+          <div class="seg"><button type="button" class="pill on" aria-pressed="true">Paris</button><button type="button" class="pill" disabled>Another city</button></div>
+          <p class="fhint" style="margin-top:8px">Paris for now. Other cities appear here once the office lists them.</p>
+        </section>
+        <section class="sec"><h3>The tour</h3>
+          <div class="field"><label for="fTitle">Title</label><input id="fTitle" class="input title-in" data-bind="title" maxlength="80" placeholder="Le Marais at dusk"></div>
+          <div class="field"><label for="fSummary">One-line summary <span class="count" id="sumCount">0 / 140</span></label><input id="fSummary" class="input" data-bind="summary" maxlength="140" placeholder="What a visitor gets, in one sentence."></div>
+          <div class="field"><span class="flabel">Description <span class="muted">(optional now, can wait for Details)</span></span>
+            <div class="rt"><div class="rt-bar" aria-hidden="true"><span><b>B</b></span><span><i>I</i></span><span>H2</span><span>• List</span><span>Link</span></div><textarea data-bind="body" aria-label="Description" placeholder="The longer story: what you'll see, the pace, what to bring."></textarea></div></div>
+        </section>
+        <section class="sec"><h3>Meeting point</h3>
+          <p class="fhint" style="margin-bottom:10px">Click the map to drop a pin where the group gathers, or pick a place from the catalogue (the dots). The meeting point becomes stop 1 of the route.</p>
+          <div class="mapbox"><div id="meetMap"></div></div>
+          <div class="readout" id="meetReadout"></div>
+          <div class="near" id="meetNear"></div>
+        </section>
+        <section class="sec"><h3>Practical</h3>
+          <div class="field"><span class="flabel">Cover image</span><div id="coverField"></div></div>
+          <div class="frow">
+            <div class="field"><label for="fPrice">Price per person</label><div class="prefix"><span>EUR</span><input id="fPrice" class="input" type="number" min="0" step="1" data-bind="price" placeholder="35"></div></div>
+            <div class="field"><label for="fParty">Max per booking</label><input id="fParty" class="input" type="number" min="1" max="20" data-bind="maxParty" placeholder="8"></div>
+          </div>
+          <p class="fhint" style="margin:-8px 0 16px">Leave the price empty for "price on request" (no booking form).</p>
+          <div class="field"><span class="flabel">Length</span>
+            <div class="dur"><div class="dur-read"><span>Rough length; the route step works it out from the stops</span><b id="lenRead">2 h</b></div><input type="range" min="30" max="300" step="15" data-bind="length" id="fLength" aria-label="Length in minutes"><div class="dur-num"><input class="input" type="number" min="15" step="15" data-bind="length" id="fLengthNum" aria-label="Minutes"> min</div><div class="dur-ticks"><span>30 min</span><span>2 h</span><span>3 h</span><span>5 h</span></div></div></div>
+          <div class="field"><span class="flabel">Languages</span><div class="seg" id="langSeg"></div></div>
+          <div class="field"><label for="fEffort">Walking</label><input id="fEffort" class="input" data-bind="effort" placeholder="Easy, 3 km, a few stairs"></div>
+        </section>
+      </div>
+      <aside class="s-rail">
+        <div class="rail-k">On /tours it will look like this</div>
+        <div id="tourCard"></div>
+        <p class="rail-note">It stays off /tours until a date is offered with <b>Offer a tour</b>. Only tours with a start time are public.</p>
+        <div class="rail-k">Needed before a date can be offered</div>
+        <ul class="checklist" id="checklist"></ul>
+      </aside>
+    </section>
+
+    <section class="wz-pane pane-route" data-pane="2">
+      <div class="map-main">
+        <div id="routeMap"></div>
+        <div class="map-tools">
+          <div class="segtool" role="group" aria-label="Map mode"><button type="button" data-act="mode" data-mode="browse" class="on">Browse places</button><button type="button" data-act="mode" data-mode="new">New place</button><button type="button" data-act="mode" data-mode="draw">Draw path</button></div>
+          <div class="draw-tools" id="drawTools" hidden><button type="button" class="btn sm" data-act="pathUndo">Undo point</button><button type="button" class="btn sm" data-act="pathClear">Clear</button><button type="button" class="btn sm primary" data-act="pathDone">Done</button></div>
+        </div>
+        <div class="map-hint" id="mapHint"></div>
+      </div>
+      <aside class="s-rail" id="stopRail"><div class="route-head" id="routeHead"></div><div id="stopList"></div></aside>
+    </section>
+
+    <section class="wz-pane pane-details" data-pane="3">
+      <div class="s-main">
+        <div class="pv-bar"><span>Preview · /tours/<span id="pvSlug">untitled</span></span><span>Click a stop to edit its media and captions. Captions edit in place.</span></div>
+        <div id="pvHead"></div>
+        <div class="pv-mapbox"><div id="detailMap"></div></div>
+        <div id="pvStops"></div>
+      </div>
+      <aside class="s-rail" id="mediaRail"></aside>
+    </section>
+  </div>
+  <footer class="s-foot">
+    <span class="s-status" id="wzStatus">Not saved yet</span>
+    <div class="s-buttons">
+      <button type="button" class="btn quiet" data-act="saveClose">Save &amp; close</button>
+      <button type="button" class="btn" data-act="back" id="btnBack">Back</button>
+      <button type="button" class="btn primary" data-act="next" id="btnNext">Next: Route</button>
+    </div>
+  </footer>`;
+  return el;
+}
+
+function stepDone(n) {
+  if (!S) return false;
+  if (n === 1) return !!(S.title.trim() && S.summary.trim() && S.meeting);
+  if (n === 2) return S.stops.length >= 2 && S.routeConfirmed;
+  return S.stops.length > 0 && S.stops.every(s => s.media.length && s.media[0].caption.trim());
+}
+function missing1() { const m = []; if (!S.title.trim()) m.push('title'); if (!S.summary.trim()) m.push('summary'); if (!S.meeting) m.push('meeting point'); return m; }
+function stepStatus(n) {
+  if (n === 1) { const m = missing1(); return m.length ? { t: 'Needs ' + m.join(', '), warn: U.flagged } : { t: `Paris · ${S.title}` }; }
+  if (n === 2) { if (!S.stops.length) return { t: 'No stops yet', warn: U.flagged }; const t = totals(); return { t: `${t.n} stop${t.n > 1 ? 's' : ''} · ${fmtDist(t.walk)}${S.routeConfirmed ? ' · confirmed' : ' · not confirmed'}`, warn: U.flagged && S.stops.length < 2 }; }
+  if (!S.stops.length) return { t: 'After the route' };
+  const c = S.stops.filter(s => s.media[0] && s.media[0].caption.trim()).length; return { t: `${c} of ${S.stops.length} stops captioned` };
+}
+function updateSteps() {
+  const nav = $('#wzSteps'); if (!nav) return;
+  nav.innerHTML = STEPS.map((l, i) => { const n = i + 1, st = stepStatus(n); return `<button type="button" class="wz-step${S.step === n ? ' on' : ''}${stepDone(n) ? ' done' : ''}${st.warn ? ' warn' : ''}" data-act="goto" data-step="${n}" aria-current="${S.step === n ? 'step' : 'false'}"><span class="n">0${n}</span><span class="l">${l}</span><span class="st">${esc(st.t)}</span></button>`; }).join('');
+}
+function updateHead() {
+  const t = $('#wzTitle'); if (!t) return; t.textContent = S.title.trim() || 'Untitled tour'; t.classList.toggle('empty', !S.title.trim());
+  $('#wzChip').textContent = S.status === 'ready' ? 'Ready' : 'Draft';
+}
+function updateFoot() {
+  $('#btnBack').disabled = S.step === 1;
+  $('#btnNext').textContent = S.step < 3 ? `Next: ${STEPS[S.step]}` : 'Save tour';
+  setStatus(S.savedAt ? `Draft saved ${fmtTime(S.savedAt)}` : 'Not saved yet');
+}
+function onChange() { updateHead(); updateSteps(); renderTourCard(); renderChecklist(); scheduleSave(); }
+
+function goTo(n) {
+  n = Math.max(1, Math.min(3, n)); S.step = n;
+  $$('.wz-pane', wizardEl).forEach(p => p.classList.toggle('on', +p.dataset.pane === n));
+  updateSteps(); updateFoot();
+  requestAnimationFrame(() => {
+    if (n === 1) ensureMeetMap();
+    if (n === 2) { ensureRouteMap(); renderStops(); setMode(U.mode); }
+    if (n === 3) { renderDetails(); ensureDetailMap(); }
+    const main = $(`.wz-pane[data-pane="${n}"] .s-main`, wizardEl); if (main) main.scrollTop = 0;
+  });
+  scheduleSave();
+}
+
+function fillForm() {
+  $$('[data-bind]', wizardEl).forEach(el => { const v = S[el.dataset.bind]; if (typeof v === 'string') el.value = v; });
+  $('#sumCount').textContent = `${S.summary.length} / 140`; $('#lenRead').textContent = fmtMin(+S.length || 0);
+  renderLang(); renderCover(); renderTourCard(); renderChecklist(); renderMeeting(); updateHead(); updateSteps(); updateFoot();
+}
+
+function openWizard(origin) {
+  if (!S) S = blank();
+  if (!wizardEl) wizardEl = buildWizard();
+  U.mode = 'browse'; U.addOpen = false; U.confirmOpen = false; U.flagged = false;
+  openSurface(origin, wizardEl, 'full');
+  fillForm();
+  goTo(S.step || 1);
+  if (!S.savedAt) saveNow();
+}
+
+/* ── step 1 ─────────────────────────────────────────────────────── */
+const LANGS = ['English', 'Français', 'Español', 'Deutsch', 'Italiano'];
+function renderLang() { $('#langSeg').innerHTML = LANGS.map(l => `<button type="button" class="pill${S.languages.includes(l) ? ' on' : ''}" aria-pressed="${S.languages.includes(l)}" data-act="lang" data-lang="${l}">${l}</button>`).join(''); }
+function renderCover() {
+  $('#coverField').innerHTML = S.cover
+    ? `<div class="cover"><div class="ph">cover image</div><div style="display:grid;gap:8px;justify-items:start"><span class="mono">le-marais-dusk.jpg · 2400 × 1600</span><div style="display:flex;gap:6px"><button type="button" class="btn sm" data-act="cover">Replace</button><button type="button" class="btn sm quiet" data-act="coverRemove">Remove</button></div></div></div>`
+    : `<button type="button" class="cover-empty" data-act="cover"><span>Choose from the media library, or drop an image</span><span class="mono">16:9 or wider looks best</span></button>`;
+}
+function renderTourCard() {
+  const el = $('#tourCard'); if (!el) return;
+  const len = S.stops.length >= 2 ? totals().time : +S.length;
+  const kick = [len ? fmtMin(len) : '', S.languages[0]].filter(Boolean).join(' · ') || 'Tour';
+  el.innerHTML = `<div class="tourcard">${S.cover ? '<div class="ph">cover image</div>' : '<div class="ph">no cover yet</div>'}<div class="tc-b"><span class="tc-k">${esc(kick)}</span><span class="tc-t${S.title.trim() ? '' : ' empty'}">${esc(S.title.trim() || 'Your title')}</span>${S.summary.trim() ? `<span class="tc-x">${esc(S.summary)}</span>` : '<span class="tc-x" style="color:var(--fa)">Your one-line summary</span>'}<div class="tc-f"><span>${S.price ? '€' + esc(S.price) : 'Price on request'}</span><span>Dates coming</span></div></div></div>`;
+}
+function renderChecklist() {
+  const el = $('#checklist'); if (!el) return;
+  const items = [[!!S.title.trim(), 'A title'], [!!S.summary.trim(), 'A one-line summary'], [!!S.meeting, 'A meeting point'], [S.stops.length >= 2, 'Two or more stops on the route']];
+  el.innerHTML = items.map(([ok, t]) => `<li class="${ok ? 'ok' : ''}">${t}</li>`).join('');
+}
+
+function ensureMeetMap() {
+  if (meetMap) { meetMap.invalidateSize(); renderMeetingMap(); if (S.meeting) meetMap.setView(center(), meetMap.getZoom()); return; }
+  meetMap = L.map('meetMap', { scrollWheelZoom: false }).setView(center(), 16);
+  tiles(meetMap); mm = { places: L.layerGroup().addTo(meetMap), pin: L.layerGroup().addTo(meetMap) };
+  meetMap.on('click', e => dropMeetingPin(e.latlng));
+  renderMeetingMap();
+}
+function renderMeetingMap() {
+  if (!meetMap) return; mm.places.clearLayers(); mm.pin.clearLayers();
+  PLACES.forEach(p => {
+    if (S.meeting && S.meeting.placeId === p.id) return;
+    const m = L.marker([p.lat, p.lng], { icon: dotIcon(false), title: p.title, riseOnHover: true });
+    m.bindTooltip(p.title, { direction: 'top', offset: [0, -8], className: 'tip' });
+    m.on('click', () => setMeetingPlace(p)); mm.places.addLayer(m);
+  });
+  if (S.meeting) {
+    const m = L.marker([S.meeting.lat, S.meeting.lng], { icon: stopIcon(1, true), draggable: true, zIndexOffset: 1000, title: 'Meeting point (drag to move)' });
+    m.on('dragend', () => dropMeetingPin(m.getLatLng())); mm.pin.addLayer(m);
+  }
+}
+function renderMeeting() {
+  const ro = $('#meetReadout'), nr = $('#meetNear'); if (!ro) return;
+  const m = S.meeting;
+  if (!m) ro.innerHTML = '<span class="pin ghost">1</span><span class="ro-t"><b>No meeting point yet</b><small>Click the map, or choose a nearby place below</small></span>';
+  else if (m.placeId) ro.innerHTML = `<span class="pin start">1</span><span class="ro-t"><b>${esc(m.title)}</b><small>${esc(m.address)} · from the catalogue</small></span><button type="button" class="btn sm quiet" data-act="clearMeeting">Clear</button>`;
+  else ro.innerHTML = `<span class="pin start">1</span><span class="ro-t"><b>${esc(m.title)}</b><small>${esc(m.address)} · ${m.lat.toFixed(5)}, ${m.lng.toFixed(5)} · a pin, not a place yet</small></span><button type="button" class="btn sm" data-act="createPlaceFromStart">Save as a place</button><button type="button" class="btn sm quiet" data-act="clearMeeting">Clear</button>`;
+  const c = { lat: center()[0], lng: center()[1] };
+  const near = PLACES.filter(p => !(m && m.placeId === p.id)).map(p => ({ p, d: dist(c, p) })).sort((a, b) => a.d - b.d).slice(0, 5);
+  nr.innerHTML = `<span class="mono" style="margin-right:4px">${m ? 'Or nearby' : 'Places nearby'}</span>` + near.map(({ p, d }) => `<button type="button" class="pill" data-act="meetPlace" data-id="${p.id}">${esc(p.title)}${m ? ` · ${fmtDist(d)}` : ''}</button>`).join('');
+  renderMeetingMap();
+}
+function setMeetingPlace(p) { setMeeting({ placeId: p.id, title: p.title, lat: p.lat, lng: p.lng, address: p.address }); }
+function setMeeting(m) {
+  S.meeting = m; syncStart();
+  renderMeeting(); refreshRouteMap(); if (S.step === 2) renderStops(); onChange();
+}
+function syncStart() {
+  const m = S.meeting, cur = S.stops[0] && S.stops[0].start ? S.stops[0] : null;
+  if (!m) { if (cur) S.stops.shift(); return; }
+  if (m.placeId) S.stops = S.stops.filter((s, i) => (i === 0 && s.start) || s.placeId !== m.placeId);
+  const same = cur && cur.placeId === m.placeId && cur.placeId;
+  const s = { uid: 'start', start: true, placeId: m.placeId, title: m.title, lat: m.lat, lng: m.lng, address: m.address, notes: cur ? cur.notes : '', duration: cur ? cur.duration : 10, media: same ? cur.media : defaultMedia(m.placeId), open: cur ? cur.open : false };
+  if (cur) S.stops[0] = s; else S.stops.unshift(s);
+  S.routeConfirmed = false;
+}
+function dropMeetingPin(ll) {
+  const lat = +ll.lat.toFixed(6), lng = +ll.lng.toFixed(6);
+  setMeeting({ placeId: null, title: 'Dropped pin', lat, lng, address: 'Looking up the address…' });
+  reverse(lat, lng).then(r => {
+    if (!S.meeting || S.meeting.lat !== lat || S.meeting.lng !== lng) return;
+    S.meeting.title = r.name || (r.road ? `Pin on ${r.road}` : 'Dropped pin'); S.meeting.address = r.address || '—'; S.meeting.website = r.website;
+    syncStart(); renderMeeting(); if (S.step === 2) renderStops(); onChange();
+  });
+}
+function defaultMedia(placeId) { const p = placeId && placeById(placeId); return p && !p.isNew ? [{ id: uid('m'), label: 'catalogue photo', caption: '' }] : []; }
+
+/* ── step 2: route ──────────────────────────────────────────────── */
+function totals() {
+  const st = S.stops; let straight = 0; for (let i = 1; i < st.length; i++) straight += dist(st[i - 1], st[i]);
+  let walk = straight * 1.3, drawn = false;
+  if (S.path.length > 1) { let d = 0; for (let i = 1; i < S.path.length; i++) d += dist({ lat: S.path[i - 1][0], lng: S.path[i - 1][1] }, { lat: S.path[i][0], lng: S.path[i][1] }); walk = d; drawn = true; }
+  const stay = st.reduce((a, s) => a + (+s.duration || 0), 0);
+  return { n: st.length, walk, drawn, time: walk / 75 + stay };
+}
+function nearestCandidates() {
+  const last = S.stops[S.stops.length - 1]; if (!last) return [];
+  const used = new Set(S.stops.map(s => s.placeId).filter(Boolean));
+  return PLACES.filter(p => !used.has(p.id)).map(p => ({ p, d: dist(last, p) })).sort((a, b) => a.d - b.d).slice(0, 5);
+}
+function ensureRouteMap() {
+  if (routeMap) { routeMap.invalidateSize(); refreshRouteMap(); return; }
+  routeMap = L.map('routeMap', { zoomControl: false }).setView(center(), 16);
+  L.control.zoom({ position: 'topright' }).addTo(routeMap); tiles(routeMap);
+  rm = { places: L.layerGroup().addTo(routeMap), cand: L.layerGroup().addTo(routeMap), straight: L.layerGroup().addTo(routeMap), path: L.layerGroup().addTo(routeMap), stops: L.layerGroup().addTo(routeMap), temp: L.layerGroup().addTo(routeMap) };
+  routeMap.on('click', onRouteClick);
+  routeMap.on('popupclose', e => { if (e.popup === tempPopup) { rm.temp.clearLayers(); tempPopup = null; } });
+  refreshRouteMap();
+  if (S.stops.length > 1) routeMap.fitBounds(L.latLngBounds(S.stops.map(s => [s.lat, s.lng])).pad(.35));
+}
+function refreshRouteMap() {
+  if (!routeMap) return;
+  ['places', 'cand', 'straight', 'path', 'stops'].forEach(k => rm[k].clearLayers());
+  const used = new Set(S.stops.map(s => s.placeId).filter(Boolean));
+  const cands = U.addOpen ? nearestCandidates() : [], candIds = cands.map(c => c.p.id);
+  PLACES.forEach(p => {
+    if (used.has(p.id)) return;
+    const m = L.marker([p.lat, p.lng], { icon: dotIcon(candIds.includes(p.id)), title: p.title, riseOnHover: true });
+    m.bindTooltip(p.title, { direction: 'top', offset: [0, -8], className: 'tip' });
+    m.on('click', () => { if (U.mode === 'draw') return addPathPoint(L.latLng(p.lat, p.lng)); openPlacePopup(p); });
+    rm.places.addLayer(m);
+  });
+  const pts = S.stops.map(s => [s.lat, s.lng]);
+  if (pts.length > 1) rm.straight.addLayer(L.polyline(pts, { color: '#f1ece2', weight: 2, opacity: S.path.length > 1 ? .22 : .6, dashArray: '4 7', interactive: false }));
+  if (cands.length) { const last = S.stops[S.stops.length - 1]; cands.forEach(c => rm.cand.addLayer(L.polyline([[last.lat, last.lng], [c.p.lat, c.p.lng]], { color: '#8fb3c4', weight: 1.5, opacity: .75, dashArray: '2 6', interactive: false }))); }
+  if (S.path.length > 1) rm.path.addLayer(L.polyline(S.path, { color: '#e8805c', weight: 4, opacity: .95, lineJoin: 'round', interactive: false }));
+  if (U.mode === 'draw') S.path.forEach(pt => rm.path.addLayer(L.circleMarker(pt, { radius: 4, color: '#e8805c', fillColor: '#1b1e23', fillOpacity: 1, weight: 2, interactive: false })));
+  S.stops.forEach((s, i) => {
+    const m = L.marker([s.lat, s.lng], { icon: stopIcon(i + 1, i === 0, s.open), zIndexOffset: 1000, title: s.title });
+    m.on('click', () => { if (U.mode === 'draw') return addPathPoint(L.latLng(s.lat, s.lng)); openStopRow(s.uid, true); });
+    rm.stops.addLayer(m);
+  });
+}
+function onRouteClick(e) {
+  if (U.mode === 'draw') return addPathPoint(e.latlng);
+  if (U.mode === 'new') return newPinAt(e.latlng);
+}
+const HINTS = {
+  browse: '<b>Browse.</b> The blue dots are places in the catalogue. Click one to read about it and add it to the route.',
+  new: '<b>New place.</b> Click the map where it is. You get a suggested name and address to keep, change or clear.',
+  draw: '<b>Draw path.</b> Click along the streets you will walk, stop to stop. Clicking a stop snaps to it.',
+};
+function setMode(m) {
+  U.mode = m;
+  $$('.segtool button', wizardEl).forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('#drawTools').hidden = m !== 'draw'; $('#mapHint').innerHTML = HINTS[m];
+  if (m === 'draw' && !S.path.length && S.stops.length) S.path = [[S.stops[0].lat, S.stops[0].lng]];
+  if (routeMap) { routeMap.closePopup(); refreshRouteMap(); }
+}
+function addPathPoint(ll) { S.path.push([+ll.lat.toFixed(6), +ll.lng.toFixed(6)]); S.routeConfirmed = false; refreshRouteMap(); renderStops(); onChange(); }
+
+function openPlacePopup(p) {
+  const last = S.stops[S.stops.length - 1];
+  const el = document.createElement('div'); el.className = 'pop'; el.dataset.kind = 'place';
+  el.innerHTML = `<span class="pop-k">Place${last ? ` · ${fmtDist(dist(last, p))} from stop ${S.stops.length}` : ''}</span><span class="pop-t">${esc(p.title)}</span><span class="pop-d">${esc(p.desc)}</span><span class="pop-m">${esc(p.tags.join(' · '))} · added by ${esc(p.by)}${p.notes.length ? ` · ${p.notes.length} private note${p.notes.length > 1 ? 's' : ''}` : ''}</span><div class="pop-a"><button type="button" class="btn sm quiet" data-act="popClose">Close</button>${last ? `<button type="button" class="btn sm primary" data-act="addPlace" data-id="${p.id}">Add as stop ${S.stops.length + 1}</button>` : `<button type="button" class="btn sm primary" data-act="meetPlace" data-id="${p.id}">Start the route here</button>`}</div>`;
+  L.popup({ closeButton: false, offset: [0, -4], minWidth: 272, maxWidth: 290, autoPanPadding: [40, 60] }).setLatLng([p.lat, p.lng]).setContent(el).openOn(routeMap);
+}
+function newPinAt(ll) {
+  rm.temp.clearLayers(); rm.temp.addLayer(L.marker(ll, { icon: newIcon(), interactive: false }));
+  const el = document.createElement('div'); el.className = 'pop'; el.dataset.kind = 'place';
+  const st = { nameDirty: false, addrDirty: false, website: '', ll };
+  el._np = st;
+  el.innerHTML = `<span class="pop-k">New place · <span class="np-status">looking up…</span></span><div class="field"><label>Name <span class="sugg np-sn" hidden>suggested</span></label><input class="input sm np-name" placeholder="Name this place"></div><div class="field"><label>Address <span class="sugg np-sa" hidden>suggested</span></label><input class="input sm np-addr" placeholder="Address"></div><span class="pop-m">Saved to the catalogue, credited to you.</span><div class="pop-a"><button type="button" class="btn sm quiet" data-act="popClose">Cancel</button><button type="button" class="btn sm primary" data-act="npAdd">${S.stops.length ? `Add as stop ${S.stops.length + 1}` : 'Start the route here'}</button></div>`;
+  const nm = el.querySelector('.np-name'), ad = el.querySelector('.np-addr');
+  nm.addEventListener('input', () => { st.nameDirty = true; el.querySelector('.np-sn').hidden = true; });
+  ad.addEventListener('input', () => { st.addrDirty = true; el.querySelector('.np-sa').hidden = true; });
+  tempPopup = L.popup({ closeButton: false, offset: [0, -10], minWidth: 272, maxWidth: 290, autoPanPadding: [40, 60] }).setLatLng(ll).setContent(el);
+  tempPopup.openOn(routeMap);
+  reverse(ll.lat, ll.lng).then(r => {
+    el.querySelector('.np-status').textContent = r.source === 'osm' ? 'from OpenStreetMap' : 'offline guess';
+    if (!st.nameDirty && r.name) { nm.value = r.name; el.querySelector('.np-sn').hidden = false; }
+    if (!st.addrDirty && r.address) { ad.value = r.address; el.querySelector('.np-sa').hidden = false; }
+    st.website = r.website || '';
+  });
+  setTimeout(() => nm.focus(), 60);
+}
+function makePlace({ title, lat, lng, address, desc = '', tags = [], link = '', note = '' }) {
+  const p = { id: uid('p'), title: title || 'Unnamed place', lat: +lat, lng: +lng, address: address || '', tags, desc, by: 'You', notes: note ? [{ by: 'You', text: note }] : [], link, isNew: true };
+  PLACES.push(p); if (S) S.customPlaces.push(p); else { try { const d = blank(); } catch (_) {} } updatePlaceCount(); return p;
+}
+function addStop(p) {
+  if (!S.stops.length) return setMeetingPlace(p);
+  S.stops.forEach(s => s.open = false);
+  S.stops.push({ uid: uid('s'), placeId: p.id, title: p.title, lat: p.lat, lng: p.lng, address: p.address, notes: '', duration: 15, media: defaultMedia(p.id), open: true });
+  S.routeConfirmed = false; U.addOpen = false;
+  if (routeMap) routeMap.closePopup();
+  refreshRouteMap(); renderStops(); onChange();
+  scrollRail($('#row-' + S.stops[S.stops.length - 1].uid));
+}
+function stopBy(id) { return S.stops.find(s => s.uid === id); }
+function openStopRow(id, fromMap) {
+  const s = stopBy(id); if (!s) return;
+  const willOpen = fromMap ? true : !s.open;
+  S.stops.forEach(x => x.open = false); s.open = willOpen; U.addOpen = false; U.confirmOpen = false;
+  renderStops(); refreshRouteMap();
+  if (willOpen && routeMap) routeMap.panTo([s.lat, s.lng], { animate: true });
+  if (willOpen) scrollRail($('#row-' + id));
+}
+function scrollRail(row) { const rail = $('#stopRail'); if (!row || !rail) return; requestAnimationFrame(() => { rail.scrollTop = Math.max(0, row.offsetTop - 56); }); }
+
+function renderRouteHead() {
+  const h = $('#routeHead'); if (!h) return; const t = totals();
+  h.innerHTML = `<b>Route</b><span class="mono">${t.n ? `${t.n} stop${t.n > 1 ? 's' : ''} · ${fmtDist(t.walk)} · ${fmtMin(t.time)}` : 'No stops yet'}</span>`;
+}
+function stopMeta(s, i) { return i === 0 ? `Start · meeting point · ${s.duration} min here` : `${fmtDist(dist(S.stops[i - 1], s))} from ${i} · ${s.duration} min here`; }
+function stopRowHTML(s, i) {
+  const p = s.placeId ? placeById(s.placeId) : null;
+  let body = '';
+  if (s.open) {
+    const kicker = i === 0 ? (p ? 'Meeting point · place' : 'Meeting point · a pin, not a place yet') : (p && p.isNew ? 'New place · added by you' : 'Place · catalogue');
+    body = `<div class="srow-body">
+      <div class="placecard" data-kind="place">
+        <span class="pc-k">${kicker}</span>
+        <dl class="facts"><dt>Address</dt><dd>${esc(s.address || '—')}</dd>${p && p.tags.length ? `<dt>Tags</dt><dd>${esc(p.tags.join(', '))}</dd>` : ''}${p ? `<dt>Added by</dt><dd>${esc(p.by)}</dd>` : ''}${p && p.link ? `<dt>Link</dt><dd><a href="#" onclick="return false">${esc(p.link)} ↗</a></dd>` : ''}</dl>
+        ${p && p.desc ? `<p class="pc-d">${esc(p.desc)}</p>` : ''}
+        ${!p ? '<div><button type="button" class="btn sm" data-act="createPlaceFromStart">Save this pin as a place</button></div>' : ''}
+      </div>
+      ${p && p.notes.length ? `<div class="privnotes"><span class="pc-k">Private notes · seen by guides only</span>${p.notes.map(n => `<p>${esc(n.text)} <span class="by">— ${esc(n.by)}</span></p>`).join('')}</div>` : ''}
+      <div class="field"><label for="n-${s.uid}">Notes for this stop</label><textarea id="n-${s.uid}" class="input" rows="3" data-sf="notes" data-uid="${s.uid}" placeholder="What happens here, what to point out.">${esc(s.notes)}</textarea></div>
+      <div class="field"><span class="flabel">Time here</span><div class="dur"><div class="dur-read"><span>Minutes at this stop</span><b id="dur-${s.uid}">${s.duration} min</b></div><input type="range" min="0" max="60" step="5" value="${s.duration}" data-sf="duration" data-uid="${s.uid}" aria-label="Minutes at this stop"><div class="dur-ticks"><span>0</span><span>15</span><span>30</span><span>45</span><span>60</span></div></div></div>
+      <div class="field"><span class="flabel">Media <span class="count">${s.media.length ? s.media.length + ' · first is shown' : 'none yet'}</span></span><div class="media-row">${s.media.map((m, j) => `<span class="thumb ph">${j === 0 ? 'shown' : 'alt ' + j}</span>`).join('')}<button type="button" class="addmedia" data-act="addMedia" data-uid="${s.uid}">+ Add</button></div></div>
+      <div class="srow-actions">${i > 0 ? `<button type="button" class="btn sm quiet" data-act="stopUp" data-uid="${s.uid}" ${i <= 1 ? 'disabled' : ''}>↑ Earlier</button><button type="button" class="btn sm quiet" data-act="stopDown" data-uid="${s.uid}" ${i >= S.stops.length - 1 ? 'disabled' : ''}>↓ Later</button><button type="button" class="btn sm danger" data-act="stopRemove" data-uid="${s.uid}">Remove</button>` : '<button type="button" class="btn sm quiet" data-act="goto" data-step="1">Change the meeting point</button>'}</div>
+    </div>`;
+  }
+  return `<div class="srow${s.open ? ' open' : ''}" id="row-${s.uid}"><button type="button" class="srow-sum" data-act="toggleStop" data-uid="${s.uid}" aria-expanded="${s.open}"><span class="pin${i === 0 ? ' start' : ''}">${i + 1}</span><span class="srow-t"><b>${esc(s.title)}</b><small id="meta-${s.uid}">${stopMeta(s, i)}</small></span><span class="chev" aria-hidden="true">▾</span></button>${body}</div>`;
+}
+function addRowHTML() {
+  const n = S.stops.length; let body = '';
+  if (U.addOpen) {
+    const near = nearestCandidates();
+    body = `<div class="srow-body"><span class="pc-k">Closest to stop ${n}</span><div class="near-list">${near.map(({ p, d }) => `<div class="near-item"><button type="button" class="nm" data-act="showPlace" data-id="${p.id}"><b>${esc(p.title)}</b><small>${esc(p.tags.join(' · '))}</small></button><span class="mono">${fmtDist(d)}</span><button type="button" class="btn sm" data-act="addPlace" data-id="${p.id}">Add</button></div>`).join('')}</div><div class="add-alt"><button type="button" class="btn sm" data-act="mode" data-mode="new">New place on the map</button><span class="fhint">or click any dot on the map</span></div></div>`;
+  }
+  return `<div class="srow add${U.addOpen ? ' open' : ''}"><button type="button" class="srow-sum" data-act="toggleAdd" aria-expanded="${U.addOpen}"><span class="pin ghost">+</span><span class="srow-t"><b>Add a stop</b><small>Shows the closest places to stop ${n} on the map</small></span><span class="chev" aria-hidden="true">▾</span></button>${body}</div>`;
+}
+function confirmRowHTML() {
+  const t = totals(); const pathTxt = t.drawn ? `Drawn path · ${S.path.length} points` : 'Straight lines between stops';
+  let body = '';
+  if (U.confirmOpen) {
+    body = `<div class="srow-body"><div class="totals"><div><span>Stops</span><b>${t.n}</b></div><div><span>Walking</span><b>${fmtDist(t.walk)}</b></div><div><span>Time</span><b>${fmtMin(t.time)}</b></div></div>
+      <p class="fhint">${t.drawn ? 'Walking distance follows the path you drew.' : 'Without a drawn path the walk is estimated at 1.3 × the straight lines. Draw the streets for a truer length.'} Time assumes 4.5 km/h plus the minutes at each stop.</p>
+      <div class="srow-actions"><button type="button" class="btn sm" data-act="mode" data-mode="draw">${t.drawn ? 'Edit the path' : 'Draw the path on the map'}</button>${t.drawn ? '<button type="button" class="btn sm quiet" data-act="pathClear">Use straight lines</button>' : ''}</div>
+      <label class="check"><input type="checkbox" data-act="confirmRoute" ${S.routeConfirmed ? 'checked' : ''} ${S.stops.length < 2 ? 'disabled' : ''}> This is the way the group will walk</label></div>`;
+  }
+  return `<div class="srow confirm${U.confirmOpen ? ' open' : ''}"><button type="button" class="srow-sum" data-act="toggleConfirm" aria-expanded="${U.confirmOpen}"><span class="pin route">⤳</span><span class="srow-t"><b>Confirm route</b><small>${S.routeConfirmed ? 'Confirmed · ' : ''}${pathTxt}</small></span><span class="chev" aria-hidden="true">▾</span></button>${body}</div>`;
+}
+function renderStops() {
+  const list = $('#stopList'); if (!list) return;
+  if (!S.stops.length) list.innerHTML = '<div class="srow-empty">The meeting point is stop 1. Set it on Description, or click a dot on the map and choose "Start the route here".<button type="button" class="btn sm" data-act="goto" data-step="1">Back to Description</button></div>';
+  else list.innerHTML = S.stops.map(stopRowHTML).join('') + addRowHTML() + confirmRowHTML();
+  renderRouteHead();
+}
+function moveStop(id, dir) { const i = S.stops.findIndex(s => s.uid === id), j = i + dir; if (i < 1 || j < 1 || j >= S.stops.length) return; [S.stops[i], S.stops[j]] = [S.stops[j], S.stops[i]]; S.routeConfirmed = false; renderStops(); refreshRouteMap(); onChange(); }
+
+/* ── step 3: details ────────────────────────────────────────────── */
+function slug(t) { return (t || 'untitled').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'untitled'; }
+function renderPvHead() {
+  const el = $('#pvHead'); if (!el) return; const t = totals();
+  const hl = S.highlights.split('\n').map(x => x.trim()).filter(Boolean);
+  el.innerHTML = `${S.cover ? '<div class="ph pv-cover">cover image</div>' : '<div class="ph pv-cover">no cover yet · add one on Description</div>'}
+    <h2 class="pv-title${S.title.trim() ? '' : ' empty'}">${esc(S.title.trim() || 'Untitled tour')}</h2>
+    <p class="pv-lede">${esc(S.summary || 'Your one-line summary appears here.')}</p>
+    <div class="pv-facts"><div><span>Meets</span>${esc(S.meeting ? S.meeting.title : '—')}</div><div><span>Length</span>${S.stops.length >= 2 ? fmtMin(t.time) : fmtMin(+S.length || 0)}</div><div><span>Walking</span>${S.stops.length >= 2 ? fmtDist(t.walk) : '—'}</div><div><span>Price</span>${S.price ? '€' + esc(S.price) + ' per person' : 'On request'}</div><div><span>Languages</span>${esc(S.languages.join(', ') || '—')}</div></div>
+    ${hl.length ? `<ul class="pv-hl">${hl.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}`;
+  $('#pvSlug').textContent = slug(S.title);
+}
+function renderPvStops() {
+  const el = $('#pvStops'); if (!el) return;
+  if (!S.stops.length) { el.innerHTML = '<h3 class="pv-h">The route</h3><p class="muted">No stops yet. <button type="button" class="linkbtn" data-act="goto" data-step="2">Build the route</button></p>'; return; }
+  el.innerHTML = '<h3 class="pv-h">The route</h3>' + S.stops.map((s, i) => {
+    const f = s.media[0];
+    return `<article class="pv-stop${s.uid === S.detailSel ? ' sel' : ''}" data-act="detailSel" data-uid="${s.uid}">
+      <div class="pv-num"><span class="pin${i === 0 ? ' start' : ''}">${i + 1}</span>${i < S.stops.length - 1 ? '<span class="pv-line"></span>' : ''}</div>
+      <div class="pv-body">
+        <div class="pv-st"><h4>${esc(s.title)}</h4><span class="mono">${s.duration} min${i > 0 ? ' · ' + fmtDist(dist(S.stops[i - 1], s)) + ' walk' : ' · meeting point'}</span></div>
+        ${f ? `<figure class="pv-fig"><div class="ph pv-media">${esc(f.label)}</div>${s.media.length > 1 ? `<div class="pv-alts">${s.media.slice(1).map(m => `<span class="ph">${esc(m.label)}</span>`).join('')}</div>` : ''}<input class="pv-cap" placeholder="Add a caption" value="${esc(f.caption)}" data-cap="${s.uid}:${f.id}" aria-label="Caption for ${esc(s.title)}"></figure>` : `<button type="button" class="pv-nomedia" data-act="addMedia" data-uid="${s.uid}">+ Add media for this stop</button>`}
+        ${s.notes.trim() ? `<p class="pv-notes">${esc(s.notes)}</p>` : `<p class="pv-notes muted">No notes yet. <button type="button" class="linkbtn" data-act="editStop" data-uid="${s.uid}">Write them on Route</button></p>`}
+        <div class="pv-take"><span class="mono">Guide's take</span><span>When a guide runs this tour, their own notes for this stop sit here, beside the site's.</span></div>
+      </div></article>`;
+  }).join('');
+}
+function renderMediaEditor() {
+  const rail = $('#mediaRail'); if (!rail) return;
+  if (!S.stops.length) { rail.innerHTML = '<div class="rail-k">Media &amp; captions</div><p class="fhint">Add stops on Route first.</p>'; return; }
+  if (!S.detailSel || !stopBy(S.detailSel)) S.detailSel = S.stops[0].uid;
+  const s = stopBy(S.detailSel), i = S.stops.indexOf(s);
+  rail.innerHTML = `<div class="rail-k">Media &amp; captions</div>
+    <div class="seg stopchips" role="group" aria-label="Stop">${S.stops.map((x, j) => `<button type="button" class="pill${x.uid === s.uid ? ' on' : ''}" data-act="detailSel" data-uid="${x.uid}" aria-label="Stop ${j + 1}">${j + 1}</button>`).join('')}</div>
+    <div class="me-title"><span class="pin${i === 0 ? ' start' : ''}">${i + 1}</span><b>${esc(s.title)}</b></div>
+    <p class="fhint">The first item is shown with the stop. The rest are alternatives a visitor can step through, so order them to tell the stop's story.</p>
+    <ol class="me-list">${s.media.map((m, j) => `<li class="me-item"><span class="thumb ph">${j === 0 ? 'shown' : 'alt ' + j}</span><div class="me-f"><input class="input sm" placeholder="Caption" value="${esc(m.caption)}" data-cap="${s.uid}:${m.id}" aria-label="Caption"><span class="me-role">${j === 0 ? 'Shown with the stop' : 'Alternative ' + j} · ${esc(m.label)}</span></div><div class="me-ord"><button type="button" class="iconbtn sm" data-act="mUp" data-uid="${s.uid}" data-mid="${m.id}" ${j === 0 ? 'disabled' : ''} aria-label="Move earlier">↑</button><button type="button" class="iconbtn sm" data-act="mDown" data-uid="${s.uid}" data-mid="${m.id}" ${j === s.media.length - 1 ? 'disabled' : ''} aria-label="Move later">↓</button><button type="button" class="iconbtn sm" data-act="mDel" data-uid="${s.uid}" data-mid="${m.id}" aria-label="Remove">✕</button></div></li>`).join('')}</ol>
+    <button type="button" class="btn sm" data-act="addMedia" data-uid="${s.uid}">+ Add media</button>
+    <section class="sec" style="margin-top:28px"><h3>Tour page extras</h3>
+      <div class="field"><label for="fHl">Highlights <span class="muted">(one per line)</span></label><textarea id="fHl" class="input" rows="4" data-bind="highlights">${esc(S.highlights)}</textarea></div>
+      <div class="field"><label for="fInc">What is included <span class="muted">(one per line)</span></label><textarea id="fInc" class="input" rows="3" data-bind="includes">${esc(S.includes)}</textarea></div>
+    </section>`;
+}
+function renderDetails() { renderPvHead(); renderPvStops(); renderMediaEditor(); }
+function ensureDetailMap() {
+  if (!detailMap) { detailMap = L.map('detailMap', { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false }); tiles(detailMap); dm = L.layerGroup().addTo(detailMap); }
+  detailMap.invalidateSize(); dm.clearLayers();
+  const pts = S.stops.map(s => [s.lat, s.lng]);
+  if (!pts.length) { detailMap.setView(center(), 15); return; }
+  const line = S.path.length > 1 ? S.path : pts;
+  if (line.length > 1) dm.addLayer(L.polyline(line, { color: '#e8805c', weight: 3, interactive: false, dashArray: S.path.length > 1 ? null : '4 7' }));
+  S.stops.forEach((s, i) => dm.addLayer(L.marker([s.lat, s.lng], { icon: stopIcon(i + 1, i === 0), interactive: false })));
+  if (pts.length === 1) detailMap.setView(pts[0], 16); else detailMap.fitBounds(L.latLngBounds(line.concat(pts)).pad(.2));
+}
+
+/* ── create place (a stacked or standalone surface) ─────────────── */
+const TAGS = ['landmark', 'square', 'street', 'church', 'museum', 'food', 'shop', 'garden', 'courtyard', 'view'];
+function openCreatePlace(opts) {
+  const stacked = !!opts.stacked;
+  const el = document.createElement('article'); el.className = 'panel'; el.dataset.kind = 'place';
+  const cp = el._cp = { lat: opts.lat ?? null, lng: opts.lng ?? null, tags: new Set(), dirty: {}, purpose: opts.purpose, map: null, marker: null };
+  el.innerHTML = `
+  <header class="s-head"><span class="s-glyph" aria-hidden="true">⊙</span>
+    <div class="s-headings"><div class="s-kicker">${stacked ? `<button type="button" class="crumb" data-act="pop">‹ ${esc((S && S.title.trim()) || 'New tour')}</button><span class="sep">·</span>` : ''}<span>Place · new</span></div><h2 class="s-title cp-title">${esc(opts.name || 'New place')}</h2></div>
+    <div class="s-controls">${stacked ? '<button type="button" class="iconbtn" data-act="pop" aria-label="Back">←</button>' : ''}<button type="button" class="iconbtn" data-act="${stacked ? 'pop' : 'close'}" aria-label="Close">✕</button></div></header>
+  <div class="s-body"><div class="s-main">
+    <div class="mapbox sm"><div class="cpmap"></div></div>
+    <p class="fhint cp-hint" style="margin:8px 0 16px">${cp.lat != null ? 'Drag the pin to adjust it.' : 'Click the map to drop a pin.'}</p>
+    <div class="frow">
+      <div class="field"><label>Name <span class="sugg cp-sn" ${opts.name ? '' : 'hidden'}>suggested</span></label><input class="input" data-cp="name" value="${esc(opts.name || '')}" placeholder="Name of the place"></div>
+      <div class="field"><label>Address <span class="sugg cp-sa" ${opts.address ? '' : 'hidden'}>suggested</span></label><input class="input" data-cp="address" value="${esc(opts.address && opts.address !== 'Looking up the address…' ? opts.address : '')}" placeholder="Street, postcode"></div>
+    </div>
+    <div class="field"><label>Public description</label><textarea class="input" rows="3" data-cp="desc" placeholder="What a visitor should know. Shown on tour pages."></textarea></div>
+    <div class="field"><span class="flabel">Tags</span><div class="seg cp-tags">${TAGS.map(t => `<button type="button" class="pill" data-act="cpTag" data-tag="${t}">${t}</button>`).join('')}</div></div>
+    <div class="field"><label>Link <span class="sugg cp-sl" hidden>from the listing</span></label><input class="input" data-cp="link" placeholder="https://"><p class="fhint">Filled in when the pin is on an establishment with a public website.</p></div>
+    <div class="priv-field"><div class="field"><label>Private note <span class="muted">· every guide can read it, credited to you</span></label><textarea class="input" rows="2" data-cp="note" placeholder="Opening quirks, where to stand, who to ask."></textarea></div></div>
+  </div></div>
+  <footer class="s-foot"><span class="s-status">The place joins the catalogue. You're credited; it isn't yours to delete.</span><div class="s-buttons"><button type="button" class="btn quiet" data-act="${stacked ? 'pop' : 'close'}">Cancel</button><button type="button" class="btn primary" data-act="cpSave">Save place</button></div></footer>`;
+  if (stacked) pushLayer(el, 'standard'); else openSurface(opts.origin, el, 'standard');
+  requestAnimationFrame(() => {
+    const m = cp.map = L.map(el.querySelector('.cpmap'), { scrollWheelZoom: false }).setView(cp.lat != null ? [cp.lat, cp.lng] : center(), 17);
+    tiles(m);
+    PLACES.forEach(p => L.marker([p.lat, p.lng], { icon: dotIcon(false), interactive: false, opacity: .6 }).addTo(m));
+    const place = ll => {
+      cp.lat = +ll.lat.toFixed(6); cp.lng = +ll.lng.toFixed(6);
+      if (!cp.marker) { cp.marker = L.marker(ll, { icon: newIcon(), draggable: true }).addTo(m); cp.marker.on('dragend', () => { place(cp.marker.getLatLng()); }); } else cp.marker.setLatLng(ll);
+      el.querySelector('.cp-hint').textContent = 'Looking up the address… Drag the pin to adjust.';
+      reverse(cp.lat, cp.lng).then(r => {
+        el.querySelector('.cp-hint').textContent = r.source === 'osm' ? 'Suggestions from OpenStreetMap. Keep, change or clear them. Drag the pin to adjust.' : 'Offline guess. Drag the pin to adjust.';
+        const set = (k, v, badge) => { const inp = el.querySelector(`[data-cp="${k}"]`); if (!cp.dirty[k] && v) { inp.value = v; el.querySelector(badge).hidden = false; if (k === 'name') el.querySelector('.cp-title').textContent = v; } };
+        set('name', r.name, '.cp-sn'); set('address', r.address, '.cp-sa'); set('link', r.website, '.cp-sl');
+      });
+    };
+    if (cp.lat != null) { cp.marker = L.marker([cp.lat, cp.lng], { icon: newIcon(), draggable: true }).addTo(m); cp.marker.on('dragend', () => place(cp.marker.getLatLng())); }
+    m.on('click', e => place(e.latlng));
+    if (!opts.name && cp.lat != null) place(L.latLng(cp.lat, cp.lng));
+  });
+}
+function saveCreatePlace(el) {
+  const cp = el._cp, v = k => el.querySelector(`[data-cp="${k}"]`).value.trim();
+  if (cp.lat == null) return toast('Drop a pin on the map first.');
+  if (!v('name')) { el.querySelector('[data-cp="name"]').focus(); return toast('Give the place a name.'); }
+  const p = makePlace({ title: v('name'), lat: cp.lat, lng: cp.lng, address: v('address'), desc: v('desc'), tags: [...cp.tags], link: v('link'), note: v('note') });
+  if (cp.purpose === 'meeting' && S) { popLayer(); setMeetingPlace(p); toast(`${p.title} saved to places and set as the meeting point`); }
+  else { closeSurface(); toast(`${p.title} saved to the catalogue`); }
+}
+function updatePlaceCount() { const c = $('#placeCount'); if (c) c.textContent = `${PLACES.length} places in Paris`; }
+
+/* ── finish ─────────────────────────────────────────────────────── */
+function finish() {
+  const miss = missing1(); if (S.stops.length < 2) miss.push('a second stop');
+  if (miss.length) { U.flagged = true; updateSteps(); return toast('Still needed: ' + miss.join(', ')); }
+  S.status = 'ready'; saveNow(); updateHead();
+  const el = document.createElement('article'); el.className = 'panel'; el.dataset.kind = 'tour';
+  const t = totals();
+  el.innerHTML = `<header class="s-head"><span class="s-glyph">⌖</span><div class="s-headings"><div class="s-kicker"><button type="button" class="crumb" data-act="pop">‹ ${esc(S.title)}</button><span class="sep">·</span><span>Saved</span></div><h2 class="s-title">Tour saved</h2></div><div class="s-controls"><button type="button" class="iconbtn" data-act="pop" aria-label="Back">←</button></div></header>
+  <div class="s-body"><div class="s-main"><p style="margin:0 0 10px;font-size:1.02rem;color:var(--mu)">${esc(S.title)} is saved with ${t.n} stops, ${fmtDist(t.walk)} on foot.</p><p style="margin:0">It stays off /tours until a date is offered. Offering a date puts a start time on it, and tours with start times are the only ones visitors see.</p>${S.routeConfirmed ? '' : '<p class="fhint" style="margin-top:10px">The route is not confirmed yet. You can come back to it any time.</p>'}</div></div>
+  <footer class="s-foot"><span class="s-status">Ready</span><div class="s-buttons"><button type="button" class="btn quiet" data-act="close">Back to the hub</button><button type="button" class="btn primary" data-act="offerDate">Offer a date</button></div></footer>`;
+  pushLayer(el, 'compact');
+}
+
+/* ── hub ────────────────────────────────────────────────────────── */
+function renderDraftFace() {
+  const el = $('#draftPreview'), cue = $('#draftCue');
+  if (!S || !S.savedAt) { el.innerHTML = STEPS.map((l, i) => `<div class="pline"><span class="pdate">0${i + 1}</span><span>${l}</span></div>`).join(''); cue.textContent = '+'; return; }
+  el.innerHTML = `<div class="dsegs">${[1, 2, 3].map(n => `<span class="dseg${stepDone(n) ? ' done' : ''}${S.step === n ? ' on' : ''}"></span>`).join('')}</div>
+    <div class="pline"><span class="pdate">${S.status === 'ready' ? 'Ready' : 'Draft'}</span><span>${esc(S.title.trim() || 'Untitled tour')}</span></div>
+    <div class="pline"><span class="pdate">0${S.step}</span><span>${STEPS[S.step - 1]} · saved ${fmtTime(S.savedAt)}</span></div>
+    <span class="pcue">Resume</span>`;
+  cue.textContent = '→';
+}
+function loadSample() {
+  S = blank();
+  Object.assign(S, { title: 'Le Marais at dusk', summary: 'Two and a half hours through the old aristocratic quarter as the lamps come on.', price: '35', length: '150', maxParty: '10', languages: ['English', 'Français'], effort: 'Easy, about 2 km, flat', cover: true, highlights: 'The arcades of Place des Vosges\nA hidden garden passage\nFalafel on Rue des Rosiers' });
+  const v = placeById('vosges'); S.meeting = { placeId: v.id, title: v.title, lat: v.lat, lng: v.lng, address: v.address }; syncStart();
+  ['sully', 'catherine', 'carnavalet', 'rosiers'].forEach(id => { const p = placeById(id); S.stops.push({ uid: uid('s'), placeId: p.id, title: p.title, lat: p.lat, lng: p.lng, address: p.address, notes: '', duration: 15, media: defaultMedia(p.id), open: false }); });
+  S.stops[0].notes = 'Gather under the north arcade. Introductions, then a word on Henri IV and the square.';
+  S.stops[0].media[0].caption = 'The north arcade at dusk';
+  S.step = 2; saveNow();
+  if (dlg.open) closeSurface();
+  toast('Sample draft loaded. Open "Create a tour" to resume.');
+}
+
+/* ── events ─────────────────────────────────────────────────────── */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const act = a.dataset.act, id = a.dataset.uid;
+  switch (act) {
+    case 'openWizard': return openWizard(a.closest('.face'));
+    case 'openAddPlace': return openCreatePlace({ purpose: 'standalone', origin: a.closest('.face') });
+    case 'notWired': return toast('Not built in this prototype. Try "Create a tour" or "Add a place".');
+    case 'loadSample': return loadSample();
+    case 'clearDraft': try { localStorage.removeItem(KEY); } catch (_) {} S = null; if (dlg.open) closeSurface(); renderDraftFace(); return toast('Draft cleared');
+    case 'close': return closeSurface();
+    case 'pop': return popLayer();
+    case 'saveClose': saveNow(); closeSurface(); return toast('Draft saved. It waits on the hub.');
+    case 'next': return S.step < 3 ? goTo(S.step + 1) : finish();
+    case 'back': return goTo(S.step - 1);
+    case 'goto': return goTo(+a.dataset.step);
+    case 'lang': { const l = a.dataset.lang; S.languages = S.languages.includes(l) ? S.languages.filter(x => x !== l) : [...S.languages, l]; renderLang(); return onChange(); }
+    case 'cover': S.cover = true; renderCover(); return onChange();
+    case 'coverRemove': S.cover = false; renderCover(); return onChange();
+    case 'meetPlace': { const p = placeById(a.dataset.id); if (routeMap) routeMap.closePopup(); setMeetingPlace(p); if (meetMap && S.step === 1) meetMap.panTo([p.lat, p.lng]); return; }
+    case 'clearMeeting': return setMeeting(null);
+    case 'createPlaceFromStart': { const m = S.meeting; if (!m) return; return openCreatePlace({ stacked: true, purpose: 'meeting', lat: m.lat, lng: m.lng, name: m.title === 'Dropped pin' ? '' : m.title.replace(/^Pin on /, ''), address: m.address }); }
+    case 'toggleStop': return openStopRow(id, false);
+    case 'toggleAdd': U.addOpen = !U.addOpen; U.confirmOpen = false; S.stops.forEach(s => s.open = false); renderStops(); refreshRouteMap(); if (U.addOpen && routeMap && S.stops.length) { const b = [S.stops[S.stops.length - 1], ...nearestCandidates().map(c => c.p)].map(p => [p.lat, p.lng]); routeMap.fitBounds(L.latLngBounds(b).pad(.3)); } return;
+    case 'toggleConfirm': U.confirmOpen = !U.confirmOpen; U.addOpen = false; S.stops.forEach(s => s.open = false); renderStops(); return refreshRouteMap();
+    case 'showPlace': { const p = placeById(a.dataset.id); if (routeMap) { routeMap.panTo([p.lat, p.lng]); openPlacePopup(p); } return; }
+    case 'addPlace': return addStop(placeById(a.dataset.id));
+    case 'popClose': return routeMap && routeMap.closePopup();
+    case 'npAdd': {
+      const pop = a.closest('.pop'), st = pop._np; const name = pop.querySelector('.np-name').value.trim(), addr = pop.querySelector('.np-addr').value.trim();
+      const p = makePlace({ title: name, lat: st.ll.lat.toFixed(6), lng: st.ll.lng.toFixed(6), address: addr, link: st.website });
+      routeMap.closePopup(); setMode('browse'); addStop(p); return toast(`${p.title} added to the catalogue and the route`);
+    }
+    case 'mode': return setMode(a.dataset.mode);
+    case 'pathUndo': if (S.path.length) S.path.pop(); S.routeConfirmed = false; refreshRouteMap(); renderStops(); return onChange();
+    case 'pathClear': S.path = []; S.routeConfirmed = false; if (U.mode === 'draw' && S.stops.length) S.path = [[S.stops[0].lat, S.stops[0].lng]]; refreshRouteMap(); renderStops(); return onChange();
+    case 'pathDone': setMode('browse'); U.confirmOpen = true; U.addOpen = false; S.stops.forEach(s => s.open = false); renderStops(); return scrollRail($('.srow.confirm'));
+    case 'confirmRoute': S.routeConfirmed = a.checked; renderStops(); return onChange();
+    case 'stopUp': return moveStop(id, -1);
+    case 'stopDown': return moveStop(id, 1);
+    case 'stopRemove': S.stops = S.stops.filter(s => s.uid !== id); S.routeConfirmed = false; renderStops(); refreshRouteMap(); return onChange();
+    case 'addMedia': { e.stopPropagation(); const s = stopBy(id); s.media.push({ id: uid('m'), label: `photo ${s.media.length + 1}`, caption: '' }); S.detailSel = id; if (S.step === 2) renderStops(); else renderDetails(); return onChange(); }
+    case 'mUp': case 'mDown': case 'mDel': {
+      const s = stopBy(id), j = s.media.findIndex(m => m.id === a.dataset.mid);
+      if (act === 'mDel') s.media.splice(j, 1); else { const k = j + (act === 'mUp' ? -1 : 1); if (k < 0 || k >= s.media.length) return; [s.media[j], s.media[k]] = [s.media[k], s.media[j]]; }
+      renderPvStops(); renderMediaEditor(); return onChange();
+    }
+    case 'detailSel': {
+      if (e.target.closest('input,button:not([data-act="detailSel"])')) { if (a.dataset.uid === S.detailSel) return; }
+      if (S.detailSel === id) return; S.detailSel = id;
+      $$('.pv-stop').forEach(x => x.classList.toggle('sel', x.dataset.uid === id)); return renderMediaEditor();
+    }
+    case 'editStop': { S.stops.forEach(s => s.open = s.uid === id); goTo(2); return setTimeout(() => scrollRail($('#row-' + id)), 80); }
+    case 'cpTag': { const el = a.closest('.panel'), t = a.dataset.tag; el._cp.tags.has(t) ? el._cp.tags.delete(t) : el._cp.tags.add(t); return a.classList.toggle('on'); }
+    case 'cpSave': return saveCreatePlace(a.closest('.panel'));
+    case 'offerDate': return toast('Offer a tour is not wired in this prototype.');
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.bind && S) {
+    const k = t.dataset.bind; S[k] = t.value;
+    if (k === 'length') { $$('[data-bind="length"]', wizardEl).forEach(x => { if (x !== t) x.value = t.value; }); $('#lenRead').textContent = fmtMin(+t.value || 0); }
+    if (k === 'summary') $('#sumCount').textContent = `${t.value.length} / 140`;
+    if ((k === 'highlights' || k === 'includes') && S.step === 3) renderPvHead();
+    return onChange();
+  }
+  if (t.dataset.sf && S) {
+    const s = stopBy(t.dataset.uid); if (!s) return;
+    if (t.dataset.sf === 'duration') { s.duration = +t.value; $('#dur-' + s.uid).textContent = s.duration + ' min'; const i = S.stops.indexOf(s); const meta = $('#meta-' + s.uid); if (meta) meta.textContent = stopMeta(s, i); renderRouteHead(); }
+    else s[t.dataset.sf] = t.value;
+    return onChange();
+  }
+  if (t.dataset.cap && S) {
+    const [sid, mid] = t.dataset.cap.split(':'); const s = stopBy(sid); const m = s && s.media.find(x => x.id === mid); if (!m) return;
+    m.caption = t.value; $$(`[data-cap="${t.dataset.cap}"]`).forEach(x => { if (x !== t) x.value = t.value; });
+    return onChange();
+  }
+  if (t.dataset.cp) {
+    const el = t.closest('.panel'); el._cp.dirty[t.dataset.cp] = true;
+    const badge = { name: '.cp-sn', address: '.cp-sa', link: '.cp-sl' }[t.dataset.cp]; if (badge) el.querySelector(badge).hidden = true;
+    if (t.dataset.cp === 'name') el.querySelector('.cp-title').textContent = t.value || 'New place';
+  }
+});
+
+renderDraftFace(); updatePlaceCount();
+})();
+</script>
+</body>
+</html>

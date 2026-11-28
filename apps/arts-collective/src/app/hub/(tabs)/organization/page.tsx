@@ -15,22 +15,26 @@ import { hasOrgHome } from "@/lib/puck/store";
 import { removeOrgHomeAction } from "@/lib/puck/actions";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 import { EMPTY_CONSOLE_STATE, getConsoleState, paymentsConfigured } from "@/lib/org-console";
-import { getCrossOrgForum } from "@/lib/org-forum";
+import { loadOrgForumFace } from "@/lib/hub-forum";
+import { loadContentCard } from "@/lib/content-card";
 import { Button } from "@/components/ui/button";
 import { ConsoleFaces } from "@/components/hub/console/ConsoleFaces";
-import { CrossOrgForum } from "@/components/hub/console/CrossOrgForum";
+import { OrgForumFace } from "@/components/hub/console/OrgForumFace";
+import { ContentCardFace } from "@/components/hub/console/ContentCardFace";
 import { JoinTiers } from "@/components/hub/JoinTiers";
 import { MyAppearancePanel } from "@/components/hub/MyAppearancePanel";
-import { OrgStrip, type OrgStripItem } from "@elkdonis/cms-ui/center";
 import { ListingRequestsPanel } from "./ListingRequestsPanel";
 import { TierBadge } from "@/components/hub/TierBadge";
 import { saveOrgIdentityAction } from "@/lib/org-identity-actions";
 import { SITE_THEME_VARS, THEMEABLE_PAGES } from "@/lib/theme-tokens";
 import { saveSiteThemeAction, saveMyThemeAction } from "@/lib/theme-actions";
 import { OrgConsoleHost } from "@/components/hub/console/OrgConsoleHost";
-import { AttentionBands } from "@/components/hub/console/AttentionBands";
+import { OrgSwitch } from "@/components/hub/console/OrgSwitch";
 import { ConnectionsBand } from "@/components/hub/console/ConnectionsBand";
 import { SettingsButton } from "@/components/hub/console/SettingsButton";
+import { WordArtCard } from "@/components/hub/WordArtCard";
+import { loadCurrentWork } from "@/lib/offer-card";
+import { drawsInsteadOf } from "@/lib/offer-card-words";
 import type { ConsoleSettingsProps } from "@/components/hub/console/ConsoleSettings";
 
 /**
@@ -42,13 +46,6 @@ export const dynamic = "force-dynamic";
 
 const EDITOR_ROLES = new Set(["owner", "guide"]);
 
-const ROLE_LABEL: Record<string, string> = {
-  owner: "owner",
-  guide: "guide",
-  member: "member",
-  viewer: "viewer",
-};
-
 /**
  * The Organization tab — one org's console.
  *
@@ -56,11 +53,9 @@ const ROLE_LABEL: Record<string, string> = {
  * signs in here lands on Amrit Canada, not on the "start an org" pitch. Owners
  * and guides get the console on top of that.
  *
- * The shape is: what needs you → what you can make → what you're plugged into,
- * with everything configural behind one Settings surface. It used to be seven
- * sections of identical weight with no state in any of them, which meant an
- * owner could not tell what had changed since their last visit — the one
- * question a console exists to answer.
+ * Always a card grid (2026-11-27): editors get the managing cards, members and
+ * followers the reading ones; the org is chosen from a drop down; the old
+ * "what needs you" row is the "Your pieces" card. Dark scope: org-dark.css.
  *
  * Which org shows is `?org=<slug>` (the switcher writes it), defaulting to the
  * first org the person can edit, else the first they belong to. `?new=1`
@@ -105,12 +100,21 @@ export default async function OrganizationTabPage({
       getConsoleState(selected.orgId),
       listOrgFeeds(selected.orgId),
       listOrgEventsInRange(selected.orgId, monthFrom, monthTo, 200, { userId: user.id, canEdit }),
-      // Every org this person belongs to, not just the selected one — see
-      // CrossOrgForum for why the board is deliberately the wider scope.
-      getCrossOrgForum(memberships.map((m) => m.orgId)),
+      // The forum of the SELECTED org, for its card. The wider "across your organisations"
+      // list is a layer the card opens (ForumAcross), no longer a board at the foot.
+      loadOrgForumFace({ id: selected.orgId, slug: selected.orgSlug, name: selected.orgName }),
     ]);
   const homeUrl = orgHomeUrl(homes, selected.orgSlug);
   const homeLabel = homeUrl.replace(/^https?:\/\//, "");
+  // The content library card, for every role (the routes decide what each may see). Replaces the file browser.
+  const content = await loadContentCard({
+    userId: user.id,
+    orgId: selected.orgId,
+    orgSlug: selected.orgSlug,
+    orgName: selected.orgName,
+    role: selected.role,
+    siteUrl: homeUrl,
+  });
   // "Open site" only where the address works: a verified own domain, or the
   // collective itself. *.arts-collective.com resolves but has no certificate
   // in production (checked 2026-09-18), so a subdomain link is an error page.
@@ -155,6 +159,22 @@ export default async function OrganizationTabPage({
   const emailGuard = canEdit ? await guardOrgEmail(selected.orgSlug) : null;
   const emailSuite = emailGuard
     ? await loadEmailSuite(emailGuard, emailRoutesFor(emailGuard.orgSlug))
+    : null;
+
+  // The Current Work Page card: what leads the page, its template and look. Editors only.
+  const currentWork = canEdit
+    ? await loadCurrentWork(
+        { id: selected.orgId, slug: selected.orgSlug, name: selected.orgName },
+        homeUrl,
+        drawsInsteadOf({
+          silex: org?.layout_mode === "silex" && Boolean(org.silex_published_path),
+          designed,
+          offering: offering ? { pinned: Boolean(offering.pinned), title: offering.title } : null,
+        })
+      ).catch((err) => {
+        console.error("[organization] current work card:", err);
+        return null;
+      })
     : null;
 
   const selfHref = `/hub/organization?org=${encodeURIComponent(selected.orgSlug)}`;
@@ -211,27 +231,27 @@ export default async function OrganizationTabPage({
       settings={settings}
       email={emailSuite}
       hasDesignedPage={designed}
+      currentWork={currentWork}
+      content={content}
     >
-      <div className="w-full py-10">
-        <header className="mb-8 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                Organization
-              </p>
+      <div className="orgp-body">
+        <header className="orgp-head">
+          <div className="orgp-head-main">
+            <p className="orgp-kicker">
+              Organization
               <TierBadge tier={tier} />
-            </div>
-            <h1 className="font-serif text-4xl leading-tight text-foreground">
-              {selected.orgName}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              You are {ROLE_LABEL[selected.role] === "owner" ? "an" : "a"}{" "}
-              {ROLE_LABEL[selected.role] ?? selected.role} here ·{" "}
-              <code className="font-mono">{homeLabel}</code>
+            </p>
+            {/* Which of your organisations the page shows: a drop down, not a row of cards. */}
+            <OrgSwitch
+              orgs={memberships.map((m) => ({ slug: m.orgSlug, name: m.orgName, role: m.role }))}
+              current={selected.orgSlug}
+            />
+            <p className="orgp-sub">
+              <code>{homeLabel}</code>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="orgp-actions">
             {canEdit && <SettingsButton />}
             {siteLive && (
               <Button asChild variant="outline" size="sm">
@@ -248,189 +268,75 @@ export default async function OrganizationTabPage({
           </div>
         </header>
 
-        {/* Which of your orgs this console is showing. The same strip /center
-            uses for "Where you are", so the two places a person meets their
-            list of organisations look like one thing. Past two it slides. */}
-        {memberships.length > 1 && (
-          <section className="mb-8" aria-label="Your organizations">
-            <p className="eac-face-kicker mb-2">Your organizations</p>
-            <OrgStrip
-              orgs={memberships.map<OrgStripItem>((m) => ({
-                orgId: m.orgId,
-                orgSlug: m.orgSlug,
-                orgName: m.orgName,
-                role: m.role,
-                isCurrent: m.orgSlug === selected.orgSlug,
-                href:
-                  m.orgSlug === selected.orgSlug
-                    ? null
-                    : `/hub/organization?org=${encodeURIComponent(m.orgSlug)}`,
-                note: m.orgSlug === selected.orgSlug ? "showing" : "switch →",
-              }))}
-            />
-          </section>
-        )}
-
         {startingNew && (
           <section className="mb-10 rounded-lg border border-dashed border-border">
             <JoinTiers signedIn />
           </section>
         )}
 
-        {canEdit ? (
-          <>
-            {listingRequests.length > 0 && (
-              <div className="mb-8">
-                <ListingRequestsPanel
-                  orgId={selected.orgId}
-                  orgName={selected.orgName}
-                  requests={listingRequests.map((r) => ({
-                    id: r.id,
-                    displayName: r.displayName,
-                    avatarUrl: r.avatarUrl,
-                    createdAt: r.createdAt,
-                    href: r.slug && ARTDIRECT ? `${ARTDIRECT}/${r.slug}` : null,
-                  }))}
-                />
-              </div>
-            )}
-
-            <AttentionBands state={consoleState} orgHomeUrl={homeUrl} />
-
-            <ConsoleFaces events={events} canEdit={canEdit} email={emailSuite} />
-
-            <ConnectionsBand
-              state={consoleState}
+        {listingRequests.length > 0 && (
+          <div className="mb-8">
+            <ListingRequestsPanel
               orgId={selected.orgId}
-              orgSlug={selected.orgSlug}
-              paymentsReady={paymentsConfigured()}
+              orgName={selected.orgName}
+              requests={listingRequests.map((r) => ({
+                id: r.id,
+                displayName: r.displayName,
+                avatarUrl: r.avatarUrl,
+                createdAt: r.createdAt,
+                href: r.slug && ARTDIRECT ? `${ARTDIRECT}/${r.slug}` : null,
+              }))}
             />
-
-            <section className="space-y-2 border-t border-border pt-6 text-sm">
-              <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                Store
-              </h2>
-              <p>
-                <Link className="underline underline-offset-4" href={`/hub/store?org=${selected.orgSlug}`}>
-                  Store team &amp; beneficiaries →
-                </Link>
-                <span className="ml-2 text-muted-foreground">
-                  Who may list and sell for {selected.orgName} on the marketplace, and where a
-                  listing&rsquo;s money may go.
-                </span>
-              </p>
-            </section>
-
-            {owner && (
-              <section className="space-y-2 border-t border-border pt-6 text-sm">
-                <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                  Owner
-                </h2>
-                <p>
-                  <Link className="underline underline-offset-4" href="/hub/agreements">
-                    Agreements &amp; revenue shares →
-                  </Link>
-                  <span className="ml-2 text-muted-foreground">
-                    What {selected.orgName} may take from a member&rsquo;s sale,
-                    and who has agreed to it.
-                  </span>
-                </p>
-                <p>
-                  <Link className="underline underline-offset-4" href="/hub/quotes">
-                    Quotes on the center →
-                  </Link>
-                  <span className="ml-2 text-muted-foreground">
-                    The line that turns over on {selected.orgName}&rsquo;s
-                    center, and what members have sent in.
-                  </span>
-                </p>
-              </section>
-            )}
-          </>
-        ) : (
-          <>
-            {/* A member's console answers a different question: not "what
-                needs me" — nothing here does — but "what is on, and where are
-                my files". */}
-            <section className="mb-10 space-y-3">
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                  Recently from {selected.orgName}
-                </h2>
-                <a
-                  href={homeUrl}
-                  target="_blank"
-                  rel="noopener"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-                >
-                  Everything on the site →
-                </a>
-              </div>
-              {recent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nothing published yet.
-                </p>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {recent.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`${homeUrl}/${item.slug}`}
-                      target="_blank"
-                      rel="noopener"
-                      className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4 transition hover:border-primary/60"
-                    >
-                      <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                        {item.kind}
-                      </span>
-                      <span className="font-serif text-base leading-snug text-foreground">
-                        {item.title}
-                      </span>
-                      {item.excerpt && (
-                        <span className="line-clamp-2 text-sm text-muted-foreground">
-                          {item.excerpt}
-                        </span>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <ConnectionsBand
-              state={consoleState}
-              orgId={selected.orgId}
-              orgSlug={selected.orgSlug}
-              paymentsReady={paymentsConfigured()}
-              follower={selected.role === "viewer"}
-            />
-
-            <section className="space-y-3 border-t border-border pt-6">
-              <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                Your appearance
-              </h2>
-              <p className="max-w-2xl text-sm text-muted-foreground">
-                Owners and guides set the site&rsquo;s look. These colours are
-                yours — they apply to your own profile pages across the network.
-              </p>
-              <MyAppearancePanel
-                vars={SITE_THEME_VARS}
-                overrides={myThemeOverrides}
-                onSave={saveMyThemeAction}
-              />
-            </section>
-          </>
+          </div>
         )}
 
-        {/* Outside the editor/member split on purpose: the board is the same
-            question for both — what has happened anywhere you belong. */}
-        <CrossOrgForum
-          items={forum}
-          orgHomeUrls={Object.fromEntries(
-            memberships.map((m) => [m.orgSlug, orgHomeUrl(homes, m.orgSlug)])
-          )}
-          orgCount={memberships.length}
+        {/* ALWAYS cards. Editors get the managing ones, members and followers the reading ones. */}
+        <ConsoleFaces
+          events={events}
+          canEdit={canEdit}
+          owner={owner}
+          email={emailSuite}
+          currentWork={currentWork}
+          state={canEdit ? consoleState : null}
+          recent={recent.map((r) => ({ id: r.id, slug: r.slug, kind: r.kind, title: r.title }))}
+          orgName={selected.orgName}
+          orgSlug={selected.orgSlug}
+          orgHomeUrl={homeUrl}
+          contentSlot={<ContentCardFace data={content} />}
+          forumSlot={<OrgForumFace forum={forum} />}
         />
+
+        <div className="orgp-block">
+          <WordArtCard orgId={selected.orgId} />
+        </div>
+
+        {canEdit && (
+          <ConnectionsBand
+            state={consoleState}
+            orgId={selected.orgId}
+            orgSlug={selected.orgSlug}
+            paymentsReady={paymentsConfigured()}
+            files={false}
+          />
+        )}
+
+        {!canEdit && (
+          <section className="orgp-block orgp-rule space-y-3">
+            <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+              Your appearance
+            </h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Owners and guides set the site&rsquo;s look. These colours are
+              yours — they apply to your own profile pages across the network.
+            </p>
+            <MyAppearancePanel
+              vars={SITE_THEME_VARS}
+              overrides={myThemeOverrides}
+              onSave={saveMyThemeAction}
+            />
+          </section>
+        )}
+
       </div>
     </OrgConsoleHost>
   );

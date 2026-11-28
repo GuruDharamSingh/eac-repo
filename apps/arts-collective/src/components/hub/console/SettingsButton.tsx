@@ -1,7 +1,7 @@
 "use client";
 
 import { useSurface } from "@elkdonis/cms-ui/surface";
-import { CONSOLE_SURFACES } from "./AttentionBands";
+import { CONSOLE_SURFACES } from "./console-keys";
 
 /**
  * The one way into configuration.

@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     // Booking module (2026-11-15): data package and the shared Booking section.
     "@elkdonis/booking",
     "@elkdonis/studio-forms",
+    // Directory search (content library people view, 2026-11-26) and what its server side imports.
+    "@elkdonis/content",
+    "@elkdonis/commerce",
   ],
   devIndicators: false,
   allowedDevOrigins: ["localhost", "127.0.0.1"],

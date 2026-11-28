@@ -1,0 +1,64 @@
+/* Essay (packet 2g). Classes ost-essay-* only. */
+.ost-page[data-template="essay"] .ost-main { display: grid; grid-template-rows: auto auto; align-content: start; }
+.ost-essay { display: contents; }
+.ost-essay-bar { position: relative; height: 2px; background: var(--os-line-faint); }
+.ost-essay-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--os-bronze); transition: width 0.12s linear; }
+.ost-essay-grid { display: grid; grid-template-columns: 150px minmax(0, 1fr); height: max(440px, calc(100dvh / var(--ost-z, 1) - 125px)); min-height: 0; }
+.ost-essay-rail { border-right: 1px solid var(--os-line-soft); padding: 20px 16px; display: grid; gap: 10px; align-content: start; font-family: var(--fb); font-size: 12px; color: var(--os-ink-muted); overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.ost-essay-rail-h { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-page .ost-essay-link { color: inherit; text-decoration: none; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; }
+.ost-page .ost-essay-link:hover { color: var(--os-ink-bone); }
+.ost-page .ost-essay-link.is-now { color: var(--os-ink-bone); cursor: default; }
+.ost-essay-subs { display: grid; gap: 7px; justify-items: start; margin: -2px 0 2px 2px; padding-left: 10px; border-left: 1px solid var(--os-line-soft); }
+.ost-essay-sub { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font: inherit; font-size: 11.5px; color: var(--os-ink-muted); transition: color 0.25s; }
+.ost-essay-sub.is-on { color: var(--os-bronze); }
+.ost-essay-all { margin-top: 6px; font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 10px; color: var(--os-bronze); }
+
+.ost-essay-pane { padding: 28px 36px 40px; }
+.ost-essay-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; max-width: 640px; min-width: 0; }
+.ost-essay-kick { font-family: var(--fk); font-size: 10px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-bronze); }
+.ost-essay-title { margin: 0; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 1.02; font-size: calc(36px * var(--fhx)); text-wrap: balance; color: var(--os-ink-bone); }
+.ost-essay-stand { margin: 0; font-family: var(--fq); font-style: var(--fqi); font-size: 17px; line-height: 1.4; color: var(--os-ink-muted); }
+.ost-essay-by { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.ost-essay-av { width: 24px; height: 24px; flex: none; border-radius: 50%; border: 1px solid var(--os-line-strong); background: var(--os-surface); }
+.ost-page .ost-essay-name { font-family: var(--fb); font-size: 12.5px; background: none; border: 0; padding: 0; color: var(--os-ink-bone); cursor: pointer; text-decoration: none; }
+.ost-page .ost-essay-name:hover { color: var(--os-bronze); }
+.ost-essay-meta { font: 500 9.5px var(--os-mono); letter-spacing: 0.08em; color: var(--os-ink-faint); }
+.ost-essay-rule { display: block; width: 56px; height: 2px; background: var(--os-bronze); }
+.ost-essay-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.ost-essay-body > * { min-width: 0; margin: 0 0 14px; font-family: var(--fb); font-size: 14px; line-height: 1.65; color: var(--os-ink-body); }
+.ost-essay-body > :last-child { margin-bottom: 0; }
+.ost-essay-sec.is-first > .ost-essay-body > p:first-child::first-letter { float: left; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); font-size: calc(56px * var(--fhx)); line-height: 0.8; margin: 5px 9px 0 0; color: var(--os-bronze); }
+.ost-essay-h2 { margin: 0; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 1.1; font-size: calc(21px * var(--fhx)); color: var(--os-ink-bone); }
+.ost-essay-pic { height: 150px; border: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9.5px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-essay-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ost-essay-pic.is-real { height: auto; display: block; }
+.ost-essay-pic.is-real img { height: auto; max-height: 460px; display: block; }
+.ost-essay-av { object-fit: cover; }
+.ost-essay-pane, .ost-essay-body { min-width: 0; }
+.ost-essay-rail { overflow-wrap: anywhere; }
+.ost-page .ost-essay-all { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.ost-page .ost-essay-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ost-essay-cap { font: 500 9.5px var(--os-mono); letter-spacing: 0.06em; color: var(--os-ink-faint); margin-top: -6px; }
+.ost-essay-ast { text-align: center; color: var(--os-bronze); font-size: 15px; letter-spacing: 0.5em; }
+.ost-essay-pull { margin: 0; font-family: var(--fq); font-style: var(--fqi); font-size: 23px; line-height: 1.3; text-align: center; padding: 10px 12px; color: var(--os-ink-bone); }
+.ost-essay-foot { border-top: 1px solid var(--os-line-soft); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ost-essay-talk { font-size: 11px; padding: 9px 15px; }
+
+/* Phone: the index becomes a sideways strip; the text flows on the page (no inner pane). */
+@media (max-width: 639px) {
+  .ost-page[data-template="essay"] .ost-main { grid-template-rows: auto auto; }
+  .ost-essay-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; height: auto; }
+  .ost-essay-rail { display: flex; flex-wrap: nowrap; gap: 14px; align-items: center; border-right: 0; border-bottom: 1px solid var(--os-line-soft); padding: 11px 16px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
+  .ost-essay-rail > * { flex: none; }
+  .ost-page .ost-essay-link { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+  .ost-essay-rail { overflow-wrap: normal; }
+  .ost-essay-subs { display: flex; gap: 12px; margin: 0; padding: 0 0 0 12px; }
+  .ost-page .ost-essay-pane { padding: 22px 16px 32px; overflow: visible; }
+  .ost-essay-bar { position: sticky; top: 0; z-index: 2; }
+  .ost-essay-title { font-size: calc(30px * var(--fhx)); }
+  .ost-page .ost-essay-talk { white-space: nowrap; flex: none; }
+}
+
+/* Design width of the packet frame (px, unitless); the shell scales the page from it. */
+.ost-page[data-template="essay"] { --ost-base: 620; }

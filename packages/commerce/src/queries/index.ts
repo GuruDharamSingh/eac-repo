@@ -646,16 +646,32 @@ function mapStore(r: Row): Store {
     updatedAt: iso(r.updated_at),
 
 
-    // Identity is the owner's (users / organizations). The store's own copies
-    // are deprecated (092) and no longer written; they only fill a gap.
+    // The store's own name, line, city and photo first; the owner's network profile (users / organizations)
+    // only where the store left a field empty (2026-11-26, migration 296; 092 had made the profile the only
+    // identity). `own` and `fallback` let an editor show which is which.
     displayName:
-      (opt<string>(r.fallback_display_name) ??
-        opt<string>(r.fallback_owner_name) ??
-        opt<string>(r.display_name)) ||
+      (opt<string>(r.display_name) ??
+        opt<string>(r.fallback_display_name) ??
+        opt<string>(r.fallback_owner_name)) ||
       null,
-    headline: opt<string>(r.fallback_headline) ?? opt<string>(r.headline) ?? null,
-    city: opt<string>(r.fallback_city) ?? opt<string>(r.city) ?? null,
-    photoUrl: opt<string>(r.fallback_photo_url) ?? opt<string>(r.photo_url) ?? null,
+    headline: opt<string>(r.headline) ?? opt<string>(r.fallback_headline) ?? null,
+    city: opt<string>(r.city) ?? opt<string>(r.fallback_city) ?? null,
+    photoUrl: opt<string>(r.photo_url) ?? opt<string>(r.fallback_photo_url) ?? null,
+    coverUrl: opt<string>(r.cover_url) ?? null,
+    profile: r.profile && typeof r.profile === "object" ? (r.profile as Store["profile"]) : {},
+    theme: r.theme && typeof r.theme === "object" ? (r.theme as Record<string, unknown>) : {},
+    own: {
+      displayName: opt<string>(r.display_name) ?? null,
+      headline: opt<string>(r.headline) ?? null,
+      city: opt<string>(r.city) ?? null,
+      photoUrl: opt<string>(r.photo_url) ?? null,
+    },
+    fallback: {
+      displayName: opt<string>(r.fallback_display_name) ?? opt<string>(r.fallback_owner_name) ?? null,
+      headline: opt<string>(r.fallback_headline) ?? null,
+      city: opt<string>(r.fallback_city) ?? null,
+      photoUrl: opt<string>(r.fallback_photo_url) ?? null,
+    },
     links: parseArtistLinks(r.links),
     appliedAt: opt(r.applied_at),
     reviewedAt: opt(r.reviewed_at),

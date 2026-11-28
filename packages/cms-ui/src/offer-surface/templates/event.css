@@ -1,0 +1,115 @@
+/*
+ * Event page "Playbill" (packet frame 2m). Prefix ost-event-.
+ * Values lifted from the packet's inline styles; desktop follows the packet's
+ * own proportions and height (the page may scroll).
+ */
+@keyframes ost-event-ping { 0% { transform: scale(1); opacity: 0.9; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes ost-event-reel { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ost-event-tick { from { opacity: 0.15; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+.ost-event { display: block; }
+.ost-event-empty { padding: 40px var(--ost-pad); color: var(--os-ink-muted); font-family: var(--fb); }
+.ost-event-top { display: grid; grid-template-columns: minmax(0, 1fr) 238px; }
+
+/* Left: title, poster, running order */
+.ost-event-main { padding: 24px 26px; display: flex; flex-direction: column; gap: 13px; min-width: 0; }
+.ost-event-kicker { display: flex; align-items: center; gap: 9px; font-family: var(--fk); font-size: 10px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-bronze); }
+.ost-event-pulse { position: relative; width: 8px; height: 8px; flex: none; border-radius: 50%; background: #d66666; }
+.ost-event-pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #d66666; animation: ost-event-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.ost-event-title { margin: 0; font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); letter-spacing: var(--fhl); line-height: 0.98; font-size: calc(46px * var(--fhx)); text-wrap: balance; }
+.ost-event-sub { margin: 0; font-family: var(--fq); font-style: var(--fqi); font-size: 17px; line-height: 1.3; color: var(--os-ink-muted); }
+.ost-event-body { display: flex; flex-direction: column; gap: 13px; }
+.ost-event-poster { position: relative; flex: none; height: 210px; border: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9.5px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-event-poster > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ost-event-poster-label { position: relative; }
+.ost-event-count-wrap { position: absolute; left: 12px; bottom: 12px; }
+.ost-event-count { display: flex; gap: 6px; align-items: center; background: rgba(20, 22, 24, 0.88); border: 1px solid var(--os-line-dotted); padding: 8px 12px; color: var(--os-ink-bone); }
+.ost-event-count-label { font: 500 8px var(--os-mono); letter-spacing: 0.12em; color: var(--os-bronze); margin-right: 6px; }
+.ost-event-count-cell { display: grid; justify-items: center; min-width: 30px; }
+.ost-event-count-num { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); font-size: calc(22px * var(--fhx)); line-height: 1; font-variant-numeric: tabular-nums; }
+.ost-event-count-num.is-tick { animation: ost-event-tick 0.4s ease; }
+.ost-event-count-unit { font: 500 8px var(--os-mono); letter-spacing: 0.12em; color: var(--os-ink-muted); margin-top: 4px; }
+
+.ost-event-label { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-ink-muted); }
+.ost-event-order { display: grid; gap: 13px; margin-top: 4px; }
+.ost-event-rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.ost-event-row { display: grid; grid-template-columns: 54px 1fr; padding: 7px 0; border-bottom: 1px dotted var(--os-line-dotted); }
+.ost-event-row-time { font: 500 10px var(--os-mono); color: var(--os-ink-faint); padding-top: 2px; }
+.ost-event-row-label { font-family: var(--fb); font-size: 13.5px; }
+
+/* Right: ticket stub rail */
+.ost-event-rail { border-left: 1px solid var(--os-line-soft); background: var(--os-card); padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; align-content: start; }
+.ost-event-stub { background: var(--os-input); border: 1px solid var(--os-line-strong); }
+.ost-event-when { padding: 14px 14px 12px; display: grid; gap: 3px; }
+.ost-event-when-day { font-family: var(--fk); font-size: 9.5px; text-transform: uppercase; letter-spacing: var(--fkl); color: var(--os-bronze); }
+.ost-event-when-time { font-family: var(--fh); font-weight: var(--fhw); font-style: var(--fhi); text-transform: var(--fht); font-size: calc(28px * var(--fhx)); line-height: 1.05; }
+.ost-event-venue { font-family: var(--fb); font-size: 12.5px; margin-top: 4px; }
+.ost-event-addr { font: 500 9px var(--os-mono); color: var(--os-ink-faint); text-transform: uppercase; }
+.ost-event-map { display: grid; place-items: center; height: 56px; margin-top: 8px; width: 100%; object-fit: cover; border: 1px solid var(--os-line-soft); font: 9px var(--os-mono); color: var(--os-ink-faint); }
+.ost-event-tear { border-top: 1.5px dashed var(--os-line-strong); background: var(--os-input); padding: 12px 14px 14px; display: grid; gap: 9px; box-shadow: 0 10px 18px -10px rgba(0, 0, 0, 0.6); }
+.ost-event-pulse.is-still { background: var(--os-ink-faint); }
+.ost-event-pulse.is-still::after { display: none; }
+.ost-event-ended { margin: 0; font-family: var(--fb); font-size: 12.5px; color: var(--os-ink-faint); }
+.ost-event-tear-row { display: flex; justify-content: space-between; align-items: baseline; }
+.ost-event-cost { font-family: var(--fb); font-size: 12.5px; }
+.ost-event-cap { font: 500 9.5px var(--os-mono); color: var(--os-ink-faint); }
+.ost-event-go { font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); font-size: 11px; width: 100%; padding: 10px 0; cursor: pointer; border: 1px solid var(--os-bronze); background: var(--os-bronze); color: var(--os-on-bronze); transition: filter 0.2s; }
+.ost-event-go:hover { filter: brightness(1.08); }
+.ost-event-faces { display: flex; align-items: center; }
+.ost-event-face { width: 28px; height: 28px; flex: none; border-radius: 50%; border: 2px solid var(--os-card); background: #3a3f43; object-fit: cover; }
+.ost-event-face + .ost-event-face { margin-left: -8px; }
+.ost-event-face[data-i="1"] { background: #454b4f; }
+.ost-event-face[data-i="3"] { background: #4d5357; }
+.ost-event-faces-n { margin-left: 10px; font-family: var(--fb); font-size: 12px; color: var(--os-ink-muted); }
+
+/* Bottom: photo reel */
+.ost-event-night { border-top: 1px solid var(--os-line-soft); padding: 16px 0 20px; display: grid; gap: 12px; min-width: 0; }
+.ost-event-night-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 26px; }
+.ost-event-night-btns { display: flex; gap: 8px; }
+.ost-event-nbtn { padding: 7px 11px; }
+.ost-event-nbtn[aria-disabled="true"] { opacity: 1; cursor: default; }
+.ost-event-reel { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.ost-event-reel-track { display: flex; gap: 8px; width: max-content; animation: ost-event-reel 30s linear infinite; }
+.ost-event-reel:hover .ost-event-reel-track { animation-play-state: paused; }
+.ost-event-tile { height: 86px; flex: none; border: 1px solid var(--os-line-soft); display: grid; place-items: center; font: 9px var(--os-mono); color: var(--os-ink-faint); overflow: hidden; }
+.ost-event-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ost-event-reel { overflow-x: auto; -webkit-mask-image: none; mask-image: none; scrollbar-width: thin; }
+  .ost-event-reel-track { animation: none; }
+  .ost-event-pulse::after, .ost-event-count-num.is-tick { animation: none; }
+}
+
+/* Phone and narrow windows: one column, rail under the poster. */
+@media (max-width: 899px) {
+  .ost-event-top { display: block; }
+  .ost-event-main { padding: 20px var(--ost-pad) 18px; }
+  .ost-event-rail { border-left: 0; border-top: 1px solid var(--os-line-soft); padding: 16px var(--ost-pad); }
+  .ost-event-night-head { padding: 0 var(--ost-pad); flex-wrap: wrap; }
+  .ost-event-title { font-size: calc(40px * var(--fhx)); }
+}
+@media (max-width: 420px) {
+  .ost-event-count { padding: 7px 9px; gap: 4px; }
+  .ost-event-count-label { margin-right: 2px; }
+}
+
+/* Buttons: .osf-root button resets the font, so these rules carry .ost-page. */
+.ost-page .ost-event-go, .ost-page .ost-event-nbtn { font-family: var(--fu); font-weight: var(--fuw); text-transform: var(--fut); letter-spacing: var(--ful); }
+.ost-page .ost-event-go { font-size: 11px; }
+.ost-page .ost-event-nbtn { font-size: 10px; padding: 7px 11px; }
+
+/* Design width of the packet frame (px, unitless); the shell scales the page from it. */
+.ost-page[data-template="event"] { --ost-base: 700; }
+.ost-event-hosts { display: grid; gap: 4px; }
+.ost-event-hosts-names { font-family: var(--fb); font-size: 12.5px; color: var(--os-ink-bone); }
+.ost-page .ost-event-host { font: inherit; color: inherit; text-decoration: underline dotted var(--os-line-strong); text-underline-offset: 3px; cursor: pointer; background: none; border: 0; padding: 0; }
+
+/* Real page, no poster: the countdown sits in a plate where the poster would be. */
+.ost-event-plate { border: 1px solid var(--os-line-soft); border-top: 2px solid var(--os-bronze); background: var(--os-card); padding: 14px 16px; display: flex; }
+.ost-event-plate .ost-event-count { background: none; border: 0; padding: 0; flex-wrap: wrap; }
+.ost-event-plate .ost-event-count-num { font-size: calc(30px * var(--fhx)); }
+.ost-event-plate .ost-event-count-cell { min-width: 44px; }
+.ost-event-desc { max-width: 560px; font-size: 13.5px; line-height: 1.62; }
+.ost-event-main, .ost-event-body, .ost-event-rail { min-width: 0; }
+.ost-event-title, .ost-event-venue, .ost-event-addr, .ost-event-hosts-names { overflow-wrap: anywhere; }
+.ost-event-faces { flex-wrap: wrap; row-gap: 6px; }

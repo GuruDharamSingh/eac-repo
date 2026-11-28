@@ -20,7 +20,7 @@ const hub = (path: string, surface: string | undefined, anchor: string | undefin
 export const ENTRIES: Record<string, EntryData> = {
   profile: { address: hub('/hub/network', 'profile:edit', 'profile', 'Save in the profile card'), risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:edit-my-profile' },
   'gain-space': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.learn:take-your-space' },
-  listing: { address: hub('/hub/network', 'profile:details', 'listing', 'Save details, or the Network directory switch under Where you show'), risk: ['public'], roles: ['person'] },
+  listing: { address: hub('/hub/network', 'profile:details', 'listing', 'Save details, or the Network directory switch under Where you show'), risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:set-where-i-show' },
   studio: { address: hub('/studio', undefined, 'studio', 'Publish in the Studio'), risk: ['public'], roles: ['person'], confirmFrom: 'orgapps.writing:writing-piece-save' },
   'show-on': { address: hub('/hub/network', 'profile:show', 'show-on', 'The Show on list under Where you show'), risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:choose-sites-for-post' },
   cloud: { address: { host: 'app', app: 'nextcloud', external: true, how: 'Sign in with Elkdonis in the cloud window' }, risk: [], roles: ['person'] },
@@ -38,6 +38,18 @@ export const ENTRIES: Record<string, EntryData> = {
   // The market's store course, done in the dock (2026-11-24).
   'store-front': { address: { host: 'app', app: 'art-auction', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'apps.art-auction.dock:store-front' },
   'ship-from': { address: { host: 'app', app: 'art-auction', dock: true, how: 'Done in the dock' }, risk: [], roles: ['person'], confirmFrom: 'apps.art-auction.dock:ship-from' },
+  // Dock forms, first batch (2026-11-27, rails desk lane A): done in the dock, wording drafts in reports/wording-wave-02.md.
+  'pen-name': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:create-pen-name' },
+  'writing-start': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: [], roles: ['person'], confirmFrom: 'orgapps.writing:writing-piece-start' },
+  // Registry data for two entries the rails courses name (2026-11-27): the dock takes the person there.
+  'org-publish': { address: hub('/hub/organization?org={org}', undefined, 'org-offering', 'Publish in the composer: a post, an event or a meeting'), risk: [], roles: ['owner', 'guide'] },
+  'channel-connect': { address: hub('/channel/outlets', undefined, undefined, 'Connect an account on the Outlets page'), risk: [], roles: ['person'] },
+  // Wiring wave 1 (2026-11-27, lane F): done in the dock, wording drafts in reports/wording-wave-03.md.
+  'profile-photo': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:upload-profile-photo' },
+  'profile-sections': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'orgapps.people:profile-section-toggle' },
+  'pen-name-retire': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:retire-pen-name' },
+  'pen-name-restore': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:restore-pen-name' },
+  'post-anywhere': { address: { host: 'hub', dock: true, how: 'Done in the dock' }, risk: ['public'], roles: ['person'], confirmFrom: 'arts-collective.hub:post-to-a-site' },
   org: { address: hub('/hub/network', 'journey:site', 'org', 'Create in the Create a collective dialog'), risk: ['public'], roles: ['person'] },
   'org-details': { address: hub('/hub/network', 'journey:org:{org}', 'org-details', 'Save in the organisation details'), risk: ['public'], roles: ['owner', 'guide'], confirmFrom: 'arts-collective.hub:save-org-identity' },
   'org-offering': { address: hub('/hub/organization?org={org}', undefined, 'org-offering', 'Publish in the composer'), risk: ['public'], roles: ['owner', 'guide'] },

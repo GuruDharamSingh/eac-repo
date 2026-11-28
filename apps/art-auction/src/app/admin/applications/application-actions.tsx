@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAfterSave } from "@/lib/popup-refresh";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,7 @@ import {
 
 export function ApplicationActions({ storeId }: { storeId: string }) {
   const router = useRouter();
+  const afterSave = useAfterSave();
   const [pending, setPending] = React.useState(false);
   const [rejecting, setRejecting] = React.useState(false);
   const [reason, setReason] = React.useState("");
@@ -21,7 +23,7 @@ export function ApplicationActions({ storeId }: { storeId: string }) {
       const res = await approveApplicationAction(storeId);
       if (!res.ok) return toast.error(res.error ?? "Failed.");
       toast.success("Store approved.");
-      router.refresh();
+      afterSave();
     } finally {
       setPending(false);
     }
@@ -36,7 +38,7 @@ export function ApplicationActions({ storeId }: { storeId: string }) {
       toast.success("Application declined.");
       setRejecting(false);
       setReason("");
-      router.refresh();
+      afterSave();
     } finally {
       setPending(false);
     }

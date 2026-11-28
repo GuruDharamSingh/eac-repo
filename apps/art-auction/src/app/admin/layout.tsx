@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/orders", label: "Orders" },
     { href: "/admin/stores", label: "Stores" },
     { href: "/admin/artworks", label: "Artworks" },
+    { href: "/admin/content", label: "Content" },
     { href: "/admin/users", label: "Members" },
     { href: "/admin/money", label: "Money" },
     { href: "/admin/series", label: "Series" },
@@ -38,9 +39,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/applications", label: "Applications", count: pendingApplications.length },
   ];
-  // Marketplace owners who are not platform admins get the two tabs that show
-  // and hide work; every other page redirects them away.
-  const tabs = admin ? allTabs : allTabs.filter((t) => t.href === "/admin/stores" || t.href === "/admin/artworks");
+  // Marketplace owners who are not platform admins get the tabs that show
+  // and hide work (Stores, Artworks, Content); every other page redirects them away.
+  const KEEPER_TABS = ["/admin/stores", "/admin/artworks", "/admin/content"];
+  const tabs = admin ? allTabs : allTabs.filter((t) => KEEPER_TABS.includes(t.href));
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">

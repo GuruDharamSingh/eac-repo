@@ -1,0 +1,100 @@
+/* Edit mode of the desktop tour stage (take C, 2026-11-26). Everything here renders only while an editor is editing.
+   Tokens repeat the stage's light palette (tour-stage.css) because the sheets and the bar are portaled out of .ts-root.
+   Measured (sRGB relative luminance):
+     outline / rules  #2350a0 on #ffffff  7.9:1   (needs 3:1)
+     outline on soft  #2350a0 on #eef2f8  7.1:1
+     ink              #14284b on #ffffff  14.7:1  (needs 4.5:1)
+     muted            #4f5d75 on #ffffff  6.5:1;  on #eef2f8 5.8:1
+     warning text     #b03f1c on #ffffff  6.0:1
+     primary button   #ffffff on #2350a0  7.9:1
+     bar              #ffffff on #14284b  14.7:1
+   Regions over the picture sit on a solid white panel, so their outline is measured against white, not the photo. */
+.ts-root, .tse-layer {
+  --tse-ink: #14284b; --tse-muted: #4f5d75; --tse-bg: #ffffff; --tse-soft: #eef2f8; --tse-line: #c9d2e0;
+  --tse-accent: #2350a0; --tse-warn: #b03f1c;
+}
+.tse-layer { font-family: "Basteleur", Georgia, serif; color: var(--tse-ink); }
+
+.tse-region { outline: 2px dashed var(--tse-accent); outline-offset: 3px; }
+.tse-region:hover, .tse-region:focus-within { outline-style: solid; }
+
+/* the stage in edit mode: the left column scrolls so the extra rows never cut the line off */
+.ts-root--editing .ts-left { overflow-y: auto; }
+.ts-root--editing .ts-left.has-panel { padding-bottom: 90px; }
+
+.tse-label { font-family: "Venture", Georgia, serif; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--tse-muted); }
+.tse-label a { color: var(--tse-accent); }
+.tse-note { margin: 0; font-size: .8rem; color: var(--tse-muted); }
+
+.tse-btn { padding: 6px 12px; border: 1px solid #8d9bb4; background: var(--tse-bg); color: var(--tse-ink); font: inherit; font-size: .82rem; cursor: pointer; }
+.tse-btn:hover:not(:disabled) { border-color: var(--tse-ink); }
+.tse-btn:disabled { opacity: .55; cursor: default; }
+.tse-btn--small { padding: 3px 9px; font-size: .74rem; }
+.tse-btn--primary { background: var(--tse-accent); border-color: var(--tse-accent); color: #ffffff; }
+.tse-btn--danger { color: var(--tse-warn); border-color: var(--tse-warn); }
+.tse-btn:focus-visible, .tse-num:focus-visible, .tse-plus:focus-visible, .tse-add:focus-visible { outline: 2px solid var(--tse-accent); outline-offset: 2px; }
+
+/* top bar */
+.tse-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 90; display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: #14284b; color: #ffffff; font-size: .85rem; }
+.tse-bar__hint { opacity: .85; }
+.tse-bar__spacer { flex: 1; }
+.tse-bar__saved { min-width: 7rem; text-align: right; }
+.tse-bar .tse-btn { border-color: #ffffff; background: transparent; color: #ffffff; }
+.tse-bar .tse-btn--primary { background: #ffffff; color: #14284b; }
+.tse-bar .tse-btn:disabled { opacity: .5; }
+
+/* the stop's line */
+.tse-line { width: 100%; display: grid; gap: 6px; }
+.tse-line__box { width: 100%; box-sizing: border-box; resize: vertical; border: 0; background: var(--tse-soft); color: var(--tse-ink); padding: 8px 10px; font-size: 1.15rem; line-height: 1.45; }
+.tse-count { font-size: .74rem; color: var(--tse-muted); }
+.tse-count.is-over { color: var(--tse-warn); }
+
+/* stop numbers, inserts */
+.tse-row-chips { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; padding: 6px 8px; background: var(--tse-bg); box-sizing: border-box; }
+.tse-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.tse-chips__item { display: inline-flex; align-items: center; gap: 2px; }
+.tse-num { min-width: 26px; height: 26px; border: 1px solid #8d9bb4; background: var(--tse-bg); color: var(--tse-ink); font: inherit; font-size: .78rem; cursor: pointer; }
+.tse-num[aria-current="true"] { background: #f2c14e; border-color: #f2c14e; color: #14284b; }
+.tse-plus { width: 18px; height: 26px; display: grid; place-items: center; border: 1px dashed var(--tse-accent); background: var(--tse-bg); color: var(--tse-accent); cursor: pointer; padding: 0; }
+.tse-plus:hover { background: var(--tse-accent); color: #ffffff; }
+.tse-add { display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; padding: 0 8px; height: 26px; border: 1px dashed var(--tse-accent); background: var(--tse-bg); color: var(--tse-accent); font: inherit; font-size: .74rem; cursor: pointer; }
+
+/* pictures strip over the stage's picture */
+.tse-pics { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 3; display: grid; gap: 6px; padding: 8px 10px; background: var(--tse-bg); outline-offset: -2px; }
+.tse-pics__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tse-thumbs { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.tse-thumb { position: relative; width: 84px; height: 56px; cursor: grab; border: 1px solid var(--tse-line); }
+.tse-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tse-thumb.is-hidden img { opacity: .4; }
+.tse-thumb__hide { position: absolute; inset: auto 0 0 0; padding: 1px 3px; border: 0; background: rgba(20, 40, 75, .92); color: #ffffff; font: inherit; font-size: .62rem; cursor: pointer; }
+
+/* place pictures drop zone */
+.tse-place { display: grid; gap: 8px; padding: 8px; background: var(--tse-bg); }
+.tse-drop { display: grid; gap: 4px; justify-items: start; padding: 12px; border: 2px dashed var(--tse-accent); background: var(--tse-soft); font-size: .88rem; }
+.tse-drop.is-over { background: #dbe6f6; border-style: solid; }
+.tse-drop small { color: var(--tse-muted); font-size: .74rem; }
+
+/* sheets */
+.tse-scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgba(20, 40, 75, .45); padding: 16px; }
+.tse-sheet { width: min(560px, 100%); max-height: min(88vh, 900px); display: flex; flex-direction: column; background: var(--tse-bg); border: 1px solid #8d9bb4; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6); }
+.tse-sheet--wide { width: min(980px, 100%); }
+.tse-sheet__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 2px solid var(--tse-accent); }
+.tse-sheet__title { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.tse-sheet__body { padding: 16px; overflow: auto; }
+.tse-form { display: grid; gap: 12px; }
+.tse-field { display: grid; gap: 4px; font-size: .85rem; }
+.tse-field > span { font-family: "Venture", Georgia, serif; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--tse-muted); }
+.tse-field input, .tse-field textarea { padding: 8px 10px; border: 1px solid #8d9bb4; background: var(--tse-bg); color: var(--tse-ink); font: inherit; font-size: .95rem; }
+.tse-field small { color: var(--tse-muted); }
+.tse-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.tse-links { display: flex; gap: 16px; margin: 0; font-size: .85rem; }
+.tse-links a { color: var(--tse-accent); }
+.tse-h { margin: 6px 0 0; font-size: .95rem; }
+.tse-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--tse-line); max-height: 260px; overflow: auto; }
+.tse-list li + li { border-top: 1px solid var(--tse-line); }
+.tse-list li.tse-note { padding: 8px 10px; }
+.tse-list button { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.tse-list button:hover:not(:disabled) { background: var(--tse-soft); }
+.tse-list button:disabled { opacity: .55; cursor: default; }
+.tse-list small { display: block; color: var(--tse-muted); font-size: .76rem; }
+.tse-list__act { flex: none; font-size: .78rem; color: var(--tse-accent); text-decoration: underline; text-underline-offset: 3px; }

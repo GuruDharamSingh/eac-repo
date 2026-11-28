@@ -2146,6 +2146,12 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
       ELKTOURS_OWNER_EMAIL: ${ELKTOURS_OWNER_EMAIL:-danamccoolart@gmail.com}
+      # "Sync to Google Calendar" on the hub (2026-11-26, migration 295). The client's Google
+      # project needs the Calendar API, the calendar.app.created scope and
+      # <ELKTOURS_URL>/api/google-calendar/callback as a redirect URI. CONNECTIONS_KEY seals tokens.
+      GOOGLE_CALENDAR_CLIENT_ID: ${GOOGLE_CALENDAR_CLIENT_ID:-${YOUTUBE_CLIENT_ID:-}}
+      GOOGLE_CALENDAR_CLIENT_SECRET: ${GOOGLE_CALENDAR_CLIENT_SECRET:-${YOUTUBE_CLIENT_SECRET:-}}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       # Departures on the shared booking tables (@elkdonis/booking set_dates), cut over 2026-11-15
       # (docs/open/ELKTOURS_MOBILE_2026-11-15/CUTOVER.md). 0 = back to tour_departures.
       BOOKING_TABLES: "1"

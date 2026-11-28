@@ -28,7 +28,17 @@ export interface DavEntry {
   mimeType: string | null;
   lastModified: string | null;
   isFolder: boolean;
+  /** Nextcloud's file id (oc:fileid), stable across moves and renames. Present on listings that ask for it. */
+  fileId?: string;
+  /** The entry's etag (getetag), unquoted. */
+  etag?: string;
 }
+
+const fileIdOf = (block: string): string | undefined => block.match(/<oc:fileid>(\d+)</i)?.[1];
+const etagOf = (block: string): string | undefined => {
+  const e = block.match(/<(?:d:|D:)?getetag>([^<]+)</i)?.[1];
+  return e ? e.replace(/&quot;|"/g, '') : undefined;
+};
 
 export function davConfigured(): boolean {
   return Boolean(NEXTCLOUD_URL && NEXTCLOUD_USER);
@@ -68,8 +78,8 @@ export function resolveWithin(root: string, relative = ''): string {
 }
 
 const PROPFIND_BODY =
-  `<?xml version="1.0"?><d:propfind xmlns:d="DAV:"><d:prop>` +
-  `<d:resourcetype/><d:getcontentlength/><d:getcontenttype/><d:getlastmodified/>` +
+  `<?xml version="1.0"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop>` +
+  `<d:resourcetype/><d:getcontentlength/><d:getcontenttype/><d:getlastmodified/><d:getetag/><oc:fileid/>` +
   `</d:prop></d:propfind>`;
 
 export function parsePropfind(xml: string, basePath: string): DavEntry[] {
@@ -92,7 +102,7 @@ export function parsePropfind(xml: string, basePath: string): DavEntry[] {
     const mod = block.match(/<(?:d:|D:)?getlastmodified>([^<]+)</i)?.[1] ?? null;
     const path = `${basePath}/${name}`;
 
-    out.push({ name, path, url: `/api/media/${path}`, size, mimeType: mime, lastModified: mod, isFolder });
+    out.push({ name, path, url: `/api/media/${path}`, size, mimeType: mime, lastModified: mod, isFolder, fileId: fileIdOf(block), etag: etagOf(block) });
   }
   // Folders first, then by name — a stable order beats whatever order the
   // server happened to return.
@@ -147,6 +157,8 @@ export async function davListDeep(path: string, limit = 5000): Promise<DavEntry[
       mimeType: block.match(/<(?:d:|D:)?getcontenttype>([^<]+)</i)?.[1] ?? null,
       lastModified: block.match(/<(?:d:|D:)?getlastmodified>([^<]+)</i)?.[1] ?? null,
       isFolder: false,
+      fileId: fileIdOf(block),
+      etag: etagOf(block),
     });
   }
   return out;

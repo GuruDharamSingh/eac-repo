@@ -9,6 +9,7 @@ import {
 } from "@elkdonis/studio-ui";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { Button } from "@/components/ui/button";
+import { LibraryPicker } from "./library-picker";
 import {
   createArtworkAction,
   updateArtworkAction,
@@ -119,8 +120,17 @@ export function ArtworkForm({
   allowMakerChoice = false,
   beneficiaries = [],
   orgOptions = [],
+  onCreated,
+  onSaved,
+  sources,
 }: {
   initial?: ArtworkFormInitial;
+  /** Folders the Library picker may open (content-host fileSources, CONTRACT §10.8). Absent: "My files" only. */
+  sources?: Array<{ key: string; label: string }>;
+  /** Given by a popup host (/center): called with the new piece's id instead of going to its edit page. */
+  onCreated?: (id: string) => void;
+  /** Given by an in-stack host (hub card Edit): called after an edit saves, instead of router.refresh(). */
+  onSaved?: () => void;
   /** Org stores: let the person choose whether they are the credited maker. */
   allowMakerChoice?: boolean;
   /** The store's org's beneficiary list (migration 209). Empty hides the block. */
@@ -345,13 +355,15 @@ export function ArtworkForm({
         const res = await updateArtworkAction(initial.id, buildInput());
         if (!res.ok) return toast.error(res.error ?? "Failed to save.");
         toast.success("Artwork saved.");
-        router.refresh();
+        if (onSaved) onSaved();
+        else router.refresh();
       } else {
         const res = await createArtworkAction(buildInput());
         if (!res.ok || !res.id)
           return toast.error(res.error ?? "Failed to create.");
         toast.success("Artwork created as a draft.");
-        router.push(`/studio/artworks/${res.id}/edit`);
+        if (onCreated) onCreated(res.id);
+        else router.push(`/studio/artworks/${res.id}/edit`);
       }
     } finally {
       setPending(false);
@@ -374,11 +386,13 @@ export function ArtworkForm({
       const published = await publishArtworkAction(res.id);
       if (!published.ok) {
         toast.error(published.error ?? "Created as a draft, but publishing failed.");
-        router.push(`/studio/artworks/${res.id}/edit`);
+        if (onCreated) onCreated(res.id);
+        else router.push(`/studio/artworks/${res.id}/edit`);
         return;
       }
       toast.success("Artwork published.");
-      router.push(`/studio/artworks/${res.id}/edit`);
+      if (onCreated) onCreated(res.id);
+      else router.push(`/studio/artworks/${res.id}/edit`);
     } finally {
       setPending(false);
     }
@@ -426,6 +440,7 @@ export function ArtworkForm({
           maxImages={12}
           onBusyChange={setUploadingImages}
         />
+        <LibraryPicker images={images} onChange={setImages} max={12} sources={sources} />
         {images.length === 0 && !uploadingImages && (
           <p className="text-xs text-muted-foreground">
             No photo yet — the listing will show a placeholder until one is added.

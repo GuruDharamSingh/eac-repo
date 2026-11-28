@@ -38,7 +38,7 @@ function useRun(host: HubCardProps<ChannelHubData>['host']) {
         host.refresh?.();
         return { ok: true, data: (r.value ?? undefined) as Record<string, unknown> | undefined };
       }
-      return { ok: false, error: r.error };
+      return { ok: false, error: (r as { error: string }).error };
     },
     [host],
   );

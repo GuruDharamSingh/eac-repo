@@ -32,6 +32,10 @@ export async function SiteHeader() {
   // Pointing non-sellers straight at /studio/apply left anyone the header
   // misread (e.g. a failed store lookup) on the apply page.
   const studioHref = "/studio";
+  // Signed in: the person's Center (2026-11-26, /center phase 1), which holds the store, listings and bids
+  // and links into the /studio pages. Signed out: "Sell your work" through /studio's guard, as before.
+  const ctaHref = user ? "/center" : studioHref;
+  const ctaLabel = user ? "Center" : seller ? "Studio" : "Sell your work";
 
   const links: NavLink[] = [
     { href: "/", label: "Artworks" },
@@ -40,11 +44,12 @@ export async function SiteHeader() {
     { href: "/gallery", label: "3D gallery" },
     // Also a standing button beside the cart on wide screens, so in the row
     // it would be the same link twice.
-    { href: studioHref, label: seller ? "Studio" : "Sell your work", narrowOnly: true },
+    { href: ctaHref, label: ctaLabel, narrowOnly: true },
     // Messages has its own link beside the cart on wide screens, where it
     // carries the unread count; in the narrow menu it belongs with the rest.
     ...(user ? [{ href: "/messages", label: "Messages", narrowOnly: true }] : []),
-    ...(admin ? [{ href: "/admin", label: "Admin" }] : keeper ? [{ href: "/admin/stores", label: "Admin" }] : []),
+    // Keepers (owners of the market org) and network admins: the Hub, which replaces /admin (2026-11-26).
+    ...(admin || keeper ? [{ href: "/hub", label: "Hub" }] : []),
   ];
 
   return (
@@ -80,7 +85,7 @@ export async function SiteHeader() {
             variant="outline"
             className="hidden border-primary font-medium text-primary hover:bg-primary hover:text-primary-foreground lg:inline-flex"
           >
-            <Link href={studioHref} data-part="cta">{seller ? "Studio" : "Sell your work"}</Link>
+            <Link href={ctaHref} data-part="cta">{ctaLabel}</Link>
           </Button>
 
           {user ? (

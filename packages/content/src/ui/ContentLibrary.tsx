@@ -8,6 +8,7 @@ import { IdentityMark } from "./atoms";
 import { PieceBrick, PieceLightbox, type PieceLightboxAction } from "./PieceLightbox";
 import { PieceList, PieceRow } from "./PieceRow";
 import { CountLine, SearchBox, SegGroup, ViewToggle } from "./library/bar";
+import { SuggestSearch, type SuggestConfig } from "./library/suggest";
 import { SALE_WORD } from "./library/badges";
 import { FileBrowser } from "./library/FileBrowser";
 import { FileBrick, FileRow } from "./library/file-tiles";
@@ -113,6 +114,15 @@ export interface ContentLibraryProps {
   initialSource?: string;
   /** Files view: shown when a folder is empty. */
   emptyText?: string;
+  /** Round 2: "large" = 4-across tiles with a 4/5 picture and 16px titles (2-across on a phone). Default as before. */
+  tileSize?: "regular" | "large";
+  /** Round 2: the Show toggle offers only these views (and is hidden when one is left). Default: all three, as before. */
+  views?: ContentView[];
+  /**
+   * Round 2: a suggestions dropdown under the search box (Pieces / People / Orgs, from GET <endpoint>?q=&limit=).
+   * A piece fills the search; a person or an org narrows the list to their works (a chip clears it). Remote mode.
+   */
+  suggest?: { endpoint: string };
 }
 
 const KIND_ORDER: ContentType[] = ["artwork", "product", "writing", "video", "series", "meeting", "questionnaire", "poll", "image", "audio", "document", "file"];
@@ -198,6 +208,9 @@ export function ContentLibrary({
   rememberAs,
   initialSource,
   emptyText,
+  tileSize,
+  views,
+  suggest,
 }: ContentLibraryProps) {
   const [st, setSt] = React.useState<LibraryState>({ q: "", scope: "all", kind: "all", status: "all", series: "all", sort: "recent", view: "bricks", ...initial });
   const set = (patch: Partial<LibraryState>) => {
@@ -210,6 +223,7 @@ export function ContentLibrary({
   const [sale, setSale] = React.useState<ContentSaleState | "all">("all");
   const [store, setStore] = React.useState("all");
   const [sortChosen, setSortChosen] = React.useState(false);
+  const [narrow, setNarrow] = React.useState<{ scope: ContentScope; name: string } | null>(null);
   const opener = React.useRef<HTMLElement | null>(null);
   const clock = React.useMemo(() => now ?? new Date().toISOString(), [now]);
 
@@ -221,9 +235,11 @@ export function ContentLibrary({
   const remote = Boolean(source);
   const compact = density === "compact";
   const view: ContentView = lockView ? viewProp ?? "published" : cview;
-  const showViewToggle = !lockView && (viewProp !== undefined || remote);
-  /** The files view with folders: the folder browser, MediaLibrary's body. */
-  const folderBrowser = view === "files" && Boolean(folders) && !remote;
+  const viewWords = views ? VIEW_WORD.filter((o) => views.includes(o.value)) : VIEW_WORD;
+  const showViewToggle = !lockView && (viewProp !== undefined || remote) && viewWords.length > 1;
+  /** The files view with folders: the folder browser, MediaLibrary's body. Also in remote mode
+   *  (PM, 2026-11-26): files have no index rows until Step 5, and browsing stays live folders after it. */
+  const folderBrowser = view === "files" && Boolean(folders) && (!views || views.includes("files"));
   const groupBy: LibraryGroupBy = groupByProp ?? (groupBySite ? "site" : "none");
   const picking = mode === "pick" || mode === "pickMany";
 
@@ -243,7 +259,7 @@ export function ContentLibrary({
   // ── remote mode ──
   const baseScope: ContentScope = scopeProp ?? { kind: "mine" };
   const idn = identities.find((i) => i.id === st.scope);
-  const scope: ContentScope = idn && idn.kind === "org" ? { kind: "org", orgId: idn.id.startsWith("org:") ? idn.id.slice(4) : idn.id } : idn ? { kind: "mine" } : baseScope;
+  const scope: ContentScope = narrow ? narrow.scope : idn && idn.kind === "org" ? { kind: "org", orgId: idn.id.startsWith("org:") ? idn.id.slice(4) : idn.id } : idn ? { kind: "mine" } : baseScope;
   const q = st.q.trim();
   const query: ContentQuery = {
     q: q || undefined,
@@ -292,7 +308,7 @@ export function ContentLibrary({
   if (folderBrowser) {
     const viewSeg = showViewToggle ? (
       <div className="eac-c-lib-bar">
-        <SegGroup<ContentView> label="Show" value={view} options={VIEW_WORD} onChange={pickView} />
+        <SegGroup<ContentView> label="Show" value={view} options={viewWords} onChange={pickView} />
       </div>
     ) : null;
     return (
@@ -439,6 +455,36 @@ export function ContentLibrary({
       </div>
     ) : null;
 
+  const searchBox =
+    suggest && remote ? (
+      <SuggestSearch
+        placeholder={searchPlaceholder}
+        value={st.q}
+        onChange={(v) => set({ q: v })}
+        suggest={{
+          endpoint: suggest.endpoint,
+          onPerson: (p) => {
+            setNarrow({ scope: { kind: "person", userId: p.id }, name: p.name });
+            set({ q: "" });
+          },
+          onOrg: (o) => {
+            setNarrow({ scope: { kind: "org", orgId: o.id }, name: o.name });
+            set({ q: "" });
+          },
+        }}
+      />
+    ) : (
+      <SearchBox placeholder={searchPlaceholder} value={st.q} onChange={(v) => set({ q: v })} />
+    );
+  const narrowChip = narrow ? (
+    <p className="eac-c-lib-narrow" role="status">
+      Works by {narrow.name}{" "}
+      <button type="button" className="chn-btn is-small" onClick={() => setNarrow(null)}>
+        Show all
+      </button>
+    </p>
+  ) : null;
+
   const sortSelect = (
     <label className="eac-c-select-label">
       Sort
@@ -459,7 +505,7 @@ export function ContentLibrary({
 
   const extraFilters = (
     <>
-      {showViewToggle ? <SegGroup<ContentView> small label="Show" value={view} options={VIEW_WORD} onChange={pickView} /> : null}
+      {showViewToggle ? <SegGroup<ContentView> small label="Show" value={view} options={viewWords} onChange={pickView} /> : null}
       {saleKinds.length > 1 && !compact ? (
         <SegGroup<ContentSaleState | "all">
           small
@@ -490,6 +536,7 @@ export function ContentLibrary({
       className={`eac-c eac-c-lib${remote || view !== "published" ? " eac-c-media" : ""}${className ? ` ${className}` : ""}`}
       data-mode={mode}
       data-density={density}
+      data-tile={tileSize === "large" ? "large" : undefined}
       onKeyDown={(e) => {
         if (open && e.key === "Escape") {
           e.preventDefault();
@@ -503,7 +550,7 @@ export function ContentLibrary({
         {compact ? (
           <>
             <div className="eac-c-lib-bar">
-              <SearchBox placeholder={searchPlaceholder} value={st.q} onChange={(v) => set({ q: v })} />
+              {searchBox}
             </div>
             <div className="eac-c-lib-bar">
               {extraFilters}
@@ -537,7 +584,7 @@ export function ContentLibrary({
         ) : (
           <>
             <div className="eac-c-lib-bar">
-              <SearchBox placeholder={searchPlaceholder} value={st.q} onChange={(v) => set({ q: v })} />
+              {searchBox}
               <div className="eac-c-lib-filters">
                 {sortSelect}
                 <ViewToggle value={st.view} options={[{ value: "bricks", label: "Bricks" }, { value: "list", label: "List" }]} onChange={(v) => set({ view: v })} />
@@ -567,6 +614,7 @@ export function ContentLibrary({
           </>
         )}
 
+        {narrowChip}
         {remote && rs.error ? (
           <p className="eac-c-lib-empty" role="alert">
             {rs.error}{" "}
@@ -588,12 +636,14 @@ export function ContentLibrary({
         ) : nothing ? (
           rs.error ? null : <p className="eac-c-lib-empty">{needle ? `Nothing matches “${st.q}”.` : "Nothing here yet."}</p>
         ) : listView ? (
-          groupBy !== "none" && !compact ? (
+          // Store headings also in compact (the hub card popup); site grouping stays off there (PM, 2026-11-26).
+          groupBy !== "none" && (!compact || groupBy === "store") ? (
             [...groups.values()].map((g) => (
               <section key={`${g.identityId}|${g.title}`} className="eac-c-lib-group">
                 <h3>
                   <strong>{g.title}</strong>
                   {groupBy === "site" && g.host && <small>{g.host}</small>}
+                  {groupBy === "store" ? <small>{g.pieces.length}</small> : null}
                 </h3>
                 {rows(g.pieces)}
               </section>
@@ -612,6 +662,7 @@ export function ContentLibrary({
                   {idm ? <IdentityMark initials={idm.initials} kind={idm.kind} size={18} /> : null}
                   <strong>{g.title}</strong>
                   {groupBy === "site" && g.host && <small>{g.host}</small>}
+                  {groupBy === "store" ? <small>{g.pieces.length}</small> : null}
                 </h3>
                 {bricks(g.pieces)}
               </section>
